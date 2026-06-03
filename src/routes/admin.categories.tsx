@@ -311,6 +311,16 @@ function CategoriesPage() {
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="edit-slug">짧은 주소 (URL용)</Label>
+              <Input
+                id="edit-slug"
+                value={editSlug}
+                onChange={(e) => setEditSlug(e.target.value)}
+                placeholder="예: lv1 (영문 소문자·숫자·하이픈)"
+                className="rounded-xl"
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="edit-desc">설명</Label>
               <Textarea
                 id="edit-desc"
