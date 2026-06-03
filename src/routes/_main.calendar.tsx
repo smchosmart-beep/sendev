@@ -9,6 +9,8 @@ import {
   CalendarDays,
   LinkIcon,
   Download,
+  List,
+  LayoutGrid,
 } from "lucide-react";
 
 import { eventsQueryOptions } from "@/lib/platform.queries";
@@ -54,6 +56,8 @@ function CalendarPage() {
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [selected, setSelected] = useState<EventDTO | null>(null);
+  const [mobileView, setMobileView] = useState<"calendar" | "list">("calendar");
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, EventDTO[]>();
@@ -79,10 +83,40 @@ function CalendarPage() {
     const d = new Date(viewYear, viewMonth + delta, 1);
     setViewYear(d.getFullYear());
     setViewMonth(d.getMonth());
+    setSelectedDay(null);
   };
 
+  const monthPrefix = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}`;
+  const monthEvents = useMemo(
+    () =>
+      events
+        .filter((e) => e.date.startsWith(monthPrefix))
+        .sort((a, b) =>
+          a.date === b.date
+            ? (a.time ?? "").localeCompare(b.time ?? "")
+            : a.date.localeCompare(b.date),
+        ),
+    [events, monthPrefix],
+  );
+
+  const activeDay =
+    selectedDay ?? (todayIso.startsWith(monthPrefix) ? todayIso : null);
+  const activeDayEvents = activeDay ? eventsByDate.get(activeDay) ?? [] : [];
+
+  const isoWeekday = (iso: string) => {
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Date(y, m - 1, d).getDay();
+  };
+
+  const formatDayLabel = (iso: string) => {
+    const d = Number(iso.split("-")[2]);
+    return `${d}일 (${WEEKDAYS[isoWeekday(iso)]})`;
+  };
+
+
+
   return (
-    <div className="flex h-[calc(100vh-6rem)] flex-col gap-4">
+    <div className="flex min-h-[calc(100vh-6rem)] flex-col gap-4 sm:h-[calc(100vh-6rem)]">
       <div className="flex flex-nowrap items-center justify-between gap-2">
         <h1 className="whitespace-nowrap text-xl font-bold text-foreground sm:text-3xl">
           Dev 캘린더
@@ -112,7 +146,39 @@ function CalendarPage() {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col rounded-2xl bg-card p-2 shadow-sm sm:p-6">
+      {/* Mobile view toggle */}
+      <div className="flex gap-1 rounded-xl bg-muted p-1 sm:hidden">
+        <button
+          type="button"
+          onClick={() => setMobileView("calendar")}
+          className={cn(
+            "flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-colors",
+            mobileView === "calendar"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground",
+          )}
+        >
+          <LayoutGrid className="h-4 w-4" />
+          달력
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileView("list")}
+          className={cn(
+            "flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-colors",
+            mobileView === "list"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground",
+          )}
+        >
+          <List className="h-4 w-4" />
+          목록
+        </button>
+      </div>
+
+
+
+      <div className="hidden flex-1 flex-col rounded-2xl bg-card p-2 shadow-sm sm:flex sm:p-6">
         <div className="mb-2 grid grid-cols-7 gap-1 sm:mb-3 sm:gap-2">
           {WEEKDAYS.map((w, i) => (
             <div
@@ -183,6 +249,166 @@ function CalendarPage() {
           })}
         </div>
       </div>
+
+      {/* Mobile: calendar view (dot markers + selected day list) */}
+      {mobileView === "calendar" && (
+        <div className="flex flex-col gap-4 sm:hidden">
+          <div className="rounded-2xl bg-card p-2 shadow-sm">
+            <div className="mb-2 grid grid-cols-7 gap-1">
+              {WEEKDAYS.map((w, i) => (
+                <div
+                  key={w}
+                  className={cn(
+                    "py-1 text-center text-xs font-semibold",
+                    i === 0 ? "text-destructive" : "text-muted-foreground",
+                  )}
+                >
+                  {w}
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {cells.map((day, idx) => {
+                if (day === null) return <div key={idx} />;
+                const iso = toIso(viewYear, viewMonth, day);
+                const dayEvents = eventsByDate.get(iso) ?? [];
+                const isToday = iso === todayIso;
+                const isActive = iso === activeDay;
+                const weekday = (firstWeekday + day - 1) % 7;
+                const holidayName = getHolidayName(iso);
+                const isRed = weekday === 0 || !!holidayName;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setSelectedDay(iso)}
+                    title={holidayName ?? undefined}
+                    className={cn(
+                      "flex aspect-square flex-col items-center justify-start gap-1 rounded-lg py-1.5 transition-colors",
+                      isActive ? "bg-accent" : "active:bg-muted",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium",
+                        isToday
+                          ? "bg-primary text-primary-foreground"
+                          : isRed
+                            ? "text-destructive"
+                            : "text-foreground",
+                      )}
+                    >
+                      {day}
+                    </span>
+                    <span className="flex h-1.5 items-center gap-0.5">
+                      {dayEvents.slice(0, 3).map((e) => (
+                        <span
+                          key={e.id}
+                          className="h-1.5 w-1.5 rounded-full bg-primary"
+                        />
+                      ))}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-card p-4 shadow-sm">
+            <h2 className="mb-3 text-sm font-bold text-foreground">
+              {activeDay ? formatDayLabel(activeDay) : "날짜를 선택하세요"} 일정
+            </h2>
+            {activeDay && activeDayEvents.length > 0 ? (
+              <div className="space-y-2">
+                {activeDayEvents.map((e) => (
+                  <button
+                    key={e.id}
+                    type="button"
+                    onClick={() => setSelected(e)}
+                    className="flex w-full flex-col gap-1 rounded-xl bg-muted/60 p-3 text-left transition-colors active:bg-muted"
+                  >
+                    <span className="font-medium text-foreground">{e.title}</span>
+                    {(e.time || e.location) && (
+                      <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        {e.time && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {e.time}
+                          </span>
+                        )}
+                        {e.location && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {e.location}
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                등록된 일정이 없어요.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Mobile: month list view */}
+      {mobileView === "list" && (
+        <div className="rounded-2xl bg-card p-4 shadow-sm sm:hidden">
+          {monthEvents.length > 0 ? (
+            <div className="space-y-2">
+              {monthEvents.map((e) => (
+                <button
+                  key={e.id}
+                  type="button"
+                  onClick={() => setSelected(e)}
+                  className="flex w-full items-start gap-3 rounded-xl bg-muted/60 p-3 text-left transition-colors active:bg-muted"
+                >
+                  <span className="flex w-12 shrink-0 flex-col items-center rounded-lg bg-primary/10 py-1 text-primary">
+                    <span className="text-base font-bold leading-none">
+                      {Number(e.date.split("-")[2])}
+                    </span>
+                    <span className="text-[10px]">
+                      {WEEKDAYS[isoWeekday(e.date)]}
+                    </span>
+                  </span>
+                  <span className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="truncate font-medium text-foreground">
+                      {e.title}
+                    </span>
+                    {(e.time || e.location) && (
+                      <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        {e.time && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {e.time}
+                          </span>
+                        )}
+                        {e.location && (
+                          <span className="flex min-w-0 items-center gap-1">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{e.location}</span>
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              이번 달 등록된 일정이 없어요.
+            </p>
+          )}
+        </div>
+      )}
+
+
 
 
       {events.length === 0 && (
