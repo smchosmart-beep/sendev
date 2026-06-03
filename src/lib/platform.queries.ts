@@ -8,6 +8,7 @@ import {
   listCriteria,
   listReviews,
   fetchReadme,
+  fetchOgImage,
 } from "./platform.functions";
 
 export const categoriesQueryOptions = () =>
@@ -52,4 +53,13 @@ export const readmeQueryOptions = (githubUrl: string) =>
     queryFn: () => fetchReadme({ data: { githubUrl } }),
     enabled: !!githubUrl,
     staleTime: 5 * 60 * 1000,
+  });
+
+export const ogImageQueryOptions = (url: string) =>
+  queryOptions({
+    queryKey: ["og-image", url],
+    queryFn: () => fetchOgImage({ data: { url } }),
+    enabled: !!url,
+    staleTime: 30 * 60 * 1000,
+    retry: false,
   });

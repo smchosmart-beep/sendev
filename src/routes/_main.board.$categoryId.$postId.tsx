@@ -18,6 +18,7 @@ import {
   ArrowLeft,
   User,
   Github,
+  ExternalLink,
   FileText,
   Star,
   Loader2,
@@ -109,6 +110,17 @@ function ProjectDetailPage() {
               GitHub 저장소
             </a>
           )}
+          {post.deployUrl && (
+            <a
+              href={post.deployUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1 text-primary hover:underline"
+            >
+              <ExternalLink className="h-4 w-4" />
+              배포 사이트
+            </a>
+          )}
         </div>
       </div>
 
@@ -119,7 +131,7 @@ function ProjectDetailPage() {
 }
 
 interface ManagePostProps {
-  post: { title: string; author: string; githubUrl: string };
+  post: { title: string; author: string; githubUrl: string; deployUrl: string };
   categoryId: string;
   postId: string;
 }
@@ -137,6 +149,7 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
   const [title, setTitle] = useState(post.title);
   const [author, setAuthor] = useState(post.author);
   const [githubUrl, setGithubUrl] = useState(post.githubUrl);
+  const [deployUrl, setDeployUrl] = useState(post.deployUrl);
   const [editPw, setEditPw] = useState("");
   const [deletePw, setDeletePw] = useState("");
 
@@ -144,6 +157,7 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
     setTitle(post.title);
     setAuthor(post.author);
     setGithubUrl(post.githubUrl);
+    setDeployUrl(post.deployUrl);
     setEditPw("");
     setEditOpen(true);
   };
@@ -151,7 +165,7 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
   const editMutation = useMutation({
     mutationFn: () =>
       update({
-        data: { id: postId, password: editPw, title, author, githubUrl },
+        data: { id: postId, password: editPw, title, author, githubUrl, deployUrl },
       }),
     onSuccess: (res) => {
       if (!res.ok) {
@@ -256,6 +270,16 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
                 value={githubUrl}
                 onChange={(e) => setGithubUrl(e.target.value)}
                 placeholder="https://github.com/owner/repo"
+                className="rounded-xl"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="e-deploy">배포 URL (선택)</Label>
+              <Input
+                id="e-deploy"
+                value={deployUrl}
+                onChange={(e) => setDeployUrl(e.target.value)}
+                placeholder="https://my-app.lovable.app"
                 className="rounded-xl"
               />
             </div>

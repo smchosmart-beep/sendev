@@ -1,0 +1,1 @@
+ALTER TABLE public.posts ADD COLUMN deploy_url text NOT NULL DEFAULT '';

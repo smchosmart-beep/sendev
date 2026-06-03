@@ -43,6 +43,7 @@ export interface PostDTO {
   title: string;
   author: string;
   githubUrl: string;
+  deployUrl: string;
   createdAt: string;
 }
 
@@ -233,7 +234,7 @@ export const listPosts = createServerFn({ method: "GET" })
     const db = await getAdmin();
     const { data: rows, error } = await db
       .from("posts")
-      .select("id, category_id, type, title, author, github_url, created_at")
+      .select("id, category_id, type, title, author, github_url, deploy_url, created_at")
       .eq("category_id", data.categoryId)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -246,7 +247,7 @@ export const getPost = createServerFn({ method: "GET" })
     const db = await getAdmin();
     const { data: row, error } = await db
       .from("posts")
-      .select("id, category_id, type, title, author, github_url, created_at")
+      .select("id, category_id, type, title, author, github_url, deploy_url, created_at")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -262,6 +263,7 @@ export const createPost = createServerFn({ method: "POST" })
         title: z.string().trim().min(1).max(200),
         author: z.string().trim().min(1).max(100),
         githubUrl: z.string().trim().max(300).default(""),
+        deployUrl: z.string().trim().max(300).default(""),
         editPassword: z.string().trim().min(1).max(100),
       })
       .parse(input),
@@ -285,6 +287,7 @@ export const createPost = createServerFn({ method: "POST" })
       title: data.title,
       author: data.author,
       github_url: data.githubUrl,
+      deploy_url: data.deployUrl,
       edit_password: data.editPassword,
     });
     if (error) throw new Error(error.message);
@@ -331,6 +334,7 @@ export const updatePost = createServerFn({ method: "POST" })
         title: z.string().trim().min(1).max(200),
         author: z.string().trim().min(1).max(100),
         githubUrl: z.string().trim().max(300).default(""),
+        deployUrl: z.string().trim().max(300).default(""),
       })
       .parse(input),
   )
@@ -345,6 +349,7 @@ export const updatePost = createServerFn({ method: "POST" })
         title: data.title,
         author: data.author,
         github_url: data.githubUrl,
+        deploy_url: data.deployUrl,
       })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -375,6 +380,7 @@ function mapPost(p: any): PostDTO {
     title: p.title,
     author: p.author,
     githubUrl: p.github_url,
+    deployUrl: p.deploy_url ?? "",
     createdAt: p.created_at,
   };
 }
@@ -559,3 +565,83 @@ export const fetchReadme = createServerFn({ method: "GET" })
       }
     },
   );
+
+/* ----------------------------- Deploy OG image ------------------------ */
+
+function extractMetaContent(html: string, keys: string[]): string | null {
+  for (const key of keys) {
+    // property="og:image" content="..."  (either attribute order)
+    const re1 = new RegExp(
+      `<meta[^>]+(?:property|name)=["']${key}["'][^>]*content=["']([^"']+)["']`,
+      "i",
+    );
+    const re2 = new RegExp(
+      `<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']${key}["']`,
+      "i",
+    );
+    const m = html.match(re1) ?? html.match(re2);
+    if (m && m[1]) return m[1].trim();
+  }
+  return null;
+}
+
+export const fetchOgImage = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z.object({ url: z.string().trim().url().max(500) }).parse(input),
+  )
+  .handler(async ({ data }): Promise<{ image: string | null }> => {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 7000);
+      const res = await fetch(data.url, {
+        signal: controller.signal,
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; EduShareBot/1.0)" },
+      });
+      clearTimeout(timeout);
+      if (!res.ok) return { image: null };
+
+      // Read at most ~512KB of HTML; OG tags live in <head>.
+      const reader = res.body?.getReader();
+      let html = "";
+      if (reader) {
+        const decoder = new TextDecoder();
+        let received = 0;
+        const MAX = 512 * 1024;
+        while (received < MAX) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          received += value.byteLength;
+          html += decoder.decode(value, { stream: true });
+          if (html.includes("</head>")) break;
+        }
+        try {
+          await reader.cancel();
+        } catch {
+          /* ignore */
+        }
+      } else {
+        html = await res.text();
+      }
+
+      const raw = extractMetaContent(html, [
+        "og:image:secure_url",
+        "og:image",
+        "twitter:image",
+        "twitter:image:src",
+      ]);
+      if (!raw) return { image: null };
+
+      // Resolve relative URLs against the page URL.
+      let resolved: string;
+      try {
+        resolved = new URL(raw, data.url).href;
+      } catch {
+        return { image: null };
+      }
+      if (!/^https?:\/\//i.test(resolved)) return { image: null };
+      return { image: resolved };
+    } catch (e) {
+      console.error("fetchOgImage failed:", e);
+      return { image: null };
+    }
+  });

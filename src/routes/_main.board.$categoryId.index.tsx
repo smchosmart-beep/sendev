@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import {
   useSuspenseQuery,
+  useQuery,
   useQueryClient,
   useMutation,
 } from "@tanstack/react-query";
@@ -9,8 +10,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { Megaphone, FolderGit2, User, Plus } from "lucide-react";
 import { toast } from "sonner";
 
-import { postsQueryOptions, categoriesQueryOptions } from "@/lib/platform.queries";
-import { createPost, GITHUB_URL_RE } from "@/lib/platform.functions";
+import {
+  postsQueryOptions,
+  categoriesQueryOptions,
+  ogImageQueryOptions,
+} from "@/lib/platform.queries";
+import { createPost, GITHUB_URL_RE, type PostDTO } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,23 +100,7 @@ function BoardContent() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((p) => (
-              <Link
-                key={p.id}
-                to="/board/$categoryId/$postId"
-                params={{ categoryId, postId: p.id }}
-                className="block overflow-hidden rounded-2xl bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md active:scale-95"
-              >
-                <div className="flex h-32 items-center justify-center bg-accent text-primary">
-                  <FolderGit2 className="h-10 w-10" />
-                </div>
-                <div className="p-5">
-                  <h3 className="font-semibold text-foreground">{p.title}</h3>
-                  <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-                    <User className="h-3.5 w-3.5" />
-                    {p.author}
-                  </p>
-                </div>
-              </Link>
+              <ProjectCard key={p.id} post={p} categoryId={categoryId} />
             ))}
           </div>
         )}
@@ -126,6 +115,47 @@ function BoardContent() {
     </div>
   );
 }
+
+function ProjectCard({
+  post,
+  categoryId,
+}: {
+  post: PostDTO;
+  categoryId: string;
+}) {
+  const { data: og } = useQuery(ogImageQueryOptions(post.deployUrl ?? ""));
+  const ogImage = og?.image ?? null;
+
+  return (
+    <Link
+      to="/board/$categoryId/$postId"
+      params={{ categoryId, postId: post.id }}
+      className="block overflow-hidden rounded-2xl bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md active:scale-95"
+    >
+      <div className="relative flex h-32 items-center justify-center overflow-hidden bg-accent text-primary">
+        {ogImage ? (
+          <img
+            src={ogImage}
+            alt={`${post.title} 배포 미리보기`}
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <FolderGit2 className="h-10 w-10" />
+        )}
+      </div>
+      <div className="p-5">
+        <h3 className="font-semibold text-foreground">{post.title}</h3>
+        <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+          <User className="h-3.5 w-3.5" />
+          {post.author}
+        </p>
+      </div>
+    </Link>
+  );
+}
+
+
 
 function RegisterDialog({
   categoryId,
@@ -143,12 +173,13 @@ function RegisterDialog({
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
+  const [deployUrl, setDeployUrl] = useState("");
   const [editPassword, setEditPassword] = useState("");
 
   const mutation = useMutation({
     mutationFn: () =>
       create({
-        data: { categoryId, type: "project", title, author, githubUrl, editPassword },
+        data: { categoryId, type: "project", title, author, githubUrl, deployUrl, editPassword },
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
@@ -156,6 +187,7 @@ function RegisterDialog({
       setTitle("");
       setAuthor("");
       setGithubUrl("");
+      setDeployUrl("");
       setEditPassword("");
       onOpenChange(false);
     },
@@ -189,6 +221,11 @@ function RegisterDialog({
             }
             if (url && !GITHUB_URL_RE.test(url)) {
               toast.error("GitHub 링크 형식이 올바르지 않아요. (예: https://github.com/owner/repo)");
+              return;
+            }
+            const dep = deployUrl.trim();
+            if (dep && !/^https?:\/\/.+/i.test(dep)) {
+              toast.error("배포 URL 형식이 올바르지 않아요. (예: https://my-app.lovable.app)");
               return;
             }
             mutation.mutate();
@@ -229,6 +266,19 @@ function RegisterDialog({
                 이 게시판은 GitHub 링크가 필수입니다.
               </p>
             )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="p-deploy">배포 URL (선택)</Label>
+            <Input
+              id="p-deploy"
+              value={deployUrl}
+              onChange={(e) => setDeployUrl(e.target.value)}
+              placeholder="https://my-app.lovable.app"
+              className="rounded-xl"
+            />
+            <p className="text-xs text-muted-foreground">
+              입력하면 산출물 카드에 배포 사이트 미리보기 이미지가 표시돼요.
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="p-pw">수정·삭제 비밀번호</Label>
