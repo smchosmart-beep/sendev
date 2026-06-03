@@ -376,6 +376,7 @@ function mapPost(p: any): PostDTO {
     title: p.title,
     author: p.author,
     githubUrl: p.github_url,
+    deployUrl: p.deploy_url ?? "",
     createdAt: p.created_at,
   };
 }
