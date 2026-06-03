@@ -221,8 +221,13 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
 
   const postId = post.id;
   const categoryId = post.categoryId;
-  const isBoardPost = post.type === "notice" || post.type === "question";
-  const noun = isBoardPost ? (post.type === "notice" ? "공지" : "질문") : "산출물";
+  const isBoardPost =
+    post.type === "notice" || post.type === "question" || post.type === "general";
+  const noun = isBoardPost
+    ? post.type === "notice"
+      ? "공지"
+      : "글"
+    : "산출물";
 
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
