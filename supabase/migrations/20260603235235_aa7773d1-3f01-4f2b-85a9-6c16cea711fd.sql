@@ -1,0 +1,1 @@
+ALTER TABLE public.categories ADD COLUMN IF NOT EXISTS project_name text NOT NULL DEFAULT '산출물';

@@ -27,6 +27,7 @@ export type Database = {
           id: string
           name: string
           password: string
+          project_name: string
           slug: string
           sort_order: number
           tab_group: string
@@ -43,6 +44,7 @@ export type Database = {
           id?: string
           name: string
           password?: string
+          project_name?: string
           slug: string
           sort_order?: number
           tab_group?: string
@@ -59,6 +61,7 @@ export type Database = {
           id?: string
           name?: string
           password?: string
+          project_name?: string
           slug?: string
           sort_order?: number
           tab_group?: string

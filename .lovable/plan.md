@@ -1,36 +1,41 @@
 ## 목표
 
-히어로 배너 좌우 버튼을 누르면 단순히 옆으로 슬라이드되는 대신, 뒤에 쌓인 카드가 앞으로 넘어오는 스택형 3D 애니메이션이 나타나도록 변경합니다.
+게시판 추가/수정 시 "산출물" 게시판의 이름도 일반게시판 이름(generalName)처럼 관리자가 자유롭게 바꿀 수 있게 합니다. (예: "산출물" → "프로젝트", "작품")
 
-## 동작 방식
+## 현재 구조
 
-```text
-   [뒤2]   ← 살짝 작게, 뒤에 겹쳐 보임
-  [뒤1]
- [앞]      ← 현재 보이는 카드 (선명, 정면)
-```
+이미 일반게시판은 `general_name` 컬럼으로 이름을 바꿀 수 있게 되어 있습니다. 산출물 게시판은 이름이 코드에 "산출물"로 고정되어 있어 변경이 불가합니다. 동일한 패턴으로 `project_name` 컬럼을 추가합니다.
 
-- 현재 카드 뒤로 다음 1~2장이 살짝 작아지고 위로 어긋난 채 겹쳐 쌓여 보임 (depth 느낌)
-- "다음" 버튼 → 맨 앞 카드가 살짝 들리며 옆/뒤로 빠지고, 뒤에 있던 카드가 스케일·위치가 커지며 앞으로 올라옴
-- "이전" 버튼 → 반대 방향으로, 뒤로 보냈던 카드가 다시 앞으로 넘어옴
-- 전환은 부드러운 ease + 약간의 3D perspective(원근감)로 "뒷장이 앞으로 넘어오는" 입체감 연출
+## 1. DB 마이그레이션
 
-## 구현 방식
+`categories` 테이블에 `project_name` 컬럼 추가:
+- `project_name text NOT NULL DEFAULT '산출물'`
 
-- 기존 embla 기반 `Carousel`(`CarouselContent`/`CarouselItem`/`CarouselPrevious`/`CarouselNext`)를 히어로 영역에서 제거하고, 자체 스택 카루셀 컴포넌트로 교체
-- 새 파일 `src/components/hero-stack-carousel.tsx` 생성
-  - props: `slides` 배열
-  - `useState`로 현재 인덱스 관리
-  - 각 슬라이드를 절대 위치(`absolute`)로 겹쳐 배치하고, 현재 인덱스 기준 offset(0=앞, 1=한 칸 뒤, 2=두 칸 뒤)에 따라 `transform: translateY/scale/translateZ` + `opacity` + `zIndex`를 CSS transition으로 적용
-  - 컨테이너에 `perspective`(원근감) 적용해 3D 입체감 부여
-  - 좌/우 버튼은 기존과 동일한 위치/스타일 유지 (모바일 `left-3`/`right-3`, PC `md:-left-12`/`md:-right-12`)
-  - 카드 클릭 시 `linkUrl`이 있으면 새 탭으로 열리는 기존 동작 유지
-  - 9:16 비율, `rounded-3xl`, 그림자 등 현재 시각 스타일 유지
-- `_main.home.tsx`에서 히어로 `<section>` 내부를 새 컴포넌트로 교체 (`md:mx-auto md:max-w-[50%]` 래퍼와 슬라이드 없을 때의 placeholder 블록은 그대로 유지)
+## 2. 서버 함수 (src/lib/platform.functions.ts)
+
+`general_name`이 처리되는 모든 곳에 동일하게 `project_name` / `projectName` 추가:
+- `CategoryDTO`에 `projectName: string` 추가
+- `listCategories` select 목록에 `project_name` 추가, 매핑에 `projectName: c.project_name ?? "산출물"`
+- `createCategory` 입력 스키마에 `projectName` (기본값 "산출물"), insert에 `project_name`
+- `updateCategory` 입력 스키마에 `projectName` (optional), patch에 반영
+
+## 3. 관리자 폼 (src/routes/admin.categories.tsx)
+
+`generalName` UI 패턴을 그대로 따라:
+- 추가 폼: `projectName` state 추가, "산출물 게시판" 토글이 켜져 있을 때(`enableProject`) "산출물 게시판 이름" 입력란 표시
+- 수정 다이얼로그: `editProjectName` state 추가, 동일하게 토글 켜졌을 때 입력란 표시, `openEdit`에서 초기값 세팅
+- 추가/수정 mutation 데이터에 `projectName` 포함, 초기화 로직에도 반영
+- 목록 배지: 산출물 배지를 `c.projectName || "산출물"`로 표시
+
+## 4. 사용자 화면에 반영
+
+`category.projectName || "산출물"`로 고정 텍스트 치환:
+- `src/routes/_main.board.$slug.index.tsx`: 산출물 섹션 제목(166행), "산출물 등록" 버튼(171행), 빈 상태 제목(179행)
+- `src/routes/_main.board.$slug.$postNo.tsx`: 산출물 타입 라벨(230행) — 해당 게시글의 카테고리 projectName 사용
+- `src/routes/_main.board.$slug.new-project.tsx`: "산출물 등록" 제목 등 카테고리 이름 반영
 
 ## 기술 세부사항
 
-- 추가 라이브러리 없이 React state + Tailwind/인라인 transform + CSS transition 으로 구현 (framer-motion 미설치, 불필요)
-- 애니메이션 토큰: `transition-all duration-500 ease-out`, 뒤 카드 `scale-95`/`scale-90`, `translate-y` 음수로 위로 어긋남, `opacity` 단계적 감소
-- 슬라이드 1장일 때는 버튼/스택 없이 단일 카드만 표시
-- "다가오는 이벤트" 섹션 및 기타 영역은 변경 없음
+- 빈 값이면 항상 "산출물"로 폴백 처리해 기존 데이터/빈 입력 안전 처리
+- generalName과 완전히 동일한 검증(max 100, trim) 적용
+- 마이그레이션 승인·실행 후 타입이 재생성되면 코드 변경 진행
