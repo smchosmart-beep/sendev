@@ -315,7 +315,7 @@ function AdminCalendarPage() {
               날짜, 시간, 장소, 메모와 파일/링크 첨부를 입력하세요.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 pt-2">
+          <div className="min-w-0 space-y-4 pt-2">
             <div className="space-y-2">
               <Label htmlFor="ev-title">제목 *</Label>
               <Input
