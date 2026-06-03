@@ -90,6 +90,7 @@ function CategoriesPage() {
   const [enableGeneral, setEnableGeneral] = useState(true);
   const [enableProject, setEnableProject] = useState(true);
   const [generalName, setGeneralName] = useState("일반게시판");
+  const [tabGroup, setTabGroup] = useState<TabGroup>("hackathon");
 
   const [editing, setEditing] = useState<CategoryDTO | null>(null);
   const [editName, setEditName] = useState("");
