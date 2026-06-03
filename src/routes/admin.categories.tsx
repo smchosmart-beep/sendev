@@ -410,6 +410,24 @@ function CategoriesPage() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
+              <Label htmlFor="edit-tab-group">탭 선택</Label>
+              <Select
+                value={editTabGroup}
+                onValueChange={(v) => setEditTabGroup(v as TabGroup)}
+              >
+                <SelectTrigger id="edit-tab-group" className="rounded-xl">
+                  <SelectValue placeholder="탭을 선택하세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TAB_OPTIONS.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="edit-name">게시판 이름</Label>
               <Input
                 id="edit-name"
