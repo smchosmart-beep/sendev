@@ -154,6 +154,12 @@ function BoardContent() {
         open={registerOpen}
         onOpenChange={setRegisterOpen}
       />
+
+      <QuestionDialog
+        categoryId={categoryId}
+        open={questionOpen}
+        onOpenChange={setQuestionOpen}
+      />
     </div>
   );
 }
