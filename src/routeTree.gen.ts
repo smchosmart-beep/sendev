@@ -10,14 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as MainRouteImport } from './routes/_main'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
+import { Route as MainCalendarRouteImport } from './routes/_main.calendar'
+import { Route as MainBoardIndexRouteImport } from './routes/_main.board.index'
+import { Route as MainBoardCategoryIdRouteImport } from './routes/_main.board.$categoryId'
 
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MainRoute = MainRouteImport.update({
+  id: '/_main',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -40,49 +48,89 @@ const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => AdminRoute,
 } as any)
+const MainCalendarRoute = MainCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => MainRoute,
+} as any)
+const MainBoardIndexRoute = MainBoardIndexRouteImport.update({
+  id: '/board/',
+  path: '/board/',
+  getParentRoute: () => MainRoute,
+} as any)
+const MainBoardCategoryIdRoute = MainBoardCategoryIdRouteImport.update({
+  id: '/board/$categoryId',
+  path: '/board/$categoryId',
+  getParentRoute: () => MainRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/calendar': typeof MainCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
+  '/board/$categoryId': typeof MainBoardCategoryIdRoute
+  '/board/': typeof MainBoardIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/calendar': typeof MainCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin': typeof AdminIndexRoute
+  '/board/$categoryId': typeof MainBoardCategoryIdRoute
+  '/board': typeof MainBoardIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_main': typeof MainRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
+  '/_main/calendar': typeof MainCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
+  '/_main/board/$categoryId': typeof MainBoardCategoryIdRoute
+  '/_main/board/': typeof MainBoardIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/admin'
+    | '/calendar'
     | '/admin/categories'
     | '/admin/settings'
     | '/admin/'
+    | '/board/$categoryId'
+    | '/board/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin/categories' | '/admin/settings' | '/admin'
+  to:
+    | '/'
+    | '/calendar'
+    | '/admin/categories'
+    | '/admin/settings'
+    | '/admin'
+    | '/board/$categoryId'
+    | '/board'
   id:
     | '__root__'
     | '/'
+    | '/_main'
     | '/admin'
+    | '/_main/calendar'
     | '/admin/categories'
     | '/admin/settings'
     | '/admin/'
+    | '/_main/board/$categoryId'
+    | '/_main/board/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  MainRoute: typeof MainRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
 }
 
@@ -93,6 +141,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_main': {
+      id: '/_main'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof MainRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -123,8 +178,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_main/calendar': {
+      id: '/_main/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof MainCalendarRouteImport
+      parentRoute: typeof MainRoute
+    }
+    '/_main/board/': {
+      id: '/_main/board/'
+      path: '/board'
+      fullPath: '/board/'
+      preLoaderRoute: typeof MainBoardIndexRouteImport
+      parentRoute: typeof MainRoute
+    }
+    '/_main/board/$categoryId': {
+      id: '/_main/board/$categoryId'
+      path: '/board/$categoryId'
+      fullPath: '/board/$categoryId'
+      preLoaderRoute: typeof MainBoardCategoryIdRouteImport
+      parentRoute: typeof MainRoute
+    }
   }
 }
+
+interface MainRouteChildren {
+  MainCalendarRoute: typeof MainCalendarRoute
+  MainBoardCategoryIdRoute: typeof MainBoardCategoryIdRoute
+  MainBoardIndexRoute: typeof MainBoardIndexRoute
+}
+
+const MainRouteChildren: MainRouteChildren = {
+  MainCalendarRoute: MainCalendarRoute,
+  MainBoardCategoryIdRoute: MainBoardCategoryIdRoute,
+  MainBoardIndexRoute: MainBoardIndexRoute,
+}
+
+const MainRouteWithChildren = MainRoute._addFileChildren(MainRouteChildren)
 
 interface AdminRouteChildren {
   AdminCategoriesRoute: typeof AdminCategoriesRoute
@@ -142,6 +232,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  MainRoute: MainRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
 }
 export const routeTree = rootRouteImport
