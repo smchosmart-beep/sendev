@@ -1,12 +1,12 @@
 ## 목표
-평가기준 관리 페이지의 게시판 선택 드롭다운에 `enable_project`가 `true`인 게시판만 표시되도록 필터링합니다.
+게시물 상세 페이지에서 제목과 수정/삭제 버튼이 모바일에서 겹치는 문제를 해결합니다.
 
 ## 변경 내용
-파일: `src/routes/admin.criteria.tsx`
+파일: `src/routes/_main.board.$slug.$postNo.tsx`
 
-1. `CriteriaPage` 컴포넌트에서 `useSuspenseQuery`로 불러온 전체 `categories` 중 `enableProject === true`인 항목만 필터링합니다.
-2. `useState` 초기 선택값을 필터링된 목록의 첫 번째 게시판 ID로 설정합니다.
-3. 필터링 후 게시판이 0개일 때의 `EmptyState`를 추가합니다. ("산출물 게시판이 활성화된 게시판이 없어요.")
-4. `<select>` 내부 옵션도 필터링된 목록(`projectCategories`)만 렌더링합니다.
+1. 제목 + 버튼 컨테이너(150~154번째 줄)를 모바일에서 세로 정렬, 데스크톱에서 가로 정렬로 변경:
+   - `flex items-start justify-between gap-4` → `flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4`
+   - 제목에 `break-words` 추가하여 긴 제목 줄바꿈 보장
+2. `ManagePost`의 버튼 영역(295번째 줄)이 모바일에서 잘 보이도록 확인 (`flex shrink-0 gap-2` 유지, 모바일에서 제목 아래로 자연스럽게 배치됨)
 
-기능 변경 없이 UI 필터링만 추가합니다.
+기능 변경 없이 반응형 레이아웃만 조정합니다.

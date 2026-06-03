@@ -148,8 +148,8 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
       <BackLink slug={slug} />
 
       <div className="rounded-2xl bg-card p-6 shadow-sm">
-        <div className="flex items-start justify-between gap-4">
-          <h1 className="text-2xl font-bold text-foreground">{post.title}</h1>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+          <h1 className="text-2xl font-bold text-foreground break-words">{post.title}</h1>
           <ManagePost post={post} slug={slug} />
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
