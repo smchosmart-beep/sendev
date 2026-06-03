@@ -20,11 +20,24 @@ async function getAdmin() {
 
 export interface CategoryDTO {
   id: string;
+  slug: string;
   name: string;
   description: string;
   sortOrder: number;
   hasPassword: boolean;
   githubRequired: boolean;
+}
+
+// Board slug: lowercase letters, digits and hyphens. Used in short URLs.
+export const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,30}$/;
+
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 30);
 }
 
 export interface EventDTO {
@@ -39,6 +52,7 @@ export interface EventDTO {
 export interface PostDTO {
   id: string;
   categoryId: string;
+  postNo: number;
   type: "notice" | "project" | "question";
   title: string;
   content: string;
@@ -73,11 +87,12 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const db = await getAdmin();
     const { data, error } = await db
       .from("categories")
-      .select("id, name, description, sort_order, password, github_required")
+      .select("id, slug, name, description, sort_order, password, github_required")
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []).map((c: any) => ({
       id: c.id,
+      slug: c.slug ?? "",
       name: c.name,
       description: c.description,
       sortOrder: c.sort_order,
@@ -105,11 +120,30 @@ export const getCategoryPassword = createServerFn({ method: "POST" })
     return { password: row?.password ?? "" };
   });
 
+// Returns a slug unique across categories, deriving from `base` and appending a
+// numeric suffix on collisions. `excludeId` lets an update keep its own slug.
+async function ensureUniqueSlug(
+  db: { from: (t: string) => any },
+  base: string,
+  excludeId?: string,
+): Promise<string> {
+  let candidate = slugify(base) || "board";
+  for (let i = 0; i < 50; i++) {
+    const trySlug = i === 0 ? candidate : `${candidate}-${i + 1}`;
+    let query = db.from("categories").select("id").eq("slug", trySlug);
+    if (excludeId) query = query.neq("id", excludeId);
+    const { data: row } = await query.maybeSingle();
+    if (!row) return trySlug;
+  }
+  return `${candidate}-${Date.now()}`;
+}
+
 export const createCategory = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
       .object({
         name: z.string().trim().min(1).max(100),
+        slug: z.string().trim().max(31).optional(),
         description: z.string().trim().max(500).default(""),
         password: z.string().trim().max(100).default(""),
         githubRequired: z.boolean().default(false),
@@ -125,8 +159,10 @@ export const createCategory = createServerFn({ method: "POST" })
       .limit(1)
       .maybeSingle();
     const nextOrder = (maxRow?.sort_order ?? 0) + 1;
+    const slug = await ensureUniqueSlug(db, data.slug || data.name);
     const { error } = await db.from("categories").insert({
       name: data.name,
+      slug,
       description: data.description,
       password: data.password,
       github_required: data.githubRequired,
@@ -142,6 +178,7 @@ export const updateCategory = createServerFn({ method: "POST" })
       .object({
         id: z.string().uuid(),
         name: z.string().trim().min(1).max(100),
+        slug: z.string().trim().max(31).optional(),
         description: z.string().trim().max(500).default(""),
         // undefined = leave password unchanged
         password: z.string().trim().max(100).optional(),
@@ -155,6 +192,9 @@ export const updateCategory = createServerFn({ method: "POST" })
       name: data.name,
       description: data.description,
     };
+    if (data.slug !== undefined && data.slug !== "") {
+      patch.slug = await ensureUniqueSlug(db, data.slug, data.id);
+    }
     if (data.password !== undefined) patch.password = data.password;
     if (data.githubRequired !== undefined)
       patch.github_required = data.githubRequired;
@@ -162,6 +202,7 @@ export const updateCategory = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 export const deleteCategory = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
@@ -246,6 +287,9 @@ export const deleteEvent = createServerFn({ method: "POST" })
 
 /* -------------------------------- Posts ------------------------------- */
 
+const POST_COLUMNS =
+  "id, category_id, post_no, type, title, content, author, github_url, deploy_url, og_image_url, created_at";
+
 export const listPosts = createServerFn({ method: "GET" })
   .inputValidator((input) =>
     z.object({ categoryId: z.string().uuid() }).parse(input),
@@ -254,7 +298,7 @@ export const listPosts = createServerFn({ method: "GET" })
     const db = await getAdmin();
     const { data: rows, error } = await db
       .from("posts")
-      .select("id, category_id, type, title, content, author, github_url, deploy_url, og_image_url, created_at")
+      .select(POST_COLUMNS)
       .eq("category_id", data.categoryId)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -267,12 +311,36 @@ export const getPost = createServerFn({ method: "GET" })
     const db = await getAdmin();
     const { data: row, error } = await db
       .from("posts")
-      .select("id, category_id, type, title, content, author, github_url, deploy_url, og_image_url, created_at")
+      .select(POST_COLUMNS)
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
     return row ? mapPost(row) : null;
   });
+
+// Resolves a post by its board slug + per-board number for short URLs.
+export const getPostByNo = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z.object({ slug: z.string().min(1).max(31), postNo: z.number().int().positive() }).parse(input),
+  )
+  .handler(async ({ data }): Promise<PostDTO | null> => {
+    const db = await getAdmin();
+    const { data: cat } = await db
+      .from("categories")
+      .select("id")
+      .eq("slug", data.slug)
+      .maybeSingle();
+    if (!cat) return null;
+    const { data: row, error } = await db
+      .from("posts")
+      .select(POST_COLUMNS)
+      .eq("category_id", cat.id)
+      .eq("post_no", data.postNo)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return row ? mapPost(row) : null;
+  });
+
 
 export const createPost = createServerFn({ method: "POST" })
   .inputValidator((input) =>
@@ -309,20 +377,37 @@ export const createPost = createServerFn({ method: "POST" })
     const ogImageUrl = data.deployUrl
       ? (await resolveOgImage(data.deployUrl)) ?? ""
       : "";
-    const { error } = await db.from("posts").insert({
-      category_id: data.categoryId,
-      type: data.type,
-      title: data.title,
-      content: data.content,
-      author,
-      github_url: data.githubUrl,
-      deploy_url: data.deployUrl,
-      og_image_url: ogImageUrl,
-      edit_password: data.editPassword,
-    });
-    if (error) throw new Error(error.message);
-    return { ok: true };
+    // Assign the next per-board number, retrying once on a unique collision.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { data: maxRow } = await db
+        .from("posts")
+        .select("post_no")
+        .eq("category_id", data.categoryId)
+        .order("post_no", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const nextNo = (maxRow?.post_no ?? 0) + 1;
+      const { error } = await db.from("posts").insert({
+        category_id: data.categoryId,
+        post_no: nextNo,
+        type: data.type,
+        title: data.title,
+        content: data.content,
+        author,
+        github_url: data.githubUrl,
+        deploy_url: data.deployUrl,
+        og_image_url: ogImageUrl,
+        edit_password: data.editPassword,
+      });
+      if (!error) return { ok: true, postNo: nextNo };
+      // Retry on unique violation (concurrent insert); otherwise fail.
+      if (!String(error.message ?? "").toLowerCase().includes("duplicate")) {
+        throw new Error(error.message);
+      }
+    }
+    throw new Error("게시글 번호를 부여하지 못했어요. 다시 시도해주세요.");
   });
+
 
 // Verifies the registrant's edit/delete password for a post.
 async function checkPostPassword(
@@ -425,6 +510,7 @@ function mapPost(p: any): PostDTO {
   return {
     id: p.id,
     categoryId: p.category_id,
+    postNo: p.post_no ?? 0,
     type: p.type,
     title: p.title,
     content: p.content ?? "",
