@@ -85,7 +85,14 @@ function ProjectDetailPage() {
       <BackLink categoryId={categoryId} />
 
       <div className="rounded-2xl bg-card p-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-foreground">{post.title}</h1>
+        <div className="flex items-start justify-between gap-4">
+          <h1 className="text-2xl font-bold text-foreground">{post.title}</h1>
+          <ManagePost
+            post={post}
+            categoryId={categoryId}
+            postId={postId}
+          />
+        </div>
         <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
           <span className="flex items-center gap-1">
             <User className="h-4 w-4" />
