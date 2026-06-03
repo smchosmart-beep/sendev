@@ -190,6 +190,7 @@ function CategoriesPage() {
     setEditEnableGeneral(c.enableGeneral);
     setEditEnableProject(c.enableProject);
     setEditGeneralName(c.generalName);
+    setEditTabGroup(c.tabGroup ?? "hackathon");
     if (c.hasPassword) {
       getPasswordFn({ data: { id: c.id } })
         .then((res) => setEditPassword(res.password))
