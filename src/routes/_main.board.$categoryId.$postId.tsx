@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   createFileRoute,
   Link,
@@ -420,16 +420,14 @@ function EvaluationSection({
   const { data: reviews = [] } = useQuery(reviewsQueryOptions(postId));
   const create = useServerFn(createReview);
 
-  const [reviewerName, setReviewerName] = useState("");
   const [scores, setScores] = useState<Record<string, number>>({});
 
   const mutation = useMutation({
     mutationFn: () =>
-      create({ data: { postId, reviewerName, scores } }),
+      create({ data: { postId, scores } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reviews", postId] });
       toast.success("평가를 제출했어요!");
-      setReviewerName("");
       setScores({});
     },
     onError: () => toast.error("제출 중 문제가 발생했어요."),
@@ -483,50 +481,30 @@ function EvaluationSection({
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (!reviewerName.trim()) {
-                toast.error("평가자 이름을 입력해주세요.");
-                return;
-              }
               for (const c of criteria) {
-                if (typeof scores[c.id] !== "number") {
-                  toast.error("모든 항목에 점수를 입력해주세요.");
+                if (!scores[c.id] || scores[c.id] <= 0) {
+                  toast.error("모든 항목에 별점을 매겨주세요.");
                   return;
                 }
               }
               mutation.mutate();
             }}
-            className="space-y-4"
+            className="space-y-5"
           >
-            <div className="space-y-2">
-              <Label htmlFor="reviewer">평가자 이름</Label>
-              <Input
-                id="reviewer"
-                value={reviewerName}
-                onChange={(e) => setReviewerName(e.target.value)}
-                className="rounded-xl"
-              />
-            </div>
             {criteria.map((c) => (
               <div key={c.id} className="space-y-2">
-                <Label>
+                <Label className="flex items-center gap-2">
                   {c.criterionName}{" "}
-                  <span className="text-muted-foreground">(0 ~ {c.maxScore})</span>
+                  <span className="text-xs text-muted-foreground">
+                    (0.5점 단위 · 만점 {c.maxScore})
+                  </span>
                 </Label>
-                <Input
-                  type="number"
-                  min={0}
+                <StarRating
                   max={c.maxScore}
-                  value={scores[c.id] ?? ""}
-                  onChange={(e) =>
-                    setScores((prev) => ({
-                      ...prev,
-                      [c.id]: Math.max(
-                        0,
-                        Math.min(c.maxScore, Number(e.target.value)),
-                      ),
-                    }))
+                  value={scores[c.id] ?? 0}
+                  onChange={(v) =>
+                    setScores((prev) => ({ ...prev, [c.id]: v }))
                   }
-                  className="rounded-xl"
                 />
               </div>
             ))}
@@ -538,11 +516,113 @@ function EvaluationSection({
               {mutation.isPending ? "제출 중..." : "평가 제출"}
             </Button>
           </form>
+
         </div>
       )}
     </section>
   );
 }
+
+// Drag-and-click star rating with 0.5 increments (0 … max).
+function StarRating({
+  max,
+  value,
+  onChange,
+}: {
+  max: number;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [hover, setHover] = useState<number | null>(null);
+  const [dragging, setDragging] = useState(false);
+
+  // Compute a 0.5-step value from a pointer's x position over the star row.
+  const valueFromClientX = (clientX: number): number => {
+    const el = containerRef.current;
+    if (!el) return 0;
+    const rect = el.getBoundingClientRect();
+    const ratio = (clientX - rect.left) / rect.width;
+    const clamped = Math.min(1, Math.max(0, ratio));
+    const raw = clamped * max;
+    const stepped = Math.ceil(raw * 2) / 2; // round up to nearest 0.5
+    return Math.min(max, Math.max(0.5, stepped));
+  };
+
+  useEffect(() => {
+    if (!dragging) return;
+    const handleMove = (e: PointerEvent) => setHover(valueFromClientX(e.clientX));
+    const handleUp = (e: PointerEvent) => {
+      onChange(valueFromClientX(e.clientX));
+      setDragging(false);
+      setHover(null);
+    };
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragging, max]);
+
+  const display = hover ?? value;
+
+  return (
+    <div className="flex items-center gap-3">
+      <div
+        ref={containerRef}
+        role="slider"
+        aria-valuemin={0}
+        aria-valuemax={max}
+        aria-valuenow={value}
+        tabIndex={0}
+        className="flex cursor-pointer touch-none select-none"
+        onPointerDown={(e) => {
+          e.preventDefault();
+          setDragging(true);
+          const v = valueFromClientX(e.clientX);
+          setHover(v);
+          onChange(v);
+        }}
+        onPointerMove={(e) => {
+          if (!dragging) setHover(valueFromClientX(e.clientX));
+        }}
+        onPointerLeave={() => {
+          if (!dragging) setHover(null);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+            e.preventDefault();
+            onChange(Math.min(max, (value || 0) + 0.5));
+          } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+            e.preventDefault();
+            onChange(Math.max(0, (value || 0) - 0.5));
+          }
+        }}
+      >
+        {Array.from({ length: max }).map((_, i) => {
+          const fill = Math.min(1, Math.max(0, display - i)); // 0, 0.5, or 1
+          return (
+            <span key={i} className="relative inline-block h-8 w-8">
+              <Star className="absolute inset-0 h-8 w-8 text-muted-foreground/40" />
+              <span
+                className="absolute inset-0 overflow-hidden"
+                style={{ width: `${fill * 100}%` }}
+              >
+                <Star className="h-8 w-8 fill-primary text-primary" />
+              </span>
+            </span>
+          );
+        })}
+      </div>
+      <span className="text-sm font-semibold text-primary">
+        {display > 0 ? display.toFixed(1) : "-"} / {max}
+      </span>
+    </div>
+  );
+}
+
 
 function BackLink({ categoryId }: { categoryId: string }) {
   return (
