@@ -235,6 +235,29 @@ function CategoriesPage() {
               className="rounded-xl"
             />
           </div>
+          <div className="space-y-3 rounded-xl bg-muted/40 p-4 sm:col-span-2">
+            <p className="text-sm font-medium text-foreground">사용할 게시판 종류</p>
+            <p className="text-xs text-muted-foreground">
+              이 게시판에 표시할 섹션만 켜주세요.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <SectionToggle id="add-sec-notice" label="공지사항" checked={enableNotice} onChange={setEnableNotice} />
+              <SectionToggle id="add-sec-question" label="질문 게시판" checked={enableQuestion} onChange={setEnableQuestion} />
+              <SectionToggle id="add-sec-general" label="일반게시판" checked={enableGeneral} onChange={setEnableGeneral} />
+              <SectionToggle id="add-sec-project" label="산출물 게시판" checked={enableProject} onChange={setEnableProject} />
+            </div>
+            {enableGeneral && (
+              <div className="space-y-2 pt-1">
+                <Label htmlFor="add-general-name">일반게시판 이름</Label>
+                <Input
+                  id="add-general-name"
+                  value={generalName}
+                  onChange={(e) => setGeneralName(e.target.value)}
+                  placeholder="예: 자유게시판"
+                  className="rounded-xl bg-background"
+                />
+              </div>
+            )}
           <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 p-4 sm:col-span-2">
             <div className="space-y-0.5">
               <Label htmlFor="gh-req" className="flex items-center gap-1.5">
