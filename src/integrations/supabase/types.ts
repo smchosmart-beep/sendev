@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string
+          github_required: boolean
           id: string
           name: string
           password: string
@@ -26,6 +27,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string
+          github_required?: boolean
           id?: string
           name: string
           password?: string
@@ -34,6 +36,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string
+          github_required?: boolean
           id?: string
           name?: string
           password?: string
