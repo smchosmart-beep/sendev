@@ -303,8 +303,12 @@ async function checkPostPassword(
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(error.message);
+  // Admin master password: bypasses the per-post password. Read server-side
+  // only (never reaches the client bundle). Empty input never matches.
+  const master = process.env.POST_MASTER_PASSWORD;
+  if (master && password.length > 0 && password === master) return true;
   if (!row) return false;
-  return row.edit_password === password;
+  return !!row.edit_password && row.edit_password === password;
 }
 
 export const verifyPostPassword = createServerFn({ method: "POST" })
