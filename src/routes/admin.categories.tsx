@@ -519,6 +519,18 @@ function CategoriesPage() {
                   />
                 </div>
               )}
+              {editEnableProject && (
+                <div className="space-y-2 pt-1">
+                  <Label htmlFor="edit-project-name">산출물 게시판 이름</Label>
+                  <Input
+                    id="edit-project-name"
+                    value={editProjectName}
+                    onChange={(e) => setEditProjectName(e.target.value)}
+                    placeholder="예: 프로젝트, 작품"
+                    className="rounded-xl bg-background"
+                  />
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
