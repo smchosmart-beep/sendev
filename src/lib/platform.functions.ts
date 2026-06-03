@@ -92,7 +92,9 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const db = await getAdmin();
     const { data, error } = await db
       .from("categories")
-      .select("id, slug, name, description, sort_order, password, github_required")
+      .select(
+        "id, slug, name, description, sort_order, password, github_required, enable_notice, enable_question, enable_general, enable_project, general_name",
+      )
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []).map((c: any) => ({
@@ -103,6 +105,11 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       sortOrder: c.sort_order,
       hasPassword: !!c.password,
       githubRequired: !!c.github_required,
+      enableNotice: c.enable_notice ?? true,
+      enableQuestion: c.enable_question ?? true,
+      enableGeneral: c.enable_general ?? true,
+      enableProject: c.enable_project ?? true,
+      generalName: c.general_name ?? "일반게시판",
     }));
   },
 );
