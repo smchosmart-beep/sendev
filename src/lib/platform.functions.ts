@@ -382,6 +382,7 @@ function mapPost(p: any): PostDTO {
     author: p.author,
     githubUrl: p.github_url,
     deployUrl: p.deploy_url ?? "",
+    ogImageUrl: p.og_image_url ?? "",
     createdAt: p.created_at,
   };
 }
