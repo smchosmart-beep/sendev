@@ -27,16 +27,55 @@ export const Route = createFileRoute("/admin/home")({
   component: AdminHomePage,
 });
 
-function fileToBase64(file: File): Promise<string> {
+const MAX_WIDTH = 1920;
+const JPEG_QUALITY = 0.85;
+
+function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      resolve(result.split(",")[1] ?? "");
-    };
+    reader.onload = () => resolve(reader.result as string);
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+/**
+ * 이미지를 최대폭(MAX_WIDTH)으로 축소하고 JPEG로 재인코딩한 뒤
+ * base64 본문과 contentType을 반환합니다. (배너 업로드 용량 축소용)
+ */
+async function resizeImage(
+  file: File,
+): Promise<{ dataBase64: string; contentType: string }> {
+  const dataUrl = await readFileAsDataUrl(file);
+  const img = await loadImage(dataUrl);
+
+  const scale = Math.min(1, MAX_WIDTH / img.naturalWidth);
+  const width = Math.round(img.naturalWidth * scale);
+  const height = Math.round(img.naturalHeight * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    // canvas를 못 쓰면 원본 그대로 업로드 (fallback)
+    return {
+      dataBase64: dataUrl.split(",")[1] ?? "",
+      contentType: file.type || "image/jpeg",
+    };
+  }
+  ctx.drawImage(img, 0, 0, width, height);
+  const out = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+  return { dataBase64: out.split(",")[1] ?? "", contentType: "image/jpeg" };
 }
 
 function AdminHomePage() {
