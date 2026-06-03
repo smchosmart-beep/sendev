@@ -9,6 +9,7 @@ import {
   listReviews,
   fetchReadme,
   fetchOgImage,
+  refreshOgImage,
 } from "./platform.functions";
 
 export const categoriesQueryOptions = () =>
