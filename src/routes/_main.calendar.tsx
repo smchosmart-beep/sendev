@@ -103,11 +103,16 @@ function CalendarPage() {
     selectedDay ?? (todayIso.startsWith(monthPrefix) ? todayIso : null);
   const activeDayEvents = activeDay ? eventsByDate.get(activeDay) ?? [] : [];
 
-  const formatDayLabel = (iso: string) => {
-    const [, , d] = iso.split("-");
-    const wd = WEEKDAYS[new Date(iso).getDay()];
-    return `${Number(d)}일 (${wd})`;
+  const isoWeekday = (iso: string) => {
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Date(y, m - 1, d).getDay();
   };
+
+  const formatDayLabel = (iso: string) => {
+    const d = Number(iso.split("-")[2]);
+    return `${d}일 (${WEEKDAYS[isoWeekday(iso)]})`;
+  };
+
 
 
   return (
