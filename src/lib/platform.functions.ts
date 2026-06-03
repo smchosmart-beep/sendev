@@ -87,6 +87,24 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
   },
 );
 
+// Admin-only: returns the stored password for a single board so the edit
+// modal can prefill it. Not exposed through listCategories to keep passwords
+// out of the public board list.
+export const getCategoryPassword = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z.object({ id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }): Promise<{ password: string }> => {
+    const db = await getAdmin();
+    const { data: row, error } = await db
+      .from("categories")
+      .select("password")
+      .eq("id", data.id)
+      .single();
+    if (error) throw new Error(error.message);
+    return { password: row?.password ?? "" };
+  });
+
 export const createCategory = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
