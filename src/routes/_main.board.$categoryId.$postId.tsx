@@ -130,7 +130,14 @@ function ProjectDetailPage() {
         {isBoardPost && (
           <article className="prose prose-sm mt-6 max-w-none border-t border-border pt-6 prose-headings:text-foreground prose-p:text-foreground prose-a:text-primary prose-strong:text-foreground prose-code:text-primary prose-li:text-foreground prose-table:text-foreground">
             {post.content.trim() ? (
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  a: ({ node, ...props }) => (
+                    <a {...props} target="_blank" rel="noopener noreferrer" />
+                  ),
+                }}
+              >
                 {post.content}
               </ReactMarkdown>
             ) : (
@@ -455,7 +462,14 @@ function ReadmeSection({ githubUrl }: { githubUrl: string }) {
         <p className="text-sm text-muted-foreground">{data.error}</p>
       ) : (
         <article className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground prose-a:text-primary prose-strong:text-foreground prose-code:text-primary prose-li:text-foreground prose-table:text-foreground">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              a: ({ node, ...props }) => (
+                <a {...props} target="_blank" rel="noopener noreferrer" />
+              ),
+            }}
+          >
             {data?.markdown ?? ""}
           </ReactMarkdown>
         </article>
