@@ -159,6 +159,11 @@ export const createCategory = createServerFn({ method: "POST" })
         description: z.string().trim().max(500).default(""),
         password: z.string().trim().max(100).default(""),
         githubRequired: z.boolean().default(false),
+        enableNotice: z.boolean().default(true),
+        enableQuestion: z.boolean().default(true),
+        enableGeneral: z.boolean().default(true),
+        enableProject: z.boolean().default(true),
+        generalName: z.string().trim().max(100).default("일반게시판"),
       })
       .parse(input),
   )
@@ -178,6 +183,11 @@ export const createCategory = createServerFn({ method: "POST" })
       description: data.description,
       password: data.password,
       github_required: data.githubRequired,
+      enable_notice: data.enableNotice,
+      enable_question: data.enableQuestion,
+      enable_general: data.enableGeneral,
+      enable_project: data.enableProject,
+      general_name: data.generalName || "일반게시판",
       sort_order: nextOrder,
     });
     if (error) throw new Error(error.message);
