@@ -121,6 +121,7 @@ function CategoriesPage() {
           enableGeneral,
           enableProject,
           generalName: generalName.trim(),
+          tabGroup,
         },
       }),
     onSuccess: () => {
