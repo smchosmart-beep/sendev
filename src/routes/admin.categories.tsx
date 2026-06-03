@@ -318,6 +318,12 @@ function CategoriesPage() {
                       GitHub 링크 필수
                     </span>
                   )}
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {c.enableNotice && <SectionBadge label="공지사항" />}
+                    {c.enableQuestion && <SectionBadge label="질문 게시판" />}
+                    {c.enableGeneral && <SectionBadge label={c.generalName || "일반게시판"} />}
+                    {c.enableProject && <SectionBadge label="산출물 게시판" />}
+                  </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
                   <Button
