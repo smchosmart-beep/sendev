@@ -128,7 +128,13 @@ function CategoriesPage() {
     setEditDescription(c.description);
     setEditPassword("");
     setEditGithubRequired(c.githubRequired);
+    if (c.hasPassword) {
+      getPasswordFn({ data: { id: c.id } })
+        .then((res) => setEditPassword(res.password))
+        .catch(() => toast.error("비밀번호를 불러오지 못했어요."));
+    }
   };
+
 
 
   return (
