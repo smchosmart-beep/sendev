@@ -382,6 +382,7 @@ function QuestionDialog({
   const queryClient = useQueryClient();
   const create = useServerFn(createPost);
   const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [author, setAuthor] = useState("");
   const [editPassword, setEditPassword] = useState("");
 
@@ -392,6 +393,7 @@ function QuestionDialog({
           categoryId,
           type: "question",
           title,
+          content,
           author,
           githubUrl: "",
           deployUrl: "",
@@ -402,6 +404,7 @@ function QuestionDialog({
       queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
       toast.success("질문이 등록되었어요!");
       setTitle("");
+      setContent("");
       setAuthor("");
       setEditPassword("");
       onOpenChange(false);
