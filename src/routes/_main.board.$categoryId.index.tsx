@@ -100,23 +100,7 @@ function BoardContent() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((p) => (
-              <Link
-                key={p.id}
-                to="/board/$categoryId/$postId"
-                params={{ categoryId, postId: p.id }}
-                className="block overflow-hidden rounded-2xl bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md active:scale-95"
-              >
-                <div className="flex h-32 items-center justify-center bg-accent text-primary">
-                  <FolderGit2 className="h-10 w-10" />
-                </div>
-                <div className="p-5">
-                  <h3 className="font-semibold text-foreground">{p.title}</h3>
-                  <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-                    <User className="h-3.5 w-3.5" />
-                    {p.author}
-                  </p>
-                </div>
-              </Link>
+              <ProjectCard key={p.id} post={p} categoryId={categoryId} />
             ))}
           </div>
         )}
