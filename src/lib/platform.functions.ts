@@ -334,6 +334,7 @@ export const updatePost = createServerFn({ method: "POST" })
         title: z.string().trim().min(1).max(200),
         author: z.string().trim().min(1).max(100),
         githubUrl: z.string().trim().max(300).default(""),
+        deployUrl: z.string().trim().max(300).default(""),
       })
       .parse(input),
   )
@@ -348,6 +349,7 @@ export const updatePost = createServerFn({ method: "POST" })
         title: data.title,
         author: data.author,
         github_url: data.githubUrl,
+        deploy_url: data.deployUrl,
       })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
