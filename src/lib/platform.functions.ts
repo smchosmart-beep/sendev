@@ -39,7 +39,7 @@ export interface EventDTO {
 export interface PostDTO {
   id: string;
   categoryId: string;
-  type: "notice" | "project";
+  type: "notice" | "project" | "question";
   title: string;
   author: string;
   githubUrl: string;
@@ -260,7 +260,7 @@ export const createPost = createServerFn({ method: "POST" })
     z
       .object({
         categoryId: z.string().uuid(),
-        type: z.enum(["notice", "project"]),
+        type: z.enum(["notice", "project", "question"]),
         title: z.string().trim().min(1).max(200),
         author: z.string().trim().min(1).max(100),
         githubUrl: z.string().trim().max(300).default(""),
