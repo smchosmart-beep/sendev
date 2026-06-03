@@ -1,7 +1,11 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { LayoutGrid, SlidersHorizontal, ShieldCheck } from "lucide-react";
+import { LayoutGrid, SlidersHorizontal, ShieldCheck, Lock } from "lucide-react";
+import { useState } from "react";
 
 import { cn } from "@/lib/utils";
+
+const ADMIN_PASSWORD = "sendev33";
+const ADMIN_SESSION_KEY = "admin-access-granted";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -13,8 +17,73 @@ export const Route = createFileRoute("/admin")({
       },
     ],
   }),
-  component: AdminLayout,
+  component: AdminGate,
 });
+
+function AdminGate() {
+  const [granted, setGranted] = useState(
+    () => typeof window !== "undefined" && sessionStorage.getItem(ADMIN_SESSION_KEY) === "1",
+  );
+  const [value, setValue] = useState("");
+  const [error, setError] = useState(false);
+
+  if (granted) {
+    return <AdminLayout />;
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (value === ADMIN_PASSWORD) {
+      sessionStorage.setItem(ADMIN_SESSION_KEY, "1");
+      setGranted(true);
+    } else {
+      setError(true);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-6">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-sm rounded-3xl bg-card p-8 shadow-md"
+      >
+        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md">
+          <Lock className="h-7 w-7" />
+        </div>
+        <h1 className="text-center text-xl font-bold text-foreground">관리자 인증</h1>
+        <p className="mt-1 text-center text-sm text-muted-foreground">
+          관리자 비밀번호를 입력해 주세요.
+        </p>
+        <input
+          type="password"
+          autoFocus
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setError(false);
+          }}
+          placeholder="비밀번호"
+          className="mt-6 w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
+        />
+        {error && (
+          <p className="mt-2 text-sm text-destructive">비밀번호가 올바르지 않습니다.</p>
+        )}
+        <button
+          type="submit"
+          className="mt-4 w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 active:scale-95"
+        >
+          입장하기
+        </button>
+        <Link
+          to="/calendar"
+          className="mt-3 block text-center text-sm text-muted-foreground hover:text-foreground"
+        >
+          메인으로 돌아가기
+        </Link>
+      </form>
+    </div>
+  );
+}
 
 const tabs = [
   { to: "/admin/categories", label: "게시판 관리", icon: LayoutGrid },
