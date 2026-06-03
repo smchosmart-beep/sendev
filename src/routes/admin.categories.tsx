@@ -79,6 +79,7 @@ function CategoriesPage() {
       createFn({
         data: {
           name: name.trim(),
+          slug: slug.trim(),
           description: description.trim(),
           password: password.trim(),
           githubRequired,
@@ -87,6 +88,7 @@ function CategoriesPage() {
     onSuccess: () => {
       invalidate();
       setName("");
+      setSlug("");
       setDescription("");
       setPassword("");
       setGithubRequired(false);
