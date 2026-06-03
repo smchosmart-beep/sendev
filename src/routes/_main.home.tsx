@@ -65,53 +65,7 @@ function HomePage() {
       {/* Hero banner */}
       <section className="md:mx-auto md:max-w-[50%]">
         {slides.length > 0 ? (
-          <Carousel
-            opts={{ loop: slides.length > 1 }}
-            className="overflow-hidden rounded-3xl shadow-md md:overflow-visible"
-          >
-            <CarouselContent>
-              {slides.map((slide) => {
-                const inner = (
-                  <div className="relative aspect-[9/16] w-full">
-                    <img
-                      src={slide.imageUrl}
-                      alt={slide.caption || "메인 배너"}
-                      className="h-full w-full object-cover"
-                    />
-                    {slide.caption && (
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-6 sm:p-8">
-                        <p className="text-lg font-bold text-white drop-shadow sm:text-2xl">
-                          {slide.caption}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                );
-                return (
-                  <CarouselItem key={slide.id} className="basis-full">
-                    {slide.linkUrl ? (
-                      <a
-                        href={slide.linkUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block"
-                      >
-                        {inner}
-                      </a>
-                    ) : (
-                      inner
-                    )}
-                  </CarouselItem>
-                );
-              })}
-            </CarouselContent>
-            {slides.length > 1 && (
-              <>
-                <CarouselPrevious className="left-3 md:!-left-12" />
-                <CarouselNext className="right-3 md:!-right-12" />
-              </>
-            )}
-          </Carousel>
+          <HeroStackCarousel slides={slides} />
         ) : (
           <div className="flex aspect-[9/16] w-full flex-col items-center justify-center rounded-3xl bg-gradient-to-br from-primary/15 to-secondary p-8 text-center shadow-sm">
             <Sparkles className="mb-3 h-10 w-10 text-primary" />
