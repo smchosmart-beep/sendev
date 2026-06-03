@@ -54,6 +54,7 @@ function CategoriesPage() {
   const createFn = useServerFn(createCategory);
   const updateFn = useServerFn(updateCategory);
   const deleteFn = useServerFn(deleteCategory);
+  const getPasswordFn = useServerFn(getCategoryPassword);
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["categories"] });
