@@ -258,6 +258,7 @@ function CategoriesPage() {
                 />
               </div>
             )}
+          </div>
           <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 p-4 sm:col-span-2">
             <div className="space-y-0.5">
               <Label htmlFor="gh-req" className="flex items-center gap-1.5">
