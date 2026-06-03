@@ -179,6 +179,15 @@ function RegisterDialog({
               toast.error("수정·삭제용 비밀번호를 입력해주세요.");
               return;
             }
+            const url = githubUrl.trim();
+            if (githubRequired && !url) {
+              toast.error("이 게시판은 GitHub 링크가 필수예요.");
+              return;
+            }
+            if (url && !GITHUB_URL_RE.test(url)) {
+              toast.error("GitHub 링크 형식이 올바르지 않아요. (예: https://github.com/owner/repo)");
+              return;
+            }
             mutation.mutate();
           }}
           className="space-y-4 py-2"
