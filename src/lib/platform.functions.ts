@@ -344,7 +344,8 @@ export const updatePost = createServerFn({ method: "POST" })
         id: z.string().uuid(),
         password: z.string().max(100),
         title: z.string().trim().min(1).max(200),
-        author: z.string().trim().min(1).max(100),
+        content: z.string().max(20000).optional(),
+        author: z.string().trim().max(100).optional(),
         githubUrl: z.string().trim().max(300).default(""),
         deployUrl: z.string().trim().max(300).default(""),
       })
@@ -359,7 +360,7 @@ export const updatePost = createServerFn({ method: "POST" })
     // the cached value otherwise to avoid redundant external requests.
     const { data: existing } = await db
       .from("posts")
-      .select("deploy_url, og_image_url")
+      .select("type, deploy_url, og_image_url")
       .eq("id", data.id)
       .maybeSingle();
     let ogImageUrl = existing?.og_image_url ?? "";
@@ -368,16 +369,20 @@ export const updatePost = createServerFn({ method: "POST" })
         ? (await resolveOgImage(data.deployUrl)) ?? ""
         : "";
     }
-    const { error } = await db
-      .from("posts")
-      .update({
-        title: data.title,
-        author: data.author,
-        github_url: data.githubUrl,
-        deploy_url: data.deployUrl,
-        og_image_url: ogImageUrl,
-      })
-      .eq("id", data.id);
+    const patch: Record<string, unknown> = {
+      title: data.title,
+      github_url: data.githubUrl,
+      deploy_url: data.deployUrl,
+      og_image_url: ogImageUrl,
+    };
+    if (data.content !== undefined) patch.content = data.content;
+    // Notices stay authored by the operations team; others can update author.
+    if (existing?.type === "notice") {
+      patch.author = "운영진";
+    } else if (data.author !== undefined) {
+      patch.author = data.author;
+    }
+    const { error } = await db.from("posts").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
