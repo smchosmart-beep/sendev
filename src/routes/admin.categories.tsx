@@ -130,6 +130,7 @@ function CategoriesPage() {
   const openEdit = (c: CategoryDTO) => {
     setEditing(c);
     setEditName(c.name);
+    setEditSlug(c.slug);
     setEditDescription(c.description);
     setEditPassword("");
     setEditGithubRequired(c.githubRequired);
