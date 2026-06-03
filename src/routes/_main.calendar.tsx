@@ -192,12 +192,12 @@ function CalendarPage() {
 
       {/* Detail dialog */}
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent className="rounded-2xl">
+        <DialogContent className="max-w-[90vw] overflow-hidden rounded-2xl sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{selected?.title}</DialogTitle>
           </DialogHeader>
           {selected && (
-            <div className="space-y-3 pt-2 text-sm">
+            <div className="space-y-3 overflow-hidden pt-2 text-sm">
               <div className="flex items-center gap-2 text-foreground">
                 <CalendarDays className="h-4 w-4 text-primary" />
                 {selected.date}
