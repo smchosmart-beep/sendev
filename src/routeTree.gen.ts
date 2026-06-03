@@ -19,6 +19,7 @@ import { Route as AdminCriteriaRouteImport } from './routes/admin.criteria'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as MainCalendarRouteImport } from './routes/_main.calendar'
 import { Route as MainBoardIndexRouteImport } from './routes/_main.board.index'
+import { Route as MainBoardSlugRouteImport } from './routes/_main.board.$slug'
 import { Route as MainBoardCategoryIdRouteImport } from './routes/_main.board.$categoryId'
 import { Route as MainBoardCategoryIdIndexRouteImport } from './routes/_main.board.$categoryId.index'
 import { Route as MainBoardCategoryIdPostIdRouteImport } from './routes/_main.board.$categoryId.$postId'
@@ -72,6 +73,11 @@ const MainBoardIndexRoute = MainBoardIndexRouteImport.update({
   path: '/board/',
   getParentRoute: () => MainRoute,
 } as any)
+const MainBoardSlugRoute = MainBoardSlugRouteImport.update({
+  id: '/board/$slug',
+  path: '/board/$slug',
+  getParentRoute: () => MainRoute,
+} as any)
 const MainBoardCategoryIdRoute = MainBoardCategoryIdRouteImport.update({
   id: '/board/$categoryId',
   path: '/board/$categoryId',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
   '/board/$categoryId': typeof MainBoardCategoryIdRouteWithChildren
+  '/board/$slug': typeof MainBoardSlugRoute
   '/board/': typeof MainBoardIndexRoute
   '/board/$categoryId/$postId': typeof MainBoardCategoryIdPostIdRoute
   '/board/$categoryId/': typeof MainBoardCategoryIdIndexRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin': typeof AdminIndexRoute
+  '/board/$slug': typeof MainBoardSlugRoute
   '/board': typeof MainBoardIndexRoute
   '/board/$categoryId/$postId': typeof MainBoardCategoryIdPostIdRoute
   '/board/$categoryId': typeof MainBoardCategoryIdIndexRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
   '/_main/board/$categoryId': typeof MainBoardCategoryIdRouteWithChildren
+  '/_main/board/$slug': typeof MainBoardSlugRoute
   '/_main/board/': typeof MainBoardIndexRoute
   '/_main/board/$categoryId/$postId': typeof MainBoardCategoryIdPostIdRoute
   '/_main/board/$categoryId/': typeof MainBoardCategoryIdIndexRoute
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/'
     | '/board/$categoryId'
+    | '/board/$slug'
     | '/board/'
     | '/board/$categoryId/$postId'
     | '/board/$categoryId/'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/admin/notices'
     | '/admin/settings'
     | '/admin'
+    | '/board/$slug'
     | '/board'
     | '/board/$categoryId/$postId'
     | '/board/$categoryId'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/'
     | '/_main/board/$categoryId'
+    | '/_main/board/$slug'
     | '/_main/board/'
     | '/_main/board/$categoryId/$postId'
     | '/_main/board/$categoryId/'
@@ -254,6 +266,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainBoardIndexRouteImport
       parentRoute: typeof MainRoute
     }
+    '/_main/board/$slug': {
+      id: '/_main/board/$slug'
+      path: '/board/$slug'
+      fullPath: '/board/$slug'
+      preLoaderRoute: typeof MainBoardSlugRouteImport
+      parentRoute: typeof MainRoute
+    }
     '/_main/board/$categoryId': {
       id: '/_main/board/$categoryId'
       path: '/board/$categoryId'
@@ -294,12 +313,14 @@ const MainBoardCategoryIdRouteWithChildren =
 interface MainRouteChildren {
   MainCalendarRoute: typeof MainCalendarRoute
   MainBoardCategoryIdRoute: typeof MainBoardCategoryIdRouteWithChildren
+  MainBoardSlugRoute: typeof MainBoardSlugRoute
   MainBoardIndexRoute: typeof MainBoardIndexRoute
 }
 
 const MainRouteChildren: MainRouteChildren = {
   MainCalendarRoute: MainCalendarRoute,
   MainBoardCategoryIdRoute: MainBoardCategoryIdRouteWithChildren,
+  MainBoardSlugRoute: MainBoardSlugRoute,
   MainBoardIndexRoute: MainBoardIndexRoute,
 }
 
@@ -331,3 +352,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
