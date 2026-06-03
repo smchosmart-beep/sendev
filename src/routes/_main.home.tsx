@@ -78,7 +78,7 @@ function HomePage() {
             <CarouselContent>
               {slides.map((slide) => {
                 const inner = (
-                  <div className="relative aspect-[9/16] w-full sm:aspect-[21/9]">
+                  <div className="relative aspect-[9/16] w-full">
                     <img
                       src={slide.imageUrl}
                       alt={slide.caption || "메인 배너"}
