@@ -111,7 +111,7 @@ export function PostEditor({
   // (e.g. switching between create/edit, loading existing post content).
   useEffect(() => {
     if (!editor) return;
-    const current = editor.storage.markdown.getMarkdown();
+    const current = (editor.storage as any).markdown.getMarkdown();
     if (value !== current) {
       editor.commands.setContent(value, { emitUpdate: false });
     }
