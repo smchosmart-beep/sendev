@@ -102,11 +102,11 @@ function AdminHomePage() {
     try {
       for (const file of Array.from(files)) {
         if (!file.type.startsWith("image/")) continue;
-        const dataBase64 = await fileToBase64(file);
+        const { dataBase64, contentType } = await resizeImage(file);
         const { url } = await uploadFn({
           data: {
-            name: file.name,
-            contentType: file.type || "image/jpeg",
+            name: file.name.replace(/\.[^.]+$/, "") + ".jpg",
+            contentType,
             dataBase64,
           },
         });
