@@ -1,6 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+// Accepts https://github.com/owner/repo (with optional trailing path/slash).
+export const GITHUB_URL_RE =
+  /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+/i;
+
+
 // All data access goes through the service-role admin client inside server
 // handlers. RLS denies direct client access, so category passwords never reach
 // the browser. The dynamic import keeps the server-only module out of the
