@@ -673,3 +673,32 @@ export const fetchOgImage = createServerFn({ method: "GET" })
   .handler(async ({ data }): Promise<{ image: string | null }> => {
     return { image: await resolveOgImage(data.url) };
   });
+
+// Backfills the cached OG image for an existing post whose og_image_url is
+// empty. Resolves once, stores it, and returns the image so the board can show
+// it immediately and never re-fetch the external site again.
+export const refreshOgImage = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z.object({ postId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }): Promise<{ image: string | null }> => {
+    const db = await getAdmin();
+    const { data: row } = await db
+      .from("posts")
+      .select("deploy_url, og_image_url")
+      .eq("id", data.postId)
+      .maybeSingle();
+    if (!row) return { image: null };
+    if (row.og_image_url) return { image: row.og_image_url };
+    if (!row.deploy_url) return { image: null };
+    const image = await resolveOgImage(row.deploy_url);
+    // Persist even empty result is avoided: only cache successful resolutions
+    // so we can retry later if the site was temporarily unreachable.
+    if (image) {
+      await db
+        .from("posts")
+        .update({ og_image_url: image })
+        .eq("id", data.postId);
+    }
+    return { image };
+  });
