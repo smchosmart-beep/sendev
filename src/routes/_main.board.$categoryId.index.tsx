@@ -81,6 +81,46 @@ function BoardContent() {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+            <MessageCircleQuestion className="h-5 w-5 text-primary" />
+            질문게시판
+          </h2>
+          <Button
+            onClick={() => setQuestionOpen(true)}
+            variant="secondary"
+            className="rounded-xl active:scale-95"
+          >
+            <Plus className="h-4 w-4" />
+            질문 등록
+          </Button>
+        </div>
+
+        {questions.length === 0 ? (
+          <EmptyState
+            icon={MessageCircleQuestion}
+            title="아직 등록된 질문이 없어요."
+            description="궁금한 점을 자유롭게 질문해보세요."
+          />
+        ) : (
+          questions.map((q) => (
+            <Link
+              key={q.id}
+              to="/board/$categoryId/$postId"
+              params={{ categoryId, postId: q.id }}
+              className="flex items-center justify-between rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+            >
+              <span className="font-medium text-foreground">{q.title}</span>
+              <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                <User className="h-3.5 w-3.5" />
+                {q.author}
+              </span>
+            </Link>
+          ))
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
             <FolderGit2 className="h-5 w-5 text-primary" />
             산출물
           </h2>
