@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  useParams,
+  useNavigate,
+} from "@tanstack/react-router";
 import {
   useSuspenseQuery,
   useQuery,
@@ -16,6 +21,8 @@ import {
   FileText,
   Star,
   Loader2,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,9 +32,21 @@ import {
   criteriaQueryOptions,
   reviewsQueryOptions,
 } from "@/lib/platform.queries";
-import { createReview } from "@/lib/platform.functions";
+import {
+  createReview,
+  updatePost,
+  deletePost,
+} from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
