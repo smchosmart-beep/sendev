@@ -287,6 +287,9 @@ export const deleteEvent = createServerFn({ method: "POST" })
 
 /* -------------------------------- Posts ------------------------------- */
 
+const POST_COLUMNS =
+  "id, category_id, post_no, type, title, content, author, github_url, deploy_url, og_image_url, created_at";
+
 export const listPosts = createServerFn({ method: "GET" })
   .inputValidator((input) =>
     z.object({ categoryId: z.string().uuid() }).parse(input),
@@ -295,7 +298,7 @@ export const listPosts = createServerFn({ method: "GET" })
     const db = await getAdmin();
     const { data: rows, error } = await db
       .from("posts")
-      .select("id, category_id, type, title, content, author, github_url, deploy_url, og_image_url, created_at")
+      .select(POST_COLUMNS)
       .eq("category_id", data.categoryId)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -308,12 +311,36 @@ export const getPost = createServerFn({ method: "GET" })
     const db = await getAdmin();
     const { data: row, error } = await db
       .from("posts")
-      .select("id, category_id, type, title, content, author, github_url, deploy_url, og_image_url, created_at")
+      .select(POST_COLUMNS)
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
     return row ? mapPost(row) : null;
   });
+
+// Resolves a post by its board slug + per-board number for short URLs.
+export const getPostByNo = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z.object({ slug: z.string().min(1).max(31), postNo: z.number().int().positive() }).parse(input),
+  )
+  .handler(async ({ data }): Promise<PostDTO | null> => {
+    const db = await getAdmin();
+    const { data: cat } = await db
+      .from("categories")
+      .select("id")
+      .eq("slug", data.slug)
+      .maybeSingle();
+    if (!cat) return null;
+    const { data: row, error } = await db
+      .from("posts")
+      .select(POST_COLUMNS)
+      .eq("category_id", cat.id)
+      .eq("post_no", data.postNo)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return row ? mapPost(row) : null;
+  });
+
 
 export const createPost = createServerFn({ method: "POST" })
   .inputValidator((input) =>
