@@ -46,10 +46,13 @@ function BoardDetailPage() {
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
   const category = categories.find((c) => c.id === categoryId);
 
-  const [unlocked, setUnlocked] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return sessionStorage.getItem(unlockKey(categoryId)) === "1";
-  });
+  const [mounted, setMounted] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
+
+  useEffect(() => {
+    setUnlocked(sessionStorage.getItem(unlockKey(categoryId)) === "1");
+    setMounted(true);
+  }, [categoryId]);
 
   if (!category) {
     return (
@@ -77,7 +80,7 @@ function BoardDetailPage() {
         </p>
       </div>
 
-      {needsGate ? (
+      {!mounted ? null : needsGate ? (
         <PasswordGate
           categoryId={categoryId}
           onUnlock={() => {
