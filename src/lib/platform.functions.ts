@@ -127,6 +127,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       enableGeneral: c.enable_general ?? true,
       enableProject: c.enable_project ?? true,
       generalName: c.general_name ?? "일반게시판",
+      projectName: c.project_name ?? "산출물",
       tabGroup: (c.tab_group ?? "hackathon") as TabGroup,
     }));
   },
