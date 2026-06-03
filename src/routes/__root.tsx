@@ -79,14 +79,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "SEN _DEV_Platform" },
+      { name: "description", content: "서울시교육청 교사 개발자 플랫폼" },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "SEN _DEV_Platform" },
+      { property: "og:description", content: "서울시교육청 교사 개발자 플랫폼" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "SEN _DEV_Platform" },
+      { name: "twitter:description", content: "서울시교육청 교사 개발자 플랫폼" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8b5818c5-2609-4d79-bea9-860015671db6/id-preview-33af459b--d98604f5-dc93-4b14-9c82-97b029d8a610.lovable.app-1780493877385.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8b5818c5-2609-4d79-bea9-860015671db6/id-preview-33af459b--d98604f5-dc93-4b14-9c82-97b029d8a610.lovable.app-1780493877385.png" },
     ],
     links: [
       {
