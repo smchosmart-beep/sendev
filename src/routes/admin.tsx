@@ -60,16 +60,30 @@ function AdminGate() {
         <input
           type="password"
           autoFocus
+          lang="en"
+          inputMode="latin"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
           value={value}
           onChange={(e) => {
-            setValue(e.target.value);
+            setValue(stripKorean(e.target.value));
             setError(false);
           }}
-          placeholder="비밀번호"
-          className="mt-6 w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary"
+          onCompositionEnd={(e) => {
+            setValue(stripKorean((e.target as HTMLInputElement).value));
+          }}
+          placeholder="영문 비밀번호를 입력해 주세요"
+          className={cn(
+            "mt-6 w-full rounded-xl border bg-background px-4 py-3 text-sm text-foreground outline-none transition-colors",
+            error ? "border-destructive focus:border-destructive" : "border-border focus:border-primary",
+          )}
         />
         {error && (
-          <p className="mt-2 text-sm text-destructive">비밀번호가 올바르지 않습니다.</p>
+          <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-destructive">
+            <AlertCircle className="h-4 w-4" />
+            비밀번호가 올바르지 않습니다. 다시 입력해 주세요.
+          </p>
         )}
         <button
           type="submit"
