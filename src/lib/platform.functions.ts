@@ -44,6 +44,7 @@ export interface PostDTO {
   author: string;
   githubUrl: string;
   deployUrl: string;
+  ogImageUrl: string;
   createdAt: string;
 }
 
