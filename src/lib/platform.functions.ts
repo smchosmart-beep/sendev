@@ -18,6 +18,8 @@ async function getAdmin() {
   };
 }
 
+export type TabGroup = "hackathon" | "resources" | "devground" | "helloworld";
+
 export interface CategoryDTO {
   id: string;
   slug: string;
@@ -31,6 +33,7 @@ export interface CategoryDTO {
   enableGeneral: boolean;
   enableProject: boolean;
   generalName: string;
+  tabGroup: TabGroup;
 }
 
 // Board slug: lowercase letters, digits and hyphens. Used in short URLs.
