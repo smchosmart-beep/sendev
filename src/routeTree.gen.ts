@@ -14,6 +14,7 @@ import { Route as MainRouteImport } from './routes/_main'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminCriteriaRouteImport } from './routes/admin.criteria'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as MainCalendarRouteImport } from './routes/_main.calendar'
 import { Route as MainBoardIndexRouteImport } from './routes/_main.board.index'
@@ -42,6 +43,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCriteriaRoute = AdminCriteriaRouteImport.update({
+  id: '/criteria',
+  path: '/criteria',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
@@ -76,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/calendar': typeof MainCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/criteria': typeof AdminCriteriaRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
   '/board/$categoryId': typeof MainBoardCategoryIdRouteWithChildren
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calendar': typeof MainCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/criteria': typeof AdminCriteriaRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin': typeof AdminIndexRoute
   '/board/$categoryId': typeof MainBoardCategoryIdRouteWithChildren
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/_main/calendar': typeof MainCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/criteria': typeof AdminCriteriaRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
   '/_main/board/$categoryId': typeof MainBoardCategoryIdRouteWithChildren
@@ -112,6 +121,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/calendar'
     | '/admin/categories'
+    | '/admin/criteria'
     | '/admin/settings'
     | '/admin/'
     | '/board/$categoryId'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/'
     | '/calendar'
     | '/admin/categories'
+    | '/admin/criteria'
     | '/admin/settings'
     | '/admin'
     | '/board/$categoryId'
@@ -134,6 +145,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/_main/calendar'
     | '/admin/categories'
+    | '/admin/criteria'
     | '/admin/settings'
     | '/admin/'
     | '/_main/board/$categoryId'
@@ -182,6 +194,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/admin/settings'
       preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/criteria': {
+      id: '/admin/criteria'
+      path: '/criteria'
+      fullPath: '/admin/criteria'
+      preLoaderRoute: typeof AdminCriteriaRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/categories': {
@@ -249,12 +268,14 @@ const MainRouteWithChildren = MainRoute._addFileChildren(MainRouteChildren)
 
 interface AdminRouteChildren {
   AdminCategoriesRoute: typeof AdminCategoriesRoute
+  AdminCriteriaRoute: typeof AdminCriteriaRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminCategoriesRoute: AdminCategoriesRoute,
+  AdminCriteriaRoute: AdminCriteriaRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -269,3 +290,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
