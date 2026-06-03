@@ -69,7 +69,7 @@ function HomePage() {
   return (
     <div className="space-y-10">
       {/* Hero banner */}
-      <section>
+      <section className="md:mx-auto md:max-w-[50%]">
         {slides.length > 0 ? (
           <Carousel
             opts={{ loop: slides.length > 1 }}
