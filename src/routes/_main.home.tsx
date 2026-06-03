@@ -73,7 +73,7 @@ function HomePage() {
         {slides.length > 0 ? (
           <Carousel
             opts={{ loop: slides.length > 1 }}
-            className="overflow-hidden rounded-3xl shadow-md"
+            className="overflow-hidden rounded-3xl shadow-md md:overflow-visible"
           >
             <CarouselContent>
               {slides.map((slide) => {
@@ -113,8 +113,8 @@ function HomePage() {
             </CarouselContent>
             {slides.length > 1 && (
               <>
-                <CarouselPrevious className="left-3" />
-                <CarouselNext className="right-3" />
+                <CarouselPrevious className="left-3 md:!-left-12" />
+                <CarouselNext className="right-3 md:!-right-12" />
               </>
             )}
           </Carousel>
