@@ -12,8 +12,17 @@ import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_main/board/$slug/")({
-  loader: ({ context }) =>
-    context.queryClient.ensureQueryData(categoriesQueryOptions()),
+  loader: async ({ context, params }) => {
+    const categories = await context.queryClient.ensureQueryData(
+      categoriesQueryOptions(),
+    );
+    const category = categories.find((c) => c.slug === params.slug);
+    if (category) {
+      await context.queryClient.ensureQueryData(
+        postsQueryOptions(category.id),
+      );
+    }
+  },
   errorComponent: ({ error }) => (
     <div role="alert" className="p-6 text-sm text-destructive">
       산출물을 불러오지 못했어요: {error.message}
