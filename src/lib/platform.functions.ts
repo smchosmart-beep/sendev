@@ -86,6 +86,7 @@ export const createCategory = createServerFn({ method: "POST" })
         name: z.string().trim().min(1).max(100),
         description: z.string().trim().max(500).default(""),
         password: z.string().trim().max(100).default(""),
+        githubRequired: z.boolean().default(false),
       })
       .parse(input),
   )
@@ -102,6 +103,7 @@ export const createCategory = createServerFn({ method: "POST" })
       name: data.name,
       description: data.description,
       password: data.password,
+      github_required: data.githubRequired,
       sort_order: nextOrder,
     });
     if (error) throw new Error(error.message);
@@ -117,6 +119,7 @@ export const updateCategory = createServerFn({ method: "POST" })
         description: z.string().trim().max(500).default(""),
         // undefined = leave password unchanged
         password: z.string().trim().max(100).optional(),
+        githubRequired: z.boolean().optional(),
       })
       .parse(input),
   )
@@ -127,6 +130,8 @@ export const updateCategory = createServerFn({ method: "POST" })
       description: data.description,
     };
     if (data.password !== undefined) patch.password = data.password;
+    if (data.githubRequired !== undefined)
+      patch.github_required = data.githubRequired;
     const { error } = await db.from("categories").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
