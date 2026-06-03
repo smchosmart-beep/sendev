@@ -429,6 +429,7 @@ function CategoriesPage() {
                   />
                 </div>
               )}
+            </div>
           </div>
           <DialogFooter>
             <Button
