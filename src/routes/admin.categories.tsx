@@ -178,6 +178,22 @@ function CategoriesPage() {
               className="rounded-xl"
             />
           </div>
+          <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 p-4 sm:col-span-2">
+            <div className="space-y-0.5">
+              <Label htmlFor="gh-req" className="flex items-center gap-1.5">
+                <Github className="h-4 w-4" />
+                GitHub 링크 필수
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                켜면 이 게시판에 산출물을 등록할 때 GitHub 링크를 반드시 입력해야 해요.
+              </p>
+            </div>
+            <Switch
+              id="gh-req"
+              checked={githubRequired}
+              onCheckedChange={setGithubRequired}
+            />
+          </div>
           <div className="sm:col-span-2">
             <Button
               type="submit"
