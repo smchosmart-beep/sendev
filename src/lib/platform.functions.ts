@@ -1,0 +1,469 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+
+// All data access goes through the service-role admin client inside server
+// handlers. RLS denies direct client access, so category passwords never reach
+// the browser. The dynamic import keeps the server-only module out of the
+// client bundle.
+async function getAdmin() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  // Types regenerate asynchronously; cast to keep handlers ergonomic.
+  return supabaseAdmin as unknown as {
+    from: (table: string) => any;
+  };
+}
+
+export interface CategoryDTO {
+  id: string;
+  name: string;
+  description: string;
+  sortOrder: number;
+  hasPassword: boolean;
+}
+
+export interface EventDTO {
+  id: string;
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  description: string;
+}
+
+export interface PostDTO {
+  id: string;
+  categoryId: string;
+  type: "notice" | "project";
+  title: string;
+  author: string;
+  githubUrl: string;
+  createdAt: string;
+}
+
+export interface CriterionDTO {
+  id: string;
+  categoryId: string;
+  criterionName: string;
+  maxScore: number;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export interface ReviewDTO {
+  id: string;
+  postId: string;
+  reviewerName: string;
+  scores: Record<string, number>;
+  createdAt: string;
+}
+
+/* ----------------------------- Categories ----------------------------- */
+
+export const listCategories = createServerFn({ method: "GET" }).handler(
+  async (): Promise<CategoryDTO[]> => {
+    const db = await getAdmin();
+    const { data, error } = await db
+      .from("categories")
+      .select("id, name, description, sort_order, password")
+      .order("sort_order", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      description: c.description,
+      sortOrder: c.sort_order,
+      hasPassword: !!c.password,
+    }));
+  },
+);
+
+export const createCategory = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        name: z.string().trim().min(1).max(100),
+        description: z.string().trim().max(500).default(""),
+        password: z.string().trim().max(100).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { data: maxRow } = await db
+      .from("categories")
+      .select("sort_order")
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const nextOrder = (maxRow?.sort_order ?? 0) + 1;
+    const { error } = await db.from("categories").insert({
+      name: data.name,
+      description: data.description,
+      password: data.password,
+      sort_order: nextOrder,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const updateCategory = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        name: z.string().trim().min(1).max(100),
+        description: z.string().trim().max(500).default(""),
+        // undefined = leave password unchanged
+        password: z.string().trim().max(100).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const patch: Record<string, unknown> = {
+      name: data.name,
+      description: data.description,
+    };
+    if (data.password !== undefined) patch.password = data.password;
+    const { error } = await db.from("categories").update(patch).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteCategory = createServerFn({ method: "POST" })
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { error } = await db.from("categories").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const verifyBoardPassword = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        password: z.string().max(100),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ ok: boolean }> => {
+    const db = await getAdmin();
+    const { data: row, error } = await db
+      .from("categories")
+      .select("password")
+      .eq("id", data.categoryId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) return { ok: false };
+    // Empty password = open board.
+    if (!row.password) return { ok: true };
+    return { ok: row.password === data.password };
+  });
+
+/* ------------------------------- Events ------------------------------- */
+
+export const listEvents = createServerFn({ method: "GET" }).handler(
+  async (): Promise<EventDTO[]> => {
+    const db = await getAdmin();
+    const { data, error } = await db
+      .from("events")
+      .select("id, title, date, time, location, description")
+      .order("date", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((e: any) => ({
+      id: e.id,
+      title: e.title,
+      date: e.date,
+      time: e.time,
+      location: e.location,
+      description: e.description,
+    }));
+  },
+);
+
+export const createEvent = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        title: z.string().trim().min(1).max(200),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        time: z.string().trim().max(100).default(""),
+        location: z.string().trim().max(200).default(""),
+        description: z.string().trim().max(1000).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { error } = await db.from("events").insert(data);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteEvent = createServerFn({ method: "POST" })
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { error } = await db.from("events").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/* -------------------------------- Posts ------------------------------- */
+
+export const listPosts = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z.object({ categoryId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }): Promise<PostDTO[]> => {
+    const db = await getAdmin();
+    const { data: rows, error } = await db
+      .from("posts")
+      .select("id, category_id, type, title, author, github_url, created_at")
+      .eq("category_id", data.categoryId)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map(mapPost);
+  });
+
+export const getPost = createServerFn({ method: "GET" })
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }): Promise<PostDTO | null> => {
+    const db = await getAdmin();
+    const { data: row, error } = await db
+      .from("posts")
+      .select("id, category_id, type, title, author, github_url, created_at")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return row ? mapPost(row) : null;
+  });
+
+export const createPost = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        type: z.enum(["notice", "project"]),
+        title: z.string().trim().min(1).max(200),
+        author: z.string().trim().min(1).max(100),
+        githubUrl: z.string().trim().max(300).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { error } = await db.from("posts").insert({
+      category_id: data.categoryId,
+      type: data.type,
+      title: data.title,
+      author: data.author,
+      github_url: data.githubUrl,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deletePost = createServerFn({ method: "POST" })
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { error } = await db.from("posts").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+function mapPost(p: any): PostDTO {
+  return {
+    id: p.id,
+    categoryId: p.category_id,
+    type: p.type,
+    title: p.title,
+    author: p.author,
+    githubUrl: p.github_url,
+    createdAt: p.created_at,
+  };
+}
+
+/* --------------------------- Review criteria -------------------------- */
+
+export const listCriteria = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        activeOnly: z.boolean().default(false),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<CriterionDTO[]> => {
+    const db = await getAdmin();
+    let query = db
+      .from("review_criteria")
+      .select("id, category_id, criterion_name, max_score, is_active, sort_order")
+      .eq("category_id", data.categoryId)
+      .order("sort_order", { ascending: true });
+    if (data.activeOnly) query = query.eq("is_active", true);
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map(mapCriterion);
+  });
+
+export const createCriterion = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        criterionName: z.string().trim().min(1).max(200),
+        maxScore: z.number().int().min(1).max(100).default(5),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { data: maxRow } = await db
+      .from("review_criteria")
+      .select("sort_order")
+      .eq("category_id", data.categoryId)
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const nextOrder = (maxRow?.sort_order ?? 0) + 1;
+    const { error } = await db.from("review_criteria").insert({
+      category_id: data.categoryId,
+      criterion_name: data.criterionName,
+      max_score: data.maxScore,
+      sort_order: nextOrder,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const updateCriterion = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        criterionName: z.string().trim().min(1).max(200).optional(),
+        maxScore: z.number().int().min(1).max(100).optional(),
+        isActive: z.boolean().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const patch: Record<string, unknown> = {};
+    if (data.criterionName !== undefined) patch.criterion_name = data.criterionName;
+    if (data.maxScore !== undefined) patch.max_score = data.maxScore;
+    if (data.isActive !== undefined) patch.is_active = data.isActive;
+    const { error } = await db
+      .from("review_criteria")
+      .update(patch)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteCriterion = createServerFn({ method: "POST" })
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { error } = await db.from("review_criteria").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+function mapCriterion(c: any): CriterionDTO {
+  return {
+    id: c.id,
+    categoryId: c.category_id,
+    criterionName: c.criterion_name,
+    maxScore: c.max_score,
+    isActive: c.is_active,
+    sortOrder: c.sort_order,
+  };
+}
+
+/* ------------------------------- Reviews ------------------------------ */
+
+export const listReviews = createServerFn({ method: "GET" })
+  .inputValidator((input) => z.object({ postId: z.string().uuid() }).parse(input))
+  .handler(async ({ data }): Promise<ReviewDTO[]> => {
+    const db = await getAdmin();
+    const { data: rows, error } = await db
+      .from("reviews")
+      .select("id, post_id, reviewer_name, scores, created_at")
+      .eq("post_id", data.postId)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map((r: any) => ({
+      id: r.id,
+      postId: r.post_id,
+      reviewerName: r.reviewer_name,
+      scores: (r.scores ?? {}) as Record<string, number>,
+      createdAt: r.created_at,
+    }));
+  });
+
+export const createReview = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        postId: z.string().uuid(),
+        reviewerName: z.string().trim().min(1).max(100),
+        scores: z.record(z.string().uuid(), z.number().min(0).max(100)),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { error } = await db.from("reviews").insert({
+      post_id: data.postId,
+      reviewer_name: data.reviewerName,
+      scores: data.scores,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/* ----------------------------- GitHub README -------------------------- */
+
+export const fetchReadme = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z.object({ githubUrl: z.string().trim().min(1).max(300) }).parse(input),
+  )
+  .handler(
+    async ({ data }): Promise<{ markdown: string | null; error: string | null }> => {
+      const match = data.githubUrl.match(
+        /github\.com\/([^/\s]+)\/([^/\s#?]+)/i,
+      );
+      if (!match) {
+        return { markdown: null, error: "올바른 GitHub 저장소 링크가 아니에요." };
+      }
+      const owner = match[1];
+      const repo = match[2].replace(/\.git$/i, "");
+      const branches = ["main", "master"];
+      const files = ["README.md", "readme.md", "README.MD", "Readme.md"];
+      try {
+        for (const branch of branches) {
+          for (const file of files) {
+            const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${file}`;
+            const res = await fetch(rawUrl);
+            if (res.ok) {
+              const markdown = await res.text();
+              return { markdown, error: null };
+            }
+          }
+        }
+        return {
+          markdown: null,
+          error: "README.md를 찾을 수 없어요. 저장소가 공개 상태인지 확인해주세요.",
+        };
+      } catch (e) {
+        console.error("fetchReadme failed:", e);
+        return { markdown: null, error: "README를 불러오는 중 문제가 발생했어요." };
+      }
+    },
+  );
