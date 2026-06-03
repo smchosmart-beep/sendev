@@ -481,50 +481,30 @@ function EvaluationSection({
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (!reviewerName.trim()) {
-                toast.error("평가자 이름을 입력해주세요.");
-                return;
-              }
               for (const c of criteria) {
-                if (typeof scores[c.id] !== "number") {
-                  toast.error("모든 항목에 점수를 입력해주세요.");
+                if (!scores[c.id] || scores[c.id] <= 0) {
+                  toast.error("모든 항목에 별점을 매겨주세요.");
                   return;
                 }
               }
               mutation.mutate();
             }}
-            className="space-y-4"
+            className="space-y-5"
           >
-            <div className="space-y-2">
-              <Label htmlFor="reviewer">평가자 이름</Label>
-              <Input
-                id="reviewer"
-                value={reviewerName}
-                onChange={(e) => setReviewerName(e.target.value)}
-                className="rounded-xl"
-              />
-            </div>
             {criteria.map((c) => (
               <div key={c.id} className="space-y-2">
-                <Label>
+                <Label className="flex items-center gap-2">
                   {c.criterionName}{" "}
-                  <span className="text-muted-foreground">(0 ~ {c.maxScore})</span>
+                  <span className="text-xs text-muted-foreground">
+                    (0.5점 단위 · 만점 {c.maxScore})
+                  </span>
                 </Label>
-                <Input
-                  type="number"
-                  min={0}
+                <StarRating
                   max={c.maxScore}
-                  value={scores[c.id] ?? ""}
-                  onChange={(e) =>
-                    setScores((prev) => ({
-                      ...prev,
-                      [c.id]: Math.max(
-                        0,
-                        Math.min(c.maxScore, Number(e.target.value)),
-                      ),
-                    }))
+                  value={scores[c.id] ?? 0}
+                  onChange={(v) =>
+                    setScores((prev) => ({ ...prev, [c.id]: v }))
                   }
-                  className="rounded-xl"
                 />
               </div>
             ))}
@@ -536,6 +516,7 @@ function EvaluationSection({
               {mutation.isPending ? "제출 중..." : "평가 제출"}
             </Button>
           </form>
+
         </div>
       )}
     </section>
