@@ -94,6 +94,7 @@ export function PostEditor({
         HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
       }),
       Markdown.configure({ html: false, linkify: true, breaks: true }),
+      Placeholder.configure({ placeholder }),
     ],
     content: value,
     editorProps: {
