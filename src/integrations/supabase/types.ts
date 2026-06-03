@@ -67,28 +67,34 @@ export type Database = {
       }
       events: {
         Row: {
+          attachments: Json
           created_at: string
           date: string
           description: string
           id: string
+          links: Json
           location: string
           time: string
           title: string
         }
         Insert: {
+          attachments?: Json
           created_at?: string
           date: string
           description?: string
           id?: string
+          links?: Json
           location?: string
           time?: string
           title: string
         }
         Update: {
+          attachments?: Json
           created_at?: string
           date?: string
           description?: string
           id?: string
+          links?: Json
           location?: string
           time?: string
           title?: string

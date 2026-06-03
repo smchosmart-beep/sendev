@@ -48,6 +48,17 @@ function slugify(input: string): string {
     .slice(0, 30);
 }
 
+export interface EventAttachment {
+  name: string;
+  url: string;
+  size: number;
+}
+
+export interface EventLink {
+  label: string;
+  url: string;
+}
+
 export interface EventDTO {
   id: string;
   title: string;
@@ -55,6 +66,8 @@ export interface EventDTO {
   time: string;
   location: string;
   description: string;
+  attachments: EventAttachment[];
+  links: EventLink[];
 }
 
 export interface PostDTO {
@@ -291,7 +304,7 @@ export const listEvents = createServerFn({ method: "GET" }).handler(
     const db = await getAdmin();
     const { data, error } = await db
       .from("events")
-      .select("id, title, date, time, location, description")
+      .select("id, title, date, time, location, description, attachments, links")
       .order("date", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []).map((e: any) => ({
@@ -301,9 +314,22 @@ export const listEvents = createServerFn({ method: "GET" }).handler(
       time: e.time,
       location: e.location,
       description: e.description,
+      attachments: Array.isArray(e.attachments) ? e.attachments : [],
+      links: Array.isArray(e.links) ? e.links : [],
     }));
   },
 );
+
+const attachmentSchema = z.object({
+  name: z.string().trim().min(1).max(255),
+  url: z.string().trim().url().max(2000),
+  size: z.number().int().min(0).default(0),
+});
+
+const linkSchema = z.object({
+  label: z.string().trim().min(1).max(200),
+  url: z.string().trim().url().max(2000),
+});
 
 export const createEvent = createServerFn({ method: "POST" })
   .inputValidator((input) =>
@@ -314,6 +340,8 @@ export const createEvent = createServerFn({ method: "POST" })
         time: z.string().trim().max(100).default(""),
         location: z.string().trim().max(200).default(""),
         description: z.string().trim().max(1000).default(""),
+        attachments: z.array(attachmentSchema).max(10).default([]),
+        links: z.array(linkSchema).max(10).default([]),
       })
       .parse(input),
   )
@@ -324,6 +352,35 @@ export const createEvent = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Uploads a base64-encoded file to the private event-files bucket and returns a
+// long-lived signed URL stored alongside the event.
+export const uploadEventFile = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        name: z.string().trim().min(1).max(255),
+        contentType: z.string().trim().max(200).default("application/octet-stream"),
+        dataBase64: z.string().min(1).max(15_000_000),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<EventAttachment> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const bytes = Buffer.from(data.dataBase64, "base64");
+    const safeName = data.name.replace(/[^\w.\-가-힣]/g, "_");
+    const path = `${crypto.randomUUID()}-${safeName}`;
+    const { error } = await supabaseAdmin.storage
+      .from("event-files")
+      .upload(path, bytes, { contentType: data.contentType, upsert: false });
+    if (error) throw new Error(error.message);
+    // 10-year signed URL so notices stay reachable.
+    const { data: signed, error: signErr } = await supabaseAdmin.storage
+      .from("event-files")
+      .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+    if (signErr || !signed) throw new Error(signErr?.message ?? "signing failed");
+    return { name: data.name, url: signed.signedUrl, size: bytes.length };
+  });
+
 export const deleteEvent = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
@@ -332,6 +389,7 @@ export const deleteEvent = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 /* -------------------------------- Posts ------------------------------- */
 
