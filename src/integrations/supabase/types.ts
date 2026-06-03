@@ -83,6 +83,7 @@ export type Database = {
           edit_password: string
           github_url: string
           id: string
+          og_image_url: string
           title: string
           type: string
         }
@@ -94,6 +95,7 @@ export type Database = {
           edit_password?: string
           github_url?: string
           id?: string
+          og_image_url?: string
           title: string
           type: string
         }
@@ -105,6 +107,7 @@ export type Database = {
           edit_password?: string
           github_url?: string
           id?: string
+          og_image_url?: string
           title?: string
           type?: string
         }

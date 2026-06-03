@@ -1,35 +1,38 @@
-# 산출물 배포 URL + 카드 OG 이미지
+# 배포 URL OG 이미지 캐싱
+
+## 현재 상태
+
+지금은 산출물 카드가 렌더링될 때마다 `fetchOgImage` 서버 함수를 호출해 배포 사이트의 HTML을 다시 가져와 og:image를 파싱합니다. TanStack Query에 30분 staleTime 캐시가 있지만, 캐시가 만료되거나 새 세션/새로고침이 발생하면 다시 외부 사이트로 요청이 나갑니다. 산출물이 많으면 매번 여러 외부 요청이 발생합니다.
 
 ## 목표
-- 산출물 등록 폼에 GitHub 링크 아래 **배포 URL** 입력칸 추가 (선택 입력).
-- 배포 URL이 있으면 산출물 카드의 녹색(상단) 영역에 **배포 사이트의 OG 이미지**를 표시. 없거나 실패하면 기존 폴더 아이콘 유지.
 
-## 변경 사항
+OG 이미지 URL을 **한 번 가져온 뒤 DB(posts)에 저장**하여, 이후 로딩에서는 외부 재요청 없이 저장된 값을 그대로 사용합니다.
 
-### 1. DB (migration)
-- `posts` 테이블에 `deploy_url text not null default ''` 컬럼 추가.
+## 변경 내용
 
-### 2. 서버 함수 `src/lib/platform.functions.ts`
-- `PostDTO`에 `deployUrl: string` 추가, `mapPost`에 `deploy_url` 매핑.
-- `createPost` 입력값에 `deployUrl`(선택, 빈값 허용, URL 형식 검증) 추가 → `deploy_url` 저장.
-- `updatePost` 입력값/업데이트에 `deployUrl` 추가(상세 편집에서도 수정 가능).
-- 신규 `fetchOgImage` 서버 함수: 주어진 URL의 HTML을 fetch하여 `og:image`(없으면 `twitter:image`) 메타 태그를 파싱해 절대 URL로 반환. 실패 시 `{ image: null }`. 타임아웃·예외 안전 처리.
+### 1. 데이터베이스
+- `posts` 테이블에 `og_image_url text not null default ''` 컬럼 추가 (마이그레이션).
 
-### 3. 쿼리 `src/lib/platform.queries.ts`
-- `ogImageQueryOptions(url)` 추가: `fetchOgImage` 호출, `enabled: !!url`, staleTime 길게(예: 30분).
+### 2. 서버 함수 (`src/lib/platform.functions.ts`)
+- `PostDTO`에 `ogImageUrl: string` 추가, `mapPost`에서 매핑.
+- 기존 `fetchOgImage`의 파싱 로직을 내부 헬퍼(`resolveOgImage(url)`)로 재사용 가능하게 분리.
+- `createPost`: deployUrl이 있으면 등록 시점에 OG 이미지를 한 번 가져와 `og_image_url`에 함께 저장.
+- `updatePost`: deployUrl이 변경된 경우에만 OG 이미지를 다시 가져와 저장하고, 동일하면 기존 값 유지(불필요한 재요청 방지).
+- (선택) 저장된 값이 비어 있는 기존 산출물을 위해 `fetchOgImage`는 fallback으로 유지하되, 결과를 DB에 backfill하는 `refreshOgImage` 서버 함수 추가.
 
-### 4. 등록 폼 `src/routes/_main.board.$categoryId.index.tsx`
-- GitHub 링크 입력칸 아래에 "배포 URL (선택)" 입력칸 추가. placeholder 예: `https://my-app.lovable.app`.
-- 제출 시 입력했다면 간단한 URL 형식 검증, `deployUrl`을 `createPost`로 전달.
-- 카드 컴포넌트: `p.deployUrl`이 있으면 `ogImageQueryOptions`로 OG 이미지를 불러와 녹색 영역에 `<img>`(cover)로 표시. 로딩 중/이미지 없음/오류 시 기존 `FolderGit2` 아이콘 표시.
+### 3. 프론트엔드 (`src/routes/_main.board.$categoryId.index.tsx`)
+- `ProjectCard`에서 `useQuery(ogImageQueryOptions(...))` 대신 저장된 `post.ogImageUrl`을 우선 사용.
+- `ogImageUrl`이 비어 있고 `deployUrl`이 있는 경우에만(기존 데이터 보정용) `ogImageQueryOptions`로 한 번 조회 → backfill. 신규 산출물은 외부 요청이 전혀 발생하지 않음.
 
-### 5. 상세 편집 `src/routes/_main.board.$categoryId.$postId.tsx`
-- 편집 다이얼로그에 배포 URL 입력칸 추가하여 기존 산출물도 배포 URL을 넣고 수정할 수 있게 함.
+### 4. 상세 페이지 (`src/routes/_main.board.$categoryId.$postId.tsx`)
+- `updatePost` 호출 시 동일하게 deployUrl 변경에 따라 OG 이미지가 갱신되도록 처리(서버 함수 변경으로 자동 반영).
 
-## 보안/안정성
-- `fetchOgImage`는 서버에서만 외부 fetch 수행, 응답 크기·타임아웃 제한, 파싱 실패 시 안전한 null 반환.
+## 동작 검증
+- 신규 산출물 등록 → 카드 첫 로딩부터 저장된 OG 이미지 표시, 외부 사이트 요청 없음(네트워크 탭 확인).
+- 새로고침/재방문 시 외부 재요청 없이 즉시 이미지 표시.
+- 배포 URL 수정 시에만 OG 이미지 재조회.
+- 기존(저장값 없는) 산출물은 1회 조회 후 저장되어 다음부터는 재요청 없음.
 
-## 검증
-- 배포 URL 없이 등록 → 기존처럼 폴더 아이콘 카드.
-- 배포 URL 입력해 등록 → 카드 녹색 영역에 해당 사이트 OG 이미지 표시.
-- OG 이미지가 없는 사이트 → 폴더 아이콘으로 폴백.
+## 기술 메모
+- OG 이미지 가져오기는 서버 함수 내부에서만 수행(타임아웃·다운로드 크기 제한 기존 로직 유지).
+- DB 저장은 service-role 어드민 클라이언트로 기존 패턴과 동일하게 처리.
