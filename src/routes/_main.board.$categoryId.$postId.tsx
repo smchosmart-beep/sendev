@@ -262,6 +262,16 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="e-deploy">배포 URL (선택)</Label>
+              <Input
+                id="e-deploy"
+                value={deployUrl}
+                onChange={(e) => setDeployUrl(e.target.value)}
+                placeholder="https://my-app.lovable.app"
+                className="rounded-xl"
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="e-pw">비밀번호</Label>
               <Input
                 id="e-pw"
