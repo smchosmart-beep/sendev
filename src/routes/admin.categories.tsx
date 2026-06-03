@@ -12,13 +12,34 @@ import {
   deleteCategory,
   getCategoryPassword,
 } from "@/lib/platform.functions";
-import type { CategoryDTO } from "@/lib/platform.functions";
+import type { CategoryDTO, TabGroup } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const TAB_OPTIONS: { value: TabGroup; label: string }[] = [
+  { value: "hackathon", label: "해커톤" },
+  { value: "resources", label: "자료집" },
+  { value: "devground", label: "Dev Ground" },
+  { value: "helloworld", label: "Hello, World" },
+];
+
+const TAB_LABEL: Record<TabGroup, string> = {
+  hackathon: "해커톤",
+  resources: "자료집",
+  devground: "Dev Ground",
+  helloworld: "Hello, World",
+};
 import {
   Dialog,
   DialogContent,
