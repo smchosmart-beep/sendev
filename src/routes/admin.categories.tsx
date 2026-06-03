@@ -93,6 +93,11 @@ function CategoriesPage() {
           description: description.trim(),
           password: password.trim(),
           githubRequired,
+          enableNotice,
+          enableQuestion,
+          enableGeneral,
+          enableProject,
+          generalName: generalName.trim(),
         },
       }),
     onSuccess: () => {
@@ -102,6 +107,11 @@ function CategoriesPage() {
       setDescription("");
       setPassword("");
       setGithubRequired(false);
+      setEnableNotice(true);
+      setEnableQuestion(true);
+      setEnableGeneral(true);
+      setEnableProject(true);
+      setGeneralName("일반게시판");
       toast.success("새 게시판이 추가되었어요.");
     },
     onError: () => toast.error("추가 중 문제가 발생했어요."),
@@ -117,6 +127,11 @@ function CategoriesPage() {
           description: editDescription.trim(),
           password: editPassword,
           githubRequired: editGithubRequired,
+          enableNotice: editEnableNotice,
+          enableQuestion: editEnableQuestion,
+          enableGeneral: editEnableGeneral,
+          enableProject: editEnableProject,
+          generalName: editGeneralName.trim(),
         },
       }),
     onSuccess: () => {
@@ -144,6 +159,11 @@ function CategoriesPage() {
     setEditDescription(c.description);
     setEditPassword("");
     setEditGithubRequired(c.githubRequired);
+    setEditEnableNotice(c.enableNotice);
+    setEditEnableQuestion(c.enableQuestion);
+    setEditEnableGeneral(c.enableGeneral);
+    setEditEnableProject(c.enableProject);
+    setEditGeneralName(c.generalName);
     if (c.hasPassword) {
       getPasswordFn({ data: { id: c.id } })
         .then((res) => setEditPassword(res.password))
