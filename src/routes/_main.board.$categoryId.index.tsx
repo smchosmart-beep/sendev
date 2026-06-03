@@ -268,6 +268,19 @@ function RegisterDialog({
             )}
           </div>
           <div className="space-y-2">
+            <Label htmlFor="p-deploy">배포 URL (선택)</Label>
+            <Input
+              id="p-deploy"
+              value={deployUrl}
+              onChange={(e) => setDeployUrl(e.target.value)}
+              placeholder="https://my-app.lovable.app"
+              className="rounded-xl"
+            />
+            <p className="text-xs text-muted-foreground">
+              입력하면 산출물 카드에 배포 사이트 미리보기 이미지가 표시돼요.
+            </p>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="p-pw">수정·삭제 비밀번호</Label>
             <Input
               id="p-pw"
