@@ -219,6 +219,24 @@ function CategoriesPage() {
           }}
           className="grid gap-4 sm:grid-cols-2"
         >
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="tab-group">탭 선택</Label>
+            <Select value={tabGroup} onValueChange={(v) => setTabGroup(v as TabGroup)}>
+              <SelectTrigger id="tab-group" className="rounded-xl">
+                <SelectValue placeholder="탭을 선택하세요" />
+              </SelectTrigger>
+              <SelectContent>
+                {TAB_OPTIONS.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              이 게시판이 상단 어느 탭에 표시될지 선택하세요.
+            </p>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="name">게시판 이름</Label>
             <Input
