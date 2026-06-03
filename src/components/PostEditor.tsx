@@ -9,12 +9,17 @@ import {
   Image as ImageIcon,
   Quote,
   Loader2,
+  Palette,
+  Type,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
+import { Extension } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
+import { TextStyle } from "@tiptap/extension-text-style";
+import { Color } from "@tiptap/extension-color";
 import { Markdown } from "tiptap-markdown";
 import Placeholder from "@tiptap/extension-placeholder";
 
@@ -24,12 +29,72 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
+// FontSize mark — adds a fontSize attribute on the textStyle mark so we can
+// change body text size. Serialized to inline HTML by tiptap-markdown (html:true).
+const FontSize = Extension.create({
+  name: "fontSize",
+  addOptions() {
+    return { types: ["textStyle"] };
+  },
+  addGlobalAttributes() {
+    return [
+      {
+        types: this.options.types,
+        attributes: {
+          fontSize: {
+            default: null,
+            parseHTML: (el) => el.style.fontSize || null,
+            renderHTML: (attrs) =>
+              attrs.fontSize ? { style: `font-size: ${attrs.fontSize}` } : {},
+          },
+        },
+      },
+    ];
+  },
+  addCommands() {
+    return {
+      setFontSize:
+        (size: string) =>
+        ({ chain }: any) =>
+          chain().setMark("textStyle", { fontSize: size }).run(),
+      unsetFontSize:
+        () =>
+        ({ chain }: any) =>
+          chain().setMark("textStyle", { fontSize: null }).run(),
+    } as any;
+  },
+});
+
+const TEXT_COLORS = [
+  { label: "기본", value: null },
+  { label: "검정", value: "#1a1a1a" },
+  { label: "빨강", value: "#e11d48" },
+  { label: "주황", value: "#ea580c" },
+  { label: "노랑", value: "#ca8a04" },
+  { label: "초록", value: "#16a34a" },
+  { label: "파랑", value: "#2563eb" },
+  { label: "보라", value: "#7c3aed" },
+  { label: "회색", value: "#6b7280" },
+];
+
+const FONT_SIZES = [
+  { label: "작게", value: "0.875rem" },
+  { label: "보통", value: null },
+  { label: "크게", value: "1.25rem" },
+  { label: "매우 크게", value: "1.5rem" },
+];
 
 interface PostEditorProps {
   value: string;
@@ -155,17 +220,22 @@ export function PostEditor({
   const [linkTitle, setLinkTitle] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [colorOpen, setColorOpen] = useState(false);
+  const [sizeOpen, setSizeOpen] = useState(false);
 
   const editor = useEditor({
     extensions: [
       StarterKit,
+      TextStyle,
+      Color,
+      FontSize,
       Image.configure({ inline: false }),
       Link.configure({
         openOnClick: false,
         autolink: true,
         HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
       }),
-      Markdown.configure({ html: false, linkify: true, breaks: true }),
+      Markdown.configure({ html: true, linkify: true, breaks: true }),
       Placeholder.configure({ placeholder }),
     ],
     content: value,
@@ -269,6 +339,8 @@ export function PostEditor({
     }
   };
 
+  const currentColor = (editor?.getAttributes("textStyle").color as string) ?? null;
+
   return (
     <div className={cn("rounded-xl border border-border bg-background", className)}>
       <div className="flex flex-wrap items-center gap-1 border-b border-border px-2 py-1.5">
@@ -292,6 +364,75 @@ export function PostEditor({
           isActive={editor?.isActive("italic")}
           onClick={() => editor?.chain().focus().toggleItalic().run()}
         />
+
+        {/* Text color palette */}
+        <Popover open={colorOpen} onOpenChange={setColorOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              title="글자 색상"
+              aria-label="글자 색상"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground active:scale-95"
+            >
+              <Palette className="h-4 w-4" style={currentColor ? { color: currentColor } : undefined} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto rounded-xl p-2" align="start">
+            <div className="grid grid-cols-4 gap-1.5">
+              {TEXT_COLORS.map((c) => (
+                <button
+                  key={c.label}
+                  type="button"
+                  title={c.label}
+                  aria-label={c.label}
+                  onClick={() => {
+                    if (c.value) editor?.chain().focus().setColor(c.value).run();
+                    else editor?.chain().focus().unsetColor().run();
+                    setColorOpen(false);
+                  }}
+                  className="flex h-7 w-7 items-center justify-center rounded-md border border-border transition-transform hover:scale-110 active:scale-95"
+                  style={{ background: c.value ?? "transparent" }}
+                >
+                  {!c.value && <span className="text-[10px] text-muted-foreground">×</span>}
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Font size */}
+        <Popover open={sizeOpen} onOpenChange={setSizeOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              title="글자 크기"
+              aria-label="글자 크기"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground active:scale-95"
+            >
+              <Type className="h-4 w-4" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-32 rounded-xl p-1" align="start">
+            <div className="flex flex-col">
+              {FONT_SIZES.map((s) => (
+                <button
+                  key={s.label}
+                  type="button"
+                  onClick={() => {
+                    if (s.value) (editor?.chain().focus() as any).setFontSize(s.value).run();
+                    else (editor?.chain().focus() as any).unsetFontSize().run();
+                    setSizeOpen(false);
+                  }}
+                  className="rounded-lg px-2 py-1.5 text-left text-foreground transition-colors hover:bg-secondary"
+                  style={{ fontSize: s.value ?? "1rem" }}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
         <ToolButton
           icon={Quote}
           label="인용"
