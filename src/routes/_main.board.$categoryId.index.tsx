@@ -7,7 +7,7 @@ import {
   useMutation,
 } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Megaphone, FolderGit2, User, Plus } from "lucide-react";
+import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion } from "lucide-react";
 import { toast } from "sonner";
 
 import {
