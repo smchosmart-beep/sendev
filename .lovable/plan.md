@@ -1,43 +1,18 @@
 ## 목표
-별도의 **메인 페이지**(`/home`)를 만들어 ① 관리자가 올린 이미지들을 좌우 스와이프 캐러셀(히어로 배너)로 보여주고 ② 다가오는 이벤트를 크게 노출합니다. 관리자 대시보드에는 **메인화면 구성** 메뉴를 추가해 이미지를 여러 장 업로드/삭제/정렬할 수 있게 합니다.
+관리자 **메인화면 구성**에서 배너 이미지를 업로드할 때, 원본 이미지를 그대로 올리지 않고 **브라우저에서 적절한 크기로 리사이징·압축**한 뒤 업로드합니다. 이렇게 하면 업로드 용량이 크게 줄고, 로딩 속도와 안정성(15MB 제한 초과 방지)이 좋아집니다.
 
-## 데이터베이스
-새 테이블 `hero_slides` 추가 (마이그레이션):
-- `image_url` (text) — 업로드된 이미지의 서명 URL
-- `caption` (text, 선택) — 이미지 위 짧은 문구
-- `link_url` (text, 선택) — 클릭 시 이동할 주소
-- `sort_order` (int) — 노출 순서
-- 표준 필드(id, created_at) 포함
-- RLS 활성화 + 적절한 GRANT (읽기는 공개, 쓰기/삭제는 service_role — 모든 접근이 서버 함수의 admin 클라이언트를 통하므로 events/posts와 동일한 패턴)
+## 변경 범위
+`src/routes/admin.home.tsx` 한 파일만 수정합니다. 서버 함수·DB·스토리지는 그대로 둡니다(이미 base64를 받아 저장하는 구조이므로 클라이언트에서 줄여 보내면 됩니다).
 
-이미지 저장은 기존 이벤트 첨부와 동일하게 **비공개 버킷 + 장기 서명 URL** 방식을 사용합니다. 새 비공개 스토리지 버킷 `hero-images`를 생성합니다.
-
-## 서버 함수 (`src/lib/platform.functions.ts`)
-events 패턴을 그대로 따릅니다:
-- `listHeroSlides` — sort_order 순으로 슬라이드 목록 반환
-- `uploadHeroImage` — base64 이미지를 `hero-images` 버킷에 업로드 후 서명 URL 반환 (기존 `uploadEventFile`과 동일 로직)
-- `createHeroSlide` — image_url/caption/link_url 저장 (sort_order 자동 부여)
-- `deleteHeroSlide` — 슬라이드 삭제
-- `updateHeroSlideOrder` — 위/아래 이동으로 순서 변경
-
-`src/lib/platform.queries.ts`에 `heroSlidesQueryOptions` 추가.
-
-## 메인 페이지 (`src/routes/_main.home.tsx`)
-- **히어로 캐러셀**: `hero_slides`를 `Carousel`(embla, 좌우 스와이프 지원)로 렌더링. 좌우 화살표 + 도트 인디케이터, 모바일 스와이프 동작. 슬라이드에 caption/link 있으면 표시·연결. 슬라이드가 없으면 기본 안내 배너.
-- **다가오는 이벤트**: 기존 `listEvents`에서 오늘 이후 가장 가까운 행사들을 골라 크게 카드로 노출(날짜/장소/설명, 캘린더로 가는 링크).
-- 라우트에 `head()` 메타데이터(title/description/og) 작성.
-
-## 라우팅 & 네비게이션
-- `src/routes/index.tsx`: 기존 `/calendar` 리다이렉트 → `/home`으로 변경.
-- `src/routes/_main.tsx`: 상단 네비게이션에 "홈"(Home 아이콘) 탭을 캘린더 앞에 추가(데스크톱·모바일 메뉴 모두). 로고 링크도 `/home`으로 변경.
-
-## 관리자: 메인화면 구성 (`src/routes/admin.home.tsx`)
-- `src/routes/admin.tsx`의 `tabs` 배열에 `{ to: "/admin/home", label: "메인화면 구성", icon: ImageIcon }` 추가.
-- 페이지 구성:
-  - 이미지 업로드 영역: 파일 선택 시 여러 장을 순차로 `uploadHeroImage` → `createHeroSlide` 호출. 선택적으로 문구/링크 입력.
-  - 등록된 슬라이드 목록: 썸네일, 위/아래 순서 이동 버튼, 삭제 버튼.
-  - 업로드/삭제 후 `heroSlidesQueryOptions` 무효화로 즉시 반영.
+## 동작 방식
+1. 기존 `fileToBase64` 대신, **canvas 기반 리사이즈 함수**(`resizeImage`)를 추가합니다.
+2. 각 이미지를 업로드 전에:
+   - 가로 최대폭을 **1920px**로 제한 (히어로 배너는 와이드이므로 충분). 이보다 작으면 원본 크기 유지(확대하지 않음).
+   - JPEG/WebP로 재인코딩(품질 약 0.85)하여 용량 축소. 투명도가 필요 없는 배너이므로 JPEG로 통일.
+   - canvas에서 base64(`dataBase64`)와 contentType(`image/jpeg`)을 추출해 기존 `uploadHeroImage`에 전달.
+3. 결과적으로 서버로 전송되는 데이터가 대폭 축소되어 업로드가 빠르고 안정적으로 동작합니다.
 
 ## 기술 메모
-- 이미지 업로드는 클라이언트에서 base64로 인코딩 후 서버 함수에 전달(기존 이벤트 첨부 방식과 동일, 파일당 최대 ~15MB).
-- 캐러셀은 이미 설치된 `embla-carousel-react` 기반 `@/components/ui/carousel`을 사용하므로 신규 의존성 없음.
+- 순수 브라우저 API(`Image`, `<canvas>`, `canvas.toDataURL`)만 사용하므로 신규 의존성 없음.
+- GIF/애니메이션은 정지 프레임으로 변환됨(배너 용도상 문제 없음). 필요 시 추후 별도 처리.
+- 최대폭(1920px)·품질(0.85) 값은 상수로 두어 쉽게 조정 가능.
