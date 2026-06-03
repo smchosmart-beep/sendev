@@ -40,12 +40,13 @@ export const Route = createFileRoute("/_main/board/")({
 
 function BoardListPage() {
   const { tab } = Route.useSearch();
+  const activeTab = normalizeTab(tab);
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
-  const visible = categories.filter((c) => (c.tabGroup ?? "hackathon") === tab);
+  const visible = categories.filter((c) => (c.tabGroup ?? "hackathon") === activeTab);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">{TAB_LABELS[tab]}</h1>
+      <h1 className="text-2xl font-bold text-foreground">{TAB_LABELS[activeTab]}</h1>
 
       {visible.length === 0 ? (
         <EmptyState
