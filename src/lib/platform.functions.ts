@@ -20,11 +20,24 @@ async function getAdmin() {
 
 export interface CategoryDTO {
   id: string;
+  slug: string;
   name: string;
   description: string;
   sortOrder: number;
   hasPassword: boolean;
   githubRequired: boolean;
+}
+
+// Board slug: lowercase letters, digits and hyphens. Used in short URLs.
+export const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,30}$/;
+
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 30);
 }
 
 export interface EventDTO {
