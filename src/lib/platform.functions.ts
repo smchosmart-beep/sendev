@@ -377,20 +377,37 @@ export const createPost = createServerFn({ method: "POST" })
     const ogImageUrl = data.deployUrl
       ? (await resolveOgImage(data.deployUrl)) ?? ""
       : "";
-    const { error } = await db.from("posts").insert({
-      category_id: data.categoryId,
-      type: data.type,
-      title: data.title,
-      content: data.content,
-      author,
-      github_url: data.githubUrl,
-      deploy_url: data.deployUrl,
-      og_image_url: ogImageUrl,
-      edit_password: data.editPassword,
-    });
-    if (error) throw new Error(error.message);
-    return { ok: true };
+    // Assign the next per-board number, retrying once on a unique collision.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { data: maxRow } = await db
+        .from("posts")
+        .select("post_no")
+        .eq("category_id", data.categoryId)
+        .order("post_no", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const nextNo = (maxRow?.post_no ?? 0) + 1;
+      const { error } = await db.from("posts").insert({
+        category_id: data.categoryId,
+        post_no: nextNo,
+        type: data.type,
+        title: data.title,
+        content: data.content,
+        author,
+        github_url: data.githubUrl,
+        deploy_url: data.deployUrl,
+        og_image_url: ogImageUrl,
+        edit_password: data.editPassword,
+      });
+      if (!error) return { ok: true, postNo: nextNo };
+      // Retry on unique violation (concurrent insert); otherwise fail.
+      if (!String(error.message ?? "").toLowerCase().includes("duplicate")) {
+        throw new Error(error.message);
+      }
+    }
+    throw new Error("게시글 번호를 부여하지 못했어요. 다시 시도해주세요.");
   });
+
 
 // Verifies the registrant's edit/delete password for a post.
 async function checkPostPassword(
