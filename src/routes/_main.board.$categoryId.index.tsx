@@ -368,3 +368,116 @@ function RegisterDialog({
     </Dialog>
   );
 }
+
+function QuestionDialog({
+  categoryId,
+  open,
+  onOpenChange,
+}: {
+  categoryId: string;
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
+  const queryClient = useQueryClient();
+  const create = useServerFn(createPost);
+  const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      create({
+        data: {
+          categoryId,
+          type: "question",
+          title,
+          author,
+          githubUrl: "",
+          deployUrl: "",
+          editPassword,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
+      toast.success("질문이 등록되었어요!");
+      setTitle("");
+      setAuthor("");
+      setEditPassword("");
+      onOpenChange(false);
+    },
+    onError: () => toast.error("등록 중 문제가 발생했어요."),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="rounded-2xl">
+        <DialogHeader>
+          <DialogTitle>질문 등록</DialogTitle>
+          <DialogDescription>궁금한 점을 자유롭게 질문해보세요.</DialogDescription>
+        </DialogHeader>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!title.trim() || !author.trim()) {
+              toast.error("제목과 작성자를 입력해주세요.");
+              return;
+            }
+            if (!editPassword.trim()) {
+              toast.error("수정·삭제용 비밀번호를 입력해주세요.");
+              return;
+            }
+            mutation.mutate();
+          }}
+          className="space-y-4 py-2"
+        >
+          <div className="space-y-2">
+            <Label htmlFor="q-title">질문 제목</Label>
+            <Input
+              id="q-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="rounded-xl"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="q-author">작성자</Label>
+            <Input
+              id="q-author"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              className="rounded-xl"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="q-pw">수정·삭제 비밀번호</Label>
+            <Input
+              id="q-pw"
+              type="password"
+              value={editPassword}
+              onChange={(e) => setEditPassword(e.target.value)}
+              placeholder="나중에 수정·삭제할 때 사용해요"
+              className="rounded-xl"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => onOpenChange(false)}
+              className="rounded-xl active:scale-95"
+            >
+              취소
+            </Button>
+            <Button
+              type="submit"
+              disabled={mutation.isPending}
+              className="rounded-xl active:scale-95"
+            >
+              {mutation.isPending ? "등록 중..." : "등록"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
