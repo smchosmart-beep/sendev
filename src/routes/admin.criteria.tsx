@@ -37,21 +37,25 @@ export const Route = createFileRoute("/admin/criteria")({
 
 function CriteriaPage() {
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
+  // 산출물 게시판이 활성화된 게시판만 평가 기준 대상으로 노출합니다.
+  const projectCategories = categories.filter((c) => c.enableProject);
   const [selected, setSelected] = useState<string | null>(
-    categories[0]?.id ?? null,
+    projectCategories[0]?.id ?? null,
   );
 
-  if (categories.length === 0) {
+  if (projectCategories.length === 0) {
     return (
       <EmptyState
         icon={LayoutGrid}
-        title="먼저 게시판을 만들어주세요."
-        description="평가 기준은 게시판별로 설정됩니다."
+        title="산출물 게시판이 있는 게시판이 없어요."
+        description="평가 기준은 산출물 게시판이 활성화된 게시판에서만 설정할 수 있어요."
       />
     );
   }
 
-  const activeId = selected ?? categories[0].id;
+  const activeId =
+    projectCategories.find((c) => c.id === selected)?.id ??
+    projectCategories[0].id;
 
   return (
     <div className="space-y-6">
@@ -63,7 +67,7 @@ function CriteriaPage() {
           onChange={(e) => setSelected(e.target.value)}
           className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:border-primary"
         >
-          {categories.map((c) => (
+          {projectCategories.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
             </option>
