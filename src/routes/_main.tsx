@@ -52,7 +52,21 @@ function MainLayout() {
 
           <nav className="mx-auto hidden flex-wrap justify-center gap-2 sm:flex">
             <Link
+              to={homeTab.to}
+              className={cn(
+                "flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95",
+                isHome
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "text-muted-foreground hover:-translate-y-0.5 hover:text-foreground",
+              )}
+            >
+              <homeTab.icon className="h-4 w-4" />
+              {homeTab.label}
+            </Link>
+
+            <Link
               to={calendarTab.to}
+
               className={cn(
                 "flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95",
                 isCalendar
