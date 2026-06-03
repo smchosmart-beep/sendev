@@ -64,6 +64,11 @@ function CategoriesPage() {
   const [description, setDescription] = useState("");
   const [password, setPassword] = useState("");
   const [githubRequired, setGithubRequired] = useState(false);
+  const [enableNotice, setEnableNotice] = useState(true);
+  const [enableQuestion, setEnableQuestion] = useState(true);
+  const [enableGeneral, setEnableGeneral] = useState(true);
+  const [enableProject, setEnableProject] = useState(true);
+  const [generalName, setGeneralName] = useState("일반게시판");
 
   const [editing, setEditing] = useState<CategoryDTO | null>(null);
   const [editName, setEditName] = useState("");
@@ -71,6 +76,11 @@ function CategoriesPage() {
   const [editDescription, setEditDescription] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [editGithubRequired, setEditGithubRequired] = useState(false);
+  const [editEnableNotice, setEditEnableNotice] = useState(true);
+  const [editEnableQuestion, setEditEnableQuestion] = useState(true);
+  const [editEnableGeneral, setEditEnableGeneral] = useState(true);
+  const [editEnableProject, setEditEnableProject] = useState(true);
+  const [editGeneralName, setEditGeneralName] = useState("일반게시판");
 
   const [deleting, setDeleting] = useState<CategoryDTO | null>(null);
 
