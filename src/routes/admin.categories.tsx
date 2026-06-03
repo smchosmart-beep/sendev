@@ -123,6 +123,7 @@ function CategoriesPage() {
           enableGeneral,
           enableProject,
           generalName: generalName.trim(),
+          projectName: projectName.trim(),
           tabGroup,
         },
       }),
