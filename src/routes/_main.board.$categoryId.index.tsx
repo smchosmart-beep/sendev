@@ -211,7 +211,9 @@ function RegisterDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="p-github">GitHub 링크</Label>
+            <Label htmlFor="p-github">
+              GitHub 링크{githubRequired && <span className="ml-1 text-destructive">*</span>}
+            </Label>
             <Input
               id="p-github"
               value={githubUrl}
@@ -219,6 +221,11 @@ function RegisterDialog({
               placeholder="https://github.com/owner/repo"
               className="rounded-xl"
             />
+            {githubRequired && (
+              <p className="text-xs text-muted-foreground">
+                이 게시판은 GitHub 링크가 필수입니다.
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="p-pw">수정·삭제 비밀번호</Label>
