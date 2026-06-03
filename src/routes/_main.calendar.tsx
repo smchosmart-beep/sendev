@@ -1,40 +1,24 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   ChevronLeft,
   ChevronRight,
   MapPin,
   Clock,
   CalendarDays,
-  Paperclip,
   LinkIcon,
-  Plus,
-  X,
-  Loader2,
   Download,
 } from "lucide-react";
 
 import { eventsQueryOptions } from "@/lib/platform.queries";
-import {
-  createEvent,
-  uploadEventFile,
-  type EventDTO,
-  type EventAttachment,
-  type EventLink,
-} from "@/lib/platform.functions";
+import { type EventDTO } from "@/lib/platform.functions";
 import { getHolidayName } from "@/lib/holidays";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -63,42 +47,13 @@ function toIso(year: number, month: number, day: number) {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      resolve(result.split(",")[1] ?? "");
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 function CalendarPage() {
   const { data: events } = useSuspenseQuery(eventsQueryOptions());
-  const queryClient = useQueryClient();
-  const createEventFn = useServerFn(createEvent);
-  const uploadFileFn = useServerFn(uploadEventFile);
 
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [selected, setSelected] = useState<EventDTO | null>(null);
-
-  // Create dialog state
-  const [createDate, setCreateDate] = useState<string | null>(null);
-  const [title, setTitle] = useState("");
-  const [time, setTime] = useState("");
-  const [location, setLocation] = useState("");
-  const [description, setDescription] = useState("");
-  const [attachments, setAttachments] = useState<EventAttachment[]>([]);
-  const [links, setLinks] = useState<EventLink[]>([]);
-  const [linkLabel, setLinkLabel] = useState("");
-  const [linkUrl, setLinkUrl] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, EventDTO[]>();
@@ -124,87 +79,6 @@ function CalendarPage() {
     const d = new Date(viewYear, viewMonth + delta, 1);
     setViewYear(d.getFullYear());
     setViewMonth(d.getMonth());
-  };
-
-  const resetCreateForm = () => {
-    setTitle("");
-    setTime("");
-    setLocation("");
-    setDescription("");
-    setAttachments([]);
-    setLinks([]);
-    setLinkLabel("");
-    setLinkUrl("");
-  };
-
-  const openCreate = (iso: string) => {
-    resetCreateForm();
-    setCreateDate(iso);
-  };
-
-  const handleFiles = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    setUploading(true);
-    try {
-      for (const file of Array.from(files)) {
-        if (file.size > 10 * 1024 * 1024) {
-          toast.error(`${file.name}: 10MB를 넘는 파일은 업로드할 수 없어요.`);
-          continue;
-        }
-        const dataBase64 = await fileToBase64(file);
-        const att = await uploadFileFn({
-          data: {
-            name: file.name,
-            contentType: file.type || "application/octet-stream",
-            dataBase64,
-          },
-        });
-        setAttachments((prev) => [...prev, att]);
-      }
-    } catch (err) {
-      toast.error(`파일 업로드 실패: ${(err as Error).message}`);
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
-
-  const addLink = () => {
-    if (!linkUrl.trim()) return;
-    let url = linkUrl.trim();
-    if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
-    setLinks((prev) => [...prev, { label: linkLabel.trim() || url, url }]);
-    setLinkLabel("");
-    setLinkUrl("");
-  };
-
-  const submitCreate = async () => {
-    if (!createDate || !title.trim()) {
-      toast.error("제목을 입력해 주세요.");
-      return;
-    }
-    setSaving(true);
-    try {
-      await createEventFn({
-        data: {
-          title: title.trim(),
-          date: createDate,
-          time: time.trim(),
-          location: location.trim(),
-          description: description.trim(),
-          attachments,
-          links,
-        },
-      });
-      await queryClient.invalidateQueries({ queryKey: ["events"] });
-      toast.success("일정을 추가했어요.");
-      setCreateDate(null);
-      resetCreateForm();
-    } catch (err) {
-      toast.error(`일정 추가 실패: ${(err as Error).message}`);
-    } finally {
-      setSaving(false);
-    }
   };
 
   return (
@@ -263,15 +137,13 @@ function CalendarPage() {
             const holidayName = getHolidayName(iso);
             const isRed = weekday === 0 || !!holidayName;
             return (
-              <button
+              <div
                 key={idx}
-                type="button"
-                onClick={() => openCreate(iso)}
                 className={cn(
-                  "group flex flex-col overflow-hidden rounded-xl p-2 text-left transition-all duration-200",
-                  isToday ? "bg-accent" : "hover:bg-muted",
+                  "flex flex-col overflow-hidden rounded-xl p-2",
+                  isToday ? "bg-accent" : "",
                 )}
-                title={holidayName ? `${holidayName} · 클릭하여 일정 추가` : "클릭하여 일정 추가"}
+                title={holidayName ?? undefined}
               >
                 <div className="mb-1 flex items-center justify-between">
                   <span
@@ -286,7 +158,6 @@ function CalendarPage() {
                   >
                     {day}
                   </span>
-                  <Plus className="h-3.5 w-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                 </div>
                 {holidayName && (
                   <span className="mb-1 truncate text-xs font-medium text-destructive">
@@ -295,27 +166,17 @@ function CalendarPage() {
                 )}
                 <div className="space-y-1 overflow-y-auto">
                   {dayEvents.map((e) => (
-                    <span
+                    <button
                       key={e.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={(ev) => {
-                        ev.stopPropagation();
-                        setSelected(e);
-                      }}
-                      onKeyDown={(ev) => {
-                        if (ev.key === "Enter") {
-                          ev.stopPropagation();
-                          setSelected(e);
-                        }
-                      }}
+                      type="button"
+                      onClick={() => setSelected(e)}
                       className="block w-full truncate rounded-lg bg-primary/10 px-2 py-1 text-left text-sm font-medium text-primary transition-all duration-200 hover:bg-primary/20 active:scale-95"
                     >
                       {e.title}
-                    </span>
+                    </button>
                   ))}
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
@@ -325,7 +186,7 @@ function CalendarPage() {
         <EmptyState
           icon={CalendarDays}
           title="아직 등록된 일정이 없어요."
-          description="날짜 칸을 클릭해서 새 일정을 추가할 수 있어요."
+          description="일정은 관리자 화면에서 등록할 수 있어요."
         />
       )}
 
@@ -394,153 +255,6 @@ function CalendarPage() {
               )}
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Create dialog */}
-      <Dialog open={!!createDate} onOpenChange={(o) => !o && setCreateDate(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl">
-          <DialogHeader>
-            <DialogTitle>새 일정 추가 · {createDate}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label htmlFor="ev-title">제목 *</Label>
-              <Input
-                id="ev-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="행사 이름"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="ev-time">시간</Label>
-                <Input
-                  id="ev-time"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  placeholder="예: 오후 2시"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ev-loc">장소</Label>
-                <Input
-                  id="ev-loc"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="예: 온라인 / 서울"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="ev-desc">메모</Label>
-              <Textarea
-                id="ev-desc"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="안내 사항을 적어주세요."
-                rows={4}
-              />
-            </div>
-
-            {/* Attachments */}
-            <div className="space-y-2">
-              <Label>파일 첨부 (hwp, pdf 등 · 최대 10MB)</Label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={(e) => handleFiles(e.target.files)}
-              />
-              <Button
-                type="button"
-                variant="secondary"
-                className="w-full rounded-xl"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-              >
-                {uploading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Paperclip className="mr-2 h-4 w-4" />
-                )}
-                파일 선택
-              </Button>
-              {attachments.map((a, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm"
-                >
-                  <Paperclip className="h-4 w-4 text-primary" />
-                  <span className="flex-1 truncate">{a.name}</span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setAttachments((prev) => prev.filter((_, idx) => idx !== i))
-                    }
-                    aria-label="첨부 삭제"
-                  >
-                    <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            {/* Links */}
-            <div className="space-y-2">
-              <Label>링크 첨부</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={linkLabel}
-                  onChange={(e) => setLinkLabel(e.target.value)}
-                  placeholder="이름 (선택)"
-                  className="w-1/3"
-                />
-                <Input
-                  value={linkUrl}
-                  onChange={(e) => setLinkUrl(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addLink();
-                    }
-                  }}
-                  placeholder="https://..."
-                  className="flex-1"
-                />
-                <Button type="button" variant="secondary" onClick={addLink}>
-                  추가
-                </Button>
-              </div>
-              {links.map((l, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm"
-                >
-                  <LinkIcon className="h-4 w-4 text-primary" />
-                  <span className="flex-1 truncate">{l.label}</span>
-                  <button
-                    type="button"
-                    onClick={() => setLinks((prev) => prev.filter((_, idx) => idx !== i))}
-                    aria-label="링크 삭제"
-                  >
-                    <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setCreateDate(null)}>
-              취소
-            </Button>
-            <Button onClick={submitCreate} disabled={saving || uploading}>
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              일정 저장
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
