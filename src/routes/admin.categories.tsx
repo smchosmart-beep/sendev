@@ -103,6 +103,7 @@ function CategoriesPage() {
         data: {
           id: editing!.id,
           name: editName.trim(),
+          slug: editSlug.trim(),
           description: editDescription.trim(),
           password: editPassword,
           githubRequired: editGithubRequired,
