@@ -112,6 +112,7 @@ function AdminGate() {
 
 const tabs = [
   { to: "/admin/categories", label: "게시판 관리", icon: LayoutGrid },
+  { to: "/admin/calendar", label: "캘린더 관리", icon: CalendarDays },
   { to: "/admin/notices", label: "공지사항 관리", icon: Megaphone },
   { to: "/admin/criteria", label: "평가 기준 관리", icon: SlidersHorizontal },
 ] as const;
