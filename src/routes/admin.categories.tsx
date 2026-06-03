@@ -139,6 +139,7 @@ function CategoriesPage() {
       setEnableGeneral(true);
       setEnableProject(true);
       setGeneralName("일반게시판");
+      setProjectName("산출물");
       setTabGroup("hackathon");
       toast.success("새 게시판이 추가되었어요.");
     },
