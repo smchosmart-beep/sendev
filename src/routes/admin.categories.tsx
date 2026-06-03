@@ -302,6 +302,22 @@ function CategoriesPage() {
                 className="rounded-xl"
               />
             </div>
+            <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 p-4">
+              <div className="space-y-0.5">
+                <Label htmlFor="edit-gh-req" className="flex items-center gap-1.5">
+                  <Github className="h-4 w-4" />
+                  GitHub 링크 필수
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  산출물 등록 시 GitHub 링크를 반드시 입력하게 해요.
+                </p>
+              </div>
+              <Switch
+                id="edit-gh-req"
+                checked={editGithubRequired}
+                onCheckedChange={setEditGithubRequired}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button
