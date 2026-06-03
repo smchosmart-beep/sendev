@@ -211,6 +211,7 @@ export const createCategory = createServerFn({ method: "POST" })
       enable_general: data.enableGeneral,
       enable_project: data.enableProject,
       general_name: data.generalName || "일반게시판",
+      project_name: data.projectName || "산출물",
       tab_group: data.tabGroup,
       sort_order: nextOrder,
     });
