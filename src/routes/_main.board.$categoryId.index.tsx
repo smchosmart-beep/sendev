@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import {
   useSuspenseQuery,
+  useQuery,
   useQueryClient,
   useMutation,
 } from "@tanstack/react-query";
@@ -9,8 +10,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { Megaphone, FolderGit2, User, Plus } from "lucide-react";
 import { toast } from "sonner";
 
-import { postsQueryOptions, categoriesQueryOptions } from "@/lib/platform.queries";
-import { createPost, GITHUB_URL_RE } from "@/lib/platform.functions";
+import {
+  postsQueryOptions,
+  categoriesQueryOptions,
+  ogImageQueryOptions,
+} from "@/lib/platform.queries";
+import { createPost, GITHUB_URL_RE, type PostDTO } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
