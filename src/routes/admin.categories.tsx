@@ -10,6 +10,7 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  getCategoryPassword,
 } from "@/lib/platform.functions";
 import type { CategoryDTO } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
