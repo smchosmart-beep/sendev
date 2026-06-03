@@ -52,6 +52,7 @@ export interface EventDTO {
 export interface PostDTO {
   id: string;
   categoryId: string;
+  postNo: number;
   type: "notice" | "project" | "question";
   title: string;
   content: string;
