@@ -282,6 +282,11 @@ export const createPost = createServerFn({ method: "POST" })
         throw new Error("이 게시판은 GitHub 링크가 필수입니다.");
       }
     }
+    // Resolve and cache the deploy site's OG image once at creation time so the
+    // board never re-fetches the external site on subsequent loads.
+    const ogImageUrl = data.deployUrl
+      ? (await resolveOgImage(data.deployUrl)) ?? ""
+      : "";
     const { error } = await db.from("posts").insert({
       category_id: data.categoryId,
       type: data.type,
@@ -289,6 +294,7 @@ export const createPost = createServerFn({ method: "POST" })
       author: data.author,
       github_url: data.githubUrl,
       deploy_url: data.deployUrl,
+      og_image_url: ogImageUrl,
       edit_password: data.editPassword,
     });
     if (error) throw new Error(error.message);
