@@ -949,3 +949,123 @@ export const refreshOgImage = createServerFn({ method: "POST" })
     }
     return { image };
   });
+
+
+/* ------------------------------ Hero slides ----------------------------- */
+
+export interface HeroSlideDTO {
+  id: string;
+  imageUrl: string;
+  caption: string;
+  linkUrl: string;
+  sortOrder: number;
+}
+
+export const listHeroSlides = createServerFn({ method: "GET" }).handler(
+  async (): Promise<HeroSlideDTO[]> => {
+    const db = await getAdmin();
+    const { data, error } = await db
+      .from("hero_slides")
+      .select("id, image_url, caption, link_url, sort_order")
+      .order("sort_order", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((s: any) => ({
+      id: s.id,
+      imageUrl: s.image_url,
+      caption: s.caption ?? "",
+      linkUrl: s.link_url ?? "",
+      sortOrder: s.sort_order ?? 0,
+    }));
+  },
+);
+
+// Uploads a base64-encoded image to the private hero-images bucket and returns a
+// long-lived signed URL.
+export const uploadHeroImage = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        name: z.string().trim().min(1).max(255),
+        contentType: z.string().trim().max(200).default("image/jpeg"),
+        dataBase64: z.string().min(1).max(15_000_000),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ url: string }> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const bytes = Buffer.from(data.dataBase64, "base64");
+    const extMatch = data.name.match(/\.([a-zA-Z0-9]{1,10})$/);
+    const ext = extMatch ? `.${extMatch[1].toLowerCase()}` : "";
+    const path = `${crypto.randomUUID()}${ext}`;
+    const { error } = await supabaseAdmin.storage
+      .from("hero-images")
+      .upload(path, bytes, { contentType: data.contentType, upsert: false });
+    if (error) throw new Error(error.message);
+    const { data: signed, error: signErr } = await supabaseAdmin.storage
+      .from("hero-images")
+      .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+    if (signErr || !signed) throw new Error(signErr?.message ?? "signing failed");
+    return { url: signed.signedUrl };
+  });
+
+export const createHeroSlide = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        imageUrl: z.string().trim().url().max(2000),
+        caption: z.string().trim().max(200).default(""),
+        linkUrl: z.string().trim().max(2000).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { data: rows } = await db
+      .from("hero_slides")
+      .select("sort_order")
+      .order("sort_order", { ascending: false })
+      .limit(1);
+    const nextOrder = rows && rows[0] ? (rows[0].sort_order ?? 0) + 1 : 0;
+    const { error } = await db.from("hero_slides").insert({
+      image_url: data.imageUrl,
+      caption: data.caption,
+      link_url: data.linkUrl,
+      sort_order: nextOrder,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteHeroSlide = createServerFn({ method: "POST" })
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { error } = await db.from("hero_slides").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// Swaps the sort_order of two slides to move one up or down.
+export const swapHeroSlideOrder = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        otherId: z.string().uuid(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { data: rows, error } = await db
+      .from("hero_slides")
+      .select("id, sort_order")
+      .in("id", [data.id, data.otherId]);
+    if (error) throw new Error(error.message);
+    const a = (rows ?? []).find((r: any) => r.id === data.id);
+    const b = (rows ?? []).find((r: any) => r.id === data.otherId);
+    if (!a || !b) throw new Error("slide not found");
+    await db.from("hero_slides").update({ sort_order: b.sort_order }).eq("id", a.id);
+    await db.from("hero_slides").update({ sort_order: a.sort_order }).eq("id", b.id);
+    return { ok: true };
+  });
