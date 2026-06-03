@@ -263,6 +263,8 @@ export const updateCategory = createServerFn({ method: "POST" })
       patch.enable_project = data.enableProject;
     if (data.generalName !== undefined)
       patch.general_name = data.generalName || "일반게시판";
+    if (data.projectName !== undefined)
+      patch.project_name = data.projectName || "산출물";
     if (data.tabGroup !== undefined) patch.tab_group = data.tabGroup;
     const { error } = await db.from("categories").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
