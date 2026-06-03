@@ -26,7 +26,10 @@ import {
 
 export const Route = createFileRoute("/_main/board/$categoryId/")({
   loader: ({ context, params }) =>
-    context.queryClient.ensureQueryData(postsQueryOptions(params.categoryId)),
+    Promise.all([
+      context.queryClient.ensureQueryData(postsQueryOptions(params.categoryId)),
+      context.queryClient.ensureQueryData(categoriesQueryOptions()),
+    ]),
   errorComponent: ({ error }) => (
     <div role="alert" className="p-6 text-sm text-destructive">
       산출물을 불러오지 못했어요: {error.message}
