@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { LayoutGrid, SlidersHorizontal, ShieldCheck, Lock, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // 한글 자모/완성형 음절 제거 (영문 비밀번호 강제)
 const stripKorean = (s: string) => s.replace(/[\u1100-\u11FF\u3130-\u318F\uAC00-\uD7A3]/g, "");
