@@ -173,7 +173,7 @@ function CalendarPage() {
 
 
 
-      <div className="flex flex-1 flex-col rounded-2xl bg-card p-2 shadow-sm sm:p-6">
+      <div className="hidden flex-1 flex-col rounded-2xl bg-card p-2 shadow-sm sm:flex sm:p-6">
         <div className="mb-2 grid grid-cols-7 gap-1 sm:mb-3 sm:gap-2">
           {WEEKDAYS.map((w, i) => (
             <div
