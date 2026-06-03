@@ -120,7 +120,22 @@ function MainLayout() {
               </SheetHeader>
               <nav className="mt-6 flex flex-col gap-2">
                 <Link
+                  to={homeTab.to}
+                  onClick={() => setMenuOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors",
+                    isHome
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  <homeTab.icon className="h-5 w-5" />
+                  {homeTab.label}
+                </Link>
+
+                <Link
                   to={calendarTab.to}
+
                   onClick={() => setMenuOpen(false)}
                   className={cn(
                     "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors",
