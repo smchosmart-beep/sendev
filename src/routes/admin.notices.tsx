@@ -174,6 +174,12 @@ function NoticeList({ categoryId }: { categoryId: string }) {
   const remove = useServerFn(deletePost);
   const notices = posts.filter((p) => p.type === "notice");
 
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
+  const [deletePw, setDeletePw] = useState("");
+
   const deleteMutation = useMutation({
     mutationFn: (vars: { id: string; password: string }) =>
       remove({ data: vars }),
@@ -184,6 +190,8 @@ function NoticeList({ categoryId }: { categoryId: string }) {
       }
       queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
       toast.success("공지사항이 삭제되었어요.");
+      setDeleteTarget(null);
+      setDeletePw("");
     },
     onError: () => toast.error("삭제 중 문제가 발생했어요."),
   });
@@ -218,8 +226,8 @@ function NoticeList({ categoryId }: { categoryId: string }) {
               variant="destructive"
               size="sm"
               onClick={() => {
-                const pw = window.prompt("삭제하려면 관리자 비밀번호를 입력하세요.");
-                if (pw) deleteMutation.mutate({ id: n.id, password: pw });
+                setDeletePw("");
+                setDeleteTarget({ id: n.id, title: n.title });
               }}
               className="rounded-xl active:scale-95"
             >
@@ -229,6 +237,75 @@ function NoticeList({ categoryId }: { categoryId: string }) {
           </li>
         ))}
       </ul>
+
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => {
+          if (!o) {
+            setDeleteTarget(null);
+            setDeletePw("");
+          }
+        }}
+      >
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>공지 삭제</DialogTitle>
+            <DialogDescription>
+              “{deleteTarget?.title}” 공지를 삭제하려면 관리자 비밀번호를
+              입력하세요. 이 작업은 되돌릴 수 없어요.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!deletePw.trim()) {
+                toast.error("관리자 비밀번호를 입력해주세요.");
+                return;
+              }
+              if (deleteTarget) {
+                deleteMutation.mutate({
+                  id: deleteTarget.id,
+                  password: deletePw,
+                });
+              }
+            }}
+            className="space-y-4 py-2"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="nd-pw">관리자 비밀번호</Label>
+              <Input
+                id="nd-pw"
+                type="password"
+                value={deletePw}
+                onChange={(e) => setDeletePw(e.target.value)}
+                className="rounded-xl"
+                autoFocus
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setDeleteTarget(null);
+                  setDeletePw("");
+                }}
+                className="rounded-xl active:scale-95"
+              >
+                취소
+              </Button>
+              <Button
+                type="submit"
+                variant="destructive"
+                disabled={deleteMutation.isPending}
+                className="rounded-xl active:scale-95"
+              >
+                {deleteMutation.isPending ? "삭제 중..." : "삭제"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
