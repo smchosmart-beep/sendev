@@ -19,9 +19,11 @@ import { Route as AdminCriteriaRouteImport } from './routes/admin.criteria'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as MainCalendarRouteImport } from './routes/_main.calendar'
 import { Route as MainBoardIndexRouteImport } from './routes/_main.board.index'
-import { Route as MainBoardCategoryIdRouteImport } from './routes/_main.board.$categoryId'
-import { Route as MainBoardCategoryIdIndexRouteImport } from './routes/_main.board.$categoryId.index'
-import { Route as MainBoardCategoryIdPostIdRouteImport } from './routes/_main.board.$categoryId.$postId'
+import { Route as MainBoardSlugRouteImport } from './routes/_main.board.$slug'
+import { Route as MainBoardSlugIndexRouteImport } from './routes/_main.board.$slug.index'
+import { Route as MainBoardSlugNewQuestionRouteImport } from './routes/_main.board.$slug.new-question'
+import { Route as MainBoardSlugNewProjectRouteImport } from './routes/_main.board.$slug.new-project'
+import { Route as MainBoardSlugPostNoRouteImport } from './routes/_main.board.$slug.$postNo'
 
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
@@ -72,23 +74,32 @@ const MainBoardIndexRoute = MainBoardIndexRouteImport.update({
   path: '/board/',
   getParentRoute: () => MainRoute,
 } as any)
-const MainBoardCategoryIdRoute = MainBoardCategoryIdRouteImport.update({
-  id: '/board/$categoryId',
-  path: '/board/$categoryId',
+const MainBoardSlugRoute = MainBoardSlugRouteImport.update({
+  id: '/board/$slug',
+  path: '/board/$slug',
   getParentRoute: () => MainRoute,
 } as any)
-const MainBoardCategoryIdIndexRoute =
-  MainBoardCategoryIdIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => MainBoardCategoryIdRoute,
+const MainBoardSlugIndexRoute = MainBoardSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MainBoardSlugRoute,
+} as any)
+const MainBoardSlugNewQuestionRoute =
+  MainBoardSlugNewQuestionRouteImport.update({
+    id: '/new-question',
+    path: '/new-question',
+    getParentRoute: () => MainBoardSlugRoute,
   } as any)
-const MainBoardCategoryIdPostIdRoute =
-  MainBoardCategoryIdPostIdRouteImport.update({
-    id: '/$postId',
-    path: '/$postId',
-    getParentRoute: () => MainBoardCategoryIdRoute,
-  } as any)
+const MainBoardSlugNewProjectRoute = MainBoardSlugNewProjectRouteImport.update({
+  id: '/new-project',
+  path: '/new-project',
+  getParentRoute: () => MainBoardSlugRoute,
+} as any)
+const MainBoardSlugPostNoRoute = MainBoardSlugPostNoRouteImport.update({
+  id: '/$postNo',
+  path: '/$postNo',
+  getParentRoute: () => MainBoardSlugRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -99,10 +110,12 @@ export interface FileRoutesByFullPath {
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
-  '/board/$categoryId': typeof MainBoardCategoryIdRouteWithChildren
+  '/board/$slug': typeof MainBoardSlugRouteWithChildren
   '/board/': typeof MainBoardIndexRoute
-  '/board/$categoryId/$postId': typeof MainBoardCategoryIdPostIdRoute
-  '/board/$categoryId/': typeof MainBoardCategoryIdIndexRoute
+  '/board/$slug/$postNo': typeof MainBoardSlugPostNoRoute
+  '/board/$slug/new-project': typeof MainBoardSlugNewProjectRoute
+  '/board/$slug/new-question': typeof MainBoardSlugNewQuestionRoute
+  '/board/$slug/': typeof MainBoardSlugIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -113,8 +126,10 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin': typeof AdminIndexRoute
   '/board': typeof MainBoardIndexRoute
-  '/board/$categoryId/$postId': typeof MainBoardCategoryIdPostIdRoute
-  '/board/$categoryId': typeof MainBoardCategoryIdIndexRoute
+  '/board/$slug/$postNo': typeof MainBoardSlugPostNoRoute
+  '/board/$slug/new-project': typeof MainBoardSlugNewProjectRoute
+  '/board/$slug/new-question': typeof MainBoardSlugNewQuestionRoute
+  '/board/$slug': typeof MainBoardSlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -127,10 +142,12 @@ export interface FileRoutesById {
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
-  '/_main/board/$categoryId': typeof MainBoardCategoryIdRouteWithChildren
+  '/_main/board/$slug': typeof MainBoardSlugRouteWithChildren
   '/_main/board/': typeof MainBoardIndexRoute
-  '/_main/board/$categoryId/$postId': typeof MainBoardCategoryIdPostIdRoute
-  '/_main/board/$categoryId/': typeof MainBoardCategoryIdIndexRoute
+  '/_main/board/$slug/$postNo': typeof MainBoardSlugPostNoRoute
+  '/_main/board/$slug/new-project': typeof MainBoardSlugNewProjectRoute
+  '/_main/board/$slug/new-question': typeof MainBoardSlugNewQuestionRoute
+  '/_main/board/$slug/': typeof MainBoardSlugIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -143,10 +160,12 @@ export interface FileRouteTypes {
     | '/admin/notices'
     | '/admin/settings'
     | '/admin/'
-    | '/board/$categoryId'
+    | '/board/$slug'
     | '/board/'
-    | '/board/$categoryId/$postId'
-    | '/board/$categoryId/'
+    | '/board/$slug/$postNo'
+    | '/board/$slug/new-project'
+    | '/board/$slug/new-question'
+    | '/board/$slug/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -157,8 +176,10 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin'
     | '/board'
-    | '/board/$categoryId/$postId'
-    | '/board/$categoryId'
+    | '/board/$slug/$postNo'
+    | '/board/$slug/new-project'
+    | '/board/$slug/new-question'
+    | '/board/$slug'
   id:
     | '__root__'
     | '/'
@@ -170,10 +191,12 @@ export interface FileRouteTypes {
     | '/admin/notices'
     | '/admin/settings'
     | '/admin/'
-    | '/_main/board/$categoryId'
+    | '/_main/board/$slug'
     | '/_main/board/'
-    | '/_main/board/$categoryId/$postId'
-    | '/_main/board/$categoryId/'
+    | '/_main/board/$slug/$postNo'
+    | '/_main/board/$slug/new-project'
+    | '/_main/board/$slug/new-question'
+    | '/_main/board/$slug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -254,52 +277,71 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainBoardIndexRouteImport
       parentRoute: typeof MainRoute
     }
-    '/_main/board/$categoryId': {
-      id: '/_main/board/$categoryId'
-      path: '/board/$categoryId'
-      fullPath: '/board/$categoryId'
-      preLoaderRoute: typeof MainBoardCategoryIdRouteImport
+    '/_main/board/$slug': {
+      id: '/_main/board/$slug'
+      path: '/board/$slug'
+      fullPath: '/board/$slug'
+      preLoaderRoute: typeof MainBoardSlugRouteImport
       parentRoute: typeof MainRoute
     }
-    '/_main/board/$categoryId/': {
-      id: '/_main/board/$categoryId/'
+    '/_main/board/$slug/': {
+      id: '/_main/board/$slug/'
       path: '/'
-      fullPath: '/board/$categoryId/'
-      preLoaderRoute: typeof MainBoardCategoryIdIndexRouteImport
-      parentRoute: typeof MainBoardCategoryIdRoute
+      fullPath: '/board/$slug/'
+      preLoaderRoute: typeof MainBoardSlugIndexRouteImport
+      parentRoute: typeof MainBoardSlugRoute
     }
-    '/_main/board/$categoryId/$postId': {
-      id: '/_main/board/$categoryId/$postId'
-      path: '/$postId'
-      fullPath: '/board/$categoryId/$postId'
-      preLoaderRoute: typeof MainBoardCategoryIdPostIdRouteImport
-      parentRoute: typeof MainBoardCategoryIdRoute
+    '/_main/board/$slug/new-question': {
+      id: '/_main/board/$slug/new-question'
+      path: '/new-question'
+      fullPath: '/board/$slug/new-question'
+      preLoaderRoute: typeof MainBoardSlugNewQuestionRouteImport
+      parentRoute: typeof MainBoardSlugRoute
+    }
+    '/_main/board/$slug/new-project': {
+      id: '/_main/board/$slug/new-project'
+      path: '/new-project'
+      fullPath: '/board/$slug/new-project'
+      preLoaderRoute: typeof MainBoardSlugNewProjectRouteImport
+      parentRoute: typeof MainBoardSlugRoute
+    }
+    '/_main/board/$slug/$postNo': {
+      id: '/_main/board/$slug/$postNo'
+      path: '/$postNo'
+      fullPath: '/board/$slug/$postNo'
+      preLoaderRoute: typeof MainBoardSlugPostNoRouteImport
+      parentRoute: typeof MainBoardSlugRoute
     }
   }
 }
 
-interface MainBoardCategoryIdRouteChildren {
-  MainBoardCategoryIdPostIdRoute: typeof MainBoardCategoryIdPostIdRoute
-  MainBoardCategoryIdIndexRoute: typeof MainBoardCategoryIdIndexRoute
+interface MainBoardSlugRouteChildren {
+  MainBoardSlugPostNoRoute: typeof MainBoardSlugPostNoRoute
+  MainBoardSlugNewProjectRoute: typeof MainBoardSlugNewProjectRoute
+  MainBoardSlugNewQuestionRoute: typeof MainBoardSlugNewQuestionRoute
+  MainBoardSlugIndexRoute: typeof MainBoardSlugIndexRoute
 }
 
-const MainBoardCategoryIdRouteChildren: MainBoardCategoryIdRouteChildren = {
-  MainBoardCategoryIdPostIdRoute: MainBoardCategoryIdPostIdRoute,
-  MainBoardCategoryIdIndexRoute: MainBoardCategoryIdIndexRoute,
+const MainBoardSlugRouteChildren: MainBoardSlugRouteChildren = {
+  MainBoardSlugPostNoRoute: MainBoardSlugPostNoRoute,
+  MainBoardSlugNewProjectRoute: MainBoardSlugNewProjectRoute,
+  MainBoardSlugNewQuestionRoute: MainBoardSlugNewQuestionRoute,
+  MainBoardSlugIndexRoute: MainBoardSlugIndexRoute,
 }
 
-const MainBoardCategoryIdRouteWithChildren =
-  MainBoardCategoryIdRoute._addFileChildren(MainBoardCategoryIdRouteChildren)
+const MainBoardSlugRouteWithChildren = MainBoardSlugRoute._addFileChildren(
+  MainBoardSlugRouteChildren,
+)
 
 interface MainRouteChildren {
   MainCalendarRoute: typeof MainCalendarRoute
-  MainBoardCategoryIdRoute: typeof MainBoardCategoryIdRouteWithChildren
+  MainBoardSlugRoute: typeof MainBoardSlugRouteWithChildren
   MainBoardIndexRoute: typeof MainBoardIndexRoute
 }
 
 const MainRouteChildren: MainRouteChildren = {
   MainCalendarRoute: MainCalendarRoute,
-  MainBoardCategoryIdRoute: MainBoardCategoryIdRouteWithChildren,
+  MainBoardSlugRoute: MainBoardSlugRouteWithChildren,
   MainBoardIndexRoute: MainBoardIndexRoute,
 }
 

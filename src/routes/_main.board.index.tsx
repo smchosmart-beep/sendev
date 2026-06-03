@@ -39,8 +39,8 @@ function BoardListPage() {
           {categories.map((c) => (
             <Link
               key={c.id}
-              to="/board/$categoryId"
-              params={{ categoryId: c.id }}
+              to="/board/$slug"
+              params={{ slug: c.slug }}
               className="group flex flex-col justify-between rounded-2xl bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md active:scale-95"
             >
               <div>

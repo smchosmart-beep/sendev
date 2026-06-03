@@ -5,6 +5,7 @@ import {
   listEvents,
   listPosts,
   getPost,
+  getPostByNo,
   listCriteria,
   listReviews,
   fetchReadme,
@@ -34,6 +35,13 @@ export const postQueryOptions = (id: string) =>
   queryOptions({
     queryKey: ["post", id],
     queryFn: () => getPost({ data: { id } }),
+  });
+
+// Resolves a post by board slug + per-board number for short URLs.
+export const postByNoQueryOptions = (slug: string, postNo: number) =>
+  queryOptions({
+    queryKey: ["post-by-no", slug, postNo],
+    queryFn: () => getPostByNo({ data: { slug, postNo } }),
   });
 
 export const criteriaQueryOptions = (categoryId: string, activeOnly = false) =>

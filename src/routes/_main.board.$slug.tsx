@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   createFileRoute,
   Link,
+  Navigate,
   Outlet,
   useParams,
 } from "@tanstack/react-router";
@@ -16,7 +17,10 @@ import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export const Route = createFileRoute("/_main/board/$categoryId")({
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export const Route = createFileRoute("/_main/board/$slug")({
   loader: ({ context }) =>
     context.queryClient.ensureQueryData(categoriesQueryOptions()),
   errorComponent: ({ error }) => (
@@ -32,17 +36,29 @@ function unlockKey(id: string) {
 }
 
 function BoardLayout() {
-  const { categoryId } = useParams({ from: "/_main/board/$categoryId" });
+  const { slug } = useParams({ from: "/_main/board/$slug" });
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
-  const category = categories.find((c) => c.id === categoryId);
+  const category = categories.find((c) => c.slug === slug);
 
   const [mounted, setMounted] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
 
   useEffect(() => {
-    setUnlocked(sessionStorage.getItem(unlockKey(categoryId)) === "1");
+    if (category) {
+      setUnlocked(sessionStorage.getItem(unlockKey(category.id)) === "1");
+    }
     setMounted(true);
-  }, [categoryId]);
+  }, [category]);
+
+  // Legacy support: old URLs used the category UUID. Redirect to the slug.
+  if (!category && UUID_RE.test(slug)) {
+    const byId = categories.find((c) => c.id === slug);
+    if (byId) {
+      return (
+        <Navigate to="/board/$slug" params={{ slug: byId.slug }} replace />
+      );
+    }
+  }
 
   if (!category) {
     return (
@@ -72,9 +88,9 @@ function BoardLayout() {
 
       {!mounted ? null : needsGate ? (
         <PasswordGate
-          categoryId={categoryId}
+          categoryId={category.id}
           onUnlock={() => {
-            sessionStorage.setItem(unlockKey(categoryId), "1");
+            sessionStorage.setItem(unlockKey(category.id), "1");
             setUnlocked(true);
           }}
         />

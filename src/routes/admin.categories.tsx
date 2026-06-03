@@ -60,12 +60,14 @@ function CategoriesPage() {
     queryClient.invalidateQueries({ queryKey: ["categories"] });
 
   const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [password, setPassword] = useState("");
   const [githubRequired, setGithubRequired] = useState(false);
 
   const [editing, setEditing] = useState<CategoryDTO | null>(null);
   const [editName, setEditName] = useState("");
+  const [editSlug, setEditSlug] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [editGithubRequired, setEditGithubRequired] = useState(false);
@@ -77,6 +79,7 @@ function CategoriesPage() {
       createFn({
         data: {
           name: name.trim(),
+          slug: slug.trim(),
           description: description.trim(),
           password: password.trim(),
           githubRequired,
@@ -85,6 +88,7 @@ function CategoriesPage() {
     onSuccess: () => {
       invalidate();
       setName("");
+      setSlug("");
       setDescription("");
       setPassword("");
       setGithubRequired(false);
@@ -99,6 +103,7 @@ function CategoriesPage() {
         data: {
           id: editing!.id,
           name: editName.trim(),
+          slug: editSlug.trim(),
           description: editDescription.trim(),
           password: editPassword,
           githubRequired: editGithubRequired,
@@ -125,6 +130,7 @@ function CategoriesPage() {
   const openEdit = (c: CategoryDTO) => {
     setEditing(c);
     setEditName(c.name);
+    setEditSlug(c.slug);
     setEditDescription(c.description);
     setEditPassword("");
     setEditGithubRequired(c.githubRequired);
@@ -175,6 +181,19 @@ function CategoriesPage() {
               placeholder="비워두면 공개 게시판"
               className="rounded-xl"
             />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="slug">짧은 주소 (URL용, 선택)</Label>
+            <Input
+              id="slug"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              placeholder="예: lv1 (영문 소문자·숫자·하이픈, 비우면 자동 생성)"
+              className="rounded-xl"
+            />
+            <p className="text-xs text-muted-foreground">
+              게시글 주소가 /board/{slug || "주소"}/번호 형태로 짧아져요.
+            </p>
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="desc">설명</Label>
@@ -288,6 +307,16 @@ function CategoriesPage() {
                 id="edit-name"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
+                className="rounded-xl"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-slug">짧은 주소 (URL용)</Label>
+              <Input
+                id="edit-slug"
+                value={editSlug}
+                onChange={(e) => setEditSlug(e.target.value)}
+                placeholder="예: lv1 (영문 소문자·숫자·하이픈)"
                 className="rounded-xl"
               />
             </div>

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import {
   createFileRoute,
   Link,
+  Navigate,
   useParams,
   useNavigate,
 } from "@tanstack/react-router";
@@ -29,6 +30,8 @@ import { toast } from "sonner";
 
 import {
   postQueryOptions,
+  postByNoQueryOptions,
+  categoriesQueryOptions,
   readmeQueryOptions,
   criteriaQueryOptions,
   reviewsQueryOptions,
@@ -37,6 +40,7 @@ import {
   createReview,
   updatePost,
   deletePost,
+  type PostDTO,
 } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -52,27 +56,80 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PostEditor } from "@/components/PostEditor";
 
-export const Route = createFileRoute("/_main/board/$categoryId/$postId")({
-  loader: ({ context, params }) =>
-    context.queryClient.ensureQueryData(postQueryOptions(params.postId)),
+const NUMERIC_RE = /^\d+$/;
+
+export const Route = createFileRoute("/_main/board/$slug/$postNo")({
+  loader: ({ context, params }) => {
+    if (NUMERIC_RE.test(params.postNo)) {
+      return context.queryClient.ensureQueryData(
+        postByNoQueryOptions(params.slug, Number(params.postNo)),
+      );
+    }
+    return null;
+  },
   errorComponent: ({ error }) => (
     <div role="alert" className="p-6 text-sm text-destructive">
       산출물을 불러오지 못했어요: {error.message}
     </div>
   ),
-  component: ProjectDetailPage,
+  component: PostDetailRoute,
 });
 
-function ProjectDetailPage() {
-  const { categoryId, postId } = useParams({
-    from: "/_main/board/$categoryId/$postId",
-  });
-  const { data: post } = useSuspenseQuery(postQueryOptions(postId));
+function PostDetailRoute() {
+  const { slug, postNo } = useParams({ from: "/_main/board/$slug/$postNo" });
+  // Legacy URLs used the post UUID instead of the per-board number.
+  if (!NUMERIC_RE.test(postNo)) {
+    return <LegacyPostRedirect slug={slug} postId={postNo} />;
+  }
+  return <ProjectDetailPage slug={slug} postNo={Number(postNo)} />;
+}
+
+// Resolves an old UUID-based post link to its canonical short URL.
+function LegacyPostRedirect({ slug, postId }: { slug: string; postId: string }) {
+  const { data: post, isLoading } = useQuery(postQueryOptions(postId));
+  const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        이동 중...
+      </div>
+    );
+  }
+
+  if (post) {
+    const cat = categories.find((c) => c.id === post.categoryId);
+    if (cat) {
+      return (
+        <Navigate
+          to="/board/$slug/$postNo"
+          params={{ slug: cat.slug, postNo: String(post.postNo) }}
+          replace
+        />
+      );
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <BackLink slug={slug} />
+      <EmptyState
+        icon={FileText}
+        title="산출물을 찾을 수 없어요."
+        description="삭제되었거나 잘못된 주소일 수 있어요."
+      />
+    </div>
+  );
+}
+
+function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
+  const { data: post } = useSuspenseQuery(postByNoQueryOptions(slug, postNo));
 
   if (!post) {
     return (
       <div className="space-y-6">
-        <BackLink categoryId={categoryId} />
+        <BackLink slug={slug} />
         <EmptyState
           icon={FileText}
           title="산출물을 찾을 수 없어요."
@@ -86,16 +143,12 @@ function ProjectDetailPage() {
 
   return (
     <div className="space-y-6">
-      <BackLink categoryId={categoryId} />
+      <BackLink slug={slug} />
 
       <div className="rounded-2xl bg-card p-6 shadow-sm">
         <div className="flex items-start justify-between gap-4">
           <h1 className="text-2xl font-bold text-foreground">{post.title}</h1>
-          <ManagePost
-            post={post}
-            categoryId={categoryId}
-            postId={postId}
-          />
+          <ManagePost post={post} slug={slug} />
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
           <span className="flex items-center gap-1">
@@ -150,32 +203,21 @@ function ProjectDetailPage() {
       {!isBoardPost && (
         <>
           <ReadmeSection githubUrl={post.githubUrl} />
-          <EvaluationSection categoryId={categoryId} postId={postId} />
+          <EvaluationSection categoryId={post.categoryId} postId={post.id} />
         </>
       )}
     </div>
   );
 }
 
-interface ManagePostProps {
-  post: {
-    type: "notice" | "project" | "question";
-    title: string;
-    content: string;
-    author: string;
-    githubUrl: string;
-    deployUrl: string;
-  };
-  categoryId: string;
-  postId: string;
-}
-
-function ManagePost({ post, categoryId, postId }: ManagePostProps) {
+function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const update = useServerFn(updatePost);
   const remove = useServerFn(deletePost);
 
+  const postId = post.id;
+  const categoryId = post.categoryId;
   const isBoardPost = post.type === "notice" || post.type === "question";
   const noun = isBoardPost ? (post.type === "notice" ? "공지" : "질문") : "산출물";
 
@@ -190,6 +232,12 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
   const [deployUrl, setDeployUrl] = useState(post.deployUrl);
   const [editPw, setEditPw] = useState("");
   const [deletePw, setDeletePw] = useState("");
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["post-by-no", slug, post.postNo] });
+    queryClient.invalidateQueries({ queryKey: ["post", postId] });
+    queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
+  };
 
   const openEdit = () => {
     setTitle(post.title);
@@ -213,8 +261,7 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
         toast.error("비밀번호가 일치하지 않아요.");
         return;
       }
-      queryClient.invalidateQueries({ queryKey: ["post", postId] });
-      queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
+      invalidate();
       toast.success(`${noun}이(가) 수정되었어요!`);
       setEditOpen(false);
     },
@@ -231,7 +278,7 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
       queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
       toast.success(`${noun}이(가) 삭제되었어요.`);
       setDeleteOpen(false);
-      navigate({ to: "/board/$categoryId", params: { categoryId } });
+      navigate({ to: "/board/$slug", params: { slug } });
     },
     onError: () => toast.error("삭제 중 문제가 발생했어요."),
   });
@@ -441,7 +488,6 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
   );
 }
 
-
 function ReadmeSection({ githubUrl }: { githubUrl: string }) {
   const { data, isLoading } = useQuery(readmeQueryOptions(githubUrl));
 
@@ -495,8 +541,7 @@ function EvaluationSection({
   const [scores, setScores] = useState<Record<string, number>>({});
 
   const mutation = useMutation({
-    mutationFn: () =>
-      create({ data: { postId, scores } }),
+    mutationFn: () => create({ data: { postId, scores } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reviews", postId] });
       toast.success("평가를 제출했어요!");
@@ -588,7 +633,6 @@ function EvaluationSection({
               {mutation.isPending ? "제출 중..." : "평가 제출"}
             </Button>
           </form>
-
         </div>
       )}
     </section>
@@ -695,12 +739,11 @@ function StarRating({
   );
 }
 
-
-function BackLink({ categoryId }: { categoryId: string }) {
+function BackLink({ slug }: { slug: string }) {
   return (
     <Link
-      to="/board/$categoryId"
-      params={{ categoryId }}
+      to="/board/$slug"
+      params={{ slug }}
       className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:-translate-x-0.5 hover:text-foreground"
     >
       <ArrowLeft className="h-4 w-4" />
