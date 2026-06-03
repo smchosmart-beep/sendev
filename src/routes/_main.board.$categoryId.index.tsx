@@ -173,12 +173,13 @@ function RegisterDialog({
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
+  const [deployUrl, setDeployUrl] = useState("");
   const [editPassword, setEditPassword] = useState("");
 
   const mutation = useMutation({
     mutationFn: () =>
       create({
-        data: { categoryId, type: "project", title, author, githubUrl, editPassword },
+        data: { categoryId, type: "project", title, author, githubUrl, deployUrl, editPassword },
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
@@ -186,6 +187,7 @@ function RegisterDialog({
       setTitle("");
       setAuthor("");
       setGithubUrl("");
+      setDeployUrl("");
       setEditPassword("");
       onOpenChange(false);
     },
