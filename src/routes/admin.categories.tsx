@@ -231,6 +231,12 @@ function CategoriesPage() {
                   <p className="mt-1 truncate text-sm text-muted-foreground">
                     {c.description || "설명이 없습니다."}
                   </p>
+                  {c.githubRequired && (
+                    <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-primary">
+                      <Github className="h-3 w-3" />
+                      GitHub 링크 필수
+                    </span>
+                  )}
                 </div>
                 <div className="flex shrink-0 gap-2">
                   <Button
