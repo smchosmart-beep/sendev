@@ -230,8 +230,8 @@ function CalendarPage() {
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-foreground transition-colors hover:bg-accent"
                     >
-                      <Download className="h-4 w-4 text-primary" />
-                      <span className="truncate">{a.name}</span>
+                      <Download className="h-4 w-4 shrink-0 text-primary" />
+                      <span className="min-w-0 flex-1 truncate">{a.name}</span>
                     </a>
                   ))}
                 </div>
