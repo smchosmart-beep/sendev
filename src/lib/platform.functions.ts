@@ -205,6 +205,11 @@ export const updateCategory = createServerFn({ method: "POST" })
         // undefined = leave password unchanged
         password: z.string().trim().max(100).optional(),
         githubRequired: z.boolean().optional(),
+        enableNotice: z.boolean().optional(),
+        enableQuestion: z.boolean().optional(),
+        enableGeneral: z.boolean().optional(),
+        enableProject: z.boolean().optional(),
+        generalName: z.string().trim().max(100).optional(),
       })
       .parse(input),
   )
@@ -220,6 +225,15 @@ export const updateCategory = createServerFn({ method: "POST" })
     if (data.password !== undefined) patch.password = data.password;
     if (data.githubRequired !== undefined)
       patch.github_required = data.githubRequired;
+    if (data.enableNotice !== undefined) patch.enable_notice = data.enableNotice;
+    if (data.enableQuestion !== undefined)
+      patch.enable_question = data.enableQuestion;
+    if (data.enableGeneral !== undefined)
+      patch.enable_general = data.enableGeneral;
+    if (data.enableProject !== undefined)
+      patch.enable_project = data.enableProject;
+    if (data.generalName !== undefined)
+      patch.general_name = data.generalName || "일반게시판";
     const { error } = await db.from("categories").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
