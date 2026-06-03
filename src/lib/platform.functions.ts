@@ -532,7 +532,7 @@ export const createReview = createServerFn({ method: "POST" })
     z
       .object({
         postId: z.string().uuid(),
-        reviewerName: z.string().trim().min(1).max(100),
+        reviewerName: z.string().trim().max(100).default(""),
         scores: z.record(z.string().uuid(), z.number().min(0).max(100)),
       })
       .parse(input),
