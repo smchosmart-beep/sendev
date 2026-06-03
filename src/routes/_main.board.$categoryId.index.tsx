@@ -65,16 +65,18 @@ function BoardContent() {
             공지사항
           </h2>
           {notices.map((n) => (
-            <div
+            <Link
               key={n.id}
-              className="flex items-center justify-between rounded-2xl bg-card p-5 shadow-sm"
+              to="/board/$categoryId/$postId"
+              params={{ categoryId, postId: n.id }}
+              className="flex items-center justify-between rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
             >
               <span className="font-medium text-foreground">{n.title}</span>
               <span className="flex items-center gap-1 text-sm text-muted-foreground">
                 <User className="h-3.5 w-3.5" />
                 {n.author}
               </span>
-            </div>
+            </Link>
           ))}
         </section>
       )}
