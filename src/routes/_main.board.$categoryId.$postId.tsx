@@ -110,6 +110,17 @@ function ProjectDetailPage() {
               GitHub 저장소
             </a>
           )}
+          {post.deployUrl && (
+            <a
+              href={post.deployUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1 text-primary hover:underline"
+            >
+              <ExternalLink className="h-4 w-4" />
+              배포 사이트
+            </a>
+          )}
         </div>
       </div>
 
