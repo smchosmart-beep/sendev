@@ -228,7 +228,7 @@ function CalendarPage() {
                       href={a.url.includes("download=") ? a.url : `${a.url}${a.url.includes("?") ? "&" : "?"}download=${encodeURIComponent(a.name)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-foreground transition-colors hover:bg-accent"
+                      className="flex w-full min-w-0 items-center gap-2 rounded-lg bg-muted px-3 py-2 text-foreground transition-colors hover:bg-accent"
                     >
                       <Download className="h-4 w-4 shrink-0 text-primary" />
                       <span className="min-w-0 flex-1 truncate">{a.name}</span>
