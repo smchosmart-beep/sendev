@@ -50,8 +50,10 @@ function BoardContent() {
   const githubRequired =
     categories.find((c) => c.id === categoryId)?.githubRequired ?? false;
   const notices = posts.filter((p) => p.type === "notice");
+  const questions = posts.filter((p) => p.type === "question");
   const projects = posts.filter((p) => p.type === "project");
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [questionOpen, setQuestionOpen] = useState(false);
 
   return (
     <div className="space-y-6">
