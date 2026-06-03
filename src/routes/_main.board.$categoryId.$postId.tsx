@@ -119,7 +119,7 @@ function ProjectDetailPage() {
 }
 
 interface ManagePostProps {
-  post: { title: string; author: string; githubUrl: string };
+  post: { title: string; author: string; githubUrl: string; deployUrl: string };
   categoryId: string;
   postId: string;
 }
@@ -137,6 +137,7 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
   const [title, setTitle] = useState(post.title);
   const [author, setAuthor] = useState(post.author);
   const [githubUrl, setGithubUrl] = useState(post.githubUrl);
+  const [deployUrl, setDeployUrl] = useState(post.deployUrl);
   const [editPw, setEditPw] = useState("");
   const [deletePw, setDeletePw] = useState("");
 
@@ -144,6 +145,7 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
     setTitle(post.title);
     setAuthor(post.author);
     setGithubUrl(post.githubUrl);
+    setDeployUrl(post.deployUrl);
     setEditPw("");
     setEditOpen(true);
   };
@@ -151,7 +153,7 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
   const editMutation = useMutation({
     mutationFn: () =>
       update({
-        data: { id: postId, password: editPw, title, author, githubUrl },
+        data: { id: postId, password: editPw, title, author, githubUrl, deployUrl },
       }),
     onSuccess: (res) => {
       if (!res.ok) {
