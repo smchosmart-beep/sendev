@@ -263,6 +263,17 @@ export const createPost = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const db = await getAdmin();
+    // Enforce per-board GitHub link requirement.
+    const { data: cat } = await db
+      .from("categories")
+      .select("github_required")
+      .eq("id", data.categoryId)
+      .maybeSingle();
+    if (cat?.github_required && data.type === "project") {
+      if (!GITHUB_URL_RE.test(data.githubUrl)) {
+        throw new Error("이 게시판은 GitHub 링크가 필수입니다.");
+      }
+    }
     const { error } = await db.from("posts").insert({
       category_id: data.categoryId,
       type: data.type,
