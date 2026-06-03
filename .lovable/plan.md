@@ -1,26 +1,14 @@
 ## 목표
-모바일에서 관리자 대시보드 상단 탭(게시판/캘린더/공지사항/평가 기준 관리)이 4칸으로 눌려 글자가 한 줄에 한 글자씩 세로로 깨지는 문제를 해결한다.
+`admin.criteria.tsx`의 "게시판 선택"을 현재의 버튼(칩) 형태에서 공지사항 관리(`admin.notices.tsx`)와 동일한 드롭다운(select) 형태로 변경합니다.
 
-## 원인
-`src/routes/admin.tsx`의 탭 네비게이션이 `flex gap-2`만 사용해, 좁은 화면에서 4개 탭이 균등 압축되며 라벨이 글자 단위로 줄바꿈된다.
+## 변경 내용
+파일: `src/routes/admin.criteria.tsx` (59~76번째 줄)
 
-## 변경 내용 (`src/routes/admin.tsx`, AdminLayout)
+- 현재 `<div className="flex flex-wrap gap-2">` 안의 버튼 목록을 제거
+- 공지사항 관리와 동일한 스타일의 `<select>` 요소로 교체:
+  - `value={activeId}`, `onChange`로 `setSelected` 호출
+  - `categories`를 `<option>`으로 렌더링
+  - `className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:border-primary"` (notices와 동일)
+- `Label`은 그대로 유지
 
-1. **탭 컨테이너를 가로 스크롤 영역으로**
-   - `nav`에 `overflow-x-auto`, 항목 간격 유지, 스크롤바 숨김(`scrollbar` 유틸 또는 `-mx-6 px-6`로 가장자리 여백 처리)을 적용.
-   - 모바일에서 탭이 한 줄로 나열되고 넘치면 좌우로 스와이프해 접근.
-
-2. **각 탭 라벨 줄바꿈 방지 / 축소 방지**
-   - 각 `Link`에 `whitespace-nowrap`, `shrink-0` 추가해 라벨이 한 줄로 유지되도록 함.
-   - 모바일 패딩을 약간 줄임(`px-4 py-2 sm:px-5 sm:py-2.5`)해 더 많은 탭이 보이도록.
-
-3. **헤더 살짝 보정(모바일)**
-   - "메인으로" 버튼이 줄바꿈되지 않도록 `whitespace-nowrap`, 헤더 패딩을 `px-4 sm:px-6` 등으로 모바일 대응(부수적, 탭 작업 범위 내).
-
-## 비고
-- 데스크톱 레이아웃은 기존과 동일하게 유지(반응형 분기만 추가).
-- 기능/라우팅 로직 변경 없음. 순수 스타일링 변경.
-
-```text
-[게시판 관리] [캘린더 관리] [공지사항 관리] [평가 기준 관리]  ← 한 줄, 넘치면 가로 스크롤
-```
+기능(상태 관리, CriteriaManager 연동)은 변경하지 않고 UI만 드롭다운으로 교체합니다.

@@ -56,23 +56,19 @@ function CriteriaPage() {
   return (
     <div className="space-y-6">
       <section className="rounded-2xl bg-card p-6 shadow-sm">
-        <Label className="mb-3 block">게시판 선택</Label>
-        <div className="flex flex-wrap gap-2">
+        <Label htmlFor="c-board" className="mb-3 block">게시판 선택</Label>
+        <select
+          id="c-board"
+          value={activeId}
+          onChange={(e) => setSelected(e.target.value)}
+          className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:border-primary"
+        >
           {categories.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => setSelected(c.id)}
-              className={
-                "rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 active:scale-95 " +
-                (c.id === activeId
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "bg-muted text-muted-foreground hover:text-foreground")
-              }
-            >
+            <option key={c.id} value={c.id}>
               {c.name}
-            </button>
+            </option>
           ))}
-        </div>
+        </select>
       </section>
 
       <CriteriaManager key={activeId} categoryId={activeId} />
