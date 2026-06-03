@@ -23,6 +23,7 @@ import { Route as MainBoardSlugRouteImport } from './routes/_main.board.$slug'
 import { Route as MainBoardCategoryIdRouteImport } from './routes/_main.board.$categoryId'
 import { Route as MainBoardSlugIndexRouteImport } from './routes/_main.board.$slug.index'
 import { Route as MainBoardCategoryIdIndexRouteImport } from './routes/_main.board.$categoryId.index'
+import { Route as MainBoardSlugNewProjectRouteImport } from './routes/_main.board.$slug.new-project'
 import { Route as MainBoardCategoryIdPostIdRouteImport } from './routes/_main.board.$categoryId.$postId'
 
 const AdminRoute = AdminRouteImport.update({
@@ -95,6 +96,11 @@ const MainBoardCategoryIdIndexRoute =
     path: '/',
     getParentRoute: () => MainBoardCategoryIdRoute,
   } as any)
+const MainBoardSlugNewProjectRoute = MainBoardSlugNewProjectRouteImport.update({
+  id: '/new-project',
+  path: '/new-project',
+  getParentRoute: () => MainBoardSlugRoute,
+} as any)
 const MainBoardCategoryIdPostIdRoute =
   MainBoardCategoryIdPostIdRouteImport.update({
     id: '/$postId',
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/board/$slug': typeof MainBoardSlugRouteWithChildren
   '/board/': typeof MainBoardIndexRoute
   '/board/$categoryId/$postId': typeof MainBoardCategoryIdPostIdRoute
+  '/board/$slug/new-project': typeof MainBoardSlugNewProjectRoute
   '/board/$categoryId/': typeof MainBoardCategoryIdIndexRoute
   '/board/$slug/': typeof MainBoardSlugIndexRoute
 }
@@ -128,6 +135,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/board': typeof MainBoardIndexRoute
   '/board/$categoryId/$postId': typeof MainBoardCategoryIdPostIdRoute
+  '/board/$slug/new-project': typeof MainBoardSlugNewProjectRoute
   '/board/$categoryId': typeof MainBoardCategoryIdIndexRoute
   '/board/$slug': typeof MainBoardSlugIndexRoute
 }
@@ -146,6 +154,7 @@ export interface FileRoutesById {
   '/_main/board/$slug': typeof MainBoardSlugRouteWithChildren
   '/_main/board/': typeof MainBoardIndexRoute
   '/_main/board/$categoryId/$postId': typeof MainBoardCategoryIdPostIdRoute
+  '/_main/board/$slug/new-project': typeof MainBoardSlugNewProjectRoute
   '/_main/board/$categoryId/': typeof MainBoardCategoryIdIndexRoute
   '/_main/board/$slug/': typeof MainBoardSlugIndexRoute
 }
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/board/$slug'
     | '/board/'
     | '/board/$categoryId/$postId'
+    | '/board/$slug/new-project'
     | '/board/$categoryId/'
     | '/board/$slug/'
   fileRoutesByTo: FileRoutesByTo
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/board'
     | '/board/$categoryId/$postId'
+    | '/board/$slug/new-project'
     | '/board/$categoryId'
     | '/board/$slug'
   id:
@@ -194,6 +205,7 @@ export interface FileRouteTypes {
     | '/_main/board/$slug'
     | '/_main/board/'
     | '/_main/board/$categoryId/$postId'
+    | '/_main/board/$slug/new-project'
     | '/_main/board/$categoryId/'
     | '/_main/board/$slug/'
   fileRoutesById: FileRoutesById
@@ -304,6 +316,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainBoardCategoryIdIndexRouteImport
       parentRoute: typeof MainBoardCategoryIdRoute
     }
+    '/_main/board/$slug/new-project': {
+      id: '/_main/board/$slug/new-project'
+      path: '/new-project'
+      fullPath: '/board/$slug/new-project'
+      preLoaderRoute: typeof MainBoardSlugNewProjectRouteImport
+      parentRoute: typeof MainBoardSlugRoute
+    }
     '/_main/board/$categoryId/$postId': {
       id: '/_main/board/$categoryId/$postId'
       path: '/$postId'
@@ -328,10 +347,12 @@ const MainBoardCategoryIdRouteWithChildren =
   MainBoardCategoryIdRoute._addFileChildren(MainBoardCategoryIdRouteChildren)
 
 interface MainBoardSlugRouteChildren {
+  MainBoardSlugNewProjectRoute: typeof MainBoardSlugNewProjectRoute
   MainBoardSlugIndexRoute: typeof MainBoardSlugIndexRoute
 }
 
 const MainBoardSlugRouteChildren: MainBoardSlugRouteChildren = {
+  MainBoardSlugNewProjectRoute: MainBoardSlugNewProjectRoute,
   MainBoardSlugIndexRoute: MainBoardSlugIndexRoute,
 }
 
