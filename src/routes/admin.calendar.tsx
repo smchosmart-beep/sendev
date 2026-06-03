@@ -306,7 +306,7 @@ function AdminCalendarPage() {
 
       {/* Create / edit dialog */}
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl">
+        <DialogContent className="max-h-[90vh] max-w-[90vw] overflow-y-auto overflow-x-hidden rounded-2xl sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
               {editing?.mode === "edit" ? "일정 수정" : "새 일정 추가"}
