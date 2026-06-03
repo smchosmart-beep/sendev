@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import {
   postsQueryOptions,
   categoriesQueryOptions,
-  ogImageQueryOptions,
+  ogImageBackfillQueryOptions,
 } from "@/lib/platform.queries";
 import { createPost, GITHUB_URL_RE, type PostDTO } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
