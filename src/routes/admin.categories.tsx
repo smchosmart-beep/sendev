@@ -479,3 +479,24 @@ function CategoriesPage() {
     </div>
   );
 }
+
+function SectionToggle({
+  id,
+  label,
+  checked,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg bg-background px-3 py-2">
+      <Label htmlFor={id} className="text-sm font-normal">
+        {label}
+      </Label>
+      <Switch id={id} checked={checked} onCheckedChange={onChange} />
+    </div>
+  );
+}
