@@ -222,7 +222,7 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
         return;
       }
       queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
-      toast.success("산출물이 삭제되었어요.");
+      toast.success(`${noun}이(가) 삭제되었어요.`);
       setDeleteOpen(false);
       navigate({ to: "/board/$categoryId", params: { categoryId } });
     },
