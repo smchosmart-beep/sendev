@@ -90,6 +90,7 @@ function CategoriesPage() {
   const [enableGeneral, setEnableGeneral] = useState(true);
   const [enableProject, setEnableProject] = useState(true);
   const [generalName, setGeneralName] = useState("일반게시판");
+  const [projectName, setProjectName] = useState("산출물");
   const [tabGroup, setTabGroup] = useState<TabGroup>("hackathon");
 
   const [editing, setEditing] = useState<CategoryDTO | null>(null);
@@ -103,6 +104,7 @@ function CategoriesPage() {
   const [editEnableGeneral, setEditEnableGeneral] = useState(true);
   const [editEnableProject, setEditEnableProject] = useState(true);
   const [editGeneralName, setEditGeneralName] = useState("일반게시판");
+  const [editProjectName, setEditProjectName] = useState("산출물");
   const [editTabGroup, setEditTabGroup] = useState<TabGroup>("hackathon");
 
   const [deleting, setDeleting] = useState<CategoryDTO | null>(null);
@@ -121,6 +123,7 @@ function CategoriesPage() {
           enableGeneral,
           enableProject,
           generalName: generalName.trim(),
+          projectName: projectName.trim(),
           tabGroup,
         },
       }),
@@ -136,6 +139,7 @@ function CategoriesPage() {
       setEnableGeneral(true);
       setEnableProject(true);
       setGeneralName("일반게시판");
+      setProjectName("산출물");
       setTabGroup("hackathon");
       toast.success("새 게시판이 추가되었어요.");
     },
@@ -157,6 +161,7 @@ function CategoriesPage() {
           enableGeneral: editEnableGeneral,
           enableProject: editEnableProject,
           generalName: editGeneralName.trim(),
+          projectName: editProjectName.trim(),
           tabGroup: editTabGroup,
         },
       }),
@@ -190,6 +195,7 @@ function CategoriesPage() {
     setEditEnableGeneral(c.enableGeneral);
     setEditEnableProject(c.enableProject);
     setEditGeneralName(c.generalName);
+    setEditProjectName(c.projectName);
     setEditTabGroup(c.tabGroup ?? "hackathon");
     if (c.hasPassword) {
       getPasswordFn({ data: { id: c.id } })
@@ -303,6 +309,18 @@ function CategoriesPage() {
                 />
               </div>
             )}
+            {enableProject && (
+              <div className="space-y-2 pt-1">
+                <Label htmlFor="add-project-name">산출물 게시판 이름</Label>
+                <Input
+                  id="add-project-name"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  placeholder="예: 프로젝트, 작품"
+                  className="rounded-xl bg-background"
+                />
+              </div>
+            )}
           </div>
           <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 p-4 sm:col-span-2">
             <div className="space-y-0.5">
@@ -370,7 +388,7 @@ function CategoriesPage() {
                     {c.enableNotice && <SectionBadge label="공지사항" />}
                     {c.enableQuestion && <SectionBadge label="질문 게시판" />}
                     {c.enableGeneral && <SectionBadge label={c.generalName || "일반게시판"} />}
-                    {c.enableProject && <SectionBadge label="산출물 게시판" />}
+                    {c.enableProject && <SectionBadge label={c.projectName || "산출물"} />}
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
@@ -497,6 +515,18 @@ function CategoriesPage() {
                     value={editGeneralName}
                     onChange={(e) => setEditGeneralName(e.target.value)}
                     placeholder="예: 자유게시판"
+                    className="rounded-xl bg-background"
+                  />
+                </div>
+              )}
+              {editEnableProject && (
+                <div className="space-y-2 pt-1">
+                  <Label htmlFor="edit-project-name">산출물 게시판 이름</Label>
+                  <Input
+                    id="edit-project-name"
+                    value={editProjectName}
+                    onChange={(e) => setEditProjectName(e.target.value)}
+                    placeholder="예: 프로젝트, 작품"
                     className="rounded-xl bg-background"
                   />
                 </div>

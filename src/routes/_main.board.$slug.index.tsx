@@ -163,12 +163,12 @@ function BoardInner({
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
               <FolderGit2 className="h-5 w-5 text-primary" />
-              산출물
+              {category.projectName || "산출물"}
             </h2>
             <Button asChild className="rounded-xl active:scale-95">
               <Link to="/board/$slug/new-project" params={{ slug }}>
                 <Plus className="h-4 w-4" />
-                산출물 등록
+                {category.projectName || "산출물"} 등록
               </Link>
             </Button>
           </div>
@@ -176,7 +176,7 @@ function BoardInner({
           {projects.length === 0 ? (
             <EmptyState
               icon={FolderGit2}
-              title="아직 등록된 산출물이 없어요. 첫 번째 개발자가 되어주세요!"
+              title={`아직 등록된 ${category.projectName || "산출물"}이 없어요. 첫 번째 개발자가 되어주세요!`}
               description="GitHub 링크와 함께 프로젝트를 공유해보세요."
             />
           ) : (

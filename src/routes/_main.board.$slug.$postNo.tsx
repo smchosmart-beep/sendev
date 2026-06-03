@@ -218,6 +218,9 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
   const queryClient = useQueryClient();
   const update = useServerFn(updatePost);
   const remove = useServerFn(deletePost);
+  const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
+  const projectName =
+    categories.find((c) => c.id === post.categoryId)?.projectName || "산출물";
 
   const postId = post.id;
   const categoryId = post.categoryId;
@@ -227,7 +230,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
     ? post.type === "notice"
       ? "공지"
       : "글"
-    : "산출물";
+    : projectName;
 
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);

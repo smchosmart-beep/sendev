@@ -33,6 +33,7 @@ export interface CategoryDTO {
   enableGeneral: boolean;
   enableProject: boolean;
   generalName: string;
+  projectName: string;
   tabGroup: TabGroup;
 }
 
@@ -109,7 +110,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const { data, error } = await db
       .from("categories")
       .select(
-        "id, slug, name, description, sort_order, password, github_required, enable_notice, enable_question, enable_general, enable_project, general_name, tab_group",
+        "id, slug, name, description, sort_order, password, github_required, enable_notice, enable_question, enable_general, enable_project, general_name, project_name, tab_group",
       )
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
@@ -126,6 +127,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       enableGeneral: c.enable_general ?? true,
       enableProject: c.enable_project ?? true,
       generalName: c.general_name ?? "일반게시판",
+      projectName: c.project_name ?? "산출물",
       tabGroup: (c.tab_group ?? "hackathon") as TabGroup,
     }));
   },
@@ -181,6 +183,7 @@ export const createCategory = createServerFn({ method: "POST" })
         enableGeneral: z.boolean().default(true),
         enableProject: z.boolean().default(true),
         generalName: z.string().trim().max(100).default("일반게시판"),
+        projectName: z.string().trim().max(100).default("산출물"),
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .default("hackathon"),
@@ -208,6 +211,7 @@ export const createCategory = createServerFn({ method: "POST" })
       enable_general: data.enableGeneral,
       enable_project: data.enableProject,
       general_name: data.generalName || "일반게시판",
+      project_name: data.projectName || "산출물",
       tab_group: data.tabGroup,
       sort_order: nextOrder,
     });
@@ -231,6 +235,7 @@ export const updateCategory = createServerFn({ method: "POST" })
         enableGeneral: z.boolean().optional(),
         enableProject: z.boolean().optional(),
         generalName: z.string().trim().max(100).optional(),
+        projectName: z.string().trim().max(100).optional(),
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .optional(),
@@ -258,6 +263,8 @@ export const updateCategory = createServerFn({ method: "POST" })
       patch.enable_project = data.enableProject;
     if (data.generalName !== undefined)
       patch.general_name = data.generalName || "일반게시판";
+    if (data.projectName !== undefined)
+      patch.project_name = data.projectName || "산출물";
     if (data.tabGroup !== undefined) patch.tab_group = data.tabGroup;
     const { error } = await db.from("categories").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
