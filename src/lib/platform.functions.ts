@@ -195,6 +195,7 @@ export const createCategory = createServerFn({ method: "POST" })
       enable_general: data.enableGeneral,
       enable_project: data.enableProject,
       general_name: data.generalName || "일반게시판",
+      tab_group: data.tabGroup,
       sort_order: nextOrder,
     });
     if (error) throw new Error(error.message);
