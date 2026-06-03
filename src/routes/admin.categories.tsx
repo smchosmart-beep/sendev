@@ -157,6 +157,7 @@ function CategoriesPage() {
           enableGeneral: editEnableGeneral,
           enableProject: editEnableProject,
           generalName: editGeneralName.trim(),
+          tabGroup: editTabGroup,
         },
       }),
     onSuccess: () => {
