@@ -24,11 +24,19 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminGate() {
-  const [granted, setGranted] = useState(
-    () => typeof window !== "undefined" && sessionStorage.getItem(ADMIN_SESSION_KEY) === "1",
-  );
+  const [mounted, setMounted] = useState(false);
+  const [granted, setGranted] = useState(false);
   const [value, setValue] = useState("");
   const [error, setError] = useState(false);
+
+  useEffect(() => {
+    setGranted(sessionStorage.getItem(ADMIN_SESSION_KEY) === "1");
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
 
   if (granted) {
     return <AdminLayout />;
