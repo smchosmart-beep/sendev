@@ -420,16 +420,14 @@ function EvaluationSection({
   const { data: reviews = [] } = useQuery(reviewsQueryOptions(postId));
   const create = useServerFn(createReview);
 
-  const [reviewerName, setReviewerName] = useState("");
   const [scores, setScores] = useState<Record<string, number>>({});
 
   const mutation = useMutation({
     mutationFn: () =>
-      create({ data: { postId, reviewerName, scores } }),
+      create({ data: { postId, scores } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reviews", postId] });
       toast.success("평가를 제출했어요!");
-      setReviewerName("");
       setScores({});
     },
     onError: () => toast.error("제출 중 문제가 발생했어요."),
