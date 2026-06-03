@@ -350,6 +350,19 @@ export const updatePost = createServerFn({ method: "POST" })
     if (!(await checkPostPassword(db, data.id, data.password))) {
       return { ok: false };
     }
+    // Only re-resolve the OG image when the deploy URL actually changed; keep
+    // the cached value otherwise to avoid redundant external requests.
+    const { data: existing } = await db
+      .from("posts")
+      .select("deploy_url, og_image_url")
+      .eq("id", data.id)
+      .maybeSingle();
+    let ogImageUrl = existing?.og_image_url ?? "";
+    if (data.deployUrl !== (existing?.deploy_url ?? "")) {
+      ogImageUrl = data.deployUrl
+        ? (await resolveOgImage(data.deployUrl)) ?? ""
+        : "";
+    }
     const { error } = await db
       .from("posts")
       .update({
@@ -357,6 +370,7 @@ export const updatePost = createServerFn({ method: "POST" })
         author: data.author,
         github_url: data.githubUrl,
         deploy_url: data.deployUrl,
+        og_image_url: ogImageUrl,
       })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
