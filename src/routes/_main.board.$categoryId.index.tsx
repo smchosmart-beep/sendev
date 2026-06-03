@@ -17,6 +17,7 @@ import {
 } from "@/lib/platform.queries";
 import { createPost, GITHUB_URL_RE, type PostDTO } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
+import { PostEditor } from "@/components/PostEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -381,6 +382,7 @@ function QuestionDialog({
   const queryClient = useQueryClient();
   const create = useServerFn(createPost);
   const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [author, setAuthor] = useState("");
   const [editPassword, setEditPassword] = useState("");
 
@@ -391,6 +393,7 @@ function QuestionDialog({
           categoryId,
           type: "question",
           title,
+          content,
           author,
           githubUrl: "",
           deployUrl: "",
@@ -401,6 +404,7 @@ function QuestionDialog({
       queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
       toast.success("질문이 등록되었어요!");
       setTitle("");
+      setContent("");
       setAuthor("");
       setEditPassword("");
       onOpenChange(false);
@@ -410,7 +414,7 @@ function QuestionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-2xl">
+      <DialogContent className="max-w-2xl rounded-2xl">
         <DialogHeader>
           <DialogTitle>질문 등록</DialogTitle>
           <DialogDescription>궁금한 점을 자유롭게 질문해보세요.</DialogDescription>
@@ -437,6 +441,15 @@ function QuestionDialog({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="rounded-xl"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>내용</Label>
+            <PostEditor
+              value={content}
+              onChange={setContent}
+              placeholder="질문 내용을 입력해 주세요."
+              rows={8}
             />
           </div>
           <div className="space-y-2">

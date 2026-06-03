@@ -14,6 +14,7 @@ import { Route as MainRouteImport } from './routes/_main'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
 import { Route as AdminCriteriaRouteImport } from './routes/admin.criteria'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as MainCalendarRouteImport } from './routes/_main.calendar'
@@ -44,6 +45,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminNoticesRoute = AdminNoticesRouteImport.update({
+  id: '/notices',
+  path: '/notices',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminCriteriaRoute = AdminCriteriaRouteImport.update({
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/calendar': typeof MainCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/criteria': typeof AdminCriteriaRoute
+  '/admin/notices': typeof AdminNoticesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
   '/board/$categoryId': typeof MainBoardCategoryIdRouteWithChildren
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/calendar': typeof MainCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/criteria': typeof AdminCriteriaRoute
+  '/admin/notices': typeof AdminNoticesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin': typeof AdminIndexRoute
   '/board': typeof MainBoardIndexRoute
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/_main/calendar': typeof MainCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/criteria': typeof AdminCriteriaRoute
+  '/admin/notices': typeof AdminNoticesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
   '/_main/board/$categoryId': typeof MainBoardCategoryIdRouteWithChildren
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/admin/categories'
     | '/admin/criteria'
+    | '/admin/notices'
     | '/admin/settings'
     | '/admin/'
     | '/board/$categoryId'
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/admin/categories'
     | '/admin/criteria'
+    | '/admin/notices'
     | '/admin/settings'
     | '/admin'
     | '/board'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/_main/calendar'
     | '/admin/categories'
     | '/admin/criteria'
+    | '/admin/notices'
     | '/admin/settings'
     | '/admin/'
     | '/_main/board/$categoryId'
@@ -205,6 +217,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/admin/settings'
       preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/notices': {
+      id: '/admin/notices'
+      path: '/notices'
+      fullPath: '/admin/notices'
+      preLoaderRoute: typeof AdminNoticesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/criteria': {
@@ -289,6 +308,7 @@ const MainRouteWithChildren = MainRoute._addFileChildren(MainRouteChildren)
 interface AdminRouteChildren {
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminCriteriaRoute: typeof AdminCriteriaRoute
+  AdminNoticesRoute: typeof AdminNoticesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -296,6 +316,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminCriteriaRoute: AdminCriteriaRoute,
+  AdminNoticesRoute: AdminNoticesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }

@@ -50,6 +50,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PostEditor } from "@/components/PostEditor";
 
 export const Route = createFileRoute("/_main/board/$categoryId/$postId")({
   loader: ({ context, params }) =>
@@ -81,6 +82,8 @@ function ProjectDetailPage() {
     );
   }
 
+  const isBoardPost = post.type === "notice" || post.type === "question";
+
   return (
     <div className="space-y-6">
       <BackLink categoryId={categoryId} />
@@ -99,6 +102,7 @@ function ProjectDetailPage() {
             <User className="h-4 w-4" />
             {post.author}
           </span>
+          <span>{new Date(post.createdAt).toLocaleDateString("ko-KR")}</span>
           {post.githubUrl && (
             <a
               href={post.githubUrl}
@@ -122,16 +126,39 @@ function ProjectDetailPage() {
             </a>
           )}
         </div>
+
+        {isBoardPost && (
+          <article className="prose prose-sm mt-6 max-w-none border-t border-border pt-6 prose-headings:text-foreground prose-p:text-foreground prose-a:text-primary prose-strong:text-foreground prose-code:text-primary prose-li:text-foreground prose-table:text-foreground">
+            {post.content.trim() ? (
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {post.content}
+              </ReactMarkdown>
+            ) : (
+              <p className="text-sm text-muted-foreground">내용이 없어요.</p>
+            )}
+          </article>
+        )}
       </div>
 
-      <ReadmeSection githubUrl={post.githubUrl} />
-      <EvaluationSection categoryId={categoryId} postId={postId} />
+      {!isBoardPost && (
+        <>
+          <ReadmeSection githubUrl={post.githubUrl} />
+          <EvaluationSection categoryId={categoryId} postId={postId} />
+        </>
+      )}
     </div>
   );
 }
 
 interface ManagePostProps {
-  post: { title: string; author: string; githubUrl: string; deployUrl: string };
+  post: {
+    type: "notice" | "project" | "question";
+    title: string;
+    content: string;
+    author: string;
+    githubUrl: string;
+    deployUrl: string;
+  };
   categoryId: string;
   postId: string;
 }
@@ -142,11 +169,15 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
   const update = useServerFn(updatePost);
   const remove = useServerFn(deletePost);
 
+  const isBoardPost = post.type === "notice" || post.type === "question";
+  const noun = isBoardPost ? (post.type === "notice" ? "공지" : "질문") : "산출물";
+
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   // Edit form state
   const [title, setTitle] = useState(post.title);
+  const [content, setContent] = useState(post.content);
   const [author, setAuthor] = useState(post.author);
   const [githubUrl, setGithubUrl] = useState(post.githubUrl);
   const [deployUrl, setDeployUrl] = useState(post.deployUrl);
@@ -155,6 +186,7 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
 
   const openEdit = () => {
     setTitle(post.title);
+    setContent(post.content);
     setAuthor(post.author);
     setGithubUrl(post.githubUrl);
     setDeployUrl(post.deployUrl);
@@ -165,7 +197,9 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
   const editMutation = useMutation({
     mutationFn: () =>
       update({
-        data: { id: postId, password: editPw, title, author, githubUrl, deployUrl },
+        data: isBoardPost
+          ? { id: postId, password: editPw, title, content, author }
+          : { id: postId, password: editPw, title, author, githubUrl, deployUrl },
       }),
     onSuccess: (res) => {
       if (!res.ok) {
@@ -174,7 +208,7 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
       }
       queryClient.invalidateQueries({ queryKey: ["post", postId] });
       queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
-      toast.success("산출물이 수정되었어요!");
+      toast.success(`${noun}이(가) 수정되었어요!`);
       setEditOpen(false);
     },
     onError: () => toast.error("수정 중 문제가 발생했어요."),
@@ -188,7 +222,7 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
         return;
       }
       queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
-      toast.success("산출물이 삭제되었어요.");
+      toast.success(`${noun}이(가) 삭제되었어요.`);
       setDeleteOpen(false);
       navigate({ to: "/board/$categoryId", params: { categoryId } });
     },
@@ -223,17 +257,19 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
 
       {/* Edit dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="rounded-2xl">
+        <DialogContent className="max-w-2xl rounded-2xl">
           <DialogHeader>
-            <DialogTitle>산출물 수정</DialogTitle>
+            <DialogTitle>{noun} 수정</DialogTitle>
             <DialogDescription>
-              등록 시 설정한 비밀번호를 입력해야 수정할 수 있어요.
+              {post.type === "notice"
+                ? "관리자 비밀번호를 입력해야 수정할 수 있어요."
+                : "등록 시 설정한 비밀번호를 입력해야 수정할 수 있어요."}
             </DialogDescription>
           </DialogHeader>
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (!title.trim() || !author.trim()) {
+              if (!title.trim() || (!isBoardPost && !author.trim())) {
                 toast.error("제목과 작성자를 입력해주세요.");
                 return;
               }
@@ -246,7 +282,7 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
             className="space-y-4 py-2"
           >
             <div className="space-y-2">
-              <Label htmlFor="e-title">프로젝트 제목</Label>
+              <Label htmlFor="e-title">제목</Label>
               <Input
                 id="e-title"
                 value={title}
@@ -254,35 +290,57 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
                 className="rounded-xl"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="e-author">작성자</Label>
-              <Input
-                id="e-author"
-                value={author}
-                onChange={(e) => setAuthor(e.target.value)}
-                className="rounded-xl"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="e-github">GitHub 링크</Label>
-              <Input
-                id="e-github"
-                value={githubUrl}
-                onChange={(e) => setGithubUrl(e.target.value)}
-                placeholder="https://github.com/owner/repo"
-                className="rounded-xl"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="e-deploy">배포 URL (선택)</Label>
-              <Input
-                id="e-deploy"
-                value={deployUrl}
-                onChange={(e) => setDeployUrl(e.target.value)}
-                placeholder="https://my-app.lovable.app"
-                className="rounded-xl"
-              />
-            </div>
+            {isBoardPost ? (
+              <>
+                <div className="space-y-2">
+                  <Label>내용</Label>
+                  <PostEditor value={content} onChange={setContent} rows={8} />
+                </div>
+                {post.type === "question" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="e-author">작성자</Label>
+                    <Input
+                      id="e-author"
+                      value={author}
+                      onChange={(e) => setAuthor(e.target.value)}
+                      className="rounded-xl"
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="e-author">작성자</Label>
+                  <Input
+                    id="e-author"
+                    value={author}
+                    onChange={(e) => setAuthor(e.target.value)}
+                    className="rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="e-github">GitHub 링크</Label>
+                  <Input
+                    id="e-github"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    placeholder="https://github.com/owner/repo"
+                    className="rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="e-deploy">배포 URL (선택)</Label>
+                  <Input
+                    id="e-deploy"
+                    value={deployUrl}
+                    onChange={(e) => setDeployUrl(e.target.value)}
+                    placeholder="https://my-app.lovable.app"
+                    className="rounded-xl"
+                  />
+                </div>
+              </>
+            )}
             <div className="space-y-2">
               <Label htmlFor="e-pw">비밀번호</Label>
               <Input
@@ -321,7 +379,7 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle>산출물 삭제</DialogTitle>
+            <DialogTitle>{noun} 삭제</DialogTitle>
             <DialogDescription>
               등록 시 설정한 비밀번호를 입력하면 삭제돼요. 이 작업은 되돌릴 수
               없어요.

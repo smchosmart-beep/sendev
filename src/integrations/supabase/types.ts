@@ -78,6 +78,7 @@ export type Database = {
         Row: {
           author: string
           category_id: string
+          content: string
           created_at: string
           deploy_url: string
           edit_password: string
@@ -90,6 +91,7 @@ export type Database = {
         Insert: {
           author?: string
           category_id: string
+          content?: string
           created_at?: string
           deploy_url?: string
           edit_password?: string
@@ -102,6 +104,7 @@ export type Database = {
         Update: {
           author?: string
           category_id?: string
+          content?: string
           created_at?: string
           deploy_url?: string
           edit_password?: string
