@@ -379,7 +379,7 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle>산출물 삭제</DialogTitle>
+            <DialogTitle>{noun} 삭제</DialogTitle>
             <DialogDescription>
               등록 시 설정한 비밀번호를 입력하면 삭제돼요. 이 작업은 되돌릴 수
               없어요.
