@@ -1,6 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+// Accepts https://github.com/owner/repo (with optional trailing path/slash).
+export const GITHUB_URL_RE =
+  /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+/i;
+
+
 // All data access goes through the service-role admin client inside server
 // handlers. RLS denies direct client access, so category passwords never reach
 // the browser. The dynamic import keeps the server-only module out of the
@@ -19,6 +24,7 @@ export interface CategoryDTO {
   description: string;
   sortOrder: number;
   hasPassword: boolean;
+  githubRequired: boolean;
 }
 
 export interface EventDTO {
@@ -64,7 +70,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const db = await getAdmin();
     const { data, error } = await db
       .from("categories")
-      .select("id, name, description, sort_order, password")
+      .select("id, name, description, sort_order, password, github_required")
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []).map((c: any) => ({
@@ -73,6 +79,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       description: c.description,
       sortOrder: c.sort_order,
       hasPassword: !!c.password,
+      githubRequired: !!c.github_required,
     }));
   },
 );
@@ -84,6 +91,7 @@ export const createCategory = createServerFn({ method: "POST" })
         name: z.string().trim().min(1).max(100),
         description: z.string().trim().max(500).default(""),
         password: z.string().trim().max(100).default(""),
+        githubRequired: z.boolean().default(false),
       })
       .parse(input),
   )
@@ -100,6 +108,7 @@ export const createCategory = createServerFn({ method: "POST" })
       name: data.name,
       description: data.description,
       password: data.password,
+      github_required: data.githubRequired,
       sort_order: nextOrder,
     });
     if (error) throw new Error(error.message);
@@ -115,6 +124,7 @@ export const updateCategory = createServerFn({ method: "POST" })
         description: z.string().trim().max(500).default(""),
         // undefined = leave password unchanged
         password: z.string().trim().max(100).optional(),
+        githubRequired: z.boolean().optional(),
       })
       .parse(input),
   )
@@ -125,6 +135,8 @@ export const updateCategory = createServerFn({ method: "POST" })
       description: data.description,
     };
     if (data.password !== undefined) patch.password = data.password;
+    if (data.githubRequired !== undefined)
+      patch.github_required = data.githubRequired;
     const { error } = await db.from("categories").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -256,6 +268,17 @@ export const createPost = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const db = await getAdmin();
+    // Enforce per-board GitHub link requirement.
+    const { data: cat } = await db
+      .from("categories")
+      .select("github_required")
+      .eq("id", data.categoryId)
+      .maybeSingle();
+    if (cat?.github_required && data.type === "project") {
+      if (!GITHUB_URL_RE.test(data.githubUrl)) {
+        throw new Error("이 게시판은 GitHub 링크가 필수입니다.");
+      }
+    }
     const { error } = await db.from("posts").insert({
       category_id: data.categoryId,
       type: data.type,

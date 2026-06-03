@@ -9,8 +9,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Megaphone, FolderGit2, User, Plus } from "lucide-react";
 import { toast } from "sonner";
 
-import { postsQueryOptions } from "@/lib/platform.queries";
-import { createPost } from "@/lib/platform.functions";
+import { postsQueryOptions, categoriesQueryOptions } from "@/lib/platform.queries";
+import { createPost, GITHUB_URL_RE } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,10 @@ import {
 
 export const Route = createFileRoute("/_main/board/$categoryId/")({
   loader: ({ context, params }) =>
-    context.queryClient.ensureQueryData(postsQueryOptions(params.categoryId)),
+    Promise.all([
+      context.queryClient.ensureQueryData(postsQueryOptions(params.categoryId)),
+      context.queryClient.ensureQueryData(categoriesQueryOptions()),
+    ]),
   errorComponent: ({ error }) => (
     <div role="alert" className="p-6 text-sm text-destructive">
       산출물을 불러오지 못했어요: {error.message}
@@ -38,6 +41,9 @@ export const Route = createFileRoute("/_main/board/$categoryId/")({
 function BoardContent() {
   const { categoryId } = useParams({ from: "/_main/board/$categoryId/" });
   const { data: posts } = useSuspenseQuery(postsQueryOptions(categoryId));
+  const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
+  const githubRequired =
+    categories.find((c) => c.id === categoryId)?.githubRequired ?? false;
   const notices = posts.filter((p) => p.type === "notice");
   const projects = posts.filter((p) => p.type === "project");
   const [registerOpen, setRegisterOpen] = useState(false);
@@ -113,6 +119,7 @@ function BoardContent() {
 
       <RegisterDialog
         categoryId={categoryId}
+        githubRequired={githubRequired}
         open={registerOpen}
         onOpenChange={setRegisterOpen}
       />
@@ -122,10 +129,12 @@ function BoardContent() {
 
 function RegisterDialog({
   categoryId,
+  githubRequired,
   open,
   onOpenChange,
 }: {
   categoryId: string;
+  githubRequired: boolean;
   open: boolean;
   onOpenChange: (o: boolean) => void;
 }) {
@@ -173,6 +182,15 @@ function RegisterDialog({
               toast.error("수정·삭제용 비밀번호를 입력해주세요.");
               return;
             }
+            const url = githubUrl.trim();
+            if (githubRequired && !url) {
+              toast.error("이 게시판은 GitHub 링크가 필수예요.");
+              return;
+            }
+            if (url && !GITHUB_URL_RE.test(url)) {
+              toast.error("GitHub 링크 형식이 올바르지 않아요. (예: https://github.com/owner/repo)");
+              return;
+            }
             mutation.mutate();
           }}
           className="space-y-4 py-2"
@@ -196,7 +214,9 @@ function RegisterDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="p-github">GitHub 링크</Label>
+            <Label htmlFor="p-github">
+              GitHub 링크{githubRequired && <span className="ml-1 text-destructive">*</span>}
+            </Label>
             <Input
               id="p-github"
               value={githubUrl}
@@ -204,6 +224,11 @@ function RegisterDialog({
               placeholder="https://github.com/owner/repo"
               className="rounded-xl"
             />
+            {githubRequired && (
+              <p className="text-xs text-muted-foreground">
+                이 게시판은 GitHub 링크가 필수입니다.
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="p-pw">수정·삭제 비밀번호</Label>

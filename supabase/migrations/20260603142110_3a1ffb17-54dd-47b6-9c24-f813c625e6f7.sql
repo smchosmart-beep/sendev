@@ -1,0 +1,1 @@
+ALTER TABLE public.categories ADD COLUMN IF NOT EXISTS github_required boolean NOT NULL DEFAULT false;

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { FolderPlus, Pencil, Trash2, LayoutGrid, Lock } from "lucide-react";
+import { FolderPlus, Pencil, Trash2, LayoutGrid, Lock, Github } from "lucide-react";
 import { toast } from "sonner";
 
 import { categoriesQueryOptions } from "@/lib/platform.queries";
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -59,22 +60,32 @@ function CategoriesPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [password, setPassword] = useState("");
+  const [githubRequired, setGithubRequired] = useState(false);
 
   const [editing, setEditing] = useState<CategoryDTO | null>(null);
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editPassword, setEditPassword] = useState("");
+  const [editGithubRequired, setEditGithubRequired] = useState(false);
 
   const [deleting, setDeleting] = useState<CategoryDTO | null>(null);
 
   const addMutation = useMutation({
     mutationFn: () =>
-      createFn({ data: { name: name.trim(), description: description.trim(), password: password.trim() } }),
+      createFn({
+        data: {
+          name: name.trim(),
+          description: description.trim(),
+          password: password.trim(),
+          githubRequired,
+        },
+      }),
     onSuccess: () => {
       invalidate();
       setName("");
       setDescription("");
       setPassword("");
+      setGithubRequired(false);
       toast.success("새 게시판이 추가되었어요.");
     },
     onError: () => toast.error("추가 중 문제가 발생했어요."),
@@ -88,6 +99,7 @@ function CategoriesPage() {
           name: editName.trim(),
           description: editDescription.trim(),
           password: editPassword,
+          githubRequired: editGithubRequired,
         },
       }),
     onSuccess: () => {
@@ -113,7 +125,9 @@ function CategoriesPage() {
     setEditName(c.name);
     setEditDescription(c.description);
     setEditPassword("");
+    setEditGithubRequired(c.githubRequired);
   };
+
 
   return (
     <div className="space-y-8">
@@ -164,6 +178,22 @@ function CategoriesPage() {
               className="rounded-xl"
             />
           </div>
+          <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 p-4 sm:col-span-2">
+            <div className="space-y-0.5">
+              <Label htmlFor="gh-req" className="flex items-center gap-1.5">
+                <Github className="h-4 w-4" />
+                GitHub 링크 필수
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                켜면 이 게시판에 산출물을 등록할 때 GitHub 링크를 반드시 입력해야 해요.
+              </p>
+            </div>
+            <Switch
+              id="gh-req"
+              checked={githubRequired}
+              onCheckedChange={setGithubRequired}
+            />
+          </div>
           <div className="sm:col-span-2">
             <Button
               type="submit"
@@ -201,6 +231,12 @@ function CategoriesPage() {
                   <p className="mt-1 truncate text-sm text-muted-foreground">
                     {c.description || "설명이 없습니다."}
                   </p>
+                  {c.githubRequired && (
+                    <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-primary">
+                      <Github className="h-3 w-3" />
+                      GitHub 링크 필수
+                    </span>
+                  )}
                 </div>
                 <div className="flex shrink-0 gap-2">
                   <Button
@@ -264,6 +300,22 @@ function CategoriesPage() {
                 onChange={(e) => setEditPassword(e.target.value)}
                 placeholder="비워두면 공개 게시판으로 변경"
                 className="rounded-xl"
+              />
+            </div>
+            <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 p-4">
+              <div className="space-y-0.5">
+                <Label htmlFor="edit-gh-req" className="flex items-center gap-1.5">
+                  <Github className="h-4 w-4" />
+                  GitHub 링크 필수
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  산출물 등록 시 GitHub 링크를 반드시 입력하게 해요.
+                </p>
+              </div>
+              <Switch
+                id="edit-gh-req"
+                checked={editGithubRequired}
+                onCheckedChange={setEditGithubRequired}
               />
             </div>
           </div>
