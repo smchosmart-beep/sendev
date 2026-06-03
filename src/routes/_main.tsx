@@ -1,7 +1,15 @@
+import { useState } from "react";
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Calendar, Code2, Settings, Trophy, BookOpen, Rocket, Terminal } from "lucide-react";
+import { Calendar, Code2, Settings, Trophy, BookOpen, Rocket, Terminal, Menu } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import type { TabGroup } from "@/lib/platform.functions";
 
 export const Route = createFileRoute("/_main")({
