@@ -367,8 +367,11 @@ export const uploadEventFile = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<EventAttachment> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const bytes = Buffer.from(data.dataBase64, "base64");
-    const safeName = data.name.replace(/[^\w.\-가-힣]/g, "_");
-    const path = `${crypto.randomUUID()}-${safeName}`;
+    // Storage object keys must be ASCII-safe. Korean/spaces/special chars in the
+    // original filename are kept only in the returned `name`, not in the key.
+    const extMatch = data.name.match(/\.([a-zA-Z0-9]{1,10})$/);
+    const ext = extMatch ? `.${extMatch[1].toLowerCase()}` : "";
+    const path = `${crypto.randomUUID()}${ext}`;
     const { error } = await supabaseAdmin.storage
       .from("event-files")
       .upload(path, bytes, { contentType: data.contentType, upsert: false });
