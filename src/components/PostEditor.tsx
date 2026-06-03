@@ -102,7 +102,7 @@ export function PostEditor({
       },
     },
     onUpdate: ({ editor }) => {
-      const md = editor.storage.markdown.getMarkdown();
+      const md = (editor.storage as any).markdown.getMarkdown();
       onChangeRef.current(md);
     },
   });
