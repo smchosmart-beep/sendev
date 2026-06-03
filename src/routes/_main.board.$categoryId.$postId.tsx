@@ -151,7 +151,14 @@ function ProjectDetailPage() {
 }
 
 interface ManagePostProps {
-  post: { title: string; author: string; githubUrl: string; deployUrl: string };
+  post: {
+    type: "notice" | "project" | "question";
+    title: string;
+    content: string;
+    author: string;
+    githubUrl: string;
+    deployUrl: string;
+  };
   categoryId: string;
   postId: string;
 }
@@ -162,11 +169,15 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
   const update = useServerFn(updatePost);
   const remove = useServerFn(deletePost);
 
+  const isBoardPost = post.type === "notice" || post.type === "question";
+  const noun = isBoardPost ? (post.type === "notice" ? "공지" : "질문") : "산출물";
+
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   // Edit form state
   const [title, setTitle] = useState(post.title);
+  const [content, setContent] = useState(post.content);
   const [author, setAuthor] = useState(post.author);
   const [githubUrl, setGithubUrl] = useState(post.githubUrl);
   const [deployUrl, setDeployUrl] = useState(post.deployUrl);
@@ -175,6 +186,7 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
 
   const openEdit = () => {
     setTitle(post.title);
+    setContent(post.content);
     setAuthor(post.author);
     setGithubUrl(post.githubUrl);
     setDeployUrl(post.deployUrl);
@@ -185,7 +197,9 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
   const editMutation = useMutation({
     mutationFn: () =>
       update({
-        data: { id: postId, password: editPw, title, author, githubUrl, deployUrl },
+        data: isBoardPost
+          ? { id: postId, password: editPw, title, content, author }
+          : { id: postId, password: editPw, title, author, githubUrl, deployUrl },
       }),
     onSuccess: (res) => {
       if (!res.ok) {
@@ -194,7 +208,7 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
       }
       queryClient.invalidateQueries({ queryKey: ["post", postId] });
       queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
-      toast.success("산출물이 수정되었어요!");
+      toast.success(`${noun}이(가) 수정되었어요!`);
       setEditOpen(false);
     },
     onError: () => toast.error("수정 중 문제가 발생했어요."),
