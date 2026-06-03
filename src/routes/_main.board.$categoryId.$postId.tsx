@@ -50,6 +50,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PostEditor } from "@/components/PostEditor";
 
 export const Route = createFileRoute("/_main/board/$categoryId/$postId")({
   loader: ({ context, params }) =>
