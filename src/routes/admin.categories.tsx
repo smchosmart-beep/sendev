@@ -60,12 +60,14 @@ function CategoriesPage() {
     queryClient.invalidateQueries({ queryKey: ["categories"] });
 
   const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [password, setPassword] = useState("");
   const [githubRequired, setGithubRequired] = useState(false);
 
   const [editing, setEditing] = useState<CategoryDTO | null>(null);
   const [editName, setEditName] = useState("");
+  const [editSlug, setEditSlug] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [editGithubRequired, setEditGithubRequired] = useState(false);
