@@ -168,6 +168,9 @@ export const createCategory = createServerFn({ method: "POST" })
         enableGeneral: z.boolean().default(true),
         enableProject: z.boolean().default(true),
         generalName: z.string().trim().max(100).default("일반게시판"),
+        tabGroup: z
+          .enum(["hackathon", "resources", "devground", "helloworld"])
+          .default("hackathon"),
       })
       .parse(input),
   )
