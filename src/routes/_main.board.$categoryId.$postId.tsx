@@ -523,6 +523,107 @@ function EvaluationSection({
   );
 }
 
+// Drag-and-click star rating with 0.5 increments (0 … max).
+function StarRating({
+  max,
+  value,
+  onChange,
+}: {
+  max: number;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [hover, setHover] = useState<number | null>(null);
+  const [dragging, setDragging] = useState(false);
+
+  // Compute a 0.5-step value from a pointer's x position over the star row.
+  const valueFromClientX = (clientX: number): number => {
+    const el = containerRef.current;
+    if (!el) return 0;
+    const rect = el.getBoundingClientRect();
+    const ratio = (clientX - rect.left) / rect.width;
+    const clamped = Math.min(1, Math.max(0, ratio));
+    const raw = clamped * max;
+    const stepped = Math.ceil(raw * 2) / 2; // round up to nearest 0.5
+    return Math.min(max, Math.max(0.5, stepped));
+  };
+
+  useEffect(() => {
+    if (!dragging) return;
+    const handleMove = (e: PointerEvent) => setHover(valueFromClientX(e.clientX));
+    const handleUp = (e: PointerEvent) => {
+      onChange(valueFromClientX(e.clientX));
+      setDragging(false);
+      setHover(null);
+    };
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragging, max]);
+
+  const display = hover ?? value;
+
+  return (
+    <div className="flex items-center gap-3">
+      <div
+        ref={containerRef}
+        role="slider"
+        aria-valuemin={0}
+        aria-valuemax={max}
+        aria-valuenow={value}
+        tabIndex={0}
+        className="flex cursor-pointer touch-none select-none"
+        onPointerDown={(e) => {
+          e.preventDefault();
+          setDragging(true);
+          const v = valueFromClientX(e.clientX);
+          setHover(v);
+          onChange(v);
+        }}
+        onPointerMove={(e) => {
+          if (!dragging) setHover(valueFromClientX(e.clientX));
+        }}
+        onPointerLeave={() => {
+          if (!dragging) setHover(null);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+            e.preventDefault();
+            onChange(Math.min(max, (value || 0) + 0.5));
+          } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+            e.preventDefault();
+            onChange(Math.max(0, (value || 0) - 0.5));
+          }
+        }}
+      >
+        {Array.from({ length: max }).map((_, i) => {
+          const fill = Math.min(1, Math.max(0, display - i)); // 0, 0.5, or 1
+          return (
+            <span key={i} className="relative inline-block h-8 w-8">
+              <Star className="absolute inset-0 h-8 w-8 text-muted-foreground/40" />
+              <span
+                className="absolute inset-0 overflow-hidden"
+                style={{ width: `${fill * 100}%` }}
+              >
+                <Star className="h-8 w-8 fill-primary text-primary" />
+              </span>
+            </span>
+          );
+        })}
+      </div>
+      <span className="text-sm font-semibold text-primary">
+        {display > 0 ? display.toFixed(1) : "-"} / {max}
+      </span>
+    </div>
+  );
+}
+
+
 function BackLink({ categoryId }: { categoryId: string }) {
   return (
     <Link
