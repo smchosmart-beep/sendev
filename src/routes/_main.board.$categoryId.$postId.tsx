@@ -18,6 +18,7 @@ import {
   ArrowLeft,
   User,
   Github,
+  ExternalLink,
   FileText,
   Star,
   Loader2,
