@@ -257,17 +257,19 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
 
       {/* Edit dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="rounded-2xl">
+        <DialogContent className="max-w-2xl rounded-2xl">
           <DialogHeader>
-            <DialogTitle>산출물 수정</DialogTitle>
+            <DialogTitle>{noun} 수정</DialogTitle>
             <DialogDescription>
-              등록 시 설정한 비밀번호를 입력해야 수정할 수 있어요.
+              {post.type === "notice"
+                ? "관리자 비밀번호를 입력해야 수정할 수 있어요."
+                : "등록 시 설정한 비밀번호를 입력해야 수정할 수 있어요."}
             </DialogDescription>
           </DialogHeader>
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (!title.trim() || !author.trim()) {
+              if (!title.trim() || (!isBoardPost && !author.trim())) {
                 toast.error("제목과 작성자를 입력해주세요.");
                 return;
               }
@@ -280,7 +282,7 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
             className="space-y-4 py-2"
           >
             <div className="space-y-2">
-              <Label htmlFor="e-title">프로젝트 제목</Label>
+              <Label htmlFor="e-title">제목</Label>
               <Input
                 id="e-title"
                 value={title}
@@ -288,35 +290,57 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
                 className="rounded-xl"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="e-author">작성자</Label>
-              <Input
-                id="e-author"
-                value={author}
-                onChange={(e) => setAuthor(e.target.value)}
-                className="rounded-xl"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="e-github">GitHub 링크</Label>
-              <Input
-                id="e-github"
-                value={githubUrl}
-                onChange={(e) => setGithubUrl(e.target.value)}
-                placeholder="https://github.com/owner/repo"
-                className="rounded-xl"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="e-deploy">배포 URL (선택)</Label>
-              <Input
-                id="e-deploy"
-                value={deployUrl}
-                onChange={(e) => setDeployUrl(e.target.value)}
-                placeholder="https://my-app.lovable.app"
-                className="rounded-xl"
-              />
-            </div>
+            {isBoardPost ? (
+              <>
+                <div className="space-y-2">
+                  <Label>내용</Label>
+                  <PostEditor value={content} onChange={setContent} rows={8} />
+                </div>
+                {post.type === "question" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="e-author">작성자</Label>
+                    <Input
+                      id="e-author"
+                      value={author}
+                      onChange={(e) => setAuthor(e.target.value)}
+                      className="rounded-xl"
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="e-author">작성자</Label>
+                  <Input
+                    id="e-author"
+                    value={author}
+                    onChange={(e) => setAuthor(e.target.value)}
+                    className="rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="e-github">GitHub 링크</Label>
+                  <Input
+                    id="e-github"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    placeholder="https://github.com/owner/repo"
+                    className="rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="e-deploy">배포 URL (선택)</Label>
+                  <Input
+                    id="e-deploy"
+                    value={deployUrl}
+                    onChange={(e) => setDeployUrl(e.target.value)}
+                    placeholder="https://my-app.lovable.app"
+                    className="rounded-xl"
+                  />
+                </div>
+              </>
+            )}
             <div className="space-y-2">
               <Label htmlFor="e-pw">비밀번호</Label>
               <Input
