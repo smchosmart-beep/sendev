@@ -19,6 +19,7 @@ export interface CategoryDTO {
   description: string;
   sortOrder: number;
   hasPassword: boolean;
+  githubRequired: boolean;
 }
 
 export interface EventDTO {
