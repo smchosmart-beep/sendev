@@ -392,12 +392,13 @@ function AdminCalendarPage() {
               {attachments.map((a, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm"
+                  className="flex w-full min-w-0 items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm"
                 >
-                  <Paperclip className="h-4 w-4 text-primary" />
-                  <span className="flex-1 truncate">{a.name}</span>
+                  <Paperclip className="h-4 w-4 shrink-0 text-primary" />
+                  <span className="min-w-0 flex-1 truncate">{a.name}</span>
                   <button
                     type="button"
+                    className="shrink-0"
                     onClick={() =>
                       setAttachments((prev) => prev.filter((_, idx) => idx !== i))
                     }
