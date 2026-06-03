@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { LayoutGrid, SlidersHorizontal, ShieldCheck, Lock, AlertCircle, Megaphone, CalendarDays } from "lucide-react";
+import { LayoutGrid, SlidersHorizontal, ShieldCheck, Lock, AlertCircle, Megaphone, CalendarDays, Image as ImageIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 // 한글 자모/완성형 음절 제거 (영문 비밀번호 강제)
