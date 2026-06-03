@@ -247,8 +247,8 @@ function CalendarPage() {
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-primary transition-colors hover:bg-accent"
                     >
-                      <LinkIcon className="h-4 w-4" />
-                      <span className="truncate">{l.label}</span>
+                      <LinkIcon className="h-4 w-4 shrink-0" />
+                      <span className="min-w-0 flex-1 truncate">{l.label}</span>
                     </a>
                   ))}
                 </div>
