@@ -48,6 +48,17 @@ function slugify(input: string): string {
     .slice(0, 30);
 }
 
+export interface EventAttachment {
+  name: string;
+  url: string;
+  size: number;
+}
+
+export interface EventLink {
+  label: string;
+  url: string;
+}
+
 export interface EventDTO {
   id: string;
   title: string;
@@ -55,6 +66,8 @@ export interface EventDTO {
   time: string;
   location: string;
   description: string;
+  attachments: EventAttachment[];
+  links: EventLink[];
 }
 
 export interface PostDTO {
