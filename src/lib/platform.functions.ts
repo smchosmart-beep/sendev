@@ -33,6 +33,7 @@ export interface CategoryDTO {
   enableGeneral: boolean;
   enableProject: boolean;
   generalName: string;
+  projectName: string;
   tabGroup: TabGroup;
 }
 
