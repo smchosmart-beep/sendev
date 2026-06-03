@@ -263,7 +263,8 @@ export const createPost = createServerFn({ method: "POST" })
         categoryId: z.string().uuid(),
         type: z.enum(["notice", "project", "question"]),
         title: z.string().trim().min(1).max(200),
-        author: z.string().trim().min(1).max(100),
+        content: z.string().max(20000).default(""),
+        author: z.string().trim().max(100).default(""),
         githubUrl: z.string().trim().max(300).default(""),
         deployUrl: z.string().trim().max(300).default(""),
         editPassword: z.string().trim().min(1).max(100),
@@ -283,6 +284,8 @@ export const createPost = createServerFn({ method: "POST" })
         throw new Error("이 게시판은 GitHub 링크가 필수입니다.");
       }
     }
+    // Notices are authored by the operations team.
+    const author = data.type === "notice" ? "운영진" : data.author;
     // Resolve and cache the deploy site's OG image once at creation time so the
     // board never re-fetches the external site on subsequent loads.
     const ogImageUrl = data.deployUrl
@@ -292,7 +295,8 @@ export const createPost = createServerFn({ method: "POST" })
       category_id: data.categoryId,
       type: data.type,
       title: data.title,
-      author: data.author,
+      content: data.content,
+      author,
       github_url: data.githubUrl,
       deploy_url: data.deployUrl,
       og_image_url: ogImageUrl,
