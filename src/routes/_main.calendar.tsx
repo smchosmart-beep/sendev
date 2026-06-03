@@ -141,6 +141,38 @@ function CalendarPage() {
         </div>
       </div>
 
+      {/* Mobile view toggle */}
+      <div className="flex gap-1 rounded-xl bg-muted p-1 sm:hidden">
+        <button
+          type="button"
+          onClick={() => setMobileView("calendar")}
+          className={cn(
+            "flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-colors",
+            mobileView === "calendar"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground",
+          )}
+        >
+          <LayoutGrid className="h-4 w-4" />
+          달력
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileView("list")}
+          className={cn(
+            "flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-colors",
+            mobileView === "list"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground",
+          )}
+        >
+          <List className="h-4 w-4" />
+          목록
+        </button>
+      </div>
+
+
+
       <div className="flex flex-1 flex-col rounded-2xl bg-card p-2 shadow-sm sm:p-6">
         <div className="mb-2 grid grid-cols-7 gap-1 sm:mb-3 sm:gap-2">
           {WEEKDAYS.map((w, i) => (
