@@ -323,6 +323,9 @@ function ManagePost({ post, categoryId, postId }: ManagePostProps) {
                 onChange={(e) => setDeletePw(e.target.value)}
                 className="rounded-xl"
               />
+              <p className="text-xs text-muted-foreground">
+                등록 시 설정한 비밀번호 또는 관리자 비밀번호를 입력하세요.
+              </p>
             </div>
             <DialogFooter>
               <Button
