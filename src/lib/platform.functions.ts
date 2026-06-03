@@ -26,6 +26,11 @@ export interface CategoryDTO {
   sortOrder: number;
   hasPassword: boolean;
   githubRequired: boolean;
+  enableNotice: boolean;
+  enableQuestion: boolean;
+  enableGeneral: boolean;
+  enableProject: boolean;
+  generalName: string;
 }
 
 // Board slug: lowercase letters, digits and hyphens. Used in short URLs.
@@ -53,7 +58,7 @@ export interface PostDTO {
   id: string;
   categoryId: string;
   postNo: number;
-  type: "notice" | "project" | "question";
+  type: "notice" | "project" | "question" | "general";
   title: string;
   content: string;
   author: string;
@@ -87,7 +92,9 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const db = await getAdmin();
     const { data, error } = await db
       .from("categories")
-      .select("id, slug, name, description, sort_order, password, github_required")
+      .select(
+        "id, slug, name, description, sort_order, password, github_required, enable_notice, enable_question, enable_general, enable_project, general_name",
+      )
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []).map((c: any) => ({
@@ -98,6 +105,11 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       sortOrder: c.sort_order,
       hasPassword: !!c.password,
       githubRequired: !!c.github_required,
+      enableNotice: c.enable_notice ?? true,
+      enableQuestion: c.enable_question ?? true,
+      enableGeneral: c.enable_general ?? true,
+      enableProject: c.enable_project ?? true,
+      generalName: c.general_name ?? "일반게시판",
     }));
   },
 );
@@ -147,6 +159,11 @@ export const createCategory = createServerFn({ method: "POST" })
         description: z.string().trim().max(500).default(""),
         password: z.string().trim().max(100).default(""),
         githubRequired: z.boolean().default(false),
+        enableNotice: z.boolean().default(true),
+        enableQuestion: z.boolean().default(true),
+        enableGeneral: z.boolean().default(true),
+        enableProject: z.boolean().default(true),
+        generalName: z.string().trim().max(100).default("일반게시판"),
       })
       .parse(input),
   )
@@ -166,6 +183,11 @@ export const createCategory = createServerFn({ method: "POST" })
       description: data.description,
       password: data.password,
       github_required: data.githubRequired,
+      enable_notice: data.enableNotice,
+      enable_question: data.enableQuestion,
+      enable_general: data.enableGeneral,
+      enable_project: data.enableProject,
+      general_name: data.generalName || "일반게시판",
       sort_order: nextOrder,
     });
     if (error) throw new Error(error.message);
@@ -183,6 +205,11 @@ export const updateCategory = createServerFn({ method: "POST" })
         // undefined = leave password unchanged
         password: z.string().trim().max(100).optional(),
         githubRequired: z.boolean().optional(),
+        enableNotice: z.boolean().optional(),
+        enableQuestion: z.boolean().optional(),
+        enableGeneral: z.boolean().optional(),
+        enableProject: z.boolean().optional(),
+        generalName: z.string().trim().max(100).optional(),
       })
       .parse(input),
   )
@@ -198,6 +225,15 @@ export const updateCategory = createServerFn({ method: "POST" })
     if (data.password !== undefined) patch.password = data.password;
     if (data.githubRequired !== undefined)
       patch.github_required = data.githubRequired;
+    if (data.enableNotice !== undefined) patch.enable_notice = data.enableNotice;
+    if (data.enableQuestion !== undefined)
+      patch.enable_question = data.enableQuestion;
+    if (data.enableGeneral !== undefined)
+      patch.enable_general = data.enableGeneral;
+    if (data.enableProject !== undefined)
+      patch.enable_project = data.enableProject;
+    if (data.generalName !== undefined)
+      patch.general_name = data.generalName || "일반게시판";
     const { error } = await db.from("categories").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -347,7 +383,7 @@ export const createPost = createServerFn({ method: "POST" })
     z
       .object({
         categoryId: z.string().uuid(),
-        type: z.enum(["notice", "project", "question"]),
+        type: z.enum(["notice", "project", "question", "general"]),
         title: z.string().trim().min(1).max(200),
         content: z.string().max(20000).default(""),
         author: z.string().trim().max(100).default(""),

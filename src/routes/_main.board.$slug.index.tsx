@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
-import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion } from "lucide-react";
+import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle } from "lucide-react";
 
 import {
   postsQueryOptions,
@@ -37,18 +37,25 @@ function BoardContent() {
   const category = categories.find((c) => c.slug === slug);
 
   if (!category) return null;
-  return <BoardInner slug={slug} categoryId={category.id} />;
+  return <BoardInner slug={slug} category={category} />;
 }
 
-function BoardInner({ slug, categoryId }: { slug: string; categoryId: string }) {
-  const { data: posts } = useSuspenseQuery(postsQueryOptions(categoryId));
+function BoardInner({
+  slug,
+  category,
+}: {
+  slug: string;
+  category: import("@/lib/platform.functions").CategoryDTO;
+}) {
+  const { data: posts } = useSuspenseQuery(postsQueryOptions(category.id));
   const notices = posts.filter((p) => p.type === "notice");
   const questions = posts.filter((p) => p.type === "question");
+  const generals = posts.filter((p) => p.type === "general");
   const projects = posts.filter((p) => p.type === "project");
 
   return (
     <div className="space-y-6">
-      {notices.length > 0 && (
+      {category.enableNotice && notices.length > 0 && (
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
             <Megaphone className="h-5 w-5 text-primary" />
@@ -71,72 +78,116 @@ function BoardInner({ slug, categoryId }: { slug: string; categoryId: string }) 
         </section>
       )}
 
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
-            <MessageCircleQuestion className="h-5 w-5 text-primary" />
-            질문게시판
-          </h2>
-          <Button asChild variant="secondary" className="rounded-xl active:scale-95">
-            <Link to="/board/$slug/new-question" params={{ slug }}>
-              <Plus className="h-4 w-4" />
-              질문 등록
-            </Link>
-          </Button>
-        </div>
-
-        {questions.length === 0 ? (
-          <EmptyState
-            icon={MessageCircleQuestion}
-            title="아직 등록된 질문이 없어요."
-            description="궁금한 점을 자유롭게 질문해보세요."
-          />
-        ) : (
-          questions.map((q) => (
-            <Link
-              key={q.id}
-              to="/board/$slug/$postNo"
-              params={{ slug, postNo: String(q.postNo) }}
-              className="flex items-center justify-between rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
-            >
-              <span className="font-medium text-foreground">{q.title}</span>
-              <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                <User className="h-3.5 w-3.5" />
-                {q.author}
-              </span>
-            </Link>
-          ))
-        )}
-      </section>
-
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
-            <FolderGit2 className="h-5 w-5 text-primary" />
-            산출물
-          </h2>
-          <Button asChild className="rounded-xl active:scale-95">
-            <Link to="/board/$slug/new-project" params={{ slug }}>
-              <Plus className="h-4 w-4" />
-              산출물 등록
-            </Link>
-          </Button>
-        </div>
-
-        {projects.length === 0 ? (
-          <EmptyState
-            icon={FolderGit2}
-            title="아직 등록된 산출물이 없어요. 첫 번째 개발자가 되어주세요!"
-            description="GitHub 링크와 함께 프로젝트를 공유해보세요."
-          />
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {projects.map((p) => (
-              <ProjectCard key={p.id} post={p} slug={slug} />
-            ))}
+      {category.enableQuestion && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+              <MessageCircleQuestion className="h-5 w-5 text-primary" />
+              질문게시판
+            </h2>
+            <Button asChild variant="secondary" className="rounded-xl active:scale-95">
+              <Link to="/board/$slug/new-question" params={{ slug }}>
+                <Plus className="h-4 w-4" />
+                질문 등록
+              </Link>
+            </Button>
           </div>
-        )}
-      </section>
+
+          {questions.length === 0 ? (
+            <EmptyState
+              icon={MessageCircleQuestion}
+              title="아직 등록된 질문이 없어요."
+              description="궁금한 점을 자유롭게 질문해보세요."
+            />
+          ) : (
+            questions.map((q) => (
+              <Link
+                key={q.id}
+                to="/board/$slug/$postNo"
+                params={{ slug, postNo: String(q.postNo) }}
+                className="flex items-center justify-between rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+              >
+                <span className="font-medium text-foreground">{q.title}</span>
+                <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <User className="h-3.5 w-3.5" />
+                  {q.author}
+                </span>
+              </Link>
+            ))
+          )}
+        </section>
+      )}
+
+      {category.enableGeneral && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+              <MessageCircle className="h-5 w-5 text-primary" />
+              {category.generalName || "일반게시판"}
+            </h2>
+            <Button asChild variant="secondary" className="rounded-xl active:scale-95">
+              <Link to="/board/$slug/new-general" params={{ slug }}>
+                <Plus className="h-4 w-4" />
+                글 등록
+              </Link>
+            </Button>
+          </div>
+
+          {generals.length === 0 ? (
+            <EmptyState
+              icon={MessageCircle}
+              title="아직 등록된 글이 없어요."
+              description="자유롭게 글을 남겨보세요."
+            />
+          ) : (
+            generals.map((g) => (
+              <Link
+                key={g.id}
+                to="/board/$slug/$postNo"
+                params={{ slug, postNo: String(g.postNo) }}
+                className="flex items-center justify-between rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+              >
+                <span className="font-medium text-foreground">{g.title}</span>
+                <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <User className="h-3.5 w-3.5" />
+                  {g.author}
+                </span>
+              </Link>
+            ))
+          )}
+        </section>
+      )}
+
+      {category.enableProject && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+              <FolderGit2 className="h-5 w-5 text-primary" />
+              산출물
+            </h2>
+            <Button asChild className="rounded-xl active:scale-95">
+              <Link to="/board/$slug/new-project" params={{ slug }}>
+                <Plus className="h-4 w-4" />
+                산출물 등록
+              </Link>
+            </Button>
+          </div>
+
+          {projects.length === 0 ? (
+            <EmptyState
+              icon={FolderGit2}
+              title="아직 등록된 산출물이 없어요. 첫 번째 개발자가 되어주세요!"
+              description="GitHub 링크와 함께 프로젝트를 공유해보세요."
+            />
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {projects.map((p) => (
+                <ProjectCard key={p.id} post={p} slug={slug} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }

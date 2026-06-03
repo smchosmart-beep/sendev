@@ -140,7 +140,8 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
     );
   }
 
-  const isBoardPost = post.type === "notice" || post.type === "question";
+  const isBoardPost =
+    post.type === "notice" || post.type === "question" || post.type === "general";
 
   return (
     <div className="space-y-6">
@@ -220,8 +221,13 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
 
   const postId = post.id;
   const categoryId = post.categoryId;
-  const isBoardPost = post.type === "notice" || post.type === "question";
-  const noun = isBoardPost ? (post.type === "notice" ? "공지" : "질문") : "산출물";
+  const isBoardPost =
+    post.type === "notice" || post.type === "question" || post.type === "general";
+  const noun = isBoardPost
+    ? post.type === "notice"
+      ? "공지"
+      : "글"
+    : "산출물";
 
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -352,7 +358,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
                   <Label>내용</Label>
                   <PostEditor value={content} onChange={setContent} rows={8} />
                 </div>
-                {post.type === "question" && (
+                {(post.type === "question" || post.type === "general") && (
                   <div className="space-y-2">
                     <Label htmlFor="e-author">작성자</Label>
                     <Input

@@ -64,6 +64,11 @@ function CategoriesPage() {
   const [description, setDescription] = useState("");
   const [password, setPassword] = useState("");
   const [githubRequired, setGithubRequired] = useState(false);
+  const [enableNotice, setEnableNotice] = useState(true);
+  const [enableQuestion, setEnableQuestion] = useState(true);
+  const [enableGeneral, setEnableGeneral] = useState(true);
+  const [enableProject, setEnableProject] = useState(true);
+  const [generalName, setGeneralName] = useState("일반게시판");
 
   const [editing, setEditing] = useState<CategoryDTO | null>(null);
   const [editName, setEditName] = useState("");
@@ -71,6 +76,11 @@ function CategoriesPage() {
   const [editDescription, setEditDescription] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [editGithubRequired, setEditGithubRequired] = useState(false);
+  const [editEnableNotice, setEditEnableNotice] = useState(true);
+  const [editEnableQuestion, setEditEnableQuestion] = useState(true);
+  const [editEnableGeneral, setEditEnableGeneral] = useState(true);
+  const [editEnableProject, setEditEnableProject] = useState(true);
+  const [editGeneralName, setEditGeneralName] = useState("일반게시판");
 
   const [deleting, setDeleting] = useState<CategoryDTO | null>(null);
 
@@ -83,6 +93,11 @@ function CategoriesPage() {
           description: description.trim(),
           password: password.trim(),
           githubRequired,
+          enableNotice,
+          enableQuestion,
+          enableGeneral,
+          enableProject,
+          generalName: generalName.trim(),
         },
       }),
     onSuccess: () => {
@@ -92,6 +107,11 @@ function CategoriesPage() {
       setDescription("");
       setPassword("");
       setGithubRequired(false);
+      setEnableNotice(true);
+      setEnableQuestion(true);
+      setEnableGeneral(true);
+      setEnableProject(true);
+      setGeneralName("일반게시판");
       toast.success("새 게시판이 추가되었어요.");
     },
     onError: () => toast.error("추가 중 문제가 발생했어요."),
@@ -107,6 +127,11 @@ function CategoriesPage() {
           description: editDescription.trim(),
           password: editPassword,
           githubRequired: editGithubRequired,
+          enableNotice: editEnableNotice,
+          enableQuestion: editEnableQuestion,
+          enableGeneral: editEnableGeneral,
+          enableProject: editEnableProject,
+          generalName: editGeneralName.trim(),
         },
       }),
     onSuccess: () => {
@@ -134,6 +159,11 @@ function CategoriesPage() {
     setEditDescription(c.description);
     setEditPassword("");
     setEditGithubRequired(c.githubRequired);
+    setEditEnableNotice(c.enableNotice);
+    setEditEnableQuestion(c.enableQuestion);
+    setEditEnableGeneral(c.enableGeneral);
+    setEditEnableProject(c.enableProject);
+    setEditGeneralName(c.generalName);
     if (c.hasPassword) {
       getPasswordFn({ data: { id: c.id } })
         .then((res) => setEditPassword(res.password))
@@ -205,6 +235,30 @@ function CategoriesPage() {
               className="rounded-xl"
             />
           </div>
+          <div className="space-y-3 rounded-xl bg-muted/40 p-4 sm:col-span-2">
+            <p className="text-sm font-medium text-foreground">사용할 게시판 종류</p>
+            <p className="text-xs text-muted-foreground">
+              이 게시판에 표시할 섹션만 켜주세요.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <SectionToggle id="add-sec-notice" label="공지사항" checked={enableNotice} onChange={setEnableNotice} />
+              <SectionToggle id="add-sec-question" label="질문 게시판" checked={enableQuestion} onChange={setEnableQuestion} />
+              <SectionToggle id="add-sec-general" label="일반게시판" checked={enableGeneral} onChange={setEnableGeneral} />
+              <SectionToggle id="add-sec-project" label="산출물 게시판" checked={enableProject} onChange={setEnableProject} />
+            </div>
+            {enableGeneral && (
+              <div className="space-y-2 pt-1">
+                <Label htmlFor="add-general-name">일반게시판 이름</Label>
+                <Input
+                  id="add-general-name"
+                  value={generalName}
+                  onChange={(e) => setGeneralName(e.target.value)}
+                  placeholder="예: 자유게시판"
+                  className="rounded-xl bg-background"
+                />
+              </div>
+            )}
+          </div>
           <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 p-4 sm:col-span-2">
             <div className="space-y-0.5">
               <Label htmlFor="gh-req" className="flex items-center gap-1.5">
@@ -264,6 +318,12 @@ function CategoriesPage() {
                       GitHub 링크 필수
                     </span>
                   )}
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {c.enableNotice && <SectionBadge label="공지사항" />}
+                    {c.enableQuestion && <SectionBadge label="질문 게시판" />}
+                    {c.enableGeneral && <SectionBadge label={c.generalName || "일반게시판"} />}
+                    {c.enableProject && <SectionBadge label="산출물 게시판" />}
+                  </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
                   <Button
@@ -355,6 +415,27 @@ function CategoriesPage() {
                 onCheckedChange={setEditGithubRequired}
               />
             </div>
+            <div className="space-y-3 rounded-xl bg-muted/40 p-4">
+              <p className="text-sm font-medium text-foreground">사용할 게시판 종류</p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <SectionToggle id="edit-sec-notice" label="공지사항" checked={editEnableNotice} onChange={setEditEnableNotice} />
+                <SectionToggle id="edit-sec-question" label="질문 게시판" checked={editEnableQuestion} onChange={setEditEnableQuestion} />
+                <SectionToggle id="edit-sec-general" label="일반게시판" checked={editEnableGeneral} onChange={setEditEnableGeneral} />
+                <SectionToggle id="edit-sec-project" label="산출물 게시판" checked={editEnableProject} onChange={setEditEnableProject} />
+              </div>
+              {editEnableGeneral && (
+                <div className="space-y-2 pt-1">
+                  <Label htmlFor="edit-general-name">일반게시판 이름</Label>
+                  <Input
+                    id="edit-general-name"
+                    value={editGeneralName}
+                    onChange={(e) => setEditGeneralName(e.target.value)}
+                    placeholder="예: 자유게시판"
+                    className="rounded-xl bg-background"
+                  />
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button
@@ -402,5 +483,34 @@ function CategoriesPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+function SectionToggle({
+  id,
+  label,
+  checked,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg bg-background px-3 py-2">
+      <Label htmlFor={id} className="text-sm font-normal">
+        {label}
+      </Label>
+      <Switch id={id} checked={checked} onCheckedChange={onChange} />
+    </div>
+  );
+}
+
+function SectionBadge({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+      {label}
+    </span>
   );
 }

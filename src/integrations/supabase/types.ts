@@ -18,6 +18,11 @@ export type Database = {
         Row: {
           created_at: string
           description: string
+          enable_general: boolean
+          enable_notice: boolean
+          enable_project: boolean
+          enable_question: boolean
+          general_name: string
           github_required: boolean
           id: string
           name: string
@@ -28,6 +33,11 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string
+          enable_general?: boolean
+          enable_notice?: boolean
+          enable_project?: boolean
+          enable_question?: boolean
+          general_name?: string
           github_required?: boolean
           id?: string
           name: string
@@ -38,6 +48,11 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string
+          enable_general?: boolean
+          enable_notice?: boolean
+          enable_project?: boolean
+          enable_question?: boolean
+          general_name?: string
           github_required?: boolean
           id?: string
           name?: string
