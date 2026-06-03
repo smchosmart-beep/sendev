@@ -79,6 +79,7 @@ export type Database = {
           author: string
           category_id: string
           created_at: string
+          deploy_url: string
           edit_password: string
           github_url: string
           id: string
@@ -89,6 +90,7 @@ export type Database = {
           author?: string
           category_id: string
           created_at?: string
+          deploy_url?: string
           edit_password?: string
           github_url?: string
           id?: string
@@ -99,6 +101,7 @@ export type Database = {
           author?: string
           category_id?: string
           created_at?: string
+          deploy_url?: string
           edit_password?: string
           github_url?: string
           id?: string
