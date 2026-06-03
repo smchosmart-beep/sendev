@@ -60,7 +60,12 @@ function MainLayout() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-8">
+      <main
+        className={cn(
+          "mx-auto px-6",
+          isCalendar ? "max-w-[1800px] py-4" : "max-w-5xl py-8",
+        )}
+      >
         <Outlet />
       </main>
     </div>
