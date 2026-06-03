@@ -161,6 +161,7 @@ function CategoriesPage() {
           enableGeneral: editEnableGeneral,
           enableProject: editEnableProject,
           generalName: editGeneralName.trim(),
+          projectName: editProjectName.trim(),
           tabGroup: editTabGroup,
         },
       }),
