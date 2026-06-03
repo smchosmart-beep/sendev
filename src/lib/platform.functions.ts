@@ -587,63 +587,69 @@ function extractMetaContent(html: string, keys: string[]): string | null {
   return null;
 }
 
+// Server-only OG image resolver. Returns an absolute https(s) image URL or null.
+// Reused by fetchOgImage (client fallback/backfill) and create/updatePost (cache).
+async function resolveOgImage(url: string): Promise<string | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 7000);
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; EduShareBot/1.0)" },
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+
+    // Read at most ~512KB of HTML; OG tags live in <head>.
+    const reader = res.body?.getReader();
+    let html = "";
+    if (reader) {
+      const decoder = new TextDecoder();
+      let received = 0;
+      const MAX = 512 * 1024;
+      while (received < MAX) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        received += value.byteLength;
+        html += decoder.decode(value, { stream: true });
+        if (html.includes("</head>")) break;
+      }
+      try {
+        await reader.cancel();
+      } catch {
+        /* ignore */
+      }
+    } else {
+      html = await res.text();
+    }
+
+    const raw = extractMetaContent(html, [
+      "og:image:secure_url",
+      "og:image",
+      "twitter:image",
+      "twitter:image:src",
+    ]);
+    if (!raw) return null;
+
+    // Resolve relative URLs against the page URL.
+    let resolved: string;
+    try {
+      resolved = new URL(raw, url).href;
+    } catch {
+      return null;
+    }
+    if (!/^https?:\/\//i.test(resolved)) return null;
+    return resolved;
+  } catch (e) {
+    console.error("resolveOgImage failed:", e);
+    return null;
+  }
+}
+
 export const fetchOgImage = createServerFn({ method: "GET" })
   .inputValidator((input) =>
     z.object({ url: z.string().trim().url().max(500) }).parse(input),
   )
   .handler(async ({ data }): Promise<{ image: string | null }> => {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 7000);
-      const res = await fetch(data.url, {
-        signal: controller.signal,
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; EduShareBot/1.0)" },
-      });
-      clearTimeout(timeout);
-      if (!res.ok) return { image: null };
-
-      // Read at most ~512KB of HTML; OG tags live in <head>.
-      const reader = res.body?.getReader();
-      let html = "";
-      if (reader) {
-        const decoder = new TextDecoder();
-        let received = 0;
-        const MAX = 512 * 1024;
-        while (received < MAX) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          received += value.byteLength;
-          html += decoder.decode(value, { stream: true });
-          if (html.includes("</head>")) break;
-        }
-        try {
-          await reader.cancel();
-        } catch {
-          /* ignore */
-        }
-      } else {
-        html = await res.text();
-      }
-
-      const raw = extractMetaContent(html, [
-        "og:image:secure_url",
-        "og:image",
-        "twitter:image",
-        "twitter:image:src",
-      ]);
-      if (!raw) return { image: null };
-
-      // Resolve relative URLs against the page URL.
-      let resolved: string;
-      try {
-        resolved = new URL(raw, data.url).href;
-      } catch {
-        return { image: null };
-      }
-      if (!/^https?:\/\//i.test(resolved)) return { image: null };
-      return { image: resolved };
-    } catch (e) {
-      console.error("fetchOgImage failed:", e);
-      return { image: null };
-    }
+    return { image: await resolveOgImage(data.url) };
   });
