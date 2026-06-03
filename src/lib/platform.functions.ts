@@ -409,6 +409,7 @@ function mapPost(p: any): PostDTO {
     categoryId: p.category_id,
     type: p.type,
     title: p.title,
+    content: p.content ?? "",
     author: p.author,
     githubUrl: p.github_url,
     deployUrl: p.deploy_url ?? "",
