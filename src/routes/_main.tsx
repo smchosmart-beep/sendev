@@ -1,20 +1,28 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Calendar, LayoutGrid, Code2, Settings } from "lucide-react";
+import { Calendar, Code2, Settings, Trophy, BookOpen, Rocket, Terminal } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import type { TabGroup } from "@/lib/platform.functions";
 
 export const Route = createFileRoute("/_main")({
   component: MainLayout,
 });
 
-const tabs = [
-  { to: "/calendar", label: "캘린더", icon: Calendar, match: "/calendar" },
-  { to: "/board", label: "게시판", icon: LayoutGrid, match: "/board" },
-] as const;
+const calendarTab = { to: "/calendar", label: "캘린더", icon: Calendar } as const;
+
+const boardTabs: { group: TabGroup; label: string; icon: typeof Trophy }[] = [
+  { group: "hackathon", label: "해커톤", icon: Trophy },
+  { group: "resources", label: "자료집", icon: BookOpen },
+  { group: "devground", label: "Dev Ground", icon: Rocket },
+  { group: "helloworld", label: "Hello, World", icon: Terminal },
+];
 
 function MainLayout() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const location = useRouterState({ select: (s) => s.location });
+  const pathname = location.pathname;
   const isCalendar = pathname.startsWith("/calendar");
+  const onBoardList = pathname === "/board";
+  const activeGroup = (location.search as { tab?: TabGroup })?.tab ?? "hackathon";
 
   return (
     <div className="min-h-screen bg-background">
@@ -29,13 +37,27 @@ function MainLayout() {
             </span>
           </Link>
 
-          <nav className="mx-auto flex gap-2">
-            {tabs.map(({ to, label, icon: Icon, match }) => {
-              const active = pathname.startsWith(match);
+          <nav className="mx-auto flex flex-wrap justify-center gap-2">
+            <Link
+              to={calendarTab.to}
+              className={cn(
+                "flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95",
+                isCalendar
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "text-muted-foreground hover:-translate-y-0.5 hover:text-foreground",
+              )}
+            >
+              <calendarTab.icon className="h-4 w-4" />
+              {calendarTab.label}
+            </Link>
+
+            {boardTabs.map(({ group, label, icon: Icon }) => {
+              const active = onBoardList && activeGroup === group;
               return (
                 <Link
-                  key={to}
-                  to={to}
+                  key={group}
+                  to="/board"
+                  search={{ tab: group }}
                   className={cn(
                     "flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95",
                     active
@@ -59,6 +81,7 @@ function MainLayout() {
           </Link>
         </div>
       </header>
+
 
       <main
         className={cn(

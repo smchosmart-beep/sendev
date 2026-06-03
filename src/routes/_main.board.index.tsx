@@ -3,9 +3,26 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { LayoutGrid, ArrowRight, Lock } from "lucide-react";
 
 import { categoriesQueryOptions } from "@/lib/platform.queries";
+import type { TabGroup } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 
+const TAB_LABELS: Record<TabGroup, string> = {
+  hackathon: "해커톤",
+  resources: "자료집",
+  devground: "Dev Ground",
+  helloworld: "Hello, World",
+};
+
+const VALID_TABS: TabGroup[] = ["hackathon", "resources", "devground", "helloworld"];
+
+function normalizeTab(value: unknown): TabGroup {
+  return VALID_TABS.includes(value as TabGroup) ? (value as TabGroup) : "hackathon";
+}
+
 export const Route = createFileRoute("/_main/board/")({
+  validateSearch: (search: Record<string, unknown>): { tab: TabGroup } => ({
+    tab: normalizeTab(search.tab),
+  }),
   head: () => ({
     meta: [
       { title: "게시판 — 교사 개발자 플랫폼" },
@@ -22,21 +39,24 @@ export const Route = createFileRoute("/_main/board/")({
 });
 
 function BoardListPage() {
+  const { tab } = Route.useSearch();
+  const activeTab = normalizeTab(tab);
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
+  const visible = categories.filter((c) => (c.tabGroup ?? "hackathon") === activeTab);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">게시판</h1>
+      <h1 className="text-2xl font-bold text-foreground">{TAB_LABELS[activeTab]}</h1>
 
-      {categories.length === 0 ? (
+      {visible.length === 0 ? (
         <EmptyState
           icon={LayoutGrid}
           title="아직 등록된 게시판이 없어요."
-          description="관리자 페이지에서 첫 번째 게시판을 만들어보세요!"
+          description="관리자 페이지에서 이 탭에 게시판을 추가해보세요!"
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
-          {categories.map((c) => (
+          {visible.map((c) => (
             <Link
               key={c.id}
               to="/board/$slug"

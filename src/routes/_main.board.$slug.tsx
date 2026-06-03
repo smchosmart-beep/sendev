@@ -13,6 +13,7 @@ import { toast } from "sonner";
 
 import { categoriesQueryOptions } from "@/lib/platform.queries";
 import { verifyBoardPassword } from "@/lib/platform.functions";
+import type { TabGroup } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,7 +78,8 @@ function BoardLayout() {
 
   return (
     <div className="space-y-6">
-      <BackLink />
+      <BackLink tab={category.tabGroup} />
+
 
       <div className="rounded-2xl bg-card p-6 shadow-sm">
         <h1 className="text-2xl font-bold text-foreground">{category.name}</h1>
@@ -161,10 +163,11 @@ function PasswordGate({
   );
 }
 
-function BackLink() {
+function BackLink({ tab }: { tab?: TabGroup }) {
   return (
     <Link
       to="/board"
+      search={{ tab: tab ?? "hackathon" }}
       className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:-translate-x-0.5 hover:text-foreground"
     >
       <ArrowLeft className="h-4 w-4" />

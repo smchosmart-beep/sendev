@@ -12,13 +12,34 @@ import {
   deleteCategory,
   getCategoryPassword,
 } from "@/lib/platform.functions";
-import type { CategoryDTO } from "@/lib/platform.functions";
+import type { CategoryDTO, TabGroup } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const TAB_OPTIONS: { value: TabGroup; label: string }[] = [
+  { value: "hackathon", label: "해커톤" },
+  { value: "resources", label: "자료집" },
+  { value: "devground", label: "Dev Ground" },
+  { value: "helloworld", label: "Hello, World" },
+];
+
+const TAB_LABEL: Record<TabGroup, string> = {
+  hackathon: "해커톤",
+  resources: "자료집",
+  devground: "Dev Ground",
+  helloworld: "Hello, World",
+};
 import {
   Dialog,
   DialogContent,
@@ -69,6 +90,7 @@ function CategoriesPage() {
   const [enableGeneral, setEnableGeneral] = useState(true);
   const [enableProject, setEnableProject] = useState(true);
   const [generalName, setGeneralName] = useState("일반게시판");
+  const [tabGroup, setTabGroup] = useState<TabGroup>("hackathon");
 
   const [editing, setEditing] = useState<CategoryDTO | null>(null);
   const [editName, setEditName] = useState("");
@@ -81,6 +103,7 @@ function CategoriesPage() {
   const [editEnableGeneral, setEditEnableGeneral] = useState(true);
   const [editEnableProject, setEditEnableProject] = useState(true);
   const [editGeneralName, setEditGeneralName] = useState("일반게시판");
+  const [editTabGroup, setEditTabGroup] = useState<TabGroup>("hackathon");
 
   const [deleting, setDeleting] = useState<CategoryDTO | null>(null);
 
@@ -98,6 +121,7 @@ function CategoriesPage() {
           enableGeneral,
           enableProject,
           generalName: generalName.trim(),
+          tabGroup,
         },
       }),
     onSuccess: () => {
@@ -112,6 +136,7 @@ function CategoriesPage() {
       setEnableGeneral(true);
       setEnableProject(true);
       setGeneralName("일반게시판");
+      setTabGroup("hackathon");
       toast.success("새 게시판이 추가되었어요.");
     },
     onError: () => toast.error("추가 중 문제가 발생했어요."),
@@ -132,6 +157,7 @@ function CategoriesPage() {
           enableGeneral: editEnableGeneral,
           enableProject: editEnableProject,
           generalName: editGeneralName.trim(),
+          tabGroup: editTabGroup,
         },
       }),
     onSuccess: () => {
@@ -164,6 +190,7 @@ function CategoriesPage() {
     setEditEnableGeneral(c.enableGeneral);
     setEditEnableProject(c.enableProject);
     setEditGeneralName(c.generalName);
+    setEditTabGroup(c.tabGroup ?? "hackathon");
     if (c.hasPassword) {
       getPasswordFn({ data: { id: c.id } })
         .then((res) => setEditPassword(res.password))
@@ -192,6 +219,24 @@ function CategoriesPage() {
           }}
           className="grid gap-4 sm:grid-cols-2"
         >
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="tab-group">탭 선택</Label>
+            <Select value={tabGroup} onValueChange={(v) => setTabGroup(v as TabGroup)}>
+              <SelectTrigger id="tab-group" className="rounded-xl">
+                <SelectValue placeholder="탭을 선택하세요" />
+              </SelectTrigger>
+              <SelectContent>
+                {TAB_OPTIONS.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              이 게시판이 상단 어느 탭에 표시될지 선택하세요.
+            </p>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="name">게시판 이름</Label>
             <Input
@@ -319,6 +364,9 @@ function CategoriesPage() {
                     </span>
                   )}
                   <div className="mt-2 flex flex-wrap gap-1.5">
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                      {TAB_LABEL[c.tabGroup ?? "hackathon"]}
+                    </span>
                     {c.enableNotice && <SectionBadge label="공지사항" />}
                     {c.enableQuestion && <SectionBadge label="질문 게시판" />}
                     {c.enableGeneral && <SectionBadge label={c.generalName || "일반게시판"} />}
@@ -361,6 +409,24 @@ function CategoriesPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-tab-group">탭 선택</Label>
+              <Select
+                value={editTabGroup}
+                onValueChange={(v) => setEditTabGroup(v as TabGroup)}
+              >
+                <SelectTrigger id="edit-tab-group" className="rounded-xl">
+                  <SelectValue placeholder="탭을 선택하세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TAB_OPTIONS.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="edit-name">게시판 이름</Label>
               <Input

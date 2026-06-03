@@ -29,6 +29,7 @@ export type Database = {
           password: string
           slug: string
           sort_order: number
+          tab_group: string
         }
         Insert: {
           created_at?: string
@@ -44,6 +45,7 @@ export type Database = {
           password?: string
           slug: string
           sort_order?: number
+          tab_group?: string
         }
         Update: {
           created_at?: string
@@ -59,6 +61,7 @@ export type Database = {
           password?: string
           slug?: string
           sort_order?: number
+          tab_group?: string
         }
         Relationships: []
       }
