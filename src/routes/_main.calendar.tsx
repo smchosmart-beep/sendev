@@ -83,8 +83,10 @@ function CalendarPage() {
 
   return (
     <div className="flex h-[calc(100vh-6rem)] flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-foreground">Dev 캘린더</h1>
+      <div className="flex flex-nowrap items-center justify-between gap-2">
+        <h1 className="whitespace-nowrap text-xl font-bold text-foreground sm:text-3xl">
+          Dev 캘린더
+        </h1>
         <div className="flex items-center gap-2">
           <Button
             variant="secondary"
@@ -95,7 +97,7 @@ function CalendarPage() {
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>
-          <span className="w-36 text-center text-xl font-semibold text-foreground">
+          <span className="w-28 text-center text-base font-semibold text-foreground sm:w-36 sm:text-xl">
             {viewYear}년 {viewMonth + 1}월
           </span>
           <Button
