@@ -136,6 +136,7 @@ function CategoriesPage() {
       setEnableGeneral(true);
       setEnableProject(true);
       setGeneralName("일반게시판");
+      setTabGroup("hackathon");
       toast.success("새 게시판이 추가되었어요.");
     },
     onError: () => toast.error("추가 중 문제가 발생했어요."),
