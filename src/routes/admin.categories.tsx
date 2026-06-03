@@ -195,6 +195,7 @@ function CategoriesPage() {
     setEditEnableGeneral(c.enableGeneral);
     setEditEnableProject(c.enableProject);
     setEditGeneralName(c.generalName);
+    setEditProjectName(c.projectName);
     setEditTabGroup(c.tabGroup ?? "hackathon");
     if (c.hasPassword) {
       getPasswordFn({ data: { id: c.id } })
