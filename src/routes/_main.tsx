@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Calendar, Code2, Settings, Trophy, BookOpen, Rocket, Terminal, Menu } from "lucide-react";
+import { Calendar, Code2, Settings, Trophy, BookOpen, Rocket, Terminal, Menu, Home } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -16,7 +16,9 @@ export const Route = createFileRoute("/_main")({
   component: MainLayout,
 });
 
+const homeTab = { to: "/home", label: "홈", icon: Home } as const;
 const calendarTab = { to: "/calendar", label: "캘린더", icon: Calendar } as const;
+
 
 const boardTabs: { group: TabGroup; label: string; icon: typeof Trophy }[] = [
   { group: "hackathon", label: "해커톤", icon: Trophy },
@@ -28,7 +30,9 @@ const boardTabs: { group: TabGroup; label: string; icon: typeof Trophy }[] = [
 function MainLayout() {
   const location = useRouterState({ select: (s) => s.location });
   const pathname = location.pathname;
+  const isHome = pathname.startsWith("/home");
   const isCalendar = pathname.startsWith("/calendar");
+
   const onBoardList = pathname === "/board";
   const activeGroup = (location.search as { tab?: TabGroup })?.tab ?? "hackathon";
   const [menuOpen, setMenuOpen] = useState(false);
@@ -37,7 +41,7 @@ function MainLayout() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-20 bg-card/90 shadow-sm backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-6 py-4">
-          <Link to="/calendar" className="flex items-center gap-2">
+          <Link to="/home" className="flex items-center gap-2">
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md">
               <Code2 className="h-5 w-5" />
             </span>
@@ -48,7 +52,21 @@ function MainLayout() {
 
           <nav className="mx-auto hidden flex-wrap justify-center gap-2 sm:flex">
             <Link
+              to={homeTab.to}
+              className={cn(
+                "flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95",
+                isHome
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "text-muted-foreground hover:-translate-y-0.5 hover:text-foreground",
+              )}
+            >
+              <homeTab.icon className="h-4 w-4" />
+              {homeTab.label}
+            </Link>
+
+            <Link
               to={calendarTab.to}
+
               className={cn(
                 "flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95",
                 isCalendar
@@ -102,7 +120,22 @@ function MainLayout() {
               </SheetHeader>
               <nav className="mt-6 flex flex-col gap-2">
                 <Link
+                  to={homeTab.to}
+                  onClick={() => setMenuOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors",
+                    isHome
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  <homeTab.icon className="h-5 w-5" />
+                  {homeTab.label}
+                </Link>
+
+                <Link
                   to={calendarTab.to}
+
                   onClick={() => setMenuOpen(false)}
                   className={cn(
                     "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors",

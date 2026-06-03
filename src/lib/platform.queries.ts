@@ -11,7 +11,15 @@ import {
   fetchReadme,
   fetchOgImage,
   refreshOgImage,
+  listHeroSlides,
 } from "./platform.functions";
+
+export const heroSlidesQueryOptions = () =>
+  queryOptions({
+    queryKey: ["hero-slides"],
+    queryFn: () => listHeroSlides(),
+  });
+
 
 export const categoriesQueryOptions = () =>
   queryOptions({

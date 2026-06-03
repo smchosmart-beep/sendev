@@ -15,9 +15,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
+import { Route as AdminHomeRouteImport } from './routes/admin.home'
 import { Route as AdminCriteriaRouteImport } from './routes/admin.criteria'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
+import { Route as MainHomeRouteImport } from './routes/_main.home'
 import { Route as MainCalendarRouteImport } from './routes/_main.calendar'
 import { Route as MainBoardIndexRouteImport } from './routes/_main.board.index'
 import { Route as MainBoardSlugRouteImport } from './routes/_main.board.$slug'
@@ -56,6 +58,11 @@ const AdminNoticesRoute = AdminNoticesRouteImport.update({
   path: '/notices',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminHomeRoute = AdminHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCriteriaRoute = AdminCriteriaRouteImport.update({
   id: '/criteria',
   path: '/criteria',
@@ -70,6 +77,11 @@ const AdminCalendarRoute = AdminCalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
   getParentRoute: () => AdminRoute,
+} as any)
+const MainHomeRoute = MainHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => MainRoute,
 } as any)
 const MainCalendarRoute = MainCalendarRouteImport.update({
   id: '/calendar',
@@ -117,9 +129,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/calendar': typeof MainCalendarRoute
+  '/home': typeof MainHomeRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/criteria': typeof AdminCriteriaRoute
+  '/admin/home': typeof AdminHomeRoute
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
@@ -134,9 +148,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calendar': typeof MainCalendarRoute
+  '/home': typeof MainHomeRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/criteria': typeof AdminCriteriaRoute
+  '/admin/home': typeof AdminHomeRoute
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin': typeof AdminIndexRoute
@@ -153,9 +169,11 @@ export interface FileRoutesById {
   '/_main': typeof MainRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/_main/calendar': typeof MainCalendarRoute
+  '/_main/home': typeof MainHomeRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/criteria': typeof AdminCriteriaRoute
+  '/admin/home': typeof AdminHomeRoute
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
@@ -173,9 +191,11 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/calendar'
+    | '/home'
     | '/admin/calendar'
     | '/admin/categories'
     | '/admin/criteria'
+    | '/admin/home'
     | '/admin/notices'
     | '/admin/settings'
     | '/admin/'
@@ -190,9 +210,11 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/calendar'
+    | '/home'
     | '/admin/calendar'
     | '/admin/categories'
     | '/admin/criteria'
+    | '/admin/home'
     | '/admin/notices'
     | '/admin/settings'
     | '/admin'
@@ -208,9 +230,11 @@ export interface FileRouteTypes {
     | '/_main'
     | '/admin'
     | '/_main/calendar'
+    | '/_main/home'
     | '/admin/calendar'
     | '/admin/categories'
     | '/admin/criteria'
+    | '/admin/home'
     | '/admin/notices'
     | '/admin/settings'
     | '/admin/'
@@ -273,6 +297,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminNoticesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/home': {
+      id: '/admin/home'
+      path: '/home'
+      fullPath: '/admin/home'
+      preLoaderRoute: typeof AdminHomeRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/criteria': {
       id: '/admin/criteria'
       path: '/criteria'
@@ -293,6 +324,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/calendar'
       preLoaderRoute: typeof AdminCalendarRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/_main/home': {
+      id: '/_main/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof MainHomeRouteImport
+      parentRoute: typeof MainRoute
     }
     '/_main/calendar': {
       id: '/_main/calendar'
@@ -375,12 +413,14 @@ const MainBoardSlugRouteWithChildren = MainBoardSlugRoute._addFileChildren(
 
 interface MainRouteChildren {
   MainCalendarRoute: typeof MainCalendarRoute
+  MainHomeRoute: typeof MainHomeRoute
   MainBoardSlugRoute: typeof MainBoardSlugRouteWithChildren
   MainBoardIndexRoute: typeof MainBoardIndexRoute
 }
 
 const MainRouteChildren: MainRouteChildren = {
   MainCalendarRoute: MainCalendarRoute,
+  MainHomeRoute: MainHomeRoute,
   MainBoardSlugRoute: MainBoardSlugRouteWithChildren,
   MainBoardIndexRoute: MainBoardIndexRoute,
 }
@@ -391,6 +431,7 @@ interface AdminRouteChildren {
   AdminCalendarRoute: typeof AdminCalendarRoute
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminCriteriaRoute: typeof AdminCriteriaRoute
+  AdminHomeRoute: typeof AdminHomeRoute
   AdminNoticesRoute: typeof AdminNoticesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -400,6 +441,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCalendarRoute: AdminCalendarRoute,
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminCriteriaRoute: AdminCriteriaRoute,
+  AdminHomeRoute: AdminHomeRoute,
   AdminNoticesRoute: AdminNoticesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminIndexRoute: AdminIndexRoute,
