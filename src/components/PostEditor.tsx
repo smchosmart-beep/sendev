@@ -42,6 +42,78 @@ interface PostEditorProps {
 // 10 years — effectively permanent signed URL for the private bucket.
 const SIGNED_URL_TTL = 60 * 60 * 24 * 365 * 10;
 
+// Keep stored images under ~1MB to save storage cost. We re-encode to JPEG in
+// the browser (Canvas) before upload, shrinking dimensions and quality until the
+// result fits the target size.
+const MAX_UPLOAD_BYTES = 1024 * 1024; // 1MB
+
+function loadImage(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new window.Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("이미지를 읽을 수 없어요."));
+    };
+    img.src = url;
+  });
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob | null> {
+  return new Promise((resolve) =>
+    canvas.toBlob((b) => resolve(b), "image/jpeg", quality),
+  );
+}
+
+// Returns a JPEG Blob no larger than MAX_UPLOAD_BYTES (best effort).
+async function compressImage(file: File): Promise<Blob> {
+  const img = await loadImage(file);
+  let maxEdge = 1600;
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const scale = Math.min(1, maxEdge / Math.max(img.width, img.height));
+    const w = Math.max(1, Math.round(img.width * scale));
+    const h = Math.max(1, Math.round(img.height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("이미지 변환에 실패했어요.");
+    // Flatten transparency onto white so JPEG conversion looks correct.
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0, w, h);
+
+    // Step quality down until it fits.
+    for (const quality of [0.92, 0.85, 0.75, 0.65, 0.5]) {
+      const blob = await canvasToBlob(canvas, quality);
+      if (blob && blob.size <= MAX_UPLOAD_BYTES) return blob;
+    }
+
+    // Still too big — shrink dimensions and try again.
+    maxEdge = Math.round(maxEdge * 0.75);
+  }
+
+  // Last resort: smallest quality at the reduced size.
+  const canvas = document.createElement("canvas");
+  const scale = Math.min(1, maxEdge / Math.max(img.width, img.height));
+  canvas.width = Math.max(1, Math.round(img.width * scale));
+  canvas.height = Math.max(1, Math.round(img.height * scale));
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("이미지 변환에 실패했어요.");
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  const blob = await canvasToBlob(canvas, 0.5);
+  if (!blob) throw new Error("이미지 변환에 실패했어요.");
+  return blob;
+}
+
 type ToolButtonProps = {
   icon: typeof Bold;
   label: string;
