@@ -1,11 +1,18 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { FolderPlus, Pencil, Trash2, LayoutGrid } from "lucide-react";
+import { useSuspenseQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { FolderPlus, Pencil, Trash2, LayoutGrid, Lock } from "lucide-react";
 import { toast } from "sonner";
 
-import { useAdminStore, type Category } from "@/lib/admin-store";
+import { categoriesQueryOptions } from "@/lib/platform.queries";
+import {
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} from "@/lib/platform.functions";
+import type { CategoryDTO } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
-import { SkeletonList } from "@/components/SkeletonList";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,64 +37,82 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/admin/categories")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(categoriesQueryOptions()),
+  errorComponent: ({ error }) => (
+    <div role="alert" className="p-6 text-sm text-destructive">
+      게시판을 불러오지 못했어요: {error.message}
+    </div>
+  ),
   component: CategoriesPage,
 });
 
 function CategoriesPage() {
-  const { categories, addCategory, updateCategory, removeCategory } = useAdminStore();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
+  const createFn = useServerFn(createCategory);
+  const updateFn = useServerFn(updateCategory);
+  const deleteFn = useServerFn(deleteCategory);
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ["categories"] });
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [password, setPassword] = useState("");
 
-  const [editing, setEditing] = useState<Category | null>(null);
+  const [editing, setEditing] = useState<CategoryDTO | null>(null);
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [editPassword, setEditPassword] = useState("");
 
-  const [deleting, setDeleting] = useState<Category | null>(null);
+  const [deleting, setDeleting] = useState<CategoryDTO | null>(null);
 
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 600);
-    return () => clearTimeout(t);
-  }, []);
+  const addMutation = useMutation({
+    mutationFn: () =>
+      createFn({ data: { name: name.trim(), description: description.trim(), password: password.trim() } }),
+    onSuccess: () => {
+      invalidate();
+      setName("");
+      setDescription("");
+      setPassword("");
+      toast.success("새 게시판이 추가되었어요.");
+    },
+    onError: () => toast.error("추가 중 문제가 발생했어요."),
+  });
 
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) {
-      toast.error("게시판 이름을 입력해주세요.");
-      return;
-    }
-    addCategory({ name: name.trim(), description: description.trim() });
-    setName("");
-    setDescription("");
-    toast.success("새 게시판이 추가되었어요.");
-  };
+  const editMutation = useMutation({
+    mutationFn: () =>
+      updateFn({
+        data: {
+          id: editing!.id,
+          name: editName.trim(),
+          description: editDescription.trim(),
+          password: editPassword,
+        },
+      }),
+    onSuccess: () => {
+      invalidate();
+      setEditing(null);
+      toast.success("게시판 정보가 수정되었어요.");
+    },
+    onError: () => toast.error("수정 중 문제가 발생했어요."),
+  });
 
-  const openEdit = (c: Category) => {
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteFn({ data: { id: deleting!.id } }),
+    onSuccess: () => {
+      invalidate();
+      setDeleting(null);
+      toast.success("게시판이 삭제되었어요.");
+    },
+    onError: () => toast.error("삭제 중 문제가 발생했어요."),
+  });
+
+  const openEdit = (c: CategoryDTO) => {
     setEditing(c);
     setEditName(c.name);
     setEditDescription(c.description);
-  };
-
-  const handleEditSave = () => {
-    if (!editing) return;
-    if (!editName.trim()) {
-      toast.error("게시판 이름을 입력해주세요.");
-      return;
-    }
-    updateCategory(editing.id, {
-      name: editName.trim(),
-      description: editDescription.trim(),
-    });
-    setEditing(null);
-    toast.success("게시판 정보가 수정되었어요.");
-  };
-
-  const handleDelete = () => {
-    if (!deleting) return;
-    removeCategory(deleting.id);
-    setDeleting(null);
-    toast.success("게시판이 삭제되었어요.");
+    setEditPassword("");
   };
 
   return (
@@ -98,7 +123,17 @@ function CategoriesPage() {
           <FolderPlus className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold text-foreground">새 게시판 추가</h2>
         </div>
-        <form onSubmit={handleAdd} className="grid gap-4 sm:grid-cols-[1fr_2fr_auto] sm:items-end">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!name.trim()) {
+              toast.error("게시판 이름을 입력해주세요.");
+              return;
+            }
+            addMutation.mutate();
+          }}
+          className="grid gap-4 sm:grid-cols-2"
+        >
           <div className="space-y-2">
             <Label htmlFor="name">게시판 이름</Label>
             <Input
@@ -110,6 +145,16 @@ function CategoriesPage() {
             />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="pw">입장 비밀번호 (선택)</Label>
+            <Input
+              id="pw"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="비워두면 공개 게시판"
+              className="rounded-xl"
+            />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="desc">설명</Label>
             <Input
               id="desc"
@@ -119,12 +164,15 @@ function CategoriesPage() {
               className="rounded-xl"
             />
           </div>
-          <Button
-            type="submit"
-            className="rounded-xl shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95"
-          >
-            추가하기
-          </Button>
+          <div className="sm:col-span-2">
+            <Button
+              type="submit"
+              disabled={addMutation.isPending}
+              className="rounded-xl shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95"
+            >
+              추가하기
+            </Button>
+          </div>
         </form>
       </section>
 
@@ -132,9 +180,7 @@ function CategoriesPage() {
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-foreground">게시판 목록</h2>
 
-        {loading ? (
-          <SkeletonList count={2} />
-        ) : categories.length === 0 ? (
+        {categories.length === 0 ? (
           <EmptyState
             icon={LayoutGrid}
             title="아직 등록된 게시판이 없어요."
@@ -148,7 +194,10 @@ function CategoriesPage() {
                 className="flex items-center justify-between gap-4 rounded-2xl bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="min-w-0">
-                  <h3 className="truncate text-base font-semibold text-foreground">{c.name}</h3>
+                  <h3 className="flex items-center gap-2 truncate text-base font-semibold text-foreground">
+                    {c.name}
+                    {c.hasPassword && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+                  </h3>
                   <p className="mt-1 truncate text-sm text-muted-foreground">
                     {c.description || "설명이 없습니다."}
                   </p>
@@ -184,7 +233,9 @@ function CategoriesPage() {
         <DialogContent className="rounded-2xl">
           <DialogHeader>
             <DialogTitle>게시판 수정</DialogTitle>
-            <DialogDescription>게시판 이름과 설명을 변경할 수 있어요.</DialogDescription>
+            <DialogDescription>
+              게시판 이름, 설명, 비밀번호를 변경할 수 있어요.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
@@ -205,6 +256,16 @@ function CategoriesPage() {
                 className="rounded-xl"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-pw">입장 비밀번호</Label>
+              <Input
+                id="edit-pw"
+                value={editPassword}
+                onChange={(e) => setEditPassword(e.target.value)}
+                placeholder="비워두면 공개 게시판으로 변경"
+                className="rounded-xl"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button
@@ -214,7 +275,17 @@ function CategoriesPage() {
             >
               취소
             </Button>
-            <Button onClick={handleEditSave} className="rounded-xl active:scale-95">
+            <Button
+              onClick={() => {
+                if (!editName.trim()) {
+                  toast.error("게시판 이름을 입력해주세요.");
+                  return;
+                }
+                editMutation.mutate();
+              }}
+              disabled={editMutation.isPending}
+              className="rounded-xl active:scale-95"
+            >
               저장
             </Button>
           </DialogFooter>
@@ -233,7 +304,7 @@ function CategoriesPage() {
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-xl">취소</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={() => deleteMutation.mutate()}
               className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               삭제

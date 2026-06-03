@@ -14,10 +14,12 @@ import { Route as MainRouteImport } from './routes/_main'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminCriteriaRouteImport } from './routes/admin.criteria'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as MainCalendarRouteImport } from './routes/_main.calendar'
 import { Route as MainBoardIndexRouteImport } from './routes/_main.board.index'
 import { Route as MainBoardCategoryIdRouteImport } from './routes/_main.board.$categoryId'
+import { Route as MainBoardCategoryIdPostIdRouteImport } from './routes/_main.board.$categoryId.$postId'
 
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
@@ -43,6 +45,11 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCriteriaRoute = AdminCriteriaRouteImport.update({
+  id: '/criteria',
+  path: '/criteria',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
   id: '/categories',
   path: '/categories',
@@ -63,25 +70,35 @@ const MainBoardCategoryIdRoute = MainBoardCategoryIdRouteImport.update({
   path: '/board/$categoryId',
   getParentRoute: () => MainRoute,
 } as any)
+const MainBoardCategoryIdPostIdRoute =
+  MainBoardCategoryIdPostIdRouteImport.update({
+    id: '/$postId',
+    path: '/$postId',
+    getParentRoute: () => MainBoardCategoryIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/calendar': typeof MainCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/criteria': typeof AdminCriteriaRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
-  '/board/$categoryId': typeof MainBoardCategoryIdRoute
+  '/board/$categoryId': typeof MainBoardCategoryIdRouteWithChildren
   '/board/': typeof MainBoardIndexRoute
+  '/board/$categoryId/$postId': typeof MainBoardCategoryIdPostIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calendar': typeof MainCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/criteria': typeof AdminCriteriaRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin': typeof AdminIndexRoute
-  '/board/$categoryId': typeof MainBoardCategoryIdRoute
+  '/board/$categoryId': typeof MainBoardCategoryIdRouteWithChildren
   '/board': typeof MainBoardIndexRoute
+  '/board/$categoryId/$postId': typeof MainBoardCategoryIdPostIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -90,10 +107,12 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/_main/calendar': typeof MainCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/criteria': typeof AdminCriteriaRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
-  '/_main/board/$categoryId': typeof MainBoardCategoryIdRoute
+  '/_main/board/$categoryId': typeof MainBoardCategoryIdRouteWithChildren
   '/_main/board/': typeof MainBoardIndexRoute
+  '/_main/board/$categoryId/$postId': typeof MainBoardCategoryIdPostIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -102,19 +121,23 @@ export interface FileRouteTypes {
     | '/admin'
     | '/calendar'
     | '/admin/categories'
+    | '/admin/criteria'
     | '/admin/settings'
     | '/admin/'
     | '/board/$categoryId'
     | '/board/'
+    | '/board/$categoryId/$postId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/calendar'
     | '/admin/categories'
+    | '/admin/criteria'
     | '/admin/settings'
     | '/admin'
     | '/board/$categoryId'
     | '/board'
+    | '/board/$categoryId/$postId'
   id:
     | '__root__'
     | '/'
@@ -122,10 +145,12 @@ export interface FileRouteTypes {
     | '/admin'
     | '/_main/calendar'
     | '/admin/categories'
+    | '/admin/criteria'
     | '/admin/settings'
     | '/admin/'
     | '/_main/board/$categoryId'
     | '/_main/board/'
+    | '/_main/board/$categoryId/$postId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -171,6 +196,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/criteria': {
+      id: '/admin/criteria'
+      path: '/criteria'
+      fullPath: '/admin/criteria'
+      preLoaderRoute: typeof AdminCriteriaRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/categories': {
       id: '/admin/categories'
       path: '/categories'
@@ -199,18 +231,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainBoardCategoryIdRouteImport
       parentRoute: typeof MainRoute
     }
+    '/_main/board/$categoryId/$postId': {
+      id: '/_main/board/$categoryId/$postId'
+      path: '/$postId'
+      fullPath: '/board/$categoryId/$postId'
+      preLoaderRoute: typeof MainBoardCategoryIdPostIdRouteImport
+      parentRoute: typeof MainBoardCategoryIdRoute
+    }
   }
 }
 
+interface MainBoardCategoryIdRouteChildren {
+  MainBoardCategoryIdPostIdRoute: typeof MainBoardCategoryIdPostIdRoute
+}
+
+const MainBoardCategoryIdRouteChildren: MainBoardCategoryIdRouteChildren = {
+  MainBoardCategoryIdPostIdRoute: MainBoardCategoryIdPostIdRoute,
+}
+
+const MainBoardCategoryIdRouteWithChildren =
+  MainBoardCategoryIdRoute._addFileChildren(MainBoardCategoryIdRouteChildren)
+
 interface MainRouteChildren {
   MainCalendarRoute: typeof MainCalendarRoute
-  MainBoardCategoryIdRoute: typeof MainBoardCategoryIdRoute
+  MainBoardCategoryIdRoute: typeof MainBoardCategoryIdRouteWithChildren
   MainBoardIndexRoute: typeof MainBoardIndexRoute
 }
 
 const MainRouteChildren: MainRouteChildren = {
   MainCalendarRoute: MainCalendarRoute,
-  MainBoardCategoryIdRoute: MainBoardCategoryIdRoute,
+  MainBoardCategoryIdRoute: MainBoardCategoryIdRouteWithChildren,
   MainBoardIndexRoute: MainBoardIndexRoute,
 }
 
@@ -218,12 +268,14 @@ const MainRouteWithChildren = MainRoute._addFileChildren(MainRouteChildren)
 
 interface AdminRouteChildren {
   AdminCategoriesRoute: typeof AdminCategoriesRoute
+  AdminCriteriaRoute: typeof AdminCriteriaRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminCategoriesRoute: AdminCategoriesRoute,
+  AdminCriteriaRoute: AdminCriteriaRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -238,3 +290,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, MapPin, Clock, CalendarDays } from "lucide-react";
 
-import { useAdminStore, type AppEvent } from "@/lib/admin-store";
+import { eventsQueryOptions } from "@/lib/platform.queries";
+import type { EventDTO } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,6 +22,12 @@ export const Route = createFileRoute("/_main/calendar")({
       { name: "description", content: "교사 개발자 모임의 행사와 일정을 월간 달력으로 확인하세요." },
     ],
   }),
+  loader: ({ context }) => context.queryClient.ensureQueryData(eventsQueryOptions()),
+  errorComponent: ({ error }) => (
+    <div role="alert" className="p-6 text-sm text-destructive">
+      일정을 불러오지 못했어요: {error.message}
+    </div>
+  ),
   component: CalendarPage,
 });
 
@@ -31,20 +38,14 @@ function toIso(year: number, month: number, day: number) {
 }
 
 function CalendarPage() {
-  const { events } = useAdminStore();
-  const [loading, setLoading] = useState(true);
+  const { data: events } = useSuspenseQuery(eventsQueryOptions());
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
-  const [selected, setSelected] = useState<AppEvent | null>(null);
-
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(t);
-  }, []);
+  const [selected, setSelected] = useState<EventDTO | null>(null);
 
   const eventsByDate = useMemo(() => {
-    const map = new Map<string, AppEvent[]>();
+    const map = new Map<string, EventDTO[]>();
     for (const e of events) {
       const list = map.get(e.date) ?? [];
       list.push(e);
@@ -98,67 +99,63 @@ function CalendarPage() {
         </div>
       </div>
 
-      {loading ? (
-        <Skeleton className="w-full flex-1 rounded-2xl" />
-      ) : (
-        <div className="flex flex-1 flex-col rounded-2xl bg-card p-6 shadow-sm">
-          <div className="mb-3 grid grid-cols-7 gap-2">
-            {WEEKDAYS.map((w, i) => (
+      <div className="flex flex-1 flex-col rounded-2xl bg-card p-6 shadow-sm">
+        <div className="mb-3 grid grid-cols-7 gap-2">
+          {WEEKDAYS.map((w, i) => (
+            <div
+              key={w}
+              className={cn(
+                "py-2 text-center text-sm font-semibold",
+                i === 0 ? "text-destructive" : "text-muted-foreground",
+              )}
+            >
+              {w}
+            </div>
+          ))}
+        </div>
+        <div
+          className="grid flex-1 grid-cols-7 gap-2"
+          style={{ gridTemplateRows: `repeat(${cells.length / 7}, minmax(0, 1fr))` }}
+        >
+          {cells.map((day, idx) => {
+            if (day === null) return <div key={idx} />;
+            const iso = toIso(viewYear, viewMonth, day);
+            const dayEvents = eventsByDate.get(iso) ?? [];
+            const isToday = iso === todayIso;
+            return (
               <div
-                key={w}
+                key={idx}
                 className={cn(
-                  "py-2 text-center text-sm font-semibold",
-                  i === 0 ? "text-destructive" : "text-muted-foreground",
+                  "flex flex-col overflow-hidden rounded-xl p-2 transition-all duration-200",
+                  isToday ? "bg-accent" : "hover:bg-muted",
                 )}
               >
-                {w}
-              </div>
-            ))}
-          </div>
-          <div
-            className="grid flex-1 grid-cols-7 gap-2"
-            style={{ gridTemplateRows: `repeat(${cells.length / 7}, minmax(0, 1fr))` }}
-          >
-            {cells.map((day, idx) => {
-              if (day === null) return <div key={idx} />;
-              const iso = toIso(viewYear, viewMonth, day);
-              const dayEvents = eventsByDate.get(iso) ?? [];
-              const isToday = iso === todayIso;
-              return (
                 <div
-                  key={idx}
                   className={cn(
-                    "flex flex-col overflow-hidden rounded-xl p-2 transition-all duration-200",
-                    isToday ? "bg-accent" : "hover:bg-muted",
+                    "mb-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium",
+                    isToday ? "bg-primary text-primary-foreground" : "text-foreground",
                   )}
                 >
-                  <div
-                    className={cn(
-                      "mb-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium",
-                      isToday ? "bg-primary text-primary-foreground" : "text-foreground",
-                    )}
-                  >
-                    {day}
-                  </div>
-                  <div className="space-y-1 overflow-y-auto">
-                    {dayEvents.map((e) => (
-                      <button
-                        key={e.id}
-                        onClick={() => setSelected(e)}
-                        className="block w-full truncate rounded-lg bg-primary/10 px-2 py-1 text-left text-sm font-medium text-primary transition-all duration-200 hover:bg-primary/20 active:scale-95"
-                      >
-                        {e.title}
-                      </button>
-                    ))}
-                  </div>
+                  {day}
                 </div>
-              );
-            })}
-          </div>
+                <div className="space-y-1 overflow-y-auto">
+                  {dayEvents.map((e) => (
+                    <button
+                      key={e.id}
+                      onClick={() => setSelected(e)}
+                      className="block w-full truncate rounded-lg bg-primary/10 px-2 py-1 text-left text-sm font-medium text-primary transition-all duration-200 hover:bg-primary/20 active:scale-95"
+                    >
+                      {e.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
-      )}
+      </div>
 
-      {!loading && events.length === 0 && (
+      {events.length === 0 && (
         <EmptyState
           icon={CalendarDays}
           title="아직 등록된 일정이 없어요."
