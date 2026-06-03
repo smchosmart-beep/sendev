@@ -64,3 +64,17 @@ export const ogImageQueryOptions = (url: string) =>
     staleTime: 30 * 60 * 1000,
     retry: false,
   });
+
+// Backfills the cached OG image for an existing post (one external request,
+// then stored in the DB). Keyed by postId so it runs at most once per post.
+export const ogImageBackfillQueryOptions = (
+  postId: string,
+  deployUrl: string,
+) =>
+  queryOptions({
+    queryKey: ["og-image-backfill", postId],
+    queryFn: () => refreshOgImage({ data: { postId } }),
+    enabled: !!postId && !!deployUrl,
+    staleTime: Infinity,
+    retry: false,
+  });
