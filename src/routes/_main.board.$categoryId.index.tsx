@@ -134,11 +134,12 @@ function RegisterDialog({
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
+  const [editPassword, setEditPassword] = useState("");
 
   const mutation = useMutation({
     mutationFn: () =>
       create({
-        data: { categoryId, type: "project", title, author, githubUrl },
+        data: { categoryId, type: "project", title, author, githubUrl, editPassword },
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
@@ -146,6 +147,7 @@ function RegisterDialog({
       setTitle("");
       setAuthor("");
       setGithubUrl("");
+      setEditPassword("");
       onOpenChange(false);
     },
     onError: () => toast.error("등록 중 문제가 발생했어요."),
@@ -165,6 +167,10 @@ function RegisterDialog({
             e.preventDefault();
             if (!title.trim() || !author.trim()) {
               toast.error("제목과 작성자를 입력해주세요.");
+              return;
+            }
+            if (!editPassword.trim()) {
+              toast.error("수정·삭제용 비밀번호를 입력해주세요.");
               return;
             }
             mutation.mutate();
@@ -196,6 +202,17 @@ function RegisterDialog({
               value={githubUrl}
               onChange={(e) => setGithubUrl(e.target.value)}
               placeholder="https://github.com/owner/repo"
+              className="rounded-xl"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="p-pw">수정·삭제 비밀번호</Label>
+            <Input
+              id="p-pw"
+              type="password"
+              value={editPassword}
+              onChange={(e) => setEditPassword(e.target.value)}
+              placeholder="나중에 수정·삭제할 때 사용해요"
               className="rounded-xl"
             />
           </div>

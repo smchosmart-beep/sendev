@@ -250,6 +250,7 @@ export const createPost = createServerFn({ method: "POST" })
         title: z.string().trim().min(1).max(200),
         author: z.string().trim().min(1).max(100),
         githubUrl: z.string().trim().max(300).default(""),
+        editPassword: z.string().trim().min(1).max(100),
       })
       .parse(input),
   )
@@ -261,15 +262,79 @@ export const createPost = createServerFn({ method: "POST" })
       title: data.title,
       author: data.author,
       github_url: data.githubUrl,
+      edit_password: data.editPassword,
     });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
-export const deletePost = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
-  .handler(async ({ data }) => {
+// Verifies the registrant's edit/delete password for a post.
+async function checkPostPassword(
+  db: { from: (t: string) => any },
+  id: string,
+  password: string,
+): Promise<boolean> {
+  const { data: row, error } = await db
+    .from("posts")
+    .select("edit_password")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!row) return false;
+  return row.edit_password === password;
+}
+
+export const verifyPostPassword = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({ id: z.string().uuid(), password: z.string().max(100) })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ ok: boolean }> => {
     const db = await getAdmin();
+    return { ok: await checkPostPassword(db, data.id, data.password) };
+  });
+
+export const updatePost = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        password: z.string().max(100),
+        title: z.string().trim().min(1).max(200),
+        author: z.string().trim().min(1).max(100),
+        githubUrl: z.string().trim().max(300).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ ok: boolean }> => {
+    const db = await getAdmin();
+    if (!(await checkPostPassword(db, data.id, data.password))) {
+      return { ok: false };
+    }
+    const { error } = await db
+      .from("posts")
+      .update({
+        title: data.title,
+        author: data.author,
+        github_url: data.githubUrl,
+      })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deletePost = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({ id: z.string().uuid(), password: z.string().max(100) })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ ok: boolean }> => {
+    const db = await getAdmin();
+    if (!(await checkPostPassword(db, data.id, data.password))) {
+      return { ok: false };
+    }
     const { error } = await db.from("posts").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

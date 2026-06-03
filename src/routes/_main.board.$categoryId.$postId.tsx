@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  useParams,
+  useNavigate,
+} from "@tanstack/react-router";
 import {
   useSuspenseQuery,
   useQuery,
@@ -16,6 +21,8 @@ import {
   FileText,
   Star,
   Loader2,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,9 +32,21 @@ import {
   criteriaQueryOptions,
   reviewsQueryOptions,
 } from "@/lib/platform.queries";
-import { createReview } from "@/lib/platform.functions";
+import {
+  createReview,
+  updatePost,
+  deletePost,
+} from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -66,7 +85,14 @@ function ProjectDetailPage() {
       <BackLink categoryId={categoryId} />
 
       <div className="rounded-2xl bg-card p-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-foreground">{post.title}</h1>
+        <div className="flex items-start justify-between gap-4">
+          <h1 className="text-2xl font-bold text-foreground">{post.title}</h1>
+          <ManagePost
+            post={post}
+            categoryId={categoryId}
+            postId={postId}
+          />
+        </div>
         <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
           <span className="flex items-center gap-1">
             <User className="h-4 w-4" />
@@ -91,6 +117,235 @@ function ProjectDetailPage() {
     </div>
   );
 }
+
+interface ManagePostProps {
+  post: { title: string; author: string; githubUrl: string };
+  categoryId: string;
+  postId: string;
+}
+
+function ManagePost({ post, categoryId, postId }: ManagePostProps) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const update = useServerFn(updatePost);
+  const remove = useServerFn(deletePost);
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  // Edit form state
+  const [title, setTitle] = useState(post.title);
+  const [author, setAuthor] = useState(post.author);
+  const [githubUrl, setGithubUrl] = useState(post.githubUrl);
+  const [editPw, setEditPw] = useState("");
+  const [deletePw, setDeletePw] = useState("");
+
+  const openEdit = () => {
+    setTitle(post.title);
+    setAuthor(post.author);
+    setGithubUrl(post.githubUrl);
+    setEditPw("");
+    setEditOpen(true);
+  };
+
+  const editMutation = useMutation({
+    mutationFn: () =>
+      update({
+        data: { id: postId, password: editPw, title, author, githubUrl },
+      }),
+    onSuccess: (res) => {
+      if (!res.ok) {
+        toast.error("비밀번호가 일치하지 않아요.");
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ["post", postId] });
+      queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
+      toast.success("산출물이 수정되었어요!");
+      setEditOpen(false);
+    },
+    onError: () => toast.error("수정 중 문제가 발생했어요."),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => remove({ data: { id: postId, password: deletePw } }),
+    onSuccess: (res) => {
+      if (!res.ok) {
+        toast.error("비밀번호가 일치하지 않아요.");
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
+      toast.success("산출물이 삭제되었어요.");
+      setDeleteOpen(false);
+      navigate({ to: "/board/$categoryId", params: { categoryId } });
+    },
+    onError: () => toast.error("삭제 중 문제가 발생했어요."),
+  });
+
+  return (
+    <div className="flex shrink-0 gap-2">
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        onClick={openEdit}
+        className="rounded-xl active:scale-95"
+      >
+        <Pencil className="h-4 w-4" />
+        수정
+      </Button>
+      <Button
+        type="button"
+        variant="destructive"
+        size="sm"
+        onClick={() => {
+          setDeletePw("");
+          setDeleteOpen(true);
+        }}
+        className="rounded-xl active:scale-95"
+      >
+        <Trash2 className="h-4 w-4" />
+        삭제
+      </Button>
+
+      {/* Edit dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>산출물 수정</DialogTitle>
+            <DialogDescription>
+              등록 시 설정한 비밀번호를 입력해야 수정할 수 있어요.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!title.trim() || !author.trim()) {
+                toast.error("제목과 작성자를 입력해주세요.");
+                return;
+              }
+              if (!editPw.trim()) {
+                toast.error("비밀번호를 입력해주세요.");
+                return;
+              }
+              editMutation.mutate();
+            }}
+            className="space-y-4 py-2"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="e-title">프로젝트 제목</Label>
+              <Input
+                id="e-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="rounded-xl"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="e-author">작성자</Label>
+              <Input
+                id="e-author"
+                value={author}
+                onChange={(e) => setAuthor(e.target.value)}
+                className="rounded-xl"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="e-github">GitHub 링크</Label>
+              <Input
+                id="e-github"
+                value={githubUrl}
+                onChange={(e) => setGithubUrl(e.target.value)}
+                placeholder="https://github.com/owner/repo"
+                className="rounded-xl"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="e-pw">비밀번호</Label>
+              <Input
+                id="e-pw"
+                type="password"
+                value={editPw}
+                onChange={(e) => setEditPw(e.target.value)}
+                className="rounded-xl"
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setEditOpen(false)}
+                className="rounded-xl active:scale-95"
+              >
+                취소
+              </Button>
+              <Button
+                type="submit"
+                disabled={editMutation.isPending}
+                className="rounded-xl active:scale-95"
+              >
+                {editMutation.isPending ? "수정 중..." : "수정"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete dialog */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>산출물 삭제</DialogTitle>
+            <DialogDescription>
+              등록 시 설정한 비밀번호를 입력하면 삭제돼요. 이 작업은 되돌릴 수
+              없어요.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!deletePw.trim()) {
+                toast.error("비밀번호를 입력해주세요.");
+                return;
+              }
+              deleteMutation.mutate();
+            }}
+            className="space-y-4 py-2"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="d-pw">비밀번호</Label>
+              <Input
+                id="d-pw"
+                type="password"
+                value={deletePw}
+                onChange={(e) => setDeletePw(e.target.value)}
+                className="rounded-xl"
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setDeleteOpen(false)}
+                className="rounded-xl active:scale-95"
+              >
+                취소
+              </Button>
+              <Button
+                type="submit"
+                variant="destructive"
+                disabled={deleteMutation.isPending}
+                className="rounded-xl active:scale-95"
+              >
+                {deleteMutation.isPending ? "삭제 중..." : "삭제"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 
 function ReadmeSection({ githubUrl }: { githubUrl: string }) {
   const { data, isLoading } = useQuery(readmeQueryOptions(githubUrl));
