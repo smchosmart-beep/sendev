@@ -116,6 +116,7 @@ function BoardContent() {
 
       <RegisterDialog
         categoryId={categoryId}
+        githubRequired={githubRequired}
         open={registerOpen}
         onOpenChange={setRegisterOpen}
       />
@@ -125,10 +126,12 @@ function BoardContent() {
 
 function RegisterDialog({
   categoryId,
+  githubRequired,
   open,
   onOpenChange,
 }: {
   categoryId: string;
+  githubRequired: boolean;
   open: boolean;
   onOpenChange: (o: boolean) => void;
 }) {
