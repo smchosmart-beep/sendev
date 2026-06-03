@@ -1,7 +1,15 @@
+import { useState } from "react";
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Calendar, Code2, Settings, Trophy, BookOpen, Rocket, Terminal } from "lucide-react";
+import { Calendar, Code2, Settings, Trophy, BookOpen, Rocket, Terminal, Menu } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import type { TabGroup } from "@/lib/platform.functions";
 
 export const Route = createFileRoute("/_main")({
@@ -23,6 +31,7 @@ function MainLayout() {
   const isCalendar = pathname.startsWith("/calendar");
   const onBoardList = pathname === "/board";
   const activeGroup = (location.search as { tab?: TabGroup })?.tab ?? "hackathon";
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
@@ -32,12 +41,12 @@ function MainLayout() {
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md">
               <Code2 className="h-5 w-5" />
             </span>
-            <span className="hidden text-base font-bold text-foreground sm:block">
+            <span className="text-base font-bold text-foreground">
               교사 개발자 플랫폼
             </span>
           </Link>
 
-          <nav className="mx-auto flex flex-wrap justify-center gap-2">
+          <nav className="mx-auto hidden flex-wrap justify-center gap-2 sm:flex">
             <Link
               to={calendarTab.to}
               className={cn(
@@ -75,12 +84,72 @@ function MainLayout() {
           <Link
             to="/admin/categories"
             aria-label="관리자"
-            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95"
+            className="hidden h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:flex"
           >
             <Settings className="h-5 w-5" />
           </Link>
+
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+            <SheetTrigger
+              aria-label="메뉴 열기"
+              className="ml-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm active:scale-95 sm:hidden"
+            >
+              <Menu className="h-5 w-5" />
+            </SheetTrigger>
+            <SheetContent side="right" className="w-72">
+              <SheetHeader>
+                <SheetTitle>메뉴</SheetTitle>
+              </SheetHeader>
+              <nav className="mt-6 flex flex-col gap-2">
+                <Link
+                  to={calendarTab.to}
+                  onClick={() => setMenuOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors",
+                    isCalendar
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  <calendarTab.icon className="h-5 w-5" />
+                  {calendarTab.label}
+                </Link>
+
+                {boardTabs.map(({ group, label, icon: Icon }) => {
+                  const active = onBoardList && activeGroup === group;
+                  return (
+                    <Link
+                      key={group}
+                      to="/board"
+                      search={{ tab: group }}
+                      onClick={() => setMenuOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors",
+                        active
+                          ? "bg-primary text-primary-foreground shadow-md"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                      )}
+                    >
+                      <Icon className="h-5 w-5" />
+                      {label}
+                    </Link>
+                  );
+                })}
+
+                <Link
+                  to="/admin/categories"
+                  onClick={() => setMenuOpen(false)}
+                  className="mt-2 flex items-center gap-3 rounded-2xl border border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <Settings className="h-5 w-5" />
+                  관리자
+                </Link>
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </header>
+
 
 
       <main
