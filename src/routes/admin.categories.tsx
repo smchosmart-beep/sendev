@@ -104,6 +104,7 @@ function CategoriesPage() {
   const [editEnableGeneral, setEditEnableGeneral] = useState(true);
   const [editEnableProject, setEditEnableProject] = useState(true);
   const [editGeneralName, setEditGeneralName] = useState("일반게시판");
+  const [editProjectName, setEditProjectName] = useState("산출물");
   const [editTabGroup, setEditTabGroup] = useState<TabGroup>("hackathon");
 
   const [deleting, setDeleting] = useState<CategoryDTO | null>(null);
