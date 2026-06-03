@@ -116,6 +116,47 @@ function BoardContent() {
   );
 }
 
+function ProjectCard({
+  post,
+  categoryId,
+}: {
+  post: PostDTO;
+  categoryId: string;
+}) {
+  const { data: og } = useQuery(ogImageQueryOptions(post.deployUrl ?? ""));
+  const ogImage = og?.image ?? null;
+
+  return (
+    <Link
+      to="/board/$categoryId/$postId"
+      params={{ categoryId, postId: post.id }}
+      className="block overflow-hidden rounded-2xl bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md active:scale-95"
+    >
+      <div className="relative flex h-32 items-center justify-center overflow-hidden bg-accent text-primary">
+        {ogImage ? (
+          <img
+            src={ogImage}
+            alt={`${post.title} 배포 미리보기`}
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <FolderGit2 className="h-10 w-10" />
+        )}
+      </div>
+      <div className="p-5">
+        <h3 className="font-semibold text-foreground">{post.title}</h3>
+        <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+          <User className="h-3.5 w-3.5" />
+          {post.author}
+        </p>
+      </div>
+    </Link>
+  );
+}
+
+
+
 function RegisterDialog({
   categoryId,
   githubRequired,
