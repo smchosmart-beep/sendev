@@ -22,6 +22,7 @@ export type Database = {
           id: string
           name: string
           password: string
+          slug: string
           sort_order: number
         }
         Insert: {
@@ -31,6 +32,7 @@ export type Database = {
           id?: string
           name: string
           password?: string
+          slug: string
           sort_order?: number
         }
         Update: {
@@ -40,6 +42,7 @@ export type Database = {
           id?: string
           name?: string
           password?: string
+          slug?: string
           sort_order?: number
         }
         Relationships: []
@@ -85,6 +88,7 @@ export type Database = {
           github_url: string
           id: string
           og_image_url: string
+          post_no: number | null
           title: string
           type: string
         }
@@ -98,6 +102,7 @@ export type Database = {
           github_url?: string
           id?: string
           og_image_url?: string
+          post_no?: number | null
           title: string
           type: string
         }
@@ -111,6 +116,7 @@ export type Database = {
           github_url?: string
           id?: string
           og_image_url?: string
+          post_no?: number | null
           title?: string
           type?: string
         }
