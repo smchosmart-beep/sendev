@@ -43,6 +43,7 @@ export interface PostDTO {
   title: string;
   author: string;
   githubUrl: string;
+  deployUrl: string;
   createdAt: string;
 }
 
