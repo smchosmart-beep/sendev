@@ -61,7 +61,7 @@ function AdminGate() {
           type="password"
           autoFocus
           lang="en"
-          inputMode="latin"
+          inputMode="text"
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
