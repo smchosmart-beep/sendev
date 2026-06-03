@@ -83,7 +83,32 @@ function CalendarPage() {
     const d = new Date(viewYear, viewMonth + delta, 1);
     setViewYear(d.getFullYear());
     setViewMonth(d.getMonth());
+    setSelectedDay(null);
   };
+
+  const monthPrefix = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}`;
+  const monthEvents = useMemo(
+    () =>
+      events
+        .filter((e) => e.date.startsWith(monthPrefix))
+        .sort((a, b) =>
+          a.date === b.date
+            ? (a.time ?? "").localeCompare(b.time ?? "")
+            : a.date.localeCompare(b.date),
+        ),
+    [events, monthPrefix],
+  );
+
+  const activeDay =
+    selectedDay ?? (todayIso.startsWith(monthPrefix) ? todayIso : null);
+  const activeDayEvents = activeDay ? eventsByDate.get(activeDay) ?? [] : [];
+
+  const formatDayLabel = (iso: string) => {
+    const [, , d] = iso.split("-");
+    const wd = WEEKDAYS[new Date(iso).getDay()];
+    return `${Number(d)}일 (${wd})`;
+  };
+
 
   return (
     <div className="flex h-[calc(100vh-6rem)] flex-col gap-4">
