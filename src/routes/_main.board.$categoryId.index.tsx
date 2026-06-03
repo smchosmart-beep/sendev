@@ -414,7 +414,7 @@ function QuestionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-2xl">
+      <DialogContent className="max-w-2xl rounded-2xl">
         <DialogHeader>
           <DialogTitle>질문 등록</DialogTitle>
           <DialogDescription>궁금한 점을 자유롭게 질문해보세요.</DialogDescription>
@@ -441,6 +441,15 @@ function QuestionDialog({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="rounded-xl"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>내용</Label>
+            <PostEditor
+              value={content}
+              onChange={setContent}
+              placeholder="질문 내용을 입력해 주세요."
+              rows={8}
             />
           </div>
           <div className="space-y-2">
