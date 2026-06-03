@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { LayoutGrid, KeyRound, ShieldCheck } from "lucide-react";
+import { LayoutGrid, SlidersHorizontal, ShieldCheck } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/admin")({
 
 const tabs = [
   { to: "/admin/categories", label: "게시판 관리", icon: LayoutGrid },
-  { to: "/admin/settings", label: "비밀번호 설정", icon: KeyRound },
+  { to: "/admin/criteria", label: "평가 기준 관리", icon: SlidersHorizontal },
 ] as const;
 
 function AdminLayout() {
