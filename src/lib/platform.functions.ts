@@ -352,6 +352,29 @@ export const createEvent = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const updateEvent = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        title: z.string().trim().min(1).max(200),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        time: z.string().trim().max(100).default(""),
+        location: z.string().trim().max(200).default(""),
+        description: z.string().trim().max(1000).default(""),
+        attachments: z.array(attachmentSchema).max(10).default([]),
+        links: z.array(linkSchema).max(10).default([]),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { id, ...rest } = data;
+    const db = await getAdmin();
+    const { error } = await db.from("events").update(rest).eq("id", id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // Uploads a base64-encoded file to the private event-files bucket and returns a
 // long-lived signed URL stored alongside the event.
 export const uploadEventFile = createServerFn({ method: "POST" })
