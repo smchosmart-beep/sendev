@@ -6,13 +6,7 @@ import {
   heroSlidesQueryOptions,
   eventsQueryOptions,
 } from "@/lib/platform.queries";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
+import { HeroStackCarousel } from "@/components/hero-stack-carousel";
 
 export const Route = createFileRoute("/_main/home")({
   head: () => ({
