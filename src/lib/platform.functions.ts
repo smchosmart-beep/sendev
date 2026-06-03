@@ -120,11 +120,30 @@ export const getCategoryPassword = createServerFn({ method: "POST" })
     return { password: row?.password ?? "" };
   });
 
+// Returns a slug unique across categories, deriving from `base` and appending a
+// numeric suffix on collisions. `excludeId` lets an update keep its own slug.
+async function ensureUniqueSlug(
+  db: { from: (t: string) => any },
+  base: string,
+  excludeId?: string,
+): Promise<string> {
+  let candidate = slugify(base) || "board";
+  for (let i = 0; i < 50; i++) {
+    const trySlug = i === 0 ? candidate : `${candidate}-${i + 1}`;
+    let query = db.from("categories").select("id").eq("slug", trySlug);
+    if (excludeId) query = query.neq("id", excludeId);
+    const { data: row } = await query.maybeSingle();
+    if (!row) return trySlug;
+  }
+  return `${candidate}-${Date.now()}`;
+}
+
 export const createCategory = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
       .object({
         name: z.string().trim().min(1).max(100),
+        slug: z.string().trim().max(31).optional(),
         description: z.string().trim().max(500).default(""),
         password: z.string().trim().max(100).default(""),
         githubRequired: z.boolean().default(false),
@@ -140,8 +159,10 @@ export const createCategory = createServerFn({ method: "POST" })
       .limit(1)
       .maybeSingle();
     const nextOrder = (maxRow?.sort_order ?? 0) + 1;
+    const slug = await ensureUniqueSlug(db, data.slug || data.name);
     const { error } = await db.from("categories").insert({
       name: data.name,
+      slug,
       description: data.description,
       password: data.password,
       github_required: data.githubRequired,
@@ -157,6 +178,7 @@ export const updateCategory = createServerFn({ method: "POST" })
       .object({
         id: z.string().uuid(),
         name: z.string().trim().min(1).max(100),
+        slug: z.string().trim().max(31).optional(),
         description: z.string().trim().max(500).default(""),
         // undefined = leave password unchanged
         password: z.string().trim().max(100).optional(),
@@ -170,6 +192,9 @@ export const updateCategory = createServerFn({ method: "POST" })
       name: data.name,
       description: data.description,
     };
+    if (data.slug !== undefined && data.slug !== "") {
+      patch.slug = await ensureUniqueSlug(db, data.slug, data.id);
+    }
     if (data.password !== undefined) patch.password = data.password;
     if (data.githubRequired !== undefined)
       patch.github_required = data.githubRequired;
@@ -177,6 +202,7 @@ export const updateCategory = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 export const deleteCategory = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
