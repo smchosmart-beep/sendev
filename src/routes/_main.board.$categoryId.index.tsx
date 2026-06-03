@@ -223,6 +223,11 @@ function RegisterDialog({
               toast.error("GitHub 링크 형식이 올바르지 않아요. (예: https://github.com/owner/repo)");
               return;
             }
+            const dep = deployUrl.trim();
+            if (dep && !/^https?:\/\/.+/i.test(dep)) {
+              toast.error("배포 URL 형식이 올바르지 않아요. (예: https://my-app.lovable.app)");
+              return;
+            }
             mutation.mutate();
           }}
           className="space-y-4 py-2"
