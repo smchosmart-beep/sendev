@@ -306,7 +306,7 @@ function AdminCalendarPage() {
 
       {/* Create / edit dialog */}
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl">
+        <DialogContent className="max-h-[90vh] max-w-[90vw] overflow-y-auto overflow-x-hidden rounded-2xl sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
               {editing?.mode === "edit" ? "일정 수정" : "새 일정 추가"}
@@ -392,12 +392,13 @@ function AdminCalendarPage() {
               {attachments.map((a, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm"
+                  className="flex w-full min-w-0 items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm"
                 >
-                  <Paperclip className="h-4 w-4 text-primary" />
-                  <span className="flex-1 truncate">{a.name}</span>
+                  <Paperclip className="h-4 w-4 shrink-0 text-primary" />
+                  <span className="min-w-0 flex-1 truncate">{a.name}</span>
                   <button
                     type="button"
+                    className="shrink-0"
                     onClick={() =>
                       setAttachments((prev) => prev.filter((_, idx) => idx !== i))
                     }
@@ -438,12 +439,13 @@ function AdminCalendarPage() {
               {links.map((l, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm"
+                  className="flex w-full min-w-0 items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm"
                 >
-                  <LinkIcon className="h-4 w-4 text-primary" />
-                  <span className="flex-1 truncate">{l.label}</span>
+                  <LinkIcon className="h-4 w-4 shrink-0 text-primary" />
+                  <span className="min-w-0 flex-1 truncate">{l.label}</span>
                   <button
                     type="button"
+                    className="shrink-0"
                     onClick={() => setLinks((prev) => prev.filter((_, idx) => idx !== i))}
                     aria-label="링크 삭제"
                   >
