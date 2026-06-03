@@ -14,6 +14,7 @@ const tabs = [
 
 function MainLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isCalendar = pathname.startsWith("/calendar");
 
   return (
     <div className="min-h-screen bg-background">
