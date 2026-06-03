@@ -225,7 +225,7 @@ function CalendarPage() {
                   {selected.attachments.map((a, i) => (
                     <a
                       key={i}
-                      href={a.url}
+                      href={a.url.includes("download=") ? a.url : `${a.url}${a.url.includes("?") ? "&" : "?"}download=${encodeURIComponent(a.name)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-foreground transition-colors hover:bg-accent"
