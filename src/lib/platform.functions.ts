@@ -218,6 +218,9 @@ export const updateCategory = createServerFn({ method: "POST" })
         enableGeneral: z.boolean().optional(),
         enableProject: z.boolean().optional(),
         generalName: z.string().trim().max(100).optional(),
+        tabGroup: z
+          .enum(["hackathon", "resources", "devground", "helloworld"])
+          .optional(),
       })
       .parse(input),
   )
