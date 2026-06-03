@@ -13,6 +13,7 @@ import { toast } from "sonner";
 
 import { categoriesQueryOptions } from "@/lib/platform.queries";
 import { verifyBoardPassword } from "@/lib/platform.functions";
+import type { TabGroup } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
