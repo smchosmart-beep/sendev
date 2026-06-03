@@ -38,6 +38,9 @@ export const Route = createFileRoute("/_main/board/$categoryId/")({
 function BoardContent() {
   const { categoryId } = useParams({ from: "/_main/board/$categoryId/" });
   const { data: posts } = useSuspenseQuery(postsQueryOptions(categoryId));
+  const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
+  const githubRequired =
+    categories.find((c) => c.id === categoryId)?.githubRequired ?? false;
   const notices = posts.filter((p) => p.type === "notice");
   const projects = posts.filter((p) => p.type === "project");
   const [registerOpen, setRegisterOpen] = useState(false);
