@@ -235,18 +235,19 @@ export function PostEditor({
       toast.error("이미지 파일만 올릴 수 있어요.");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("이미지 크기는 5MB 이하만 가능해요.");
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("이미지 크기는 20MB 이하만 가능해요.");
       return;
     }
 
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop() || "png";
-      const path = `${crypto.randomUUID()}.${ext}`;
+      // Resize/compress to keep storage under ~1MB.
+      const blob = await compressImage(file);
+      const path = `${crypto.randomUUID()}.jpg`;
       const { error: uploadError } = await supabase.storage
         .from("post-images")
-        .upload(path, file, { contentType: file.type, upsert: false });
+        .upload(path, blob, { contentType: "image/jpeg", upsert: false });
       if (uploadError) throw uploadError;
 
       const { data, error: signError } = await supabase.storage
