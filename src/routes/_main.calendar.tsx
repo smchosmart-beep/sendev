@@ -111,7 +111,7 @@ function CalendarPage() {
 
 
   return (
-    <div className="flex h-[calc(100vh-6rem)] flex-col gap-4">
+    <div className="flex min-h-[calc(100vh-6rem)] flex-col gap-4 sm:h-[calc(100vh-6rem)]">
       <div className="flex flex-nowrap items-center justify-between gap-2">
         <h1 className="whitespace-nowrap text-xl font-bold text-foreground sm:text-3xl">
           Dev 캘린더
