@@ -9,6 +9,8 @@ import {
   CalendarDays,
   LinkIcon,
   Download,
+  List,
+  LayoutGrid,
 } from "lucide-react";
 
 import { eventsQueryOptions } from "@/lib/platform.queries";
