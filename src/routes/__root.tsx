@@ -89,8 +89,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "SEN _DEV_Platform" },
       { name: "twitter:description", content: "서울시교육청 교사 개발자 플랫폼" },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8b5818c5-2609-4d79-bea9-860015671db6/id-preview-33af459b--d98604f5-dc93-4b14-9c82-97b029d8a610.lovable.app-1780493877385.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8b5818c5-2609-4d79-bea9-860015671db6/id-preview-33af459b--d98604f5-dc93-4b14-9c82-97b029d8a610.lovable.app-1780493877385.png" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/LCOx43L9vdVDqKXPvjgXJ8eB1Lr2/social-images/social-1780529697075-5637.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/LCOx43L9vdVDqKXPvjgXJ8eB1Lr2/social-images/social-1780529697075-5637.webp" },
     ],
     links: [
       {
