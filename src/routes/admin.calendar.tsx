@@ -439,12 +439,13 @@ function AdminCalendarPage() {
               {links.map((l, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm"
+                  className="flex w-full min-w-0 items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm"
                 >
-                  <LinkIcon className="h-4 w-4 text-primary" />
-                  <span className="flex-1 truncate">{l.label}</span>
+                  <LinkIcon className="h-4 w-4 shrink-0 text-primary" />
+                  <span className="min-w-0 flex-1 truncate">{l.label}</span>
                   <button
                     type="button"
+                    className="shrink-0"
                     onClick={() => setLinks((prev) => prev.filter((_, idx) => idx !== i))}
                     aria-label="링크 삭제"
                   >
