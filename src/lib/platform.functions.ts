@@ -183,6 +183,7 @@ export const createCategory = createServerFn({ method: "POST" })
         enableGeneral: z.boolean().default(true),
         enableProject: z.boolean().default(true),
         generalName: z.string().trim().max(100).default("일반게시판"),
+        projectName: z.string().trim().max(100).default("산출물"),
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .default("hackathon"),
