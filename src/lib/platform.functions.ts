@@ -41,6 +41,7 @@ export interface PostDTO {
   categoryId: string;
   type: "notice" | "project" | "question";
   title: string;
+  content: string;
   author: string;
   githubUrl: string;
   deployUrl: string;
@@ -235,7 +236,7 @@ export const listPosts = createServerFn({ method: "GET" })
     const db = await getAdmin();
     const { data: rows, error } = await db
       .from("posts")
-      .select("id, category_id, type, title, author, github_url, deploy_url, og_image_url, created_at")
+      .select("id, category_id, type, title, content, author, github_url, deploy_url, og_image_url, created_at")
       .eq("category_id", data.categoryId)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -248,7 +249,7 @@ export const getPost = createServerFn({ method: "GET" })
     const db = await getAdmin();
     const { data: row, error } = await db
       .from("posts")
-      .select("id, category_id, type, title, author, github_url, deploy_url, og_image_url, created_at")
+      .select("id, category_id, type, title, content, author, github_url, deploy_url, og_image_url, created_at")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
