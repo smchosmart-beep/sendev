@@ -13,6 +13,16 @@ const TAB_LABELS: Record<TabGroup, string> = {
   helloworld: "Hello, World",
 };
 
+const TAB_DESCRIPTIONS: Record<TabGroup, string> = {
+  hackathon:
+    "교사들이 함께 모여 정해진 기간 동안 아이디어를 코드로 만들고 결과물을 나누는 공간이에요.",
+  resources:
+    "수업과 바이브코딩에 바로 활용할 수 있는 자료와 가이드를 모아둔 공간이에요.",
+  devground: "교사들이 서로 소통, 공유하는 바이브코딩 문화 조성을 위한 공간이에요.",
+  helloworld:
+    "처음 시작하는 분들을 위한 입문 가이드와 첫걸음 정보를 담은 공간이에요.",
+};
+
 const VALID_TABS: TabGroup[] = ["hackathon", "resources", "devground", "helloworld"];
 
 function normalizeTab(value: unknown): TabGroup {
@@ -46,7 +56,10 @@ function BoardListPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">{TAB_LABELS[activeTab]}</h1>
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold text-foreground">{TAB_LABELS[activeTab]}</h1>
+        <p className="text-sm text-muted-foreground">{TAB_DESCRIPTIONS[activeTab]}</p>
+      </div>
 
       {visible.length === 0 ? (
         <EmptyState
