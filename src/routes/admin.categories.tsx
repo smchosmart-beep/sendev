@@ -60,22 +60,32 @@ function CategoriesPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [password, setPassword] = useState("");
+  const [githubRequired, setGithubRequired] = useState(false);
 
   const [editing, setEditing] = useState<CategoryDTO | null>(null);
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editPassword, setEditPassword] = useState("");
+  const [editGithubRequired, setEditGithubRequired] = useState(false);
 
   const [deleting, setDeleting] = useState<CategoryDTO | null>(null);
 
   const addMutation = useMutation({
     mutationFn: () =>
-      createFn({ data: { name: name.trim(), description: description.trim(), password: password.trim() } }),
+      createFn({
+        data: {
+          name: name.trim(),
+          description: description.trim(),
+          password: password.trim(),
+          githubRequired,
+        },
+      }),
     onSuccess: () => {
       invalidate();
       setName("");
       setDescription("");
       setPassword("");
+      setGithubRequired(false);
       toast.success("새 게시판이 추가되었어요.");
     },
     onError: () => toast.error("추가 중 문제가 발생했어요."),
@@ -89,6 +99,7 @@ function CategoriesPage() {
           name: editName.trim(),
           description: editDescription.trim(),
           password: editPassword,
+          githubRequired: editGithubRequired,
         },
       }),
     onSuccess: () => {
@@ -114,7 +125,9 @@ function CategoriesPage() {
     setEditName(c.name);
     setEditDescription(c.description);
     setEditPassword("");
+    setEditGithubRequired(c.githubRequired);
   };
+
 
   return (
     <div className="space-y-8">
