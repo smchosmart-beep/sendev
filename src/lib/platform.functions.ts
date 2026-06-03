@@ -510,6 +510,7 @@ function mapPost(p: any): PostDTO {
   return {
     id: p.id,
     categoryId: p.category_id,
+    postNo: p.post_no ?? 0,
     type: p.type,
     title: p.title,
     content: p.content ?? "",
