@@ -21,6 +21,7 @@ import { Route as MainCalendarRouteImport } from './routes/_main.calendar'
 import { Route as MainBoardIndexRouteImport } from './routes/_main.board.index'
 import { Route as MainBoardSlugRouteImport } from './routes/_main.board.$slug'
 import { Route as MainBoardCategoryIdRouteImport } from './routes/_main.board.$categoryId'
+import { Route as MainBoardSlugIndexRouteImport } from './routes/_main.board.$slug.index'
 import { Route as MainBoardCategoryIdIndexRouteImport } from './routes/_main.board.$categoryId.index'
 import { Route as MainBoardCategoryIdPostIdRouteImport } from './routes/_main.board.$categoryId.$postId'
 
@@ -83,6 +84,11 @@ const MainBoardCategoryIdRoute = MainBoardCategoryIdRouteImport.update({
   path: '/board/$categoryId',
   getParentRoute: () => MainRoute,
 } as any)
+const MainBoardSlugIndexRoute = MainBoardSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MainBoardSlugRoute,
+} as any)
 const MainBoardCategoryIdIndexRoute =
   MainBoardCategoryIdIndexRouteImport.update({
     id: '/',
@@ -106,10 +112,11 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
   '/board/$categoryId': typeof MainBoardCategoryIdRouteWithChildren
-  '/board/$slug': typeof MainBoardSlugRoute
+  '/board/$slug': typeof MainBoardSlugRouteWithChildren
   '/board/': typeof MainBoardIndexRoute
   '/board/$categoryId/$postId': typeof MainBoardCategoryIdPostIdRoute
   '/board/$categoryId/': typeof MainBoardCategoryIdIndexRoute
+  '/board/$slug/': typeof MainBoardSlugIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -119,10 +126,10 @@ export interface FileRoutesByTo {
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin': typeof AdminIndexRoute
-  '/board/$slug': typeof MainBoardSlugRoute
   '/board': typeof MainBoardIndexRoute
   '/board/$categoryId/$postId': typeof MainBoardCategoryIdPostIdRoute
   '/board/$categoryId': typeof MainBoardCategoryIdIndexRoute
+  '/board/$slug': typeof MainBoardSlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -136,10 +143,11 @@ export interface FileRoutesById {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
   '/_main/board/$categoryId': typeof MainBoardCategoryIdRouteWithChildren
-  '/_main/board/$slug': typeof MainBoardSlugRoute
+  '/_main/board/$slug': typeof MainBoardSlugRouteWithChildren
   '/_main/board/': typeof MainBoardIndexRoute
   '/_main/board/$categoryId/$postId': typeof MainBoardCategoryIdPostIdRoute
   '/_main/board/$categoryId/': typeof MainBoardCategoryIdIndexRoute
+  '/_main/board/$slug/': typeof MainBoardSlugIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -157,6 +165,7 @@ export interface FileRouteTypes {
     | '/board/'
     | '/board/$categoryId/$postId'
     | '/board/$categoryId/'
+    | '/board/$slug/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,10 +175,10 @@ export interface FileRouteTypes {
     | '/admin/notices'
     | '/admin/settings'
     | '/admin'
-    | '/board/$slug'
     | '/board'
     | '/board/$categoryId/$postId'
     | '/board/$categoryId'
+    | '/board/$slug'
   id:
     | '__root__'
     | '/'
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/_main/board/'
     | '/_main/board/$categoryId/$postId'
     | '/_main/board/$categoryId/'
+    | '/_main/board/$slug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -280,6 +290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainBoardCategoryIdRouteImport
       parentRoute: typeof MainRoute
     }
+    '/_main/board/$slug/': {
+      id: '/_main/board/$slug/'
+      path: '/'
+      fullPath: '/board/$slug/'
+      preLoaderRoute: typeof MainBoardSlugIndexRouteImport
+      parentRoute: typeof MainBoardSlugRoute
+    }
     '/_main/board/$categoryId/': {
       id: '/_main/board/$categoryId/'
       path: '/'
@@ -310,17 +327,29 @@ const MainBoardCategoryIdRouteChildren: MainBoardCategoryIdRouteChildren = {
 const MainBoardCategoryIdRouteWithChildren =
   MainBoardCategoryIdRoute._addFileChildren(MainBoardCategoryIdRouteChildren)
 
+interface MainBoardSlugRouteChildren {
+  MainBoardSlugIndexRoute: typeof MainBoardSlugIndexRoute
+}
+
+const MainBoardSlugRouteChildren: MainBoardSlugRouteChildren = {
+  MainBoardSlugIndexRoute: MainBoardSlugIndexRoute,
+}
+
+const MainBoardSlugRouteWithChildren = MainBoardSlugRoute._addFileChildren(
+  MainBoardSlugRouteChildren,
+)
+
 interface MainRouteChildren {
   MainCalendarRoute: typeof MainCalendarRoute
   MainBoardCategoryIdRoute: typeof MainBoardCategoryIdRouteWithChildren
-  MainBoardSlugRoute: typeof MainBoardSlugRoute
+  MainBoardSlugRoute: typeof MainBoardSlugRouteWithChildren
   MainBoardIndexRoute: typeof MainBoardIndexRoute
 }
 
 const MainRouteChildren: MainRouteChildren = {
   MainCalendarRoute: MainCalendarRoute,
   MainBoardCategoryIdRoute: MainBoardCategoryIdRouteWithChildren,
-  MainBoardSlugRoute: MainBoardSlugRoute,
+  MainBoardSlugRoute: MainBoardSlugRouteWithChildren,
   MainBoardIndexRoute: MainBoardIndexRoute,
 }
 
