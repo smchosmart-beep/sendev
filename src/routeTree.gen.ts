@@ -25,6 +25,7 @@ import { Route as MainBoardSlugIndexRouteImport } from './routes/_main.board.$sl
 import { Route as MainBoardCategoryIdIndexRouteImport } from './routes/_main.board.$categoryId.index'
 import { Route as MainBoardSlugNewQuestionRouteImport } from './routes/_main.board.$slug.new-question'
 import { Route as MainBoardSlugNewProjectRouteImport } from './routes/_main.board.$slug.new-project'
+import { Route as MainBoardSlugPostNoRouteImport } from './routes/_main.board.$slug.$postNo'
 import { Route as MainBoardCategoryIdPostIdRouteImport } from './routes/_main.board.$categoryId.$postId'
 
 const AdminRoute = AdminRouteImport.update({
@@ -108,6 +109,11 @@ const MainBoardSlugNewProjectRoute = MainBoardSlugNewProjectRouteImport.update({
   path: '/new-project',
   getParentRoute: () => MainBoardSlugRoute,
 } as any)
+const MainBoardSlugPostNoRoute = MainBoardSlugPostNoRouteImport.update({
+  id: '/$postNo',
+  path: '/$postNo',
+  getParentRoute: () => MainBoardSlugRoute,
+} as any)
 const MainBoardCategoryIdPostIdRoute =
   MainBoardCategoryIdPostIdRouteImport.update({
     id: '/$postId',
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/board/$slug': typeof MainBoardSlugRouteWithChildren
   '/board/': typeof MainBoardIndexRoute
   '/board/$categoryId/$postId': typeof MainBoardCategoryIdPostIdRoute
+  '/board/$slug/$postNo': typeof MainBoardSlugPostNoRoute
   '/board/$slug/new-project': typeof MainBoardSlugNewProjectRoute
   '/board/$slug/new-question': typeof MainBoardSlugNewQuestionRoute
   '/board/$categoryId/': typeof MainBoardCategoryIdIndexRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/board': typeof MainBoardIndexRoute
   '/board/$categoryId/$postId': typeof MainBoardCategoryIdPostIdRoute
+  '/board/$slug/$postNo': typeof MainBoardSlugPostNoRoute
   '/board/$slug/new-project': typeof MainBoardSlugNewProjectRoute
   '/board/$slug/new-question': typeof MainBoardSlugNewQuestionRoute
   '/board/$categoryId': typeof MainBoardCategoryIdIndexRoute
@@ -163,6 +171,7 @@ export interface FileRoutesById {
   '/_main/board/$slug': typeof MainBoardSlugRouteWithChildren
   '/_main/board/': typeof MainBoardIndexRoute
   '/_main/board/$categoryId/$postId': typeof MainBoardCategoryIdPostIdRoute
+  '/_main/board/$slug/$postNo': typeof MainBoardSlugPostNoRoute
   '/_main/board/$slug/new-project': typeof MainBoardSlugNewProjectRoute
   '/_main/board/$slug/new-question': typeof MainBoardSlugNewQuestionRoute
   '/_main/board/$categoryId/': typeof MainBoardCategoryIdIndexRoute
@@ -183,6 +192,7 @@ export interface FileRouteTypes {
     | '/board/$slug'
     | '/board/'
     | '/board/$categoryId/$postId'
+    | '/board/$slug/$postNo'
     | '/board/$slug/new-project'
     | '/board/$slug/new-question'
     | '/board/$categoryId/'
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/board'
     | '/board/$categoryId/$postId'
+    | '/board/$slug/$postNo'
     | '/board/$slug/new-project'
     | '/board/$slug/new-question'
     | '/board/$categoryId'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/_main/board/$slug'
     | '/_main/board/'
     | '/_main/board/$categoryId/$postId'
+    | '/_main/board/$slug/$postNo'
     | '/_main/board/$slug/new-project'
     | '/_main/board/$slug/new-question'
     | '/_main/board/$categoryId/'
@@ -343,6 +355,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainBoardSlugNewProjectRouteImport
       parentRoute: typeof MainBoardSlugRoute
     }
+    '/_main/board/$slug/$postNo': {
+      id: '/_main/board/$slug/$postNo'
+      path: '/$postNo'
+      fullPath: '/board/$slug/$postNo'
+      preLoaderRoute: typeof MainBoardSlugPostNoRouteImport
+      parentRoute: typeof MainBoardSlugRoute
+    }
     '/_main/board/$categoryId/$postId': {
       id: '/_main/board/$categoryId/$postId'
       path: '/$postId'
@@ -367,12 +386,14 @@ const MainBoardCategoryIdRouteWithChildren =
   MainBoardCategoryIdRoute._addFileChildren(MainBoardCategoryIdRouteChildren)
 
 interface MainBoardSlugRouteChildren {
+  MainBoardSlugPostNoRoute: typeof MainBoardSlugPostNoRoute
   MainBoardSlugNewProjectRoute: typeof MainBoardSlugNewProjectRoute
   MainBoardSlugNewQuestionRoute: typeof MainBoardSlugNewQuestionRoute
   MainBoardSlugIndexRoute: typeof MainBoardSlugIndexRoute
 }
 
 const MainBoardSlugRouteChildren: MainBoardSlugRouteChildren = {
+  MainBoardSlugPostNoRoute: MainBoardSlugPostNoRoute,
   MainBoardSlugNewProjectRoute: MainBoardSlugNewProjectRoute,
   MainBoardSlugNewQuestionRoute: MainBoardSlugNewQuestionRoute,
   MainBoardSlugIndexRoute: MainBoardSlugIndexRoute,
