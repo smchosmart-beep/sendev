@@ -82,6 +82,8 @@ function ProjectDetailPage() {
     );
   }
 
+  const isBoardPost = post.type === "notice" || post.type === "question";
+
   return (
     <div className="space-y-6">
       <BackLink categoryId={categoryId} />
@@ -100,6 +102,7 @@ function ProjectDetailPage() {
             <User className="h-4 w-4" />
             {post.author}
           </span>
+          <span>{new Date(post.createdAt).toLocaleDateString("ko-KR")}</span>
           {post.githubUrl && (
             <a
               href={post.githubUrl}
@@ -123,10 +126,26 @@ function ProjectDetailPage() {
             </a>
           )}
         </div>
+
+        {isBoardPost && (
+          <article className="prose prose-sm mt-6 max-w-none border-t border-border pt-6 prose-headings:text-foreground prose-p:text-foreground prose-a:text-primary prose-strong:text-foreground prose-code:text-primary prose-li:text-foreground prose-table:text-foreground">
+            {post.content.trim() ? (
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {post.content}
+              </ReactMarkdown>
+            ) : (
+              <p className="text-sm text-muted-foreground">내용이 없어요.</p>
+            )}
+          </article>
+        )}
       </div>
 
-      <ReadmeSection githubUrl={post.githubUrl} />
-      <EvaluationSection categoryId={categoryId} postId={postId} />
+      {!isBoardPost && (
+        <>
+          <ReadmeSection githubUrl={post.githubUrl} />
+          <EvaluationSection categoryId={categoryId} postId={postId} />
+        </>
+      )}
     </div>
   );
 }
