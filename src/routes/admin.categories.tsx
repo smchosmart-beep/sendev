@@ -309,6 +309,18 @@ function CategoriesPage() {
                 />
               </div>
             )}
+            {enableProject && (
+              <div className="space-y-2 pt-1">
+                <Label htmlFor="add-project-name">산출물 게시판 이름</Label>
+                <Input
+                  id="add-project-name"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  placeholder="예: 프로젝트, 작품"
+                  className="rounded-xl bg-background"
+                />
+              </div>
+            )}
           </div>
           <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 p-4 sm:col-span-2">
             <div className="space-y-0.5">
