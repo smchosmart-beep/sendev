@@ -1,58 +1,25 @@
-## 목표
+사용자 요청: 캘린더 페이지가 1920×1080 해상도에서 화면을 가득 채우도록 크기를 키워야 함.
 
-첫 화면(`/`)이 관리자 대시보드로 이동하지 않고 **캘린더부터** 보이도록 변경합니다. 상단 헤더에 **캘린더 / 게시판** 탭을 두고, 게시판 탭에서 게시판 목록과 게시판 상세를 볼 수 있게 합니다. 모든 데이터는 아직 프론트엔드 상태(State)로 동작하며, **관리자에서 만든 게시판이 메인에도 실시간 공유**되도록 합니다.
+### 현재 문제
+- `_main.tsx`의 `<main>`이 `max-w-5xl`과 `py-8`로 중앙 제한되어 있어 넓은 화면에서 여백이 많음.
+- `_main.calendar.tsx`의 일별 셀이 `min-h-16` / `sm:min-h-24`로 작아 달력 그리드가 화면 하단까지 채우지 못함.
+- 이벤트 막대도 `text-[11px]`로 작게 표시됨.
 
-## 1단계 — 공유 스토어로 승격
+### 수정 방향
+1. **메인 레이아웃(`_main.tsx`)**
+   - `<main>`의 `max-w-5xl`을 제거하거나, 캘린더 전용으로 더 넓은 제한(`max-w-7xl` 또는 `max-w-full`)으로 변경.
+   - 캘린더 페이지에서는 상하 패딩을 최소화(`py-4` 또는 제거)하여 헤더 아래 공간을 최대한 활용.
 
-- 현재 `AdminStoreProvider`는 `/admin` 레이아웃 안에만 있어 메인과 공유되지 않음.
-- `src/lib/admin-store.tsx`를 앱 전역 스토어로 확장(이름은 그대로 사용):
-  - 기존 `categories`, `globalPassword` 유지
-  - **`events`** 추가: `{ id, title, date, location, time, description }` (샘플 일정 포함)
-  - 게시판 상세용 **`posts`** 샘플 데이터 추가: `{ id, categoryId, type: "notice"|"project", title, author }`
-- Provider를 `src/routes/__root.tsx`의 `RootComponent`로 이동(앱 전역 래핑). `/admin` 레이아웃에서는 중복 Provider 제거.
+2. **캘린더 그리드(`_main.calendar.tsx`)**
+   - 달력 전체 컨테이너를 `flex-1` 또는 `h-[calc(100vh-4rem)]` 등으로 뷰포트 높이를 채우도록 설정.
+   - 7열 그리드 각 셀의 높이를 `min-h-16` → `h-[calc((100vh-10rem)/6)]` 또는 `min-h-32` 이상으로 확대.
+   - `sm:` breakpoint를 벗어나 기본값부터 큰 높이를 적용(1920×1080은 데스크톱이므로 `sm:` 이상 기준).
+   - 요일 헤더(`py-2`)와 날짜 숫자(`h-6 w-6`)도 비례적으로 키움.
+   - 이벤트 막대 높이와 폰트 크기 확대(`text-[11px]` → `text-sm`).
 
-## 2단계 — 메인 레이아웃 + 헤더 탭
+3. **이벤트 모달**
+   - 모달 크기도 `sm:max-w-lg` 이상으로 확대하여 큰 화면에 맞춤.
 
-- 새 파일 `src/routes/_main.tsx` (pathless 레이아웃):
-  - 상단 헤더: 로고 + **캘린더 / 게시판** 탭(Link, active 상태 강조), 우측에 관리자 링크
-  - `<Outlet />`로 하위 페이지 렌더
-  - 디자인 가이드 유지(민트, `rounded-2xl`, shadow, hover 부상/`active:scale-95`)
-- 기존 `src/routes/index.tsx`(랜딩) 는 `/calendar`로 리다이렉트하도록 변경하여 첫 화면이 캘린더가 되게 함.
-
-## 3단계 — 캘린더 페이지 (`/calendar`)
-
+### 관련 파일
+- `src/routes/_main.tsx`
 - `src/routes/_main.calendar.tsx`
-- **월간 달력 뷰** 직접 구현(외부 라이브러리 없이 그리드로):
-  - 이전/다음 달 이동, 오늘 강조
-  - 일정이 있는 날짜 셀에 일정 표시(점/제목 칩)
-- 일정 칩/셀 클릭 시 **상세 모달**(shadcn Dialog) 오픈 → 제목, 날짜, 시간, 장소, 설명 표시
-- 일정 없을 때를 대비한 빈 상태 문구, 초기 로딩 스켈레톤 적용
-
-## 4단계 — 게시판 목록 (`/board`)
-
-- `src/routes/_main.board.index.tsx`
-- 공유 스토어의 `categories`를 카드 그리드로 표시(이름, 설명)
-- 카드 클릭 시 해당 게시판 상세로 이동
-- 빈 상태/스켈레톤 적용
-
-## 5단계 — 게시판 상세 (`/board/$categoryId`)
-
-- `src/routes/_main.board.$categoryId.tsx`
-- 상단에 게시판 이름/설명
-- **공지사항(Notice) / 산출물(Projects) 서브탭**(shadcn Tabs)
-  - Notice: 리스트형
-  - Projects: 그리드 썸네일 카드(제목/작성자) — 샘플 데이터 기반
-- 잘못된 categoryId일 경우 notFound 처리, 빈 상태/스켈레톤 적용
-
-## 기술 메모
-
-- TanStack Start 파일 기반 라우팅 사용(`src/routes/`). pathless `_main` 레이아웃으로 헤더 공유.
-- 색상은 `src/styles.css` 시맨틱 토큰만 사용(직접 색상값 금지), 기존 민트 디자인 시스템 유지.
-- shadcn `dialog`, `tabs`, `card`, `skeleton` 등 기존 컴포넌트 재사용.
-- GitHub README 렌더링/평가(리뷰)/공용 비밀번호 입장 게이트/실제 DB 연동은 **다음 단계**로 제외.
-
-## 이번 범위에서 제외 (다음 단계 예정)
-
-- Lovable Cloud(Supabase) DB 연동
-- 프로젝트 상세 README 렌더링 및 평가(리뷰) 기능
-- 공용 비밀번호 입장 게이트
