@@ -39,7 +39,7 @@ export interface EventDTO {
 export interface PostDTO {
   id: string;
   categoryId: string;
-  type: "notice" | "project";
+  type: "notice" | "project" | "question";
   title: string;
   author: string;
   githubUrl: string;
