@@ -1,17 +1,26 @@
-## 관리자 비밀번호 게이트 개선
+## 카드 클릭 무반응 + 하이드레이션 오류 수정
 
-### 1. 비밀번호 틀림 에러 메시지 강화
-- 현재 `error` 상태에 텍스트 메시지가 표시되지만, 사용자가 인지하지 못하는 문제가 있음.
-- 에러 발생 시 입력 필드에 붉은 테두리(`border-destructive`)를 추가하고, 아이콘(Lucide AlertCircle)과 함께 더 눈에 띄는 시각적 피드백을 제공.
-- "비밀번호가 올바르지 않습니다." 문구는 그대로 유지하되, `animate-shake` 또는 트랜지션으로 주목도를 높임.
+### 근본 원인
+`BoardDetailPage`에서 `unlocked` 초기 상태를 렌더링 중에 `sessionStorage`로 읽음
+→ 서버는 항상 `false`(게이트 화면), 클라이언트는 `true`(목록 화면)로 렌더링 결과가 달라짐
+→ 하이드레이션 불일치 발생 → React가 트리를 재생성하며 `<Link>` 이벤트 핸들러가 정상 연결되지 않음
+→ 산출물 카드를 눌러도 페이지 이동이 일어나지 않음.
 
-### 2. 비밀번호 입력란 영어 전용 힌트
-- 브라우저가 한글 IME를 완전히 차단할 수는 없으나, 입력 필드에 `lang="en"`, `inputmode="latin"`, `autoCapitalize="off"`, `autoCorrect="off"` 속성을 추가하여 영문 입력을 유도.
-- placeholder 문구를 "영문 비밀번호를 입력해 주세요"로 변경하여 사용자에게 명확히 안내.
-- 입력값에 한글이 포함되면 `compositionend` 이벤트 또는 `onChange`에서 한글 자모를 필터링하여 자동 제거. 이를 통해 한글로 입력된 문자가 실제로 전달되지 않도록 차단.
+### 해결 방법
+SSR과 클라이언트 첫 렌더 결과를 동일하게 맞추는 "mounted" 패턴 적용.
+
+1. `src/routes/_main.board.$categoryId.tsx`
+   - `unlocked` 초기값을 항상 `false`로 시작.
+   - `useEffect`로 마운트 이후에 `sessionStorage`를 읽어 `unlocked`를 갱신.
+   - 비밀번호가 있는 게시판은 마운트 직후 잠깐 게이트가 보였다가 해제되므로, 첫 렌더에서 깜빡임을 줄이기 위해 `mounted` 플래그가 false인 동안에는 콘텐츠 영역을 렌더링하지 않거나 로딩 상태로 처리.
+
+2. `src/routes/admin.tsx`
+   - 동일한 패턴: `granted` 초기값을 `false`로 두고 `useEffect`에서 `sessionStorage`를 읽어 갱신하여 잠재적 하이드레이션 불일치 예방.
 
 ### 변경 대상 파일
+- `src/routes/_main.board.$categoryId.tsx`
 - `src/routes/admin.tsx`
 
-### 참고
-- 한/영 전환은 OS/브라우저 수준에서 제어되므로, 완벽한 차단은 불가능. 위 속성 + 필터링 + 안내 문구로 최대한 유도.
+### 검증
+- 비밀번호로 입장한 게시판에서 산출물 카드 클릭 시 상세 페이지로 정상 이동하는지 확인.
+- 콘솔에 하이드레이션 오류가 더 이상 나오지 않는지 확인.
