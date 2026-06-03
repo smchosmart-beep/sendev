@@ -373,7 +373,7 @@ function CalendarPage() {
                       {Number(e.date.split("-")[2])}
                     </span>
                     <span className="text-[10px]">
-                      {WEEKDAYS[new Date(e.date).getDay()]}
+                      {WEEKDAYS[isoWeekday(e.date)]}
                     </span>
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col gap-1">
