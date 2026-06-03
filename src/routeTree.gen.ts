@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
+import { Route as AdminHomeRouteImport } from './routes/admin.home'
 import { Route as AdminCriteriaRouteImport } from './routes/admin.criteria'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
@@ -55,6 +56,11 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
 const AdminNoticesRoute = AdminNoticesRouteImport.update({
   id: '/notices',
   path: '/notices',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminHomeRoute = AdminHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminCriteriaRoute = AdminCriteriaRouteImport.update({
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/criteria': typeof AdminCriteriaRoute
+  '/admin/home': typeof AdminHomeRoute
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/criteria': typeof AdminCriteriaRoute
+  '/admin/home': typeof AdminHomeRoute
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin': typeof AdminIndexRoute
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/criteria': typeof AdminCriteriaRoute
+  '/admin/home': typeof AdminHomeRoute
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/admin/calendar'
     | '/admin/categories'
     | '/admin/criteria'
+    | '/admin/home'
     | '/admin/notices'
     | '/admin/settings'
     | '/admin/'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/admin/calendar'
     | '/admin/categories'
     | '/admin/criteria'
+    | '/admin/home'
     | '/admin/notices'
     | '/admin/settings'
     | '/admin'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/admin/calendar'
     | '/admin/categories'
     | '/admin/criteria'
+    | '/admin/home'
     | '/admin/notices'
     | '/admin/settings'
     | '/admin/'
@@ -283,6 +295,13 @@ declare module '@tanstack/react-router' {
       path: '/notices'
       fullPath: '/admin/notices'
       preLoaderRoute: typeof AdminNoticesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/home': {
+      id: '/admin/home'
+      path: '/home'
+      fullPath: '/admin/home'
+      preLoaderRoute: typeof AdminHomeRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/criteria': {
@@ -412,6 +431,7 @@ interface AdminRouteChildren {
   AdminCalendarRoute: typeof AdminCalendarRoute
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminCriteriaRoute: typeof AdminCriteriaRoute
+  AdminHomeRoute: typeof AdminHomeRoute
   AdminNoticesRoute: typeof AdminNoticesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -421,6 +441,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCalendarRoute: AdminCalendarRoute,
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminCriteriaRoute: AdminCriteriaRoute,
+  AdminHomeRoute: AdminHomeRoute,
   AdminNoticesRoute: AdminNoticesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -436,3 +457,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
