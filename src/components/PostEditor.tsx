@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Bold,
   Italic,
@@ -11,6 +11,11 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useEditor, EditorContent, type Editor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Image from "@tiptap/extension-image";
+import Link from "@tiptap/extension-link";
+import { Markdown } from "tiptap-markdown";
 
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,31 +38,34 @@ interface PostEditorProps {
   rows?: number;
 }
 
-type WrapTool = {
-  icon: typeof Bold;
-  label: string;
-  // Wraps the current selection: before + selection + after.
-  wrap: { before: string; after: string };
-};
-
-type BlockTool = {
-  icon: typeof Bold;
-  label: string;
-  // Prefixes each selected line (block formatting).
-  linePrefix: string;
-};
-
-const formatTools: (WrapTool | BlockTool)[] = [
-  { icon: Heading, label: "제목", linePrefix: "## " },
-  { icon: Bold, label: "굵게", wrap: { before: "**", after: "**" } },
-  { icon: Italic, label: "기울임", wrap: { before: "*", after: "*" } },
-  { icon: Quote, label: "인용", linePrefix: "> " },
-  { icon: List, label: "목록", linePrefix: "- " },
-  { icon: ListOrdered, label: "번호 목록", linePrefix: "1. " },
-];
-
 // 10 years — effectively permanent signed URL for the private bucket.
 const SIGNED_URL_TTL = 60 * 60 * 24 * 365 * 10;
+
+type ToolButtonProps = {
+  icon: typeof Bold;
+  label: string;
+  isActive?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+};
+
+function ToolButton({ icon: Icon, label, isActive, disabled, onClick }: ToolButtonProps) {
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground active:scale-95 disabled:opacity-50",
+        isActive && "bg-secondary text-foreground",
+      )}
+    >
+      <Icon className="h-4 w-4" />
+    </button>
+  );
+}
 
 export function PostEditor({
   value,
@@ -66,101 +74,88 @@ export function PostEditor({
   className,
   rows = 10,
 }: PostEditorProps) {
-  const ref = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const selectionRef = useRef<{ start: number; end: number }>({ start: 0, end: 0 });
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkTitle, setLinkTitle] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
   const [uploading, setUploading] = useState(false);
 
-  const rememberSelection = () => {
-    const el = ref.current;
-    if (!el) return;
-    selectionRef.current = { start: el.selectionStart, end: el.selectionEnd };
-  };
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Image.configure({ inline: false }),
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
+      }),
+      Markdown.configure({ html: false, linkify: true, breaks: true }),
+    ],
+    content: value,
+    editorProps: {
+      attributes: {
+        class: "tiptap-editor focus:outline-none",
+        style: `min-height: ${rows * 1.6}rem`,
+      },
+    },
+    onUpdate: ({ editor }) => {
+      const md = editor.storage.markdown.getMarkdown();
+      onChangeRef.current(md);
+    },
+  });
 
-  const applyFormat = (tool: WrapTool | BlockTool) => {
-    const el = ref.current;
-    if (!el) return;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    const selected = value.slice(start, end);
-
-    let next = value;
-    let cursorStart = start;
-    let cursorEnd = end;
-
-    if ("linePrefix" in tool) {
-      const lineStart = value.lastIndexOf("\n", start - 1) + 1;
-      const block = value.slice(lineStart, end);
-      const prefixed = block
-        .split("\n")
-        .map((line) => `${tool.linePrefix}${line}`)
-        .join("\n");
-      next = value.slice(0, lineStart) + prefixed + value.slice(end);
-      cursorStart = lineStart;
-      cursorEnd = lineStart + prefixed.length;
-    } else {
-      const { before, after } = tool.wrap;
-      next = value.slice(0, start) + before + selected + after + value.slice(end);
-      cursorStart = start + before.length;
-      cursorEnd = cursorStart + selected.length;
+  // Keep the editor in sync when the value is reset/replaced externally
+  // (e.g. switching between create/edit, loading existing post content).
+  useEffect(() => {
+    if (!editor) return;
+    const current = editor.storage.markdown.getMarkdown();
+    if (value !== current) {
+      editor.commands.setContent(value, { emitUpdate: false });
     }
-
-    onChange(next);
-    requestAnimationFrame(() => {
-      el.focus();
-      el.setSelectionRange(cursorStart, cursorEnd);
-    });
-  };
-
-  // Inserts text at the last remembered selection, replacing it.
-  const insertAtSelection = (text: string) => {
-    const { start, end } = selectionRef.current;
-    const next = value.slice(0, start) + text + value.slice(end);
-    onChange(next);
-    const cursor = start + text.length;
-    requestAnimationFrame(() => {
-      const el = ref.current;
-      if (!el) return;
-      el.focus();
-      el.setSelectionRange(cursor, cursor);
-    });
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, value]);
 
   const openLinkModal = () => {
-    rememberSelection();
-    const selected = value.slice(
-      selectionRef.current.start,
-      selectionRef.current.end,
-    );
+    if (!editor) return;
+    const { from, to } = editor.state.selection;
+    const selected = editor.state.doc.textBetween(from, to, " ");
     setLinkTitle(selected);
     setLinkUrl("");
     setLinkOpen(true);
   };
 
   const confirmLink = () => {
+    if (!editor) return;
     const title = linkTitle.trim();
     const url = linkUrl.trim();
     if (!url) {
       toast.error("URL을 입력해 주세요.");
       return;
     }
-    insertAtSelection(`[${title || url}](${url})`);
+    const text = title || url;
+    editor
+      .chain()
+      .focus()
+      .insertContent({
+        type: "text",
+        text,
+        marks: [{ type: "link", attrs: { href: url } }],
+      })
+      .run();
     setLinkOpen(false);
   };
 
   const handleImagePick = () => {
-    rememberSelection();
     fileRef.current?.click();
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
-    if (!file) return;
+    if (!file || !editor) return;
 
     if (!file.type.startsWith("image/")) {
       toast.error("이미지 파일만 올릴 수 있어요.");
@@ -185,7 +180,11 @@ export function PostEditor({
         .createSignedUrl(path, SIGNED_URL_TTL);
       if (signError || !data?.signedUrl) throw signError ?? new Error("URL 생성 실패");
 
-      insertAtSelection(`![${file.name}](${data.signedUrl})`);
+      editor
+        .chain()
+        .focus()
+        .setImage({ src: data.signedUrl, alt: file.name })
+        .run();
       toast.success("이미지를 추가했어요!");
     } catch (err) {
       console.error("image upload failed", err);
@@ -198,49 +197,57 @@ export function PostEditor({
   return (
     <div className={cn("rounded-xl border border-border bg-background", className)}>
       <div className="flex flex-wrap items-center gap-1 border-b border-border px-2 py-1.5">
-        {formatTools.map((tool) => (
-          <button
-            key={tool.label}
-            type="button"
-            title={tool.label}
-            aria-label={tool.label}
-            onClick={() => applyFormat(tool)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground active:scale-95"
-          >
-            <tool.icon className="h-4 w-4" />
-          </button>
-        ))}
-        <button
-          type="button"
-          title="링크"
-          aria-label="링크"
-          onClick={openLinkModal}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground active:scale-95"
-        >
-          <Link2 className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          title="이미지"
-          aria-label="이미지"
+        <ToolButton
+          icon={Heading}
+          label="제목"
+          isActive={editor?.isActive("heading", { level: 2 })}
+          onClick={() =>
+            editor?.chain().focus().toggleHeading({ level: 2 }).run()
+          }
+        />
+        <ToolButton
+          icon={Bold}
+          label="굵게"
+          isActive={editor?.isActive("bold")}
+          onClick={() => editor?.chain().focus().toggleBold().run()}
+        />
+        <ToolButton
+          icon={Italic}
+          label="기울임"
+          isActive={editor?.isActive("italic")}
+          onClick={() => editor?.chain().focus().toggleItalic().run()}
+        />
+        <ToolButton
+          icon={Quote}
+          label="인용"
+          isActive={editor?.isActive("blockquote")}
+          onClick={() => editor?.chain().focus().toggleBlockquote().run()}
+        />
+        <ToolButton
+          icon={List}
+          label="목록"
+          isActive={editor?.isActive("bulletList")}
+          onClick={() => editor?.chain().focus().toggleBulletList().run()}
+        />
+        <ToolButton
+          icon={ListOrdered}
+          label="번호 목록"
+          isActive={editor?.isActive("orderedList")}
+          onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+        />
+        <ToolButton icon={Link2} label="링크" onClick={openLinkModal} />
+        <ToolButton
+          icon={uploading ? Loader2 : ImageIcon}
+          label="이미지"
           disabled={uploading}
           onClick={handleImagePick}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground active:scale-95 disabled:opacity-50"
-        >
-          {uploading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <ImageIcon className="h-4 w-4" />
-          )}
-        </button>
+        />
       </div>
-      <textarea
-        ref={ref}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        rows={rows}
-        className="block w-full resize-y rounded-b-xl bg-transparent px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+
+      <EditorContent
+        editor={editor}
+        data-placeholder={placeholder}
+        className="px-3 py-2.5 text-sm text-foreground"
       />
 
       <input
@@ -284,7 +291,7 @@ export function PostEditor({
                 className="rounded-xl"
               />
               <p className="text-xs text-muted-foreground">
-                본문에는 URL이 노출되지 않고 "링크 제목" 카드로 표시됩니다.
+                본문에는 URL이 노출되지 않고 "링크 제목"으로 표시됩니다.
               </p>
             </div>
           </div>
@@ -310,3 +317,6 @@ export function PostEditor({
     </div>
   );
 }
+
+// Silence unused import warning when Editor type isn't referenced elsewhere.
+export type { Editor };
