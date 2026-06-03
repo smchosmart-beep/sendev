@@ -78,7 +78,7 @@ function HomePage() {
             <CarouselContent>
               {slides.map((slide) => {
                 const inner = (
-                  <div className="relative aspect-[16/9] w-full sm:aspect-[21/9]">
+                  <div className="relative aspect-[9/16] w-full sm:aspect-[21/9]">
                     <img
                       src={slide.imageUrl}
                       alt={slide.caption || "메인 배너"}
@@ -119,7 +119,7 @@ function HomePage() {
             )}
           </Carousel>
         ) : (
-          <div className="flex aspect-[21/9] w-full flex-col items-center justify-center rounded-3xl bg-gradient-to-br from-primary/15 to-secondary p-8 text-center shadow-sm">
+          <div className="flex aspect-[9/16] w-full flex-col items-center justify-center rounded-3xl bg-gradient-to-br from-primary/15 to-secondary p-8 text-center shadow-sm sm:aspect-[21/9]">
             <Sparkles className="mb-3 h-10 w-10 text-primary" />
             <h1 className="text-xl font-bold text-foreground sm:text-2xl">
               교사 개발자 플랫폼
