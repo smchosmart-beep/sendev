@@ -263,6 +263,7 @@ export const createPost = createServerFn({ method: "POST" })
         title: z.string().trim().min(1).max(200),
         author: z.string().trim().min(1).max(100),
         githubUrl: z.string().trim().max(300).default(""),
+        deployUrl: z.string().trim().max(300).default(""),
         editPassword: z.string().trim().min(1).max(100),
       })
       .parse(input),
@@ -286,6 +287,7 @@ export const createPost = createServerFn({ method: "POST" })
       title: data.title,
       author: data.author,
       github_url: data.githubUrl,
+      deploy_url: data.deployUrl,
       edit_password: data.editPassword,
     });
     if (error) throw new Error(error.message);
