@@ -1,38 +1,33 @@
-# 배포 URL OG 이미지 캐싱
+# 평가 폼 개선: 평가자 이름 제거 + 별점(반 개 단위) 평가
 
-## 현재 상태
+대상 파일: `src/routes/_main.board.$categoryId.$postId.tsx` (평가 폼), `src/lib/platform.functions.ts` (createReview 검증)
 
-지금은 산출물 카드가 렌더링될 때마다 `fetchOgImage` 서버 함수를 호출해 배포 사이트의 HTML을 다시 가져와 og:image를 파싱합니다. TanStack Query에 30분 staleTime 캐시가 있지만, 캐시가 만료되거나 새 세션/새로고침이 발생하면 다시 외부 사이트로 요청이 나갑니다. 산출물이 많으면 매번 여러 외부 요청이 발생합니다.
+## 1. 평가자 이름 삭제
+- 평가 폼에서 "평가자 이름" Label/Input 제거, `reviewerName` 상태 및 제출 검증 제거.
+- 제출 시 `createReview`에 이름 없이 전송.
+- 서버 `createReview` 검증에서 `reviewerName`을 선택값으로 변경(기본값 빈 문자열). DB `reviews.reviewer_name`은 이미 기본값 `''`이라 호환됨.
 
-## 목표
+## 2. 별점 형태 입력 (0.5 단위, 드래그)
+숫자 입력칸을 **별점 컴포넌트**로 교체합니다.
 
-OG 이미지 URL을 **한 번 가져온 뒤 DB(posts)에 저장**하여, 이후 로딩에서는 외부 재요청 없이 저장된 값을 그대로 사용합니다.
+- 새 컴포넌트 `StarRating`(같은 파일 내):
+  - 만점(`maxScore`) 개수만큼 별을 표시.
+  - 각 별을 좌/우 반쪽으로 나눠 **0.5점 단위** 선택 가능 (예: 0.5, 1.0, 1.5 … maxScore).
+  - **마우스 클릭 + 드래그**로 채우기: `onMouseDown`으로 드래그 시작, `onMouseMove`(또는 각 반쪽 hover)로 값 미리보기 및 설정, `onMouseUp`/창 밖으로 나가면 확정.
+  - 키보드 접근성: 좌우 화살표로 0.5씩 조절(`role="slider"`, aria 값 지정).
+  - 현재 값 옆에 `3.5 / 5` 형태로 숫자 표시.
+- 채워진 별은 primary 색(녹색), 빈 별은 muted. 반쪽은 별을 절반만 색칠(겹친 두 별 또는 클립으로 표현).
+- 라벨의 `(0 ~ {maxScore})` 표기는 `(별점, 0.5점 단위)` 또는 `(0 ~ {maxScore}점)`으로 변경.
 
-## 변경 내용
+## 3. 점수 처리
+- `scores[c.id]`에 소수(예: 3.5)를 저장. 기존 jsonb·숫자 검증(`number().min(0).max(100)`)이 소수도 허용하므로 DB/서버 변경 불필요.
+- 제출 검증: 모든 항목이 선택(>0 또는 0 포함 여부)되었는지 확인. 미선택(undefined) 항목이 있으면 토스트 안내.
+- 평가 요약 평균은 기존 `toFixed(1)` 그대로 사용(반점 평균도 자연스럽게 표시).
 
-### 1. 데이터베이스
-- `posts` 테이블에 `og_image_url text not null default ''` 컬럼 추가 (마이그레이션).
+## 검증
+- 평가자 이름 입력칸이 사라지고 이름 없이 제출됨.
+- 각 기준에서 별을 클릭/드래그해 0.5 단위로 점수 선택 가능, 숫자 미리보기 일치.
+- 제출 후 요약 평균에 소수 점수 반영.
 
-### 2. 서버 함수 (`src/lib/platform.functions.ts`)
-- `PostDTO`에 `ogImageUrl: string` 추가, `mapPost`에서 매핑.
-- 기존 `fetchOgImage`의 파싱 로직을 내부 헬퍼(`resolveOgImage(url)`)로 재사용 가능하게 분리.
-- `createPost`: deployUrl이 있으면 등록 시점에 OG 이미지를 한 번 가져와 `og_image_url`에 함께 저장.
-- `updatePost`: deployUrl이 변경된 경우에만 OG 이미지를 다시 가져와 저장하고, 동일하면 기존 값 유지(불필요한 재요청 방지).
-- (선택) 저장된 값이 비어 있는 기존 산출물을 위해 `fetchOgImage`는 fallback으로 유지하되, 결과를 DB에 backfill하는 `refreshOgImage` 서버 함수 추가.
-
-### 3. 프론트엔드 (`src/routes/_main.board.$categoryId.index.tsx`)
-- `ProjectCard`에서 `useQuery(ogImageQueryOptions(...))` 대신 저장된 `post.ogImageUrl`을 우선 사용.
-- `ogImageUrl`이 비어 있고 `deployUrl`이 있는 경우에만(기존 데이터 보정용) `ogImageQueryOptions`로 한 번 조회 → backfill. 신규 산출물은 외부 요청이 전혀 발생하지 않음.
-
-### 4. 상세 페이지 (`src/routes/_main.board.$categoryId.$postId.tsx`)
-- `updatePost` 호출 시 동일하게 deployUrl 변경에 따라 OG 이미지가 갱신되도록 처리(서버 함수 변경으로 자동 반영).
-
-## 동작 검증
-- 신규 산출물 등록 → 카드 첫 로딩부터 저장된 OG 이미지 표시, 외부 사이트 요청 없음(네트워크 탭 확인).
-- 새로고침/재방문 시 외부 재요청 없이 즉시 이미지 표시.
-- 배포 URL 수정 시에만 OG 이미지 재조회.
-- 기존(저장값 없는) 산출물은 1회 조회 후 저장되어 다음부터는 재요청 없음.
-
-## 기술 메모
-- OG 이미지 가져오기는 서버 함수 내부에서만 수행(타임아웃·다운로드 크기 제한 기존 로직 유지).
-- DB 저장은 service-role 어드민 클라이언트로 기존 패턴과 동일하게 처리.
+## 비고
+"만점 5점일 때 1~5점" 의도는 별점 드래그로 0.5~5 범위 선택으로 충족됩니다(빈 상태=미평가). 0점 강제 입력이 아닌, 드래그로 최소 0.5부터 부여되는 방식으로 구현합니다.
