@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Calendar, Code2, Settings, Trophy, BookOpen, Rocket, Terminal, Menu } from "lucide-react";
+import { Calendar, Code2, Settings, Trophy, BookOpen, Rocket, Terminal, Menu, Home } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
