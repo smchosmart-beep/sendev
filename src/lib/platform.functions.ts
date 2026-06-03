@@ -402,7 +402,7 @@ export const uploadEventFile = createServerFn({ method: "POST" })
     // 10-year signed URL so notices stay reachable.
     const { data: signed, error: signErr } = await supabaseAdmin.storage
       .from("event-files")
-      .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+      .createSignedUrl(path, 60 * 60 * 24 * 365 * 10, { download: data.name });
     if (signErr || !signed) throw new Error(signErr?.message ?? "signing failed");
     return { name: data.name, url: signed.signedUrl, size: bytes.length };
   });
