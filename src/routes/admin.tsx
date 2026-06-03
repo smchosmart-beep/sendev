@@ -123,25 +123,25 @@ function AdminLayout() {
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-card shadow-sm">
-        <div className="mx-auto flex max-w-5xl items-center gap-3 px-6 py-6">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md">
-            <ShieldCheck className="h-6 w-6" />
+        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-5 sm:px-6 sm:py-6">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md sm:h-11 sm:w-11">
+            <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-foreground">관리자 대시보드</h1>
-            <p className="text-sm text-muted-foreground">장학사님 및 관리자 전용 화면입니다.</p>
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold text-foreground sm:text-xl">관리자 대시보드</h1>
+            <p className="truncate text-xs text-muted-foreground sm:text-sm">장학사님 및 관리자 전용 화면입니다.</p>
           </div>
           <Link
             to="/calendar"
-            className="ml-auto rounded-xl bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95"
+            className="ml-auto shrink-0 whitespace-nowrap rounded-xl bg-secondary px-3 py-2 text-sm font-medium text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:px-4"
           >
             메인으로
           </Link>
         </div>
       </header>
 
-      <div className="mx-auto max-w-5xl px-6 py-8">
-        <nav className="mb-8 flex gap-2">
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
+        <nav className="mb-6 -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:mb-8 sm:px-0 sm:pb-0">
           {tabs.map(({ to, label, icon: Icon }) => {
             const active = pathname.startsWith(to);
             return (
@@ -149,18 +149,19 @@ function AdminLayout() {
                 key={to}
                 to={to}
                 className={cn(
-                  "flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium shadow-sm transition-all duration-200 active:scale-95",
+                  "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-2xl px-4 py-2 text-sm font-medium shadow-sm transition-all duration-200 active:scale-95 sm:px-5 sm:py-2.5",
                   active
                     ? "bg-primary text-primary-foreground shadow-md"
                     : "bg-card text-muted-foreground hover:-translate-y-0.5 hover:text-foreground",
                 )}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-4 w-4 shrink-0" />
                 {label}
               </Link>
             );
           })}
         </nav>
+
 
         <Outlet />
       </div>
