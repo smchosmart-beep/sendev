@@ -140,7 +140,8 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
     );
   }
 
-  const isBoardPost = post.type === "notice" || post.type === "question";
+  const isBoardPost =
+    post.type === "notice" || post.type === "question" || post.type === "general";
 
   return (
     <div className="space-y-6">
