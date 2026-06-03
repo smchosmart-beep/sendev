@@ -112,13 +112,13 @@ function CalendarPage() {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col rounded-2xl bg-card p-6 shadow-sm">
-        <div className="mb-3 grid grid-cols-7 gap-2">
+      <div className="flex flex-1 flex-col rounded-2xl bg-card p-2 shadow-sm sm:p-6">
+        <div className="mb-2 grid grid-cols-7 gap-1 sm:mb-3 sm:gap-2">
           {WEEKDAYS.map((w, i) => (
             <div
               key={w}
               className={cn(
-                "py-2 text-center text-sm font-semibold",
+                "py-1 text-center text-xs font-semibold sm:py-2 sm:text-sm",
                 i === 0 ? "text-destructive" : "text-muted-foreground",
               )}
             >
@@ -127,7 +127,7 @@ function CalendarPage() {
           ))}
         </div>
         <div
-          className="grid flex-1 grid-cols-7 gap-2"
+          className="grid flex-1 grid-cols-7 gap-1 sm:gap-2"
           style={{ gridTemplateRows: `repeat(${cells.length / 7}, minmax(0, 1fr))` }}
         >
           {cells.map((day, idx) => {
@@ -142,15 +142,15 @@ function CalendarPage() {
               <div
                 key={idx}
                 className={cn(
-                  "flex flex-col overflow-hidden rounded-xl p-2",
-                  isToday ? "bg-accent" : "",
+                  "flex flex-col overflow-hidden rounded-lg p-1 sm:rounded-xl sm:p-2",
+                  isToday ? "bg-accent/50" : "",
                 )}
                 title={holidayName ?? undefined}
               >
-                <div className="mb-1 flex items-center justify-between">
+                <div className="mb-0.5 flex items-center justify-between sm:mb-1">
                   <span
                     className={cn(
-                      "inline-flex h-8 min-w-8 items-center justify-center rounded-full px-1 text-sm font-medium",
+                      "inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium sm:h-8 sm:min-w-8 sm:px-1 sm:text-sm",
                       isToday
                         ? "bg-primary text-primary-foreground"
                         : isRed
@@ -162,17 +162,17 @@ function CalendarPage() {
                   </span>
                 </div>
                 {holidayName && (
-                  <span className="mb-1 truncate text-xs font-medium text-destructive">
+                  <span className="mb-0.5 truncate text-[10px] font-medium text-destructive sm:mb-1 sm:text-xs">
                     {holidayName}
                   </span>
                 )}
-                <div className="space-y-1 overflow-y-auto">
+                <div className="space-y-0.5 overflow-y-auto sm:space-y-1">
                   {dayEvents.map((e) => (
                     <button
                       key={e.id}
                       type="button"
                       onClick={() => setSelected(e)}
-                      className="block w-full truncate rounded-lg bg-primary/10 px-2 py-1 text-left text-sm font-medium text-primary transition-all duration-200 hover:bg-primary/20 active:scale-95"
+                      className="block w-full truncate rounded-md bg-primary/10 px-1 py-0.5 text-left text-[10px] font-medium text-primary transition-all duration-200 hover:bg-primary/20 active:scale-95 sm:rounded-lg sm:px-2 sm:py-1 sm:text-sm"
                     >
                       {e.title}
                     </button>
@@ -183,6 +183,7 @@ function CalendarPage() {
           })}
         </div>
       </div>
+
 
       {events.length === 0 && (
         <EmptyState
