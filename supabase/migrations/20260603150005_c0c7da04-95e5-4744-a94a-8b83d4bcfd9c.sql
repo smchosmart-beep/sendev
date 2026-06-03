@@ -1,0 +1,1 @@
+ALTER TABLE public.posts ADD COLUMN og_image_url text NOT NULL DEFAULT '';

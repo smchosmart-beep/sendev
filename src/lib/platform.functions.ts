@@ -44,6 +44,7 @@ export interface PostDTO {
   author: string;
   githubUrl: string;
   deployUrl: string;
+  ogImageUrl: string;
   createdAt: string;
 }
 
@@ -234,7 +235,7 @@ export const listPosts = createServerFn({ method: "GET" })
     const db = await getAdmin();
     const { data: rows, error } = await db
       .from("posts")
-      .select("id, category_id, type, title, author, github_url, deploy_url, created_at")
+      .select("id, category_id, type, title, author, github_url, deploy_url, og_image_url, created_at")
       .eq("category_id", data.categoryId)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -247,7 +248,7 @@ export const getPost = createServerFn({ method: "GET" })
     const db = await getAdmin();
     const { data: row, error } = await db
       .from("posts")
-      .select("id, category_id, type, title, author, github_url, deploy_url, created_at")
+      .select("id, category_id, type, title, author, github_url, deploy_url, og_image_url, created_at")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -281,6 +282,11 @@ export const createPost = createServerFn({ method: "POST" })
         throw new Error("이 게시판은 GitHub 링크가 필수입니다.");
       }
     }
+    // Resolve and cache the deploy site's OG image once at creation time so the
+    // board never re-fetches the external site on subsequent loads.
+    const ogImageUrl = data.deployUrl
+      ? (await resolveOgImage(data.deployUrl)) ?? ""
+      : "";
     const { error } = await db.from("posts").insert({
       category_id: data.categoryId,
       type: data.type,
@@ -288,6 +294,7 @@ export const createPost = createServerFn({ method: "POST" })
       author: data.author,
       github_url: data.githubUrl,
       deploy_url: data.deployUrl,
+      og_image_url: ogImageUrl,
       edit_password: data.editPassword,
     });
     if (error) throw new Error(error.message);
@@ -343,6 +350,19 @@ export const updatePost = createServerFn({ method: "POST" })
     if (!(await checkPostPassword(db, data.id, data.password))) {
       return { ok: false };
     }
+    // Only re-resolve the OG image when the deploy URL actually changed; keep
+    // the cached value otherwise to avoid redundant external requests.
+    const { data: existing } = await db
+      .from("posts")
+      .select("deploy_url, og_image_url")
+      .eq("id", data.id)
+      .maybeSingle();
+    let ogImageUrl = existing?.og_image_url ?? "";
+    if (data.deployUrl !== (existing?.deploy_url ?? "")) {
+      ogImageUrl = data.deployUrl
+        ? (await resolveOgImage(data.deployUrl)) ?? ""
+        : "";
+    }
     const { error } = await db
       .from("posts")
       .update({
@@ -350,6 +370,7 @@ export const updatePost = createServerFn({ method: "POST" })
         author: data.author,
         github_url: data.githubUrl,
         deploy_url: data.deployUrl,
+        og_image_url: ogImageUrl,
       })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -381,6 +402,7 @@ function mapPost(p: any): PostDTO {
     author: p.author,
     githubUrl: p.github_url,
     deployUrl: p.deploy_url ?? "",
+    ogImageUrl: p.og_image_url ?? "",
     createdAt: p.created_at,
   };
 }
@@ -585,63 +607,98 @@ function extractMetaContent(html: string, keys: string[]): string | null {
   return null;
 }
 
+// Server-only OG image resolver. Returns an absolute https(s) image URL or null.
+// Reused by fetchOgImage (client fallback/backfill) and create/updatePost (cache).
+async function resolveOgImage(url: string): Promise<string | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 7000);
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; EduShareBot/1.0)" },
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+
+    // Read at most ~512KB of HTML; OG tags live in <head>.
+    const reader = res.body?.getReader();
+    let html = "";
+    if (reader) {
+      const decoder = new TextDecoder();
+      let received = 0;
+      const MAX = 512 * 1024;
+      while (received < MAX) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        received += value.byteLength;
+        html += decoder.decode(value, { stream: true });
+        if (html.includes("</head>")) break;
+      }
+      try {
+        await reader.cancel();
+      } catch {
+        /* ignore */
+      }
+    } else {
+      html = await res.text();
+    }
+
+    const raw = extractMetaContent(html, [
+      "og:image:secure_url",
+      "og:image",
+      "twitter:image",
+      "twitter:image:src",
+    ]);
+    if (!raw) return null;
+
+    // Resolve relative URLs against the page URL.
+    let resolved: string;
+    try {
+      resolved = new URL(raw, url).href;
+    } catch {
+      return null;
+    }
+    if (!/^https?:\/\//i.test(resolved)) return null;
+    return resolved;
+  } catch (e) {
+    console.error("resolveOgImage failed:", e);
+    return null;
+  }
+}
+
 export const fetchOgImage = createServerFn({ method: "GET" })
   .inputValidator((input) =>
     z.object({ url: z.string().trim().url().max(500) }).parse(input),
   )
   .handler(async ({ data }): Promise<{ image: string | null }> => {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 7000);
-      const res = await fetch(data.url, {
-        signal: controller.signal,
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; EduShareBot/1.0)" },
-      });
-      clearTimeout(timeout);
-      if (!res.ok) return { image: null };
+    return { image: await resolveOgImage(data.url) };
+  });
 
-      // Read at most ~512KB of HTML; OG tags live in <head>.
-      const reader = res.body?.getReader();
-      let html = "";
-      if (reader) {
-        const decoder = new TextDecoder();
-        let received = 0;
-        const MAX = 512 * 1024;
-        while (received < MAX) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          received += value.byteLength;
-          html += decoder.decode(value, { stream: true });
-          if (html.includes("</head>")) break;
-        }
-        try {
-          await reader.cancel();
-        } catch {
-          /* ignore */
-        }
-      } else {
-        html = await res.text();
-      }
-
-      const raw = extractMetaContent(html, [
-        "og:image:secure_url",
-        "og:image",
-        "twitter:image",
-        "twitter:image:src",
-      ]);
-      if (!raw) return { image: null };
-
-      // Resolve relative URLs against the page URL.
-      let resolved: string;
-      try {
-        resolved = new URL(raw, data.url).href;
-      } catch {
-        return { image: null };
-      }
-      if (!/^https?:\/\//i.test(resolved)) return { image: null };
-      return { image: resolved };
-    } catch (e) {
-      console.error("fetchOgImage failed:", e);
-      return { image: null };
+// Backfills the cached OG image for an existing post whose og_image_url is
+// empty. Resolves once, stores it, and returns the image so the board can show
+// it immediately and never re-fetch the external site again.
+export const refreshOgImage = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z.object({ postId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }): Promise<{ image: string | null }> => {
+    const db = await getAdmin();
+    const { data: row } = await db
+      .from("posts")
+      .select("deploy_url, og_image_url")
+      .eq("id", data.postId)
+      .maybeSingle();
+    if (!row) return { image: null };
+    if (row.og_image_url) return { image: row.og_image_url };
+    if (!row.deploy_url) return { image: null };
+    const image = await resolveOgImage(row.deploy_url);
+    // Persist even empty result is avoided: only cache successful resolutions
+    // so we can retry later if the site was temporarily unreachable.
+    if (image) {
+      await db
+        .from("posts")
+        .update({ og_image_url: image })
+        .eq("id", data.postId);
     }
+    return { image };
   });
