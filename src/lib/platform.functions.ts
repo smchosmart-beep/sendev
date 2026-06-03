@@ -26,6 +26,11 @@ export interface CategoryDTO {
   sortOrder: number;
   hasPassword: boolean;
   githubRequired: boolean;
+  enableNotice: boolean;
+  enableQuestion: boolean;
+  enableGeneral: boolean;
+  enableProject: boolean;
+  generalName: string;
 }
 
 // Board slug: lowercase letters, digits and hyphens. Used in short URLs.
