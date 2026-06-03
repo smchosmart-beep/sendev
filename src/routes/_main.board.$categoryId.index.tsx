@@ -9,8 +9,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Megaphone, FolderGit2, User, Plus } from "lucide-react";
 import { toast } from "sonner";
 
-import { postsQueryOptions } from "@/lib/platform.queries";
-import { createPost } from "@/lib/platform.functions";
+import { postsQueryOptions, categoriesQueryOptions } from "@/lib/platform.queries";
+import { createPost, GITHUB_URL_RE } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
