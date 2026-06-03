@@ -123,8 +123,15 @@ function ProjectCard({
   post: PostDTO;
   categoryId: string;
 }) {
-  const { data: og } = useQuery(ogImageQueryOptions(post.deployUrl ?? ""));
-  const ogImage = og?.image ?? null;
+  // Prefer the cached OG image stored on the post. Only existing posts without a
+  // cached value (and with a deploy URL) trigger a one-time backfill request,
+  // which stores the result so future loads never hit the external site again.
+  const needsBackfill = !post.ogImageUrl && !!post.deployUrl;
+  const { data: backfill } = useQuery(
+    ogImageBackfillQueryOptions(needsBackfill ? post.id : "", post.deployUrl ?? ""),
+  );
+  const ogImage = post.ogImageUrl || backfill?.image || null;
+
 
   return (
     <Link
