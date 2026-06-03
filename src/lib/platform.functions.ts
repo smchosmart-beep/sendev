@@ -383,7 +383,7 @@ export const createPost = createServerFn({ method: "POST" })
     z
       .object({
         categoryId: z.string().uuid(),
-        type: z.enum(["notice", "project", "question"]),
+        type: z.enum(["notice", "project", "question", "general"]),
         title: z.string().trim().min(1).max(200),
         content: z.string().max(20000).default(""),
         author: z.string().trim().max(100).default(""),
