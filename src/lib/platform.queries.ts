@@ -8,6 +8,7 @@ import {
   listCriteria,
   listReviews,
   fetchReadme,
+  fetchOgImage,
 } from "./platform.functions";
 
 export const categoriesQueryOptions = () =>
