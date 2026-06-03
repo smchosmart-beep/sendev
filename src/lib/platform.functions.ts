@@ -87,11 +87,12 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const db = await getAdmin();
     const { data, error } = await db
       .from("categories")
-      .select("id, name, description, sort_order, password, github_required")
+      .select("id, slug, name, description, sort_order, password, github_required")
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []).map((c: any) => ({
       id: c.id,
+      slug: c.slug ?? "",
       name: c.name,
       description: c.description,
       sortOrder: c.sort_order,
