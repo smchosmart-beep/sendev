@@ -56,6 +56,8 @@ function CalendarPage() {
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [selected, setSelected] = useState<EventDTO | null>(null);
+  const [mobileView, setMobileView] = useState<"calendar" | "list">("calendar");
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, EventDTO[]>();
