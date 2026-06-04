@@ -222,6 +222,49 @@
 }
 
 @layer utilities {
-  /* 히어로 스택 캐러셀은 단일 transition 모델을 사용하므로
-     별도 keyframe 없이 컴포넌트의 transition 클래스로 처리한다. */
+  /* 히어로 스택 캐러셀: 들어오는 카드가 옆으로 빠진 뒤
+     호를 그리며 앞장 위로 덮어오는 전환 */
+  @keyframes hero-deal-next {
+    0% {
+      transform: translateX(34px) translateY(-40px) scale(0.82) rotate(4deg);
+      opacity: 0;
+    }
+    35% {
+      transform: translateX(120px) translateY(-10px) scale(0.9) rotate(8deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(0px) translateY(0px) scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  @keyframes hero-deal-prev {
+    0% {
+      transform: translateX(-34px) translateY(-40px) scale(0.82) rotate(-4deg);
+      opacity: 0;
+    }
+    35% {
+      transform: translateX(-120px) translateY(-10px) scale(0.9) rotate(-8deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(0px) translateY(0px) scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  .hero-deal-next {
+    animation: hero-deal-next 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .hero-deal-prev {
+    animation: hero-deal-prev 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-deal-next,
+    .hero-deal-prev {
+      animation: none;
+    }
+  }
 }
