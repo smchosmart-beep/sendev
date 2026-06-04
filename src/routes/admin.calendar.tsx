@@ -126,6 +126,7 @@ function AdminCalendarPage() {
     setDate(event.date);
     setTime(event.time);
     setLocation(event.location);
+    setTarget(event.target);
     setDescription(event.description);
     setAttachments(event.attachments);
     setLinks(event.links);
