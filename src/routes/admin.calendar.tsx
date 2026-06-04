@@ -112,6 +112,7 @@ function AdminCalendarPage() {
     setDate("");
     setTime("");
     setLocation("");
+    setTarget("");
     setDescription("");
     setAttachments([]);
     setLinks([]);
