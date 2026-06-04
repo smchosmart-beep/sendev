@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
-import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon } from "lucide-react";
+import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play } from "lucide-react";
 
 import {
   postsQueryOptions,
@@ -8,6 +8,7 @@ import {
   ogImageBackfillQueryOptions,
 } from "@/lib/platform.queries";
 import { type PostDTO } from "@/lib/platform.functions";
+import { getEmbedUrl } from "@/lib/embed";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 
@@ -230,12 +231,13 @@ function LinkCard({ post, slug }: { post: PostDTO; slug: string }) {
     ogImageBackfillQueryOptions(needsBackfill ? post.id : "", post.deployUrl ?? ""),
   );
   const ogImage = post.ogImageUrl || backfill?.image || null;
+  const embeddable = !!getEmbedUrl(post.deployUrl);
 
   return (
     <Link
       to="/board/$slug/$postNo"
       params={{ slug, postNo: String(post.postNo) }}
-      className="block overflow-hidden rounded-2xl bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md active:scale-95"
+      className="group block overflow-hidden rounded-2xl bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md active:scale-95"
     >
       <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-accent text-primary">
         {ogImage ? (
@@ -247,6 +249,13 @@ function LinkCard({ post, slug }: { post: PostDTO; slug: string }) {
           />
         ) : (
           <LinkIcon className="h-10 w-10" />
+        )}
+        {embeddable && (
+          <span className="absolute inset-0 flex items-center justify-center bg-foreground/20 transition-colors group-hover:bg-foreground/30">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-background/90 text-primary shadow-md">
+              <Play className="ml-0.5 h-5 w-5 fill-current" />
+            </span>
+          </span>
         )}
       </div>
       <div className="p-5">
