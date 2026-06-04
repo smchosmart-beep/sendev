@@ -387,7 +387,9 @@ export const updateEvent = createServerFn({ method: "POST" })
         date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
         time: z.string().trim().max(100).default(""),
         location: z.string().trim().max(200).default(""),
+        target: z.string().trim().max(200).default(""),
         description: z.string().trim().max(1000).default(""),
+
         attachments: z.array(attachmentSchema).max(10).default([]),
         links: z.array(linkSchema).max(10).default([]),
       })
