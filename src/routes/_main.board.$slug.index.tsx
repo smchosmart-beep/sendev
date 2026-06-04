@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
-import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle } from "lucide-react";
+import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon } from "lucide-react";
 
 import {
   postsQueryOptions,
@@ -52,6 +52,7 @@ function BoardInner({
   const questions = posts.filter((p) => p.type === "question");
   const generals = posts.filter((p) => p.type === "general");
   const projects = posts.filter((p) => p.type === "project");
+  const links = posts.filter((p) => p.type === "link");
 
   return (
     <div className="space-y-6">
@@ -188,7 +189,74 @@ function BoardInner({
           )}
         </section>
       )}
+
+      {category.enableLink && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+              <LinkIcon className="h-5 w-5 text-primary" />
+              {category.linkName || "링크"}
+            </h2>
+            <Button asChild className="rounded-xl active:scale-95">
+              <Link to="/board/$slug/new-link" params={{ slug }}>
+                <Plus className="h-4 w-4" />
+                {category.linkName || "링크"} 등록
+              </Link>
+            </Button>
+          </div>
+
+          {links.length === 0 ? (
+            <EmptyState
+              icon={LinkIcon}
+              title={`아직 등록된 ${category.linkName || "링크"}이 없어요.`}
+              description="링크를 공유하면 미리보기 썸네일이 표시돼요."
+            />
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {links.map((p) => (
+                <LinkCard key={p.id} post={p} slug={slug} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
     </div>
+  );
+}
+
+function LinkCard({ post, slug }: { post: PostDTO; slug: string }) {
+  const needsBackfill = !post.ogImageUrl && !!post.deployUrl;
+  const { data: backfill } = useQuery(
+    ogImageBackfillQueryOptions(needsBackfill ? post.id : "", post.deployUrl ?? ""),
+  );
+  const ogImage = post.ogImageUrl || backfill?.image || null;
+
+  return (
+    <Link
+      to="/board/$slug/$postNo"
+      params={{ slug, postNo: String(post.postNo) }}
+      className="block overflow-hidden rounded-2xl bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md active:scale-95"
+    >
+      <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-accent text-primary">
+        {ogImage ? (
+          <img
+            src={ogImage}
+            alt={`${post.title} 미리보기`}
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <LinkIcon className="h-10 w-10" />
+        )}
+      </div>
+      <div className="p-5">
+        <h3 className="font-semibold text-foreground">{post.title}</h3>
+        <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+          <User className="h-3.5 w-3.5" />
+          {post.author}
+        </p>
+      </div>
+    </Link>
   );
 }
 

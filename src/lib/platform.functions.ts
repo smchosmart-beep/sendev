@@ -32,8 +32,10 @@ export interface CategoryDTO {
   enableQuestion: boolean;
   enableGeneral: boolean;
   enableProject: boolean;
+  enableLink: boolean;
   generalName: string;
   projectName: string;
+  linkName: string;
   tabGroup: TabGroup;
 }
 
@@ -75,7 +77,7 @@ export interface PostDTO {
   id: string;
   categoryId: string;
   postNo: number;
-  type: "notice" | "project" | "question" | "general";
+  type: "notice" | "project" | "question" | "general" | "link";
   title: string;
   content: string;
   author: string;
@@ -110,7 +112,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const { data, error } = await db
       .from("categories")
       .select(
-        "id, slug, name, description, sort_order, password, github_required, enable_notice, enable_question, enable_general, enable_project, general_name, project_name, tab_group",
+        "id, slug, name, description, sort_order, password, github_required, enable_notice, enable_question, enable_general, enable_project, enable_link, general_name, project_name, link_name, tab_group",
       )
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
@@ -126,8 +128,10 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       enableQuestion: c.enable_question ?? true,
       enableGeneral: c.enable_general ?? true,
       enableProject: c.enable_project ?? true,
+      enableLink: c.enable_link ?? false,
       generalName: c.general_name ?? "일반게시판",
       projectName: c.project_name ?? "산출물",
+      linkName: c.link_name ?? "링크",
       tabGroup: (c.tab_group ?? "hackathon") as TabGroup,
     }));
   },
@@ -182,8 +186,10 @@ export const createCategory = createServerFn({ method: "POST" })
         enableQuestion: z.boolean().default(true),
         enableGeneral: z.boolean().default(true),
         enableProject: z.boolean().default(true),
+        enableLink: z.boolean().default(false),
         generalName: z.string().trim().max(100).default("일반게시판"),
         projectName: z.string().trim().max(100).default("산출물"),
+        linkName: z.string().trim().max(100).default("링크"),
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .default("hackathon"),
@@ -210,8 +216,10 @@ export const createCategory = createServerFn({ method: "POST" })
       enable_question: data.enableQuestion,
       enable_general: data.enableGeneral,
       enable_project: data.enableProject,
+      enable_link: data.enableLink,
       general_name: data.generalName || "일반게시판",
       project_name: data.projectName || "산출물",
+      link_name: data.linkName || "링크",
       tab_group: data.tabGroup,
       sort_order: nextOrder,
     });
@@ -234,8 +242,10 @@ export const updateCategory = createServerFn({ method: "POST" })
         enableQuestion: z.boolean().optional(),
         enableGeneral: z.boolean().optional(),
         enableProject: z.boolean().optional(),
+        enableLink: z.boolean().optional(),
         generalName: z.string().trim().max(100).optional(),
         projectName: z.string().trim().max(100).optional(),
+        linkName: z.string().trim().max(100).optional(),
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .optional(),
@@ -261,10 +271,13 @@ export const updateCategory = createServerFn({ method: "POST" })
       patch.enable_general = data.enableGeneral;
     if (data.enableProject !== undefined)
       patch.enable_project = data.enableProject;
+    if (data.enableLink !== undefined) patch.enable_link = data.enableLink;
     if (data.generalName !== undefined)
       patch.general_name = data.generalName || "일반게시판";
     if (data.projectName !== undefined)
       patch.project_name = data.projectName || "산출물";
+    if (data.linkName !== undefined)
+      patch.link_name = data.linkName || "링크";
     if (data.tabGroup !== undefined) patch.tab_group = data.tabGroup;
     const { error } = await db.from("categories").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -486,7 +499,7 @@ export const createPost = createServerFn({ method: "POST" })
     z
       .object({
         categoryId: z.string().uuid(),
-        type: z.enum(["notice", "project", "question", "general"]),
+        type: z.enum(["notice", "project", "question", "general", "link"]),
         title: z.string().trim().min(1).max(200),
         content: z.string().max(20000).default(""),
         author: z.string().trim().max(100).default(""),

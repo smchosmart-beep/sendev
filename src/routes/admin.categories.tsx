@@ -89,8 +89,10 @@ function CategoriesPage() {
   const [enableQuestion, setEnableQuestion] = useState(true);
   const [enableGeneral, setEnableGeneral] = useState(true);
   const [enableProject, setEnableProject] = useState(true);
+  const [enableLink, setEnableLink] = useState(false);
   const [generalName, setGeneralName] = useState("일반게시판");
   const [projectName, setProjectName] = useState("산출물");
+  const [linkName, setLinkName] = useState("링크");
   const [tabGroup, setTabGroup] = useState<TabGroup>("hackathon");
 
   const [editing, setEditing] = useState<CategoryDTO | null>(null);
@@ -103,8 +105,10 @@ function CategoriesPage() {
   const [editEnableQuestion, setEditEnableQuestion] = useState(true);
   const [editEnableGeneral, setEditEnableGeneral] = useState(true);
   const [editEnableProject, setEditEnableProject] = useState(true);
+  const [editEnableLink, setEditEnableLink] = useState(false);
   const [editGeneralName, setEditGeneralName] = useState("일반게시판");
   const [editProjectName, setEditProjectName] = useState("산출물");
+  const [editLinkName, setEditLinkName] = useState("링크");
   const [editTabGroup, setEditTabGroup] = useState<TabGroup>("hackathon");
 
   const [deleting, setDeleting] = useState<CategoryDTO | null>(null);
@@ -122,8 +126,10 @@ function CategoriesPage() {
           enableQuestion,
           enableGeneral,
           enableProject,
+          enableLink,
           generalName: generalName.trim(),
           projectName: projectName.trim(),
+          linkName: linkName.trim(),
           tabGroup,
         },
       }),
@@ -138,8 +144,10 @@ function CategoriesPage() {
       setEnableQuestion(true);
       setEnableGeneral(true);
       setEnableProject(true);
+      setEnableLink(false);
       setGeneralName("일반게시판");
       setProjectName("산출물");
+      setLinkName("링크");
       setTabGroup("hackathon");
       toast.success("새 게시판이 추가되었어요.");
     },
@@ -160,8 +168,10 @@ function CategoriesPage() {
           enableQuestion: editEnableQuestion,
           enableGeneral: editEnableGeneral,
           enableProject: editEnableProject,
+          enableLink: editEnableLink,
           generalName: editGeneralName.trim(),
           projectName: editProjectName.trim(),
+          linkName: editLinkName.trim(),
           tabGroup: editTabGroup,
         },
       }),
@@ -194,8 +204,10 @@ function CategoriesPage() {
     setEditEnableQuestion(c.enableQuestion);
     setEditEnableGeneral(c.enableGeneral);
     setEditEnableProject(c.enableProject);
+    setEditEnableLink(c.enableLink);
     setEditGeneralName(c.generalName);
     setEditProjectName(c.projectName);
+    setEditLinkName(c.linkName);
     setEditTabGroup(c.tabGroup ?? "hackathon");
     if (c.hasPassword) {
       getPasswordFn({ data: { id: c.id } })
@@ -296,6 +308,7 @@ function CategoriesPage() {
               <SectionToggle id="add-sec-question" label="질문 게시판" checked={enableQuestion} onChange={setEnableQuestion} />
               <SectionToggle id="add-sec-general" label="일반게시판" checked={enableGeneral} onChange={setEnableGeneral} />
               <SectionToggle id="add-sec-project" label="산출물 게시판" checked={enableProject} onChange={setEnableProject} />
+              <SectionToggle id="add-sec-link" label="링크 게시판" checked={enableLink} onChange={setEnableLink} />
             </div>
             {enableGeneral && (
               <div className="space-y-2 pt-1">
@@ -319,6 +332,21 @@ function CategoriesPage() {
                   placeholder="예: 프로젝트, 작품"
                   className="rounded-xl bg-background"
                 />
+              </div>
+            )}
+            {enableLink && (
+              <div className="space-y-2 pt-1">
+                <Label htmlFor="add-link-name">링크 게시판 이름</Label>
+                <Input
+                  id="add-link-name"
+                  value={linkName}
+                  onChange={(e) => setLinkName(e.target.value)}
+                  placeholder="예: 추천 영상, 디자인 모음"
+                  className="rounded-xl bg-background"
+                />
+                <p className="text-xs text-muted-foreground">
+                  링크 주소의 미리보기 썸네일이 카드에 크게 표시돼요.
+                </p>
               </div>
             )}
           </div>
@@ -389,6 +417,7 @@ function CategoriesPage() {
                     {c.enableQuestion && <SectionBadge label="질문 게시판" />}
                     {c.enableGeneral && <SectionBadge label={c.generalName || "일반게시판"} />}
                     {c.enableProject && <SectionBadge label={c.projectName || "산출물"} />}
+                    {c.enableLink && <SectionBadge label={c.linkName || "링크"} />}
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
@@ -506,6 +535,7 @@ function CategoriesPage() {
                 <SectionToggle id="edit-sec-question" label="질문 게시판" checked={editEnableQuestion} onChange={setEditEnableQuestion} />
                 <SectionToggle id="edit-sec-general" label="일반게시판" checked={editEnableGeneral} onChange={setEditEnableGeneral} />
                 <SectionToggle id="edit-sec-project" label="산출물 게시판" checked={editEnableProject} onChange={setEditEnableProject} />
+                <SectionToggle id="edit-sec-link" label="링크 게시판" checked={editEnableLink} onChange={setEditEnableLink} />
               </div>
               {editEnableGeneral && (
                 <div className="space-y-2 pt-1">
@@ -527,6 +557,18 @@ function CategoriesPage() {
                     value={editProjectName}
                     onChange={(e) => setEditProjectName(e.target.value)}
                     placeholder="예: 프로젝트, 작품"
+                    className="rounded-xl bg-background"
+                  />
+                </div>
+              )}
+              {editEnableLink && (
+                <div className="space-y-2 pt-1">
+                  <Label htmlFor="edit-link-name">링크 게시판 이름</Label>
+                  <Input
+                    id="edit-link-name"
+                    value={editLinkName}
+                    onChange={(e) => setEditLinkName(e.target.value)}
+                    placeholder="예: 추천 영상, 디자인 모음"
                     className="rounded-xl bg-background"
                   />
                 </div>
