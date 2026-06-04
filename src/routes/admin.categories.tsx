@@ -89,8 +89,10 @@ function CategoriesPage() {
   const [enableQuestion, setEnableQuestion] = useState(true);
   const [enableGeneral, setEnableGeneral] = useState(true);
   const [enableProject, setEnableProject] = useState(true);
+  const [enableLink, setEnableLink] = useState(false);
   const [generalName, setGeneralName] = useState("일반게시판");
   const [projectName, setProjectName] = useState("산출물");
+  const [linkName, setLinkName] = useState("링크");
   const [tabGroup, setTabGroup] = useState<TabGroup>("hackathon");
 
   const [editing, setEditing] = useState<CategoryDTO | null>(null);
