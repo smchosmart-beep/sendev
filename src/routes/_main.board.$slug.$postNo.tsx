@@ -736,9 +736,23 @@ function EvaluationSection({
                 placeholder="이름을 입력하세요"
                 maxLength={100}
               />
+              {debouncedName ? (
+                alreadyReviewed ? (
+                  <p className="text-xs font-medium text-primary">
+                    ✅ 이미 평가하셨어요
+                    {myReviewDate ? ` · ${myReviewDate} 제출` : ""} (점수를 새로
+                    매겨 다시 제출하면 갱신돼요)
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    아직 평가하지 않으셨어요.
+                  </p>
+                )
+              ) : null}
               <p className="text-xs text-muted-foreground">
                 중복 평가 방지용이며, 다른 사람에게 표시되지 않아요. 같은 이름으로 다시 제출하면 점수가 갱신됩니다.
               </p>
+
             </div>
             {criteria.map((c) => (
               <div key={c.id} className="space-y-2">
