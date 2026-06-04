@@ -77,7 +77,7 @@ export interface PostDTO {
   id: string;
   categoryId: string;
   postNo: number;
-  type: "notice" | "project" | "question" | "general";
+  type: "notice" | "project" | "question" | "general" | "link";
   title: string;
   content: string;
   author: string;
