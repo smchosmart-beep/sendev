@@ -115,9 +115,7 @@ export function HeroStackCarousel({ slides }: HeroStackCarouselProps) {
                 key={slide.id}
                 className={cn(
                   "absolute inset-0",
-                  incoming!.dir === 1
-                    ? "motion-safe:hero-deal-next"
-                    : "motion-safe:hero-deal-prev",
+                  incoming!.dir === 1 ? "hero-deal-next" : "hero-deal-prev",
                 )}
                 style={{ zIndex: 50, willChange: "transform, opacity" }}
               >
