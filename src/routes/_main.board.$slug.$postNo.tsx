@@ -828,7 +828,394 @@ function StarRating({
   );
 }
 
-function BackLink({ slug }: { slug: string }) {
+function CommentsSection({ postId }: { postId: string }) {
+  const queryClient = useQueryClient();
+  const { data: comments = [], isLoading } = useQuery(
+    commentsQueryOptions(postId),
+  );
+  const create = useServerFn(createComment);
+  const remove = useServerFn(deleteComment);
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ["comments", postId] });
+
+  // New top-level comment form state.
+  const [author, setAuthor] = useState("");
+  const [content, setContent] = useState("");
+  const [password, setPassword] = useState("");
+
+  // Reply form is open for at most one comment at a time.
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+
+  // Delete dialog state.
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deletePw, setDeletePw] = useState("");
+
+  const createMutation = useMutation({
+    mutationFn: (vars: {
+      parentId: string | null;
+      author: string;
+      content: string;
+      editPassword: string;
+    }) => create({ data: { postId, ...vars } }),
+    onSuccess: (_res, vars) => {
+      invalidate();
+      toast.success(vars.parentId ? "답글을 남겼어요!" : "댓글을 남겼어요!");
+      if (vars.parentId) {
+        setReplyTo(null);
+      } else {
+        setAuthor("");
+        setContent("");
+        setPassword("");
+      }
+    },
+    onError: () => toast.error("등록 중 문제가 발생했어요."),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => remove({ data: { id, password: deletePw } }),
+    onSuccess: (res) => {
+      if (!res.ok) {
+        toast.error("비밀번호가 일치하지 않아요.");
+        return;
+      }
+      invalidate();
+      toast.success("삭제되었어요.");
+      setDeleteTarget(null);
+      setDeletePw("");
+    },
+    onError: () => toast.error("삭제 중 문제가 발생했어요."),
+  });
+
+  const topLevel = comments.filter((c) => !c.parentId);
+  const repliesOf = (parentId: string) =>
+    comments.filter((c) => c.parentId === parentId);
+
+  return (
+    <section className="rounded-2xl bg-card p-6 shadow-sm">
+      <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+        <MessageCircle className="h-5 w-5 text-primary" />
+        댓글 {comments.length > 0 && `(${comments.length})`}
+      </h2>
+
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          댓글을 불러오는 중...
+        </div>
+      ) : topLevel.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          아직 댓글이 없어요. 첫 댓글을 남겨보세요!
+        </p>
+      ) : (
+        <ul className="space-y-4">
+          {topLevel.map((c) => (
+            <li key={c.id} className="space-y-3">
+              <CommentItem
+                comment={c}
+                onReply={() => setReplyTo(replyTo === c.id ? null : c.id)}
+                onDelete={() => {
+                  setDeleteTarget(c.id);
+                  setDeletePw("");
+                }}
+              />
+
+              {/* Reply form */}
+              {replyTo === c.id && (
+                <CommentForm
+                  compact
+                  pending={createMutation.isPending}
+                  onCancel={() => setReplyTo(null)}
+                  onSubmit={(vals) =>
+                    createMutation.mutate({ parentId: c.id, ...vals })
+                  }
+                />
+              )}
+
+              {/* Replies */}
+              {repliesOf(c.id).length > 0 && (
+                <ul className="space-y-3 border-l-2 border-border pl-4">
+                  {repliesOf(c.id).map((r) => (
+                    <li key={r.id}>
+                      <CommentItem
+                        comment={r}
+                        isReply
+                        onDelete={() => {
+                          setDeleteTarget(r.id);
+                          setDeletePw("");
+                        }}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* New comment form */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!content.trim()) {
+            toast.error("댓글 내용을 입력해주세요.");
+            return;
+          }
+          if (!password.trim()) {
+            toast.error("삭제용 비밀번호를 입력해주세요.");
+            return;
+          }
+          createMutation.mutate({
+            parentId: null,
+            author: author.trim(),
+            content: content.trim(),
+            editPassword: password.trim(),
+          });
+        }}
+        className="mt-6 space-y-3 border-t border-border pt-6"
+      >
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Input
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+            placeholder="작성자 (선택, 기본 익명)"
+            maxLength={100}
+            className="rounded-xl"
+          />
+          <Input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="삭제용 비밀번호"
+            maxLength={100}
+            className="rounded-xl"
+          />
+        </div>
+        <Textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="댓글을 입력하세요"
+          rows={3}
+          maxLength={5000}
+          className="rounded-xl"
+        />
+        <div className="flex justify-end">
+          <Button
+            type="submit"
+            disabled={createMutation.isPending}
+            className="rounded-xl active:scale-95"
+          >
+            {createMutation.isPending ? "등록 중..." : "댓글 등록"}
+          </Button>
+        </div>
+      </form>
+
+      {/* Delete dialog */}
+      <Dialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>댓글 삭제</DialogTitle>
+            <DialogDescription>
+              작성 시 설정한 비밀번호 또는 관리자 비밀번호를 입력해야 삭제할 수
+              있어요.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!deletePw.trim()) {
+                toast.error("비밀번호를 입력해주세요.");
+                return;
+              }
+              if (deleteTarget) deleteMutation.mutate(deleteTarget);
+            }}
+            className="space-y-4 py-2"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="c-del-pw">비밀번호</Label>
+              <Input
+                id="c-del-pw"
+                type="password"
+                value={deletePw}
+                onChange={(e) => setDeletePw(e.target.value)}
+                className="rounded-xl"
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setDeleteTarget(null)}
+                className="rounded-xl active:scale-95"
+              >
+                취소
+              </Button>
+              <Button
+                type="submit"
+                variant="destructive"
+                disabled={deleteMutation.isPending}
+                className="rounded-xl active:scale-95"
+              >
+                {deleteMutation.isPending ? "삭제 중..." : "삭제"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </section>
+  );
+}
+
+function CommentItem({
+  comment,
+  isReply = false,
+  onReply,
+  onDelete,
+}: {
+  comment: CommentDTO;
+  isReply?: boolean;
+  onReply?: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="rounded-xl bg-muted/50 px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm">
+          {isReply && (
+            <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground" />
+          )}
+          <User className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="font-medium text-foreground">{comment.author}</span>
+          <span className="text-xs text-muted-foreground">
+            {new Date(comment.createdAt).toLocaleDateString("ko-KR")}
+          </span>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          {onReply && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onReply}
+              className="h-7 rounded-lg px-2 text-xs"
+            >
+              답글
+            </Button>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onDelete}
+            className="h-7 rounded-lg px-2 text-xs text-destructive hover:text-destructive"
+          >
+            삭제
+          </Button>
+        </div>
+      </div>
+      <p className="mt-2 whitespace-pre-wrap break-words text-sm text-foreground">
+        {comment.content}
+      </p>
+    </div>
+  );
+}
+
+function CommentForm({
+  compact = false,
+  pending,
+  onSubmit,
+  onCancel,
+}: {
+  compact?: boolean;
+  pending: boolean;
+  onSubmit: (vals: {
+    author: string;
+    content: string;
+    editPassword: string;
+  }) => void;
+  onCancel?: () => void;
+}) {
+  const [author, setAuthor] = useState("");
+  const [content, setContent] = useState("");
+  const [password, setPassword] = useState("");
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!content.trim()) {
+          toast.error("내용을 입력해주세요.");
+          return;
+        }
+        if (!password.trim()) {
+          toast.error("삭제용 비밀번호를 입력해주세요.");
+          return;
+        }
+        onSubmit({
+          author: author.trim(),
+          content: content.trim(),
+          editPassword: password.trim(),
+        });
+      }}
+      className={`space-y-3 rounded-xl border border-border p-4 ${compact ? "ml-4" : ""}`}
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Input
+          value={author}
+          onChange={(e) => setAuthor(e.target.value)}
+          placeholder="작성자 (선택, 기본 익명)"
+          maxLength={100}
+          className="rounded-xl"
+        />
+        <Input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="삭제용 비밀번호"
+          maxLength={100}
+          className="rounded-xl"
+        />
+      </div>
+      <Textarea
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder="답글을 입력하세요"
+        rows={2}
+        maxLength={5000}
+        className="rounded-xl"
+      />
+      <div className="flex justify-end gap-2">
+        {onCancel && (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={onCancel}
+            className="rounded-xl active:scale-95"
+          >
+            취소
+          </Button>
+        )}
+        <Button
+          type="submit"
+          size="sm"
+          disabled={pending}
+          className="rounded-xl active:scale-95"
+        >
+          {pending ? "등록 중..." : "답글 등록"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+
   return (
     <Link
       to="/board/$slug"
