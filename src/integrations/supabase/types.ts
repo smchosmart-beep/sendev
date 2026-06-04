@@ -113,6 +113,7 @@ export type Database = {
           id: string
           links: Json
           location: string
+          target: string
           time: string
           title: string
         }
@@ -124,6 +125,7 @@ export type Database = {
           id?: string
           links?: Json
           location?: string
+          target?: string
           time?: string
           title: string
         }
@@ -135,6 +137,7 @@ export type Database = {
           id?: string
           links?: Json
           location?: string
+          target?: string
           time?: string
           title?: string
         }
