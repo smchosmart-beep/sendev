@@ -776,7 +776,11 @@ function EvaluationSection({
               disabled={mutation.isPending}
               className="rounded-xl active:scale-95"
             >
-              {mutation.isPending ? "제출 중..." : "평가 제출"}
+              {mutation.isPending
+                ? "제출 중..."
+                : alreadyReviewed
+                  ? "평가 수정"
+                  : "평가 제출"}
             </Button>
           </form>
         </div>
