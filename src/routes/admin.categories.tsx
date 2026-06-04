@@ -535,6 +535,7 @@ function CategoriesPage() {
                 <SectionToggle id="edit-sec-question" label="질문 게시판" checked={editEnableQuestion} onChange={setEditEnableQuestion} />
                 <SectionToggle id="edit-sec-general" label="일반게시판" checked={editEnableGeneral} onChange={setEditEnableGeneral} />
                 <SectionToggle id="edit-sec-project" label="산출물 게시판" checked={editEnableProject} onChange={setEditEnableProject} />
+                <SectionToggle id="edit-sec-link" label="링크 게시판" checked={editEnableLink} onChange={setEditEnableLink} />
               </div>
               {editEnableGeneral && (
                 <div className="space-y-2 pt-1">
@@ -556,6 +557,18 @@ function CategoriesPage() {
                     value={editProjectName}
                     onChange={(e) => setEditProjectName(e.target.value)}
                     placeholder="예: 프로젝트, 작품"
+                    className="rounded-xl bg-background"
+                  />
+                </div>
+              )}
+              {editEnableLink && (
+                <div className="space-y-2 pt-1">
+                  <Label htmlFor="edit-link-name">링크 게시판 이름</Label>
+                  <Input
+                    id="edit-link-name"
+                    value={editLinkName}
+                    onChange={(e) => setEditLinkName(e.target.value)}
+                    placeholder="예: 추천 영상, 디자인 모음"
                     className="rounded-xl bg-background"
                   />
                 </div>
