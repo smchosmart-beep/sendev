@@ -32,8 +32,10 @@ export interface CategoryDTO {
   enableQuestion: boolean;
   enableGeneral: boolean;
   enableProject: boolean;
+  enableLink: boolean;
   generalName: string;
   projectName: string;
+  linkName: string;
   tabGroup: TabGroup;
 }
 
