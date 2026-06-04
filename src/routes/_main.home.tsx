@@ -98,27 +98,20 @@ function HomePage() {
 
         {upcoming.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2">
-            {upcoming.map((e, i) => (
+            {upcoming.map((e) => (
               <Link
                 key={e.id}
                 to="/calendar"
-                className={
-                  "group rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md " +
-                  (i === 0 ? "sm:col-span-2 ring-1 ring-primary/30" : "")
-                }
+                className="group rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="flex items-center gap-2 text-sm font-medium text-primary">
                   <CalendarDays className="h-4 w-4" />
                   {formatDate(e.date)}
                 </div>
-                <h3
-                  className={
-                    "mt-2 font-bold text-foreground " +
-                    (i === 0 ? "text-xl sm:text-2xl" : "text-lg")
-                  }
-                >
+                <h3 className="mt-2 text-lg font-bold text-foreground">
                   {e.title}
                 </h3>
+
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                   {e.time && (
                     <span className="flex items-center gap-1">
