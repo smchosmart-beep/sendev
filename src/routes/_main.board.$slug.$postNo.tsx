@@ -631,11 +631,31 @@ function EvaluationSection({
   const [scores, setScores] = useState<Record<string, number>>({});
   const [reviewerName, setReviewerName] = useState("");
 
+  // 이름 입력에 디바운스를 적용해 과도한 조회를 막는다.
+  const [debouncedName, setDebouncedName] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedName(reviewerName.trim()), 500);
+    return () => clearTimeout(t);
+  }, [reviewerName]);
+
+  const { data: myReview } = useQuery(
+    myReviewQueryOptions(postId, debouncedName),
+  );
+  const alreadyReviewed = myReview?.found ?? false;
+  const myReviewDate =
+    alreadyReviewed && myReview?.createdAt
+      ? new Date(myReview.createdAt).toLocaleDateString("ko-KR", {
+          month: "long",
+          day: "numeric",
+        })
+      : null;
+
   const mutation = useMutation({
     mutationFn: () =>
       create({ data: { postId, reviewerName: reviewerName.trim(), scores } }),
     onSuccess: (res: { ok: boolean; updated?: boolean }) => {
       queryClient.invalidateQueries({ queryKey: ["reviews", postId] });
+      queryClient.invalidateQueries({ queryKey: ["my-review", postId] });
       toast.success(
         res?.updated ? "평가가 갱신되었어요!" : "평가를 제출했어요!",
       );
@@ -643,6 +663,7 @@ function EvaluationSection({
     },
     onError: () => toast.error("제출 중 문제가 발생했어요."),
   });
+
 
   const averages = criteria.map((c) => {
     const vals = reviews
