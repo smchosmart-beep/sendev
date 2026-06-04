@@ -714,7 +714,7 @@ function EvaluationSection({
             onSubmit={(e) => {
               e.preventDefault();
               if (!reviewerName.trim()) {
-                toast.error("이름을 입력해주세요.");
+                toast.error("닉네임을 입력해주세요.");
                 return;
               }
               for (const c of criteria) {
@@ -728,12 +728,12 @@ function EvaluationSection({
             className="space-y-5"
           >
             <div className="space-y-2">
-              <Label htmlFor="reviewer-name">이름</Label>
+              <Label htmlFor="reviewer-name">닉네임</Label>
               <Input
                 id="reviewer-name"
                 value={reviewerName}
                 onChange={(e) => setReviewerName(e.target.value)}
-                placeholder="이름을 입력하세요"
+                placeholder="닉네임을 입력하세요"
                 maxLength={100}
               />
               {debouncedName ? (
@@ -750,7 +750,7 @@ function EvaluationSection({
                 )
               ) : null}
               <p className="text-xs text-muted-foreground">
-                중복 평가 방지용이며, 다른 사람에게 표시되지 않아요. 같은 이름으로 다시 제출하면 점수가 갱신됩니다.
+                닉네임은 중복 평가 방지용이므로 흔하지 않은 것으로 정해주세요. 같은 닉네임으로 다시 제출하면 점수가 갱신됩니다.
               </p>
 
             </div>
