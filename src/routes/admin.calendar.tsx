@@ -90,6 +90,7 @@ function AdminCalendarPage() {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [location, setLocation] = useState("");
+  const [target, setTarget] = useState("");
   const [description, setDescription] = useState("");
   const [attachments, setAttachments] = useState<EventAttachment[]>([]);
   const [links, setLinks] = useState<EventLink[]>([]);
