@@ -188,6 +188,7 @@ function AdminCalendarPage() {
         date,
         time: time.trim(),
         location: location.trim(),
+        target: target.trim(),
         description: description.trim(),
         attachments,
         links,
