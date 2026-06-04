@@ -289,7 +289,7 @@ function AdminHomePage() {
         </div>
       ) : (
         <EmptyState
-          icon={ImageIcon}
+          icon={Home}
           title="등록된 배너가 없어요."
           description="위에서 이미지를 업로드하면 메인 화면에 표시됩니다."
         />
