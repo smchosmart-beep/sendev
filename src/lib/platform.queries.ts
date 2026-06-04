@@ -65,6 +65,12 @@ export const reviewsQueryOptions = (postId: string) =>
     queryFn: () => listReviews({ data: { postId } }),
   });
 
+export const commentsQueryOptions = (postId: string) =>
+  queryOptions({
+    queryKey: ["comments", postId],
+    queryFn: () => listComments({ data: { postId } }),
+  });
+
 export const readmeQueryOptions = (githubUrl: string) =>
   queryOptions({
     queryKey: ["readme", githubUrl],
