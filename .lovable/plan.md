@@ -1,38 +1,23 @@
 ## 목표
 
-링크 게시판(`type === "link"`) 글은 **README와 평가(채점) 섹션을 제거**하고, 등록한 주소(유튜브, 캔바 등)를 **카드/상세에서 바로 임베드(iframe)로 재생·미리보기**되도록 합니다.
+링크(유튜브) 카드에서 지금은 OG 이미지가 없으면 단색 배경 위에 재생 버튼만 보입니다. 첨부 화면처럼 비어 보이지 않도록, 유튜브 영상의 실제 썸네일이 카드에 채워지게 합니다.
 
-## 현재 문제
+## 원인
 
-- 글 상세(`_main.board.$slug.$postNo.tsx`)에서 링크 글은 `isBoardPost`가 false라서 일반 산출물처럼 **README 섹션 + 평가 섹션이 잘못 표시**됩니다.
-- 링크 상세에는 임베드가 없고, 단순히 "배포 사이트" 외부 링크만 보입니다.
+현재 `LinkCard`는 `post.ogImageUrl` 또는 백필된 OG 이미지가 있을 때만 이미지를 보여줍니다. 유튜브 링크는 OG 이미지가 비어 있는 경우가 많아 단색 배경 + 재생 버튼만 표시됩니다.
 
-## 작업 내용
+## 변경 내용
 
-### 1. 임베드 변환 유틸 (신규 `src/lib/embed.ts`)
-주소를 받아 임베드 가능한 iframe URL을 돌려주는 순수 함수 `getEmbedUrl(url)` 추가:
-- **유튜브**: `youtube.com/watch?v=`, `youtu.be/`, `youtube.com/shorts/` → `https://www.youtube.com/embed/{id}`
-- **캔바**: 디자인/프레젠테이션 공유 링크 → 뒤에 `?embed` 또는 `/view?embed` 형태의 임베드 URL
-- **비메오** 등 일반적 케이스 가벼운 처리, 그 외에는 `null` 반환(임베드 불가 → 외부 링크 버튼으로 대체)
+### 1. `src/lib/embed.ts`
+- `getThumbnailUrl(url)` 함수 추가:
+  - 유튜브(`youtu.be`, `/watch?v=`, `/shorts/`, `/embed/`)에서 video ID를 추출해 `https://img.youtube.com/vi/{id}/hqdefault.jpg` 썸네일 URL 반환
+  - 비메오/캔바 등 썸네일을 만들 수 없는 경우 `null` 반환
+  - 기존 `getEmbedUrl`의 ID 추출 로직을 재사용
 
-### 2. 글 상세 화면 (`_main.board.$slug.$postNo.tsx`)
-- `isLink = post.type === "link"` 분기 추가.
-- 링크 글일 때:
-  - **README 섹션, 평가 섹션 렌더링 안 함** (현재 `!isBoardPost` 블록에서 제외).
-  - `getEmbedUrl(post.deployUrl)`이 있으면 **16:9 반응형 iframe**으로 임베드 표시(`aspect-video`, `rounded-2xl`, `allowfullscreen`).
-  - 임베드 불가 시 미리보기 썸네일 + "바로가기" 외부 링크 버튼으로 대체.
-  - 작성자/등록일 메타와 수정·삭제(`ManagePost`)는 그대로 유지.
+### 2. `src/routes/_main.board.$slug.index.tsx` (`LinkCard`)
+- 이미지 소스 우선순위를 `post.ogImageUrl → 백필 OG 이미지 → getThumbnailUrl(deployUrl)` 순으로 변경
+- 썸네일이 있으면 단색 배경 대신 실제 썸네일을 카드에 채워서 표시
+- 재생 버튼 오버레이는 유지하되, 썸네일 위에 작게 얹혀 보이도록 함(영상임을 알 수 있게)
 
-### 3. 게시판 목록 카드 (`_main.board.$slug.index.tsx`)
-- `LinkCard`에서 유튜브 등 임베드 가능한 주소면 썸네일 대신(또는 호버 시) 재생 느낌을 주도록, 카드 썸네일 위에 **재생 아이콘 오버레이**를 표시(임베드는 상세에서, 목록은 가벼운 썸네일 유지).
-- 썸네일 영역은 기존 `aspect-video` 유지.
-
-## 기술 메모
-
-- iframe은 기존 디자인 토큰(`rounded-2xl`, `bg-card`, `shadow-sm`)에 맞춰 래핑.
-- 캔바 임베드는 공개(공유) 링크에서만 동작하므로, 임베드 실패 대비 외부 링크 버튼 fallback을 항상 제공.
-- DB/서버 로직 변경 없음 — 주소는 기존 `deploy_url`을 그대로 사용.
-
-## 기대 결과
-
-링크 게시판 글에는 README·평가가 사라지고, 유튜브·캔바 주소를 올리면 상세 화면에서 영상·디자인이 바로 임베드되어 재생/미리보기됩니다.
+## 확인
+- 빌드 후 유튜브 링크 카드에 실제 영상 썸네일이 표시되는지 미리보기로 확인합니다.
