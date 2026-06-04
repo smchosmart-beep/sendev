@@ -833,6 +833,30 @@ export const createReview = createServerFn({ method: "POST" })
     return { ok: true, updated: !!existing };
   });
 
+export const getMyReview = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z
+      .object({
+        postId: z.string().uuid(),
+        reviewerName: z.string().trim().min(1).max(100),
+      })
+      .parse(input),
+  )
+  .handler(
+    async ({ data }): Promise<{ found: boolean; createdAt?: string }> => {
+      const db = await getAdmin();
+      const { data: row, error } = await db
+        .from("reviews")
+        .select("created_at")
+        .eq("post_id", data.postId)
+        .eq("reviewer_name", data.reviewerName)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!row) return { found: false };
+      return { found: true, createdAt: row.created_at };
+    },
+  );
+
 /* ------------------------------ Comments ------------------------------ */
 
 export interface CommentDTO {
