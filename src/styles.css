@@ -220,3 +220,51 @@
     pointer-events: none;
   }
 }
+
+@layer utilities {
+  /* 뒷장 카드가 오른쪽에서 나오며 앞장 위로 올라오는 진입 애니메이션 */
+  @keyframes hero-slide-over-right {
+    0% {
+      transform: translateX(55%) translateY(-24px) scale(0.86) rotate(4deg);
+      opacity: 0.4;
+    }
+    55% {
+      transform: translateX(12%) translateY(-6px) scale(0.97) rotate(1deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(0%) translateY(0px) scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  /* 뒷장 카드가 왼쪽에서 나오며 앞장 위로 올라오는 진입 애니메이션 */
+  @keyframes hero-slide-over-left {
+    0% {
+      transform: translateX(-55%) translateY(-24px) scale(0.86) rotate(-4deg);
+      opacity: 0.4;
+    }
+    55% {
+      transform: translateX(-12%) translateY(-6px) scale(0.97) rotate(-1deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(0%) translateY(0px) scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  .hero-slide-over-right {
+    animation: hero-slide-over-right 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .hero-slide-over-left {
+    animation: hero-slide-over-left 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-slide-over-right,
+    .hero-slide-over-left {
+      animation: fade-in 200ms ease-out both;
+    }
+  }
+}

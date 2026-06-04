@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import type { HeroSlideDTO } from "@/lib/platform.functions";
@@ -44,6 +44,10 @@ function SlideCard({ slide }: { slide: HeroSlideDTO }) {
 
 export function HeroStackCarousel({ slides }: HeroStackCarouselProps) {
   const [current, setCurrent] = useState(0);
+  const [incoming, setIncoming] = useState<{ index: number; dir: 1 | -1 } | null>(
+    null,
+  );
+  const animatingRef = useRef(false);
   const count = slides.length;
 
   if (count === 0) return null;
@@ -53,36 +57,44 @@ export function HeroStackCarousel({ slides }: HeroStackCarouselProps) {
   }
 
   const go = (dir: 1 | -1) => {
-    setCurrent((prev) => (prev + dir + count) % count);
+    if (animatingRef.current) return;
+    const next = (current + dir + count) % count;
+    animatingRef.current = true;
+    setIncoming({ index: next, dir });
   };
 
-  // Visual stacking config per depth offset (0 = front).
+  const handleAnimationEnd = () => {
+    if (!incoming) return;
+    setCurrent(incoming.index);
+    setIncoming(null);
+    animatingRef.current = false;
+  };
+
+  // 대기 중인 뒤 카드들의 stack 상태 (front = offset 0)
   const depthStyle = (offset: number): React.CSSProperties => {
-    // Show up to 2 cards behind the front one.
     if (offset === 0) {
       return {
-        transform: "translateY(0px) translateZ(0px) scale(1)",
+        transform: "translateX(0px) translateY(0px) scale(1)",
         opacity: 1,
         zIndex: 30,
       };
     }
     if (offset === 1) {
       return {
-        transform: "translateY(-18px) translateZ(-80px) scale(0.93)",
+        transform: "translateX(14px) translateY(-16px) scale(0.93)",
         opacity: 0.7,
         zIndex: 20,
       };
     }
     if (offset === 2) {
       return {
-        transform: "translateY(-34px) translateZ(-160px) scale(0.86)",
+        transform: "translateX(26px) translateY(-30px) scale(0.86)",
         opacity: 0.4,
         zIndex: 10,
       };
     }
-    // Hidden behind the stack.
     return {
-      transform: "translateY(-44px) translateZ(-220px) scale(0.82)",
+      transform: "translateX(34px) translateY(-40px) scale(0.82)",
       opacity: 0,
       zIndex: 0,
     };
@@ -90,22 +102,28 @@ export function HeroStackCarousel({ slides }: HeroStackCarouselProps) {
 
   return (
     <div className="relative md:overflow-visible">
-      <div
-        className="relative aspect-[9/16] w-full"
-        style={{ perspective: "1400px" }}
-      >
+      <div className="relative aspect-[9/16] w-full">
         {slides.map((slide, i) => {
           const offset = (i - current + count) % count;
+          const isIncoming = incoming?.index === i;
           return (
             <div
               key={slide.id}
-              className="absolute inset-0 transition-all duration-500 ease-out"
+              className={cn(
+                "absolute inset-0",
+                isIncoming
+                  ? incoming.dir === 1
+                    ? "hero-slide-over-right"
+                    : "hero-slide-over-left"
+                  : "transition-all duration-500 ease-out",
+              )}
               style={{
-                ...depthStyle(offset),
-                pointerEvents: offset === 0 ? "auto" : "none",
-                transformStyle: "preserve-3d",
+                ...(isIncoming ? { zIndex: 40 } : depthStyle(offset)),
+                pointerEvents: offset === 0 && !incoming ? "auto" : "none",
+                willChange: "transform, opacity",
               }}
               aria-hidden={offset !== 0}
+              onAnimationEnd={isIncoming ? handleAnimationEnd : undefined}
             >
               <SlideCard slide={slide} />
             </div>
