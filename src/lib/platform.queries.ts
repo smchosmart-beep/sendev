@@ -8,6 +8,7 @@ import {
   getPostByNo,
   listCriteria,
   listReviews,
+  listComments,
   fetchReadme,
   fetchOgImage,
   refreshOgImage,
