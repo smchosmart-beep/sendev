@@ -45,7 +45,7 @@ function MainLayout() {
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md">
               <Code2 className="h-5 w-5" />
             </span>
-            <span className="text-xl font-bold text-foreground sm:text-2xl">
+            <span className="text-xl font-bold text-foreground sm:text-xl">
               교사 개발자 플랫폼
             </span>
           </Link>
