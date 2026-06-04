@@ -290,7 +290,7 @@ function ProjectCard({ post, slug }: { post: PostDTO; slug: string }) {
     <Link
       to="/board/$slug/$postNo"
       params={{ slug, postNo: String(post.postNo) }}
-      className="block overflow-hidden rounded-2xl bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md active:scale-95"
+      className="group block overflow-hidden rounded-2xl bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md active:scale-95"
     >
       <div className="relative flex h-32 items-center justify-center overflow-hidden bg-accent text-primary">
         {ogImage ? (
@@ -303,7 +303,13 @@ function ProjectCard({ post, slug }: { post: PostDTO; slug: string }) {
         ) : (
           <FolderGit2 className="h-10 w-10" />
         )}
+        <ThumbnailUploadButton
+          postId={post.id}
+          categoryId={post.categoryId}
+          recommendedSize="1280×640px (가로형)"
+        />
       </div>
+
       <div className="p-5">
         <h3 className="font-semibold text-foreground">{post.title}</h3>
         <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
