@@ -230,7 +230,8 @@ function LinkCard({ post, slug }: { post: PostDTO; slug: string }) {
   const { data: backfill } = useQuery(
     ogImageBackfillQueryOptions(needsBackfill ? post.id : "", post.deployUrl ?? ""),
   );
-  const ogImage = post.ogImageUrl || backfill?.image || null;
+  const thumb = getThumbnailUrl(post.deployUrl);
+  const ogImage = post.ogImageUrl || backfill?.image || thumb || null;
   const embeddable = !!getEmbedUrl(post.deployUrl);
 
   return (
