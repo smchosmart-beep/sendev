@@ -226,7 +226,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
       {!isBoardPost && !isLink && (
         <>
           <ReadmeSection githubUrl={post.githubUrl} />
-          <EvaluationSection categoryId={post.categoryId} postId={post.id} />
+          <EvaluationSection categoryId={post.categoryId} postId={post.id} slug={slug} />
         </>
       )}
 
@@ -617,9 +617,11 @@ function ReadmeSection({ githubUrl }: { githubUrl: string }) {
 function EvaluationSection({
   categoryId,
   postId,
+  slug,
 }: {
   categoryId: string;
   postId: string;
+  slug: string;
 }) {
   const queryClient = useQueryClient();
   const { data: criteria = [] } = useQuery(
@@ -630,6 +632,18 @@ function EvaluationSection({
 
   const [scores, setScores] = useState<Record<string, number>>({});
   const [reviewerName, setReviewerName] = useState("");
+
+  // 이 기기가 이 게시판에서 이미 고정한 닉네임 (localStorage 기반)
+  const storageKey = `sendev:nickname:${slug}`;
+  const [lockedName, setLockedName] = useState<string | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem(storageKey);
+    if (saved && saved.trim()) {
+      setLockedName(saved.trim());
+      setReviewerName(saved.trim());
+    }
+  }, [storageKey]);
 
   // 이름 입력에 디바운스를 적용해 과도한 조회를 막는다.
   const [debouncedName, setDebouncedName] = useState("");
@@ -656,6 +670,12 @@ function EvaluationSection({
     onSuccess: (res: { ok: boolean; updated?: boolean }) => {
       queryClient.invalidateQueries({ queryKey: ["reviews", postId] });
       queryClient.invalidateQueries({ queryKey: ["my-review", postId] });
+      // 이 기기에 이 게시판의 닉네임을 고정 저장한다.
+      const name = reviewerName.trim();
+      if (typeof window !== "undefined" && name) {
+        window.localStorage.setItem(storageKey, name);
+      }
+      setLockedName(name || null);
       toast.success(
         res?.updated ? "평가가 갱신되었어요!" : "평가를 제출했어요!",
       );
@@ -735,24 +755,34 @@ function EvaluationSection({
                 onChange={(e) => setReviewerName(e.target.value)}
                 placeholder="닉네임을 입력하세요"
                 maxLength={100}
+                disabled={lockedName !== null}
+                readOnly={lockedName !== null}
               />
-              {debouncedName ? (
-                alreadyReviewed ? (
-                  <p className="text-xs font-medium text-primary">
-                    ✅ 이미 평가하셨어요
-                    {myReviewDate ? ` · ${myReviewDate} 제출` : ""} (점수를 새로
-                    매겨 다시 제출하면 갱신돼요)
-                  </p>
-                ) : (
+              {lockedName !== null ? (
+                <p className="text-xs font-medium text-primary">
+                  🔒 이 기기는 이 게시판에서 '{lockedName}' 닉네임으로 고정되어
+                  있어요. 점수만 새로 매겨 다시 제출하면 평가가 갱신됩니다.
+                </p>
+              ) : (
+                <>
+                  {debouncedName ? (
+                    alreadyReviewed ? (
+                      <p className="text-xs font-medium text-primary">
+                        ✅ 이미 평가하셨어요
+                        {myReviewDate ? ` · ${myReviewDate} 제출` : ""} (점수를 새로
+                        매겨 다시 제출하면 갱신돼요)
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        아직 평가하지 않으셨어요.
+                      </p>
+                    )
+                  ) : null}
                   <p className="text-xs text-muted-foreground">
-                    아직 평가하지 않으셨어요.
+                    닉네임은 중복 평가 방지용이므로 흔하지 않은 것으로 정해주세요. 한 기기에서는 이 게시판의 첫 닉네임으로 고정됩니다.
                   </p>
-                )
-              ) : null}
-              <p className="text-xs text-muted-foreground">
-                닉네임은 중복 평가 방지용이므로 흔하지 않은 것으로 정해주세요. 같은 닉네임으로 다시 제출하면 점수가 갱신됩니다.
-              </p>
-
+                </>
+              )}
             </div>
             {criteria.map((c) => (
               <div key={c.id} className="space-y-2">
