@@ -1112,6 +1112,31 @@ export const refreshOgImage = createServerFn({ method: "POST" })
     return { image };
   });
 
+// Sets a custom thumbnail (og_image_url) for a post after verifying the
+// registrant's edit/delete password. The image is uploaded from the browser to
+// the post-images bucket first; this only stores the resulting signed URL.
+export const setPostThumbnail = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        postId: z.string().uuid(),
+        password: z.string().max(100),
+        imageUrl: z.string().trim().url().max(2000),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ ok: boolean; image: string | null }> => {
+    const db = await getAdmin();
+    const ok = await checkPostPassword(db, data.postId, data.password);
+    if (!ok) return { ok: false, image: null };
+    const { error } = await db
+      .from("posts")
+      .update({ og_image_url: data.imageUrl })
+      .eq("id", data.postId);
+    if (error) throw new Error(error.message);
+    return { ok: true, image: data.imageUrl };
+  });
+
 
 /* ------------------------------ Hero slides ----------------------------- */
 
