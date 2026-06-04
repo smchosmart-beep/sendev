@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  Image as ImageIcon,
+  Home,
   Upload,
   Trash2,
   ArrowUp,
@@ -157,8 +157,8 @@ function AdminHomePage() {
     <div className="space-y-6">
       <div className="rounded-2xl bg-card p-6 shadow-sm">
         <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-foreground">
-          <ImageIcon className="h-5 w-5 text-primary" />
-          메인화면 구성
+          <Home className="h-5 w-5 text-primary" />
+          홈 화면 구성
         </h2>
         <p className="text-sm text-muted-foreground">
           메인 화면 상단 배너에 표시할 이미지를 등록하세요. 여러 장을 올리면
@@ -289,7 +289,7 @@ function AdminHomePage() {
         </div>
       ) : (
         <EmptyState
-          icon={ImageIcon}
+          icon={Home}
           title="등록된 배너가 없어요."
           description="위에서 이미지를 업로드하면 메인 화면에 표시됩니다."
         />
