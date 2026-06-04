@@ -68,10 +68,12 @@ export interface EventDTO {
   date: string;
   time: string;
   location: string;
+  target: string;
   description: string;
   attachments: EventAttachment[];
   links: EventLink[];
 }
+
 
 export interface PostDTO {
   id: string;
