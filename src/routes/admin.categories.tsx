@@ -417,6 +417,7 @@ function CategoriesPage() {
                     {c.enableQuestion && <SectionBadge label="질문 게시판" />}
                     {c.enableGeneral && <SectionBadge label={c.generalName || "일반게시판"} />}
                     {c.enableProject && <SectionBadge label={c.projectName || "산출물"} />}
+                    {c.enableLink && <SectionBadge label={c.linkName || "링크"} />}
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
