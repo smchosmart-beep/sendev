@@ -226,7 +226,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
       {!isBoardPost && !isLink && (
         <>
           <ReadmeSection githubUrl={post.githubUrl} />
-          <EvaluationSection categoryId={post.categoryId} postId={post.id} />
+          <EvaluationSection categoryId={post.categoryId} postId={post.id} slug={slug} />
         </>
       )}
 
