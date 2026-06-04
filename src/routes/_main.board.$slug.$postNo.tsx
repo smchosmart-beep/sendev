@@ -44,6 +44,7 @@ import {
   type PostDTO,
 } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
+import { getEmbedUrl } from "@/lib/embed";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
