@@ -8,7 +8,7 @@ import {
   ogImageBackfillQueryOptions,
 } from "@/lib/platform.queries";
 import { type PostDTO } from "@/lib/platform.functions";
-import { getEmbedUrl } from "@/lib/embed";
+import { getEmbedUrl, getThumbnailUrl } from "@/lib/embed";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 
@@ -252,8 +252,8 @@ function LinkCard({ post, slug }: { post: PostDTO; slug: string }) {
           <LinkIcon className="h-10 w-10" />
         )}
         {embeddable && (
-          <span className="absolute inset-0 flex items-center justify-center bg-foreground/20 transition-colors group-hover:bg-foreground/30">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-background/90 text-primary shadow-md">
+          <span className="absolute inset-0 flex items-center justify-center transition-colors group-hover:bg-foreground/10">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-background/85 text-primary shadow-md">
               <Play className="ml-0.5 h-5 w-5 fill-current" />
             </span>
           </span>
