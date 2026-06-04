@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { LayoutGrid, SlidersHorizontal, ShieldCheck, Lock, AlertCircle, Megaphone, CalendarDays, Image as ImageIcon } from "lucide-react";
+import { LayoutGrid, SlidersHorizontal, ShieldCheck, Lock, AlertCircle, Megaphone, CalendarDays, Home } from "lucide-react";
 import { useEffect, useState } from "react";
 
 // 한글 자모/완성형 음절 제거 (영문 비밀번호 강제)
@@ -112,7 +112,7 @@ function AdminGate() {
 
 const tabs = [
   { to: "/admin/categories", label: "게시판 관리", icon: LayoutGrid },
-  { to: "/admin/home", label: "메인화면 구성", icon: ImageIcon },
+  { to: "/admin/home", label: "홈 화면 구성", icon: Home },
   { to: "/admin/calendar", label: "캘린더 관리", icon: CalendarDays },
   { to: "/admin/notices", label: "공지사항 관리", icon: Megaphone },
   { to: "/admin/criteria", label: "평가 기준 관리", icon: SlidersHorizontal },
