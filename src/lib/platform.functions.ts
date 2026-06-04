@@ -216,8 +216,10 @@ export const createCategory = createServerFn({ method: "POST" })
       enable_question: data.enableQuestion,
       enable_general: data.enableGeneral,
       enable_project: data.enableProject,
+      enable_link: data.enableLink,
       general_name: data.generalName || "일반게시판",
       project_name: data.projectName || "산출물",
+      link_name: data.linkName || "링크",
       tab_group: data.tabGroup,
       sort_order: nextOrder,
     });
