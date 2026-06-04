@@ -50,7 +50,7 @@ function MainLayout() {
             </span>
           </Link>
 
-          <nav className="mx-auto hidden flex-wrap justify-center gap-2 sm:flex sm:gap-5">
+          <nav className="mx-auto hidden flex-wrap justify-center gap-2 sm:flex sm:gap-7">
             <Link
               to={homeTab.to}
               className={cn(
