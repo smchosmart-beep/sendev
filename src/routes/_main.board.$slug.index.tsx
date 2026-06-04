@@ -258,6 +258,12 @@ function LinkCard({ post, slug }: { post: PostDTO; slug: string }) {
             </span>
           </span>
         )}
+        <ThumbnailUploadButton
+          postId={post.id}
+          categoryId={post.categoryId}
+          recommendedSize="1280×720px (16:9)"
+        />
+
       </div>
       <div className="p-5">
         <h3 className="font-semibold text-foreground">{post.title}</h3>
