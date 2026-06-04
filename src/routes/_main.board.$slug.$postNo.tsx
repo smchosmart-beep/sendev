@@ -143,6 +143,8 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
 
   const isBoardPost =
     post.type === "notice" || post.type === "question" || post.type === "general";
+  const isLink = post.type === "link";
+  const embedUrl = isLink ? getEmbedUrl(post.deployUrl) : null;
 
   return (
     <div className="space-y-6">
@@ -159,7 +161,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
             {post.author}
           </span>
           <span>{new Date(post.createdAt).toLocaleDateString("ko-KR")}</span>
-          {post.githubUrl && (
+          {!isLink && post.githubUrl && (
             <a
               href={post.githubUrl}
               target="_blank"
@@ -178,7 +180,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
               className="flex items-center gap-1 text-primary hover:underline"
             >
               <ExternalLink className="h-4 w-4" />
-              배포 사이트
+              {isLink ? "원본 링크" : "배포 사이트"}
             </a>
           )}
         </div>
@@ -204,13 +206,76 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
         )}
       </div>
 
-      {!isBoardPost && (
+      {isLink && (
+        <LinkEmbedSection
+          embedUrl={embedUrl}
+          deployUrl={post.deployUrl}
+          ogImageUrl={post.ogImageUrl}
+          title={post.title}
+        />
+      )}
+
+      {!isBoardPost && !isLink && (
         <>
           <ReadmeSection githubUrl={post.githubUrl} />
           <EvaluationSection categoryId={post.categoryId} postId={post.id} />
         </>
       )}
     </div>
+  );
+}
+
+function LinkEmbedSection({
+  embedUrl,
+  deployUrl,
+  ogImageUrl,
+  title,
+}: {
+  embedUrl: string | null;
+  deployUrl: string;
+  ogImageUrl: string;
+  title: string;
+}) {
+  if (embedUrl) {
+    return (
+      <section className="overflow-hidden rounded-2xl bg-card shadow-sm">
+        <div className="aspect-video w-full">
+          <iframe
+            src={embedUrl}
+            title={title}
+            loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allowFullScreen
+            className="h-full w-full border-0"
+          />
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="rounded-2xl bg-card p-6 shadow-sm">
+      {ogImageUrl ? (
+        <img
+          src={ogImageUrl}
+          alt={`${title} 미리보기`}
+          loading="lazy"
+          className="aspect-video w-full rounded-xl object-cover"
+        />
+      ) : (
+        <div className="flex aspect-video w-full items-center justify-center rounded-xl bg-accent text-primary">
+          <ExternalLink className="h-10 w-10" />
+        </div>
+      )}
+      {deployUrl && (
+        <Button asChild className="mt-4 w-full rounded-xl active:scale-95">
+          <a href={deployUrl} target="_blank" rel="noreferrer">
+            <ExternalLink className="h-4 w-4" />
+            링크 바로가기
+          </a>
+        </Button>
+      )}
+    </section>
   );
 }
 
