@@ -440,19 +440,24 @@ function CalendarPage() {
                     {selected.time}
                   </div>
                 )}
-                {selected.location && (
-                  <div className="flex items-center gap-2 text-foreground">
-                    <MapPin className="h-4 w-4 shrink-0 text-primary" />
-                    {selected.location}
-                  </div>
-                )}
-                {selected.target && (
-                  <div className="flex items-center gap-2 text-foreground">
-                    <Users className="h-4 w-4 shrink-0 text-primary" />
-                    {selected.target}
-                  </div>
-                )}
               </div>
+              {(selected.location || selected.target) && (
+                <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+                  {selected.location && (
+                    <div className="flex items-center gap-2 text-foreground">
+                      <MapPin className="h-4 w-4 shrink-0 text-primary" />
+                      {selected.location}
+                    </div>
+                  )}
+                  {selected.target && (
+                    <div className="flex items-center gap-2 text-foreground">
+                      <Users className="h-4 w-4 shrink-0 text-primary" />
+                      {selected.target}
+                    </div>
+                  )}
+                </div>
+              )}
+
 
               {selected.description && (
                 <p className="whitespace-pre-wrap rounded-xl bg-muted p-4 text-muted-foreground">
