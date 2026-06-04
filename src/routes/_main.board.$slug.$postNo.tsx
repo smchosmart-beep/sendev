@@ -691,6 +691,10 @@ function EvaluationSection({
           <form
             onSubmit={(e) => {
               e.preventDefault();
+              if (!reviewerName.trim()) {
+                toast.error("이름을 입력해주세요.");
+                return;
+              }
               for (const c of criteria) {
                 if (!scores[c.id] || scores[c.id] <= 0) {
                   toast.error("모든 항목에 별점을 매겨주세요.");
@@ -701,6 +705,19 @@ function EvaluationSection({
             }}
             className="space-y-5"
           >
+            <div className="space-y-2">
+              <Label htmlFor="reviewer-name">이름</Label>
+              <Input
+                id="reviewer-name"
+                value={reviewerName}
+                onChange={(e) => setReviewerName(e.target.value)}
+                placeholder="이름을 입력하세요"
+                maxLength={100}
+              />
+              <p className="text-xs text-muted-foreground">
+                중복 평가 방지용이며, 다른 사람에게 표시되지 않아요. 같은 이름으로 다시 제출하면 점수가 갱신됩니다.
+              </p>
+            </div>
             {criteria.map((c) => (
               <div key={c.id} className="space-y-2">
                 <Label className="flex items-center gap-2">
