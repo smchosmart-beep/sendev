@@ -8,6 +8,7 @@ import {
   ogImageBackfillQueryOptions,
 } from "@/lib/platform.queries";
 import { type PostDTO } from "@/lib/platform.functions";
+import { getEmbedUrl } from "@/lib/embed";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 
