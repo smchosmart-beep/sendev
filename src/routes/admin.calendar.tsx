@@ -90,6 +90,7 @@ function AdminCalendarPage() {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [location, setLocation] = useState("");
+  const [target, setTarget] = useState("");
   const [description, setDescription] = useState("");
   const [attachments, setAttachments] = useState<EventAttachment[]>([]);
   const [links, setLinks] = useState<EventLink[]>([]);
@@ -111,6 +112,7 @@ function AdminCalendarPage() {
     setDate("");
     setTime("");
     setLocation("");
+    setTarget("");
     setDescription("");
     setAttachments([]);
     setLinks([]);
@@ -124,6 +126,7 @@ function AdminCalendarPage() {
     setDate(event.date);
     setTime(event.time);
     setLocation(event.location);
+    setTarget(event.target);
     setDescription(event.description);
     setAttachments(event.attachments);
     setLinks(event.links);
@@ -185,6 +188,7 @@ function AdminCalendarPage() {
         date,
         time: time.trim(),
         location: location.trim(),
+        target: target.trim(),
         description: description.trim(),
         attachments,
         links,
@@ -353,7 +357,17 @@ function AdminCalendarPage() {
                   placeholder="예: 온라인 / 서울"
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="ev-target">대상</Label>
+                <Input
+                  id="ev-target"
+                  value={target}
+                  onChange={(e) => setTarget(e.target.value)}
+                  placeholder="예: 전체 교사 / 초보자"
+                />
+              </div>
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="ev-desc">메모</Label>
               <Textarea

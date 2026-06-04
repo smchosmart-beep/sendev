@@ -68,10 +68,12 @@ export interface EventDTO {
   date: string;
   time: string;
   location: string;
+  target: string;
   description: string;
   attachments: EventAttachment[];
   links: EventLink[];
 }
+
 
 export interface PostDTO {
   id: string;
@@ -324,7 +326,7 @@ export const listEvents = createServerFn({ method: "GET" }).handler(
     const db = await getAdmin();
     const { data, error } = await db
       .from("events")
-      .select("id, title, date, time, location, description, attachments, links")
+      .select("id, title, date, time, location, target, description, attachments, links")
       .order("date", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []).map((e: any) => ({
@@ -333,10 +335,12 @@ export const listEvents = createServerFn({ method: "GET" }).handler(
       date: e.date,
       time: e.time,
       location: e.location,
+      target: e.target ?? "",
       description: e.description,
       attachments: Array.isArray(e.attachments) ? e.attachments : [],
       links: Array.isArray(e.links) ? e.links : [],
     }));
+
   },
 );
 
@@ -359,7 +363,9 @@ export const createEvent = createServerFn({ method: "POST" })
         date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
         time: z.string().trim().max(100).default(""),
         location: z.string().trim().max(200).default(""),
+        target: z.string().trim().max(200).default(""),
         description: z.string().trim().max(1000).default(""),
+
         attachments: z.array(attachmentSchema).max(10).default([]),
         links: z.array(linkSchema).max(10).default([]),
       })
@@ -381,7 +387,9 @@ export const updateEvent = createServerFn({ method: "POST" })
         date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
         time: z.string().trim().max(100).default(""),
         location: z.string().trim().max(200).default(""),
+        target: z.string().trim().max(200).default(""),
         description: z.string().trim().max(1000).default(""),
+
         attachments: z.array(attachmentSchema).max(10).default([]),
         links: z.array(linkSchema).max(10).default([]),
       })

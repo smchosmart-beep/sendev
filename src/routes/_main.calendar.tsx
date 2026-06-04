@@ -7,6 +7,7 @@ import {
   MapPin,
   Clock,
   CalendarDays,
+  Users,
   LinkIcon,
   Download,
   List,
@@ -427,22 +428,37 @@ function CalendarPage() {
           </DialogHeader>
           {selected && (
             <div className="space-y-3 overflow-hidden pt-2 text-sm">
-              <div className="flex items-center gap-2 text-foreground">
-                <CalendarDays className="h-4 w-4 text-primary" />
-                {selected.date}
+              {/* 모바일: 세로 1줄씩 / PC: 1열 날짜·시간, 2열 장소·대상 */}
+              <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+                <div className="flex items-center gap-2 text-foreground">
+                  <CalendarDays className="h-4 w-4 shrink-0 text-primary" />
+                  {selected.date}
+                </div>
+                {selected.time && (
+                  <div className="flex items-center gap-2 text-foreground">
+                    <Clock className="h-4 w-4 shrink-0 text-primary" />
+                    {selected.time}
+                  </div>
+                )}
               </div>
-              {selected.time && (
-                <div className="flex items-center gap-2 text-foreground">
-                  <Clock className="h-4 w-4 text-primary" />
-                  {selected.time}
+              {(selected.location || selected.target) && (
+                <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+                  {selected.location && (
+                    <div className="flex items-center gap-2 text-foreground">
+                      <MapPin className="h-4 w-4 shrink-0 text-primary" />
+                      {selected.location}
+                    </div>
+                  )}
+                  {selected.target && (
+                    <div className="flex items-center gap-2 text-foreground">
+                      <Users className="h-4 w-4 shrink-0 text-primary" />
+                      {selected.target}
+                    </div>
+                  )}
                 </div>
               )}
-              {selected.location && (
-                <div className="flex items-center gap-2 text-foreground">
-                  <MapPin className="h-4 w-4 text-primary" />
-                  {selected.location}
-                </div>
-              )}
+
+
               {selected.description && (
                 <p className="whitespace-pre-wrap rounded-xl bg-muted p-4 text-muted-foreground">
                   {selected.description}
