@@ -113,6 +113,12 @@ function CategoriesPage() {
 
   const [deleting, setDeleting] = useState<CategoryDTO | null>(null);
 
+  const [listFilter, setListFilter] = useState<TabGroup | "all">("all");
+  const visibleCategories =
+    listFilter === "all"
+      ? categories
+      : categories.filter((c) => (c.tabGroup ?? "hackathon") === listFilter);
+
   const addMutation = useMutation({
     mutationFn: () =>
       createFn({
@@ -380,17 +386,35 @@ function CategoriesPage() {
 
       {/* 목록 */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-foreground">게시판 목록</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-foreground">게시판 목록</h2>
+          <Select
+            value={listFilter}
+            onValueChange={(v) => setListFilter(v as TabGroup | "all")}
+          >
+            <SelectTrigger className="w-44 rounded-xl">
+              <SelectValue placeholder="탭으로 필터" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체</SelectItem>
+              {TAB_OPTIONS.map((t) => (
+                <SelectItem key={t.value} value={t.value}>
+                  {t.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        {categories.length === 0 ? (
+        {visibleCategories.length === 0 ? (
           <EmptyState
             icon={LayoutGrid}
-            title="아직 등록된 게시판이 없어요."
-            description="위 폼을 이용해 첫 번째 게시판을 만들어보세요!"
+            title="해당하는 게시판이 없어요."
+            description="다른 탭을 선택하거나 위 폼으로 게시판을 만들어보세요!"
           />
         ) : (
           <div className="space-y-4">
-            {categories.map((c) => (
+            {visibleCategories.map((c) => (
               <div
                 key={c.id}
                 className="flex items-center justify-between gap-4 rounded-2xl bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
