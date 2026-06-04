@@ -617,9 +617,11 @@ function ReadmeSection({ githubUrl }: { githubUrl: string }) {
 function EvaluationSection({
   categoryId,
   postId,
+  slug,
 }: {
   categoryId: string;
   postId: string;
+  slug: string;
 }) {
   const queryClient = useQueryClient();
   const { data: criteria = [] } = useQuery(
@@ -630,6 +632,18 @@ function EvaluationSection({
 
   const [scores, setScores] = useState<Record<string, number>>({});
   const [reviewerName, setReviewerName] = useState("");
+
+  // 이 기기가 이 게시판에서 이미 고정한 닉네임 (localStorage 기반)
+  const storageKey = `sendev:nickname:${slug}`;
+  const [lockedName, setLockedName] = useState<string | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem(storageKey);
+    if (saved && saved.trim()) {
+      setLockedName(saved.trim());
+      setReviewerName(saved.trim());
+    }
+  }, [storageKey]);
 
   // 이름 입력에 디바운스를 적용해 과도한 조회를 막는다.
   const [debouncedName, setDebouncedName] = useState("");
