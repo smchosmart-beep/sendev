@@ -670,6 +670,12 @@ function EvaluationSection({
     onSuccess: (res: { ok: boolean; updated?: boolean }) => {
       queryClient.invalidateQueries({ queryKey: ["reviews", postId] });
       queryClient.invalidateQueries({ queryKey: ["my-review", postId] });
+      // 이 기기에 이 게시판의 닉네임을 고정 저장한다.
+      const name = reviewerName.trim();
+      if (typeof window !== "undefined" && name) {
+        window.localStorage.setItem(storageKey, name);
+      }
+      setLockedName(name || null);
       toast.success(
         res?.updated ? "평가가 갱신되었어요!" : "평가를 제출했어요!",
       );
