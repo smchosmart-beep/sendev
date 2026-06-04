@@ -38,6 +38,7 @@ import {
   readmeQueryOptions,
   criteriaQueryOptions,
   reviewsQueryOptions,
+  myReviewQueryOptions,
   commentsQueryOptions,
 } from "@/lib/platform.queries";
 import {
@@ -630,11 +631,31 @@ function EvaluationSection({
   const [scores, setScores] = useState<Record<string, number>>({});
   const [reviewerName, setReviewerName] = useState("");
 
+  // 이름 입력에 디바운스를 적용해 과도한 조회를 막는다.
+  const [debouncedName, setDebouncedName] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedName(reviewerName.trim()), 500);
+    return () => clearTimeout(t);
+  }, [reviewerName]);
+
+  const { data: myReview } = useQuery(
+    myReviewQueryOptions(postId, debouncedName),
+  );
+  const alreadyReviewed = myReview?.found ?? false;
+  const myReviewDate =
+    alreadyReviewed && myReview?.createdAt
+      ? new Date(myReview.createdAt).toLocaleDateString("ko-KR", {
+          month: "long",
+          day: "numeric",
+        })
+      : null;
+
   const mutation = useMutation({
     mutationFn: () =>
       create({ data: { postId, reviewerName: reviewerName.trim(), scores } }),
     onSuccess: (res: { ok: boolean; updated?: boolean }) => {
       queryClient.invalidateQueries({ queryKey: ["reviews", postId] });
+      queryClient.invalidateQueries({ queryKey: ["my-review", postId] });
       toast.success(
         res?.updated ? "평가가 갱신되었어요!" : "평가를 제출했어요!",
       );
@@ -642,6 +663,7 @@ function EvaluationSection({
     },
     onError: () => toast.error("제출 중 문제가 발생했어요."),
   });
+
 
   const averages = criteria.map((c) => {
     const vals = reviews
@@ -714,9 +736,23 @@ function EvaluationSection({
                 placeholder="이름을 입력하세요"
                 maxLength={100}
               />
+              {debouncedName ? (
+                alreadyReviewed ? (
+                  <p className="text-xs font-medium text-primary">
+                    ✅ 이미 평가하셨어요
+                    {myReviewDate ? ` · ${myReviewDate} 제출` : ""} (점수를 새로
+                    매겨 다시 제출하면 갱신돼요)
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    아직 평가하지 않으셨어요.
+                  </p>
+                )
+              ) : null}
               <p className="text-xs text-muted-foreground">
                 중복 평가 방지용이며, 다른 사람에게 표시되지 않아요. 같은 이름으로 다시 제출하면 점수가 갱신됩니다.
               </p>
+
             </div>
             {criteria.map((c) => (
               <div key={c.id} className="space-y-2">
@@ -740,7 +776,11 @@ function EvaluationSection({
               disabled={mutation.isPending}
               className="rounded-xl active:scale-95"
             >
-              {mutation.isPending ? "제출 중..." : "평가 제출"}
+              {mutation.isPending
+                ? "제출 중..."
+                : alreadyReviewed
+                  ? "평가 수정"
+                  : "평가 제출"}
             </Button>
           </form>
         </div>
