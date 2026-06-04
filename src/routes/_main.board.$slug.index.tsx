@@ -52,6 +52,7 @@ function BoardInner({
   const questions = posts.filter((p) => p.type === "question");
   const generals = posts.filter((p) => p.type === "general");
   const projects = posts.filter((p) => p.type === "project");
+  const links = posts.filter((p) => p.type === "link");
 
   return (
     <div className="space-y-6">
