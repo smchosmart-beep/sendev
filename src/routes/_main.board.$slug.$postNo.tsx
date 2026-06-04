@@ -628,12 +628,16 @@ function EvaluationSection({
   const create = useServerFn(createReview);
 
   const [scores, setScores] = useState<Record<string, number>>({});
+  const [reviewerName, setReviewerName] = useState("");
 
   const mutation = useMutation({
-    mutationFn: () => create({ data: { postId, scores } }),
-    onSuccess: () => {
+    mutationFn: () =>
+      create({ data: { postId, reviewerName: reviewerName.trim(), scores } }),
+    onSuccess: (res: { ok: boolean; updated?: boolean }) => {
       queryClient.invalidateQueries({ queryKey: ["reviews", postId] });
-      toast.success("평가를 제출했어요!");
+      toast.success(
+        res?.updated ? "평가가 갱신되었어요!" : "평가를 제출했어요!",
+      );
       setScores({});
     },
     onError: () => toast.error("제출 중 문제가 발생했어요."),
