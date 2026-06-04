@@ -219,8 +219,9 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
   const update = useServerFn(updatePost);
   const remove = useServerFn(deletePost);
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
-  const projectName =
-    categories.find((c) => c.id === post.categoryId)?.projectName || "산출물";
+  const category = categories.find((c) => c.id === post.categoryId);
+  const projectName = category?.projectName || "산출물";
+  const linkName = category?.linkName || "링크";
 
   const postId = post.id;
   const categoryId = post.categoryId;
@@ -230,7 +231,9 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
     ? post.type === "notice"
       ? "공지"
       : "글"
-    : projectName;
+    : post.type === "link"
+      ? linkName
+      : projectName;
 
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
