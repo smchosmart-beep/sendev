@@ -1215,7 +1215,7 @@ function CommentForm({
   );
 }
 
-
+function BackLink({ slug }: { slug: string }) {
   return (
     <Link
       to="/board/$slug"
