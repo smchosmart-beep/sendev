@@ -815,6 +815,106 @@ export const createReview = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/* ------------------------------ Comments ------------------------------ */
+
+export interface CommentDTO {
+  id: string;
+  postId: string;
+  parentId: string | null;
+  author: string;
+  content: string;
+  createdAt: string;
+}
+
+function mapComment(c: any): CommentDTO {
+  return {
+    id: c.id,
+    postId: c.post_id,
+    parentId: c.parent_id ?? null,
+    author: c.author ?? "익명",
+    content: c.content ?? "",
+    createdAt: c.created_at,
+  };
+}
+
+export const listComments = createServerFn({ method: "GET" })
+  .inputValidator((input) => z.object({ postId: z.string().uuid() }).parse(input))
+  .handler(async ({ data }): Promise<CommentDTO[]> => {
+    const db = await getAdmin();
+    const { data: rows, error } = await db
+      .from("comments")
+      .select("id, post_id, parent_id, author, content, created_at")
+      .eq("post_id", data.postId)
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map(mapComment);
+  });
+
+export const createComment = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        postId: z.string().uuid(),
+        parentId: z.string().uuid().nullable().default(null),
+        author: z.string().trim().max(100).default(""),
+        content: z.string().trim().min(1).max(5000),
+        editPassword: z.string().trim().min(1).max(100),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ ok: boolean }> => {
+    const db = await getAdmin();
+    // A reply must point to an existing top-level comment on the same post.
+    let parentId: string | null = null;
+    if (data.parentId) {
+      const { data: parent } = await db
+        .from("comments")
+        .select("id, post_id, parent_id")
+        .eq("id", data.parentId)
+        .maybeSingle();
+      if (parent && parent.post_id === data.postId && !parent.parent_id) {
+        parentId = parent.id;
+      }
+    }
+    const { error } = await db.from("comments").insert({
+      post_id: data.postId,
+      parent_id: parentId,
+      author: data.author || "익명",
+      content: data.content,
+      edit_password: data.editPassword,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteComment = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({ id: z.string().uuid(), password: z.string().max(100) })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ ok: boolean }> => {
+    const db = await getAdmin();
+    const { data: row, error: selErr } = await db
+      .from("comments")
+      .select("edit_password")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (selErr) throw new Error(selErr.message);
+    if (!row) return { ok: false };
+    // Admin master password bypasses the per-comment password.
+    const master = process.env.POST_MASTER_PASSWORD;
+    const isMaster = !!master && data.password.length > 0 && data.password === master;
+    if (!isMaster && !(row.edit_password && row.edit_password === data.password)) {
+      return { ok: false };
+    }
+    // Remove replies first, then the comment itself.
+    await db.from("comments").delete().eq("parent_id", data.id);
+    const { error } = await db.from("comments").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 /* ----------------------------- GitHub README -------------------------- */
 
 export const fetchReadme = createServerFn({ method: "GET" })

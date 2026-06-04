@@ -8,6 +8,7 @@ import {
   getPostByNo,
   listCriteria,
   listReviews,
+  listComments,
   fetchReadme,
   fetchOgImage,
   refreshOgImage,
@@ -62,6 +63,12 @@ export const reviewsQueryOptions = (postId: string) =>
   queryOptions({
     queryKey: ["reviews", postId],
     queryFn: () => listReviews({ data: { postId } }),
+  });
+
+export const commentsQueryOptions = (postId: string) =>
+  queryOptions({
+    queryKey: ["comments", postId],
+    queryFn: () => listComments({ data: { postId } }),
   });
 
 export const readmeQueryOptions = (githubUrl: string) =>

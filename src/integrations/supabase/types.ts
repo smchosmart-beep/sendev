@@ -74,6 +74,36 @@ export type Database = {
         }
         Relationships: []
       }
+      comments: {
+        Row: {
+          author: string
+          content: string
+          created_at: string
+          edit_password: string
+          id: string
+          parent_id: string | null
+          post_id: string
+        }
+        Insert: {
+          author?: string
+          content?: string
+          created_at?: string
+          edit_password?: string
+          id?: string
+          parent_id?: string | null
+          post_id: string
+        }
+        Update: {
+          author?: string
+          content?: string
+          created_at?: string
+          edit_password?: string
+          id?: string
+          parent_id?: string | null
+          post_id?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           attachments: Json
