@@ -19,12 +19,14 @@ export type Database = {
           created_at: string
           description: string
           enable_general: boolean
+          enable_link: boolean
           enable_notice: boolean
           enable_project: boolean
           enable_question: boolean
           general_name: string
           github_required: boolean
           id: string
+          link_name: string
           name: string
           password: string
           project_name: string
@@ -36,12 +38,14 @@ export type Database = {
           created_at?: string
           description?: string
           enable_general?: boolean
+          enable_link?: boolean
           enable_notice?: boolean
           enable_project?: boolean
           enable_question?: boolean
           general_name?: string
           github_required?: boolean
           id?: string
+          link_name?: string
           name: string
           password?: string
           project_name?: string
@@ -53,12 +57,14 @@ export type Database = {
           created_at?: string
           description?: string
           enable_general?: boolean
+          enable_link?: boolean
           enable_notice?: boolean
           enable_project?: boolean
           enable_question?: boolean
           general_name?: string
           github_required?: boolean
           id?: string
+          link_name?: string
           name?: string
           password?: string
           project_name?: string
