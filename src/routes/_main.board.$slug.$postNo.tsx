@@ -26,6 +26,8 @@ import {
   Loader2,
   Pencil,
   Trash2,
+  MessageCircle,
+  CornerDownRight,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -36,12 +38,16 @@ import {
   readmeQueryOptions,
   criteriaQueryOptions,
   reviewsQueryOptions,
+  commentsQueryOptions,
 } from "@/lib/platform.queries";
 import {
   createReview,
   updatePost,
   deletePost,
+  createComment,
+  deleteComment,
   type PostDTO,
+  type CommentDTO,
 } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { getEmbedUrl } from "@/lib/embed";
