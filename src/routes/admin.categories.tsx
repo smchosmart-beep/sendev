@@ -113,6 +113,12 @@ function CategoriesPage() {
 
   const [deleting, setDeleting] = useState<CategoryDTO | null>(null);
 
+  const [listFilter, setListFilter] = useState<TabGroup | "all">("all");
+  const visibleCategories =
+    listFilter === "all"
+      ? categories
+      : categories.filter((c) => (c.tabGroup ?? "hackathon") === listFilter);
+
   const addMutation = useMutation({
     mutationFn: () =>
       createFn({
