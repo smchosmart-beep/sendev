@@ -419,7 +419,7 @@ function CategoriesPage() {
 
       {/* 수정 다이얼로그 */}
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="rounded-2xl">
+        <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle>게시판 수정</DialogTitle>
             <DialogDescription>
