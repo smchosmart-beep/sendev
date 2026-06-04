@@ -228,6 +228,8 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
           <EvaluationSection categoryId={post.categoryId} postId={post.id} />
         </>
       )}
+
+      {isBoardPost && <CommentsSection postId={post.id} />}
     </div>
   );
 }
