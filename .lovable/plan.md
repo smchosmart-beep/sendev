@@ -1,30 +1,50 @@
-# 같은 기기에서 닉네임 1개로 고정하기
+## 목표
 
-같은 로컬 기기에서 한 게시판(대회)당 닉네임을 하나만 쓰도록 제한합니다. 한 번 평가를 제출하면 그 기기에는 해당 게시판에서 사용한 닉네임이 기억되고, 이후에는 그 닉네임이 자동으로 채워지며 변경할 수 없게 됩니다.
+링크/산출물 게시판 카드에서, **마우스 오버 시 나타나는 설정(톱니) 버튼**으로 썸네일 이미지를 직접 업로드해 표시·교체할 수 있게 합니다.
 
-## 동작 방식
+- 유튜브 자동 썸네일은 **현재 그대로 유지** (`getThumbnailUrl`)
+- 구글 드라이브 등 자동 썸네일은 추가하지 않음
+- 그 외 링크(네이버웍스 드라이브 등)는 직접 업로드로 썸네일 지정
 
-1. 사용자가 어떤 산출물에 평가를 **처음 제출**하면, 그 기기 브라우저에 "이 게시판에서는 ○○ 닉네임 사용"이 저장됩니다.
-2. 같은 게시판의 다른 산출물(또는 같은 산출물)을 다시 열면, 닉네임 입력란에 저장된 닉네임이 **자동으로 채워지고 수정이 잠깁니다**.
-3. 닉네임 입력란 아래에 "이 기기는 이 게시판에서 ○○ 닉네임으로 고정되어 있어요"라는 안내가 표시됩니다.
-4. 잠긴 상태에서도 점수만 새로 매겨 제출하면 기존 평가가 갱신됩니다.
+`embed.ts`는 변경하지 않습니다.
 
-## 적용 범위
+---
 
-- 게시판(대회) 단위: 라우트의 `slug` 값을 키로 사용합니다. 다른 게시판에서는 새 닉네임을 정할 수 있습니다.
+## 1. 썸네일 직접 업로드 (서버)
 
-## 한계 (솔직한 안내)
+`src/lib/platform.functions.ts`에 새 서버 함수 `setPostThumbnail` 추가:
 
-- 이 방식은 브라우저 로컬 저장소 기반이라 **시크릿 모드, 다른 브라우저, 저장소 삭제로는 우회될 수 있습니다.** 로그인이 없는 구조에서 완벽한 차단은 불가능하지만, 일반적인 중복 평가 시도는 효과적으로 막습니다.
+- 입력(zod 검증): `postId`, `password`, `name`, `contentType`, `dataBase64` (크기 제한 적용)
+- 글의 `edit_password`와 일치하는지 검증 — 마스터 비밀번호도 허용 (기존 `updatePost`/`isMaster` 패턴 재사용)
+- 이미지를 `post-images` 버킷에 업로드 → 10년 서명 URL 생성 (`uploadHeroImage`와 동일 방식)
+- 해당 글의 `og_image_url` 컬럼에 저장
+- 반환: `{ image: url }`
 
-## 기술 세부사항
+DB 스키마 변경 없음 (`og_image_url` 재사용), 새 버킷 없음 (`post-images` 재사용).
 
-- 변경 파일: `src/routes/_main.board.$slug.$postNo.tsx` (UI만 변경, 서버/DB 변경 없음)
-- `EvaluationSection`에 라우트의 `slug`를 prop으로 전달하고, 컴포넌트 마운트 시 `localStorage`에서 `sendev:nickname:<slug>` 값을 읽어옵니다.
-- 저장된 닉네임이 있으면:
-  - `reviewerName` 초기값으로 설정
-  - 닉네임 `<Input>`을 `disabled`(읽기 전용) 처리
-  - 안내 문구를 "이 게시판에서는 ○○ 닉네임으로 고정됨"으로 교체
-- 저장된 닉네임이 없으면 기존처럼 자유 입력 + 디바운스 기반 "이미 평가 여부" 확인 동작 유지.
-- 제출 성공(`mutation.onSuccess`) 시 `localStorage.setItem("sendev:nickname:<slug>", reviewerName.trim())`로 닉네임을 고정 저장하고, 화면 상태도 잠금으로 전환.
-- 서버의 `createReview`는 기존대로 `post_id` + `reviewer_name` 일치 시 점수를 갱신하므로 추가 변경 불필요.
+---
+
+## 2. 카드 설정 버튼 + 업로드 다이얼로그 (UI)
+
+`src/routes/_main.board.$slug.index.tsx`의 `LinkCard`/`ProjectCard` 수정:
+
+- 이미지 영역 우상단에 **마우스 오버 시 나타나는 톱니(Settings) 버튼** 추가 (썸네일 유무와 무관하게 표시 → 교체 가능)
+- 버튼 클릭 시 카드 이동 차단: `e.preventDefault(); e.stopPropagation();`
+- 클릭하면 작은 `Dialog`를 열고:
+  - 이미지 파일 선택 (브라우저에서 JPEG로 리사이즈/압축 — `PostEditor`의 기존 압축 로직 방식 재사용)
+  - **권장 픽셀 크기 안내 문구 표시** (다이얼로그 내 작은 도움말 텍스트)
+    - 링크 카드(`LinkCard`): 16:9 비율 → **권장 1280×720px** (`aspect-video`)
+    - 산출물 카드(`ProjectCard`): 가로형 → **권장 1280×640px** (카드 이미지 높이 `h-32`에 맞춘 와이드 비율)
+  - 수정·삭제 비밀번호 입력
+  - "썸네일 적용" 버튼
+- 성공 시 `["posts", categoryId]` 쿼리 무효화 → 즉시 반영, 토스트 알림
+
+---
+
+## 기술 메모
+
+- `post-images` 버킷은 private이므로 서버에서 `createSignedUrl(10년)` 사용 — 기존 `uploadHeroImage`/`uploadEventFile`와 동일 패턴.
+- 설정 버튼/다이얼로그는 기존 shadcn `Dialog`, `Button`, `Input`, `Label` + lucide `Settings` 아이콘, 디자인 토큰 사용.
+- 권장 크기는 안내일 뿐 강제하지 않음. 업로드 이미지는 브라우저에서 JPEG로 리사이즈/압축(약 1MB 이하)되며, 카드에서는 `object-cover`로 채워 표시.
+- 비밀번호 검증으로 작성자/관리자만 썸네일 변경 가능.
+- 카드 표시 우선순위는 기존 그대로(`post.ogImageUrl || backfill?.image || thumb`), 업로드 시 `og_image_url`이 채워져 자동 반영됨.
