@@ -7,6 +7,7 @@ import {
   MapPin,
   Clock,
   CalendarDays,
+  Users,
   LinkIcon,
   Download,
   List,
