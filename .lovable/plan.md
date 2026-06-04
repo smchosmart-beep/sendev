@@ -1,53 +1,43 @@
-# 댓글 · 답글 기능 추가
+## 목표
 
-공지사항·질문게시판·일반게시판 글(`type`이 `notice`, `question`, `general`)에 댓글과 답글(대댓글)을 달 수 있게 합니다. 산출물·링크 게시판은 기존처럼 평가/README/임베드만 유지합니다.
+홈 화면 히어로 캐러셀의 두 가지 문제를 수정합니다.
 
-## 1. 데이터베이스 (마이그레이션)
+1. 히어로 카드가 상단 메뉴바(헤더)보다 앞에 그려지는 문제 → 헤더 뒤로 보내기
+2. 3D 스택 전환이 삐걱거리는 문제 → 카드 스택 느낌은 유지하면서 부드럽게
 
-새 테이블 `public.comments` 추가:
+## 1. 헤더보다 뒤로 보내기 (z-index/스택 컨텍스트)
+
+`src/components/hero-stack-carousel.tsx`의 캐러셀 루트 컨테이너에 스택 컨텍스트를 격리합니다.
+
+- 루트 `<div className="relative md:overflow-visible">` → `relative z-0 isolate md:overflow-visible`
+- `isolate`(isolation: isolate)가 새 스택 컨텍스트를 생성해, 내부 카드의 `zIndex: 30/40`이 더 이상 바깥으로 새어나가지 않습니다. 캐러셀 전체가 일반 흐름(z-0)에 놓여 `sticky z-20` 헤더 아래에 그려집니다.
+- 헤더(`src/routes/_main.tsx`)는 변경 없음.
+
+## 2. 전환 부드럽게 (스냅/점프 제거)
+
+현재 구조의 핵심 결함: 진입 카드는 CSS keyframe으로 움직이고, `onAnimationEnd`에서 `setCurrent`로 인덱스를 교체하는 순간 모든 카드의 depth 위치가 한꺼번에 재계산되며 스냅(점프)이 발생합니다. keyframe 시작값과 스택 위치값의 불연속도 끊김의 원인입니다.
+
+해결: keyframe 애니메이션과 인덱스 점프를 없애고, **transform 기반 단일 transition 모델**로 통일합니다.
+
+- `incoming` 상태와 `hero-slide-over-*` keyframe 사용 제거(CSS 키프레임도 정리).
+- 각 카드의 위치는 `current` 기준 offset에 따라 `depthStyle(offset)` 하나로만 결정하고, 모든 카드에 동일한 `transition: transform/opacity 600ms cubic-bezier(0.22,1,0.36,1)` 적용.
+- `go(dir)` 호출 시 `setCurrent`만 변경 → offset이 바뀌며 모든 카드가 같은 transition으로 한 번에 자연스럽게 이동(앞 카드는 옆으로 빠지고 뒤 카드가 앞으로 올라옴).
+- 연타 방지를 위해 전환 시간 동안 `animatingRef`로 잠그고 `setTimeout`(전환 시간)으로 해제.
+- depthStyle에 살짝의 회전/그림자 단계를 유지해 "겹쳐진 카드 스택" 입체감은 그대로 유지.
+- `prefers-reduced-motion`에서는 transition 시간을 0~200ms로 축소.
+
+### 기술 세부
 
 ```text
-comments
-- id            uuid (PK)
-- post_id       uuid (어떤 글의 댓글인지)
-- parent_id     uuid nullable (답글이면 부모 댓글 id, 일반 댓글이면 null)
-- author        text (작성자, 기본값 '익명')
-- content       text (댓글 내용)
-- edit_password text (삭제용 비밀번호)
-- created_at    timestamptz
+상태: current(number), animatingRef
+이동: go(dir) → if animatingRef return; setCurrent((c+dir+count)%count); lock; setTimeout(unlock, DURATION)
+렌더: 각 슬라이드 offset=(i-current+count)%count → style=depthStyle(offset), 공통 transition
 ```
 
-- 기존 `posts`/`reviews` 패턴과 동일하게 RLS는 켜되 정책은 두지 않아, 모든 접근은 서버의 service-role 클라이언트를 통해서만 이뤄집니다. (비밀번호가 브라우저로 노출되지 않음)
-- `service_role`에 GRANT 부여.
+- 파일: `src/components/hero-stack-carousel.tsx` (로직/스타일 수정)
+- 파일: `src/styles.css` (`hero-slide-over-right/left` keyframe 및 관련 utility 정리)
 
-## 2. 서버 함수 (`src/lib/platform.functions.ts`)
+## 검증
 
-기존 reviews 함수들과 같은 스타일로 추가:
-
-- `CommentDTO` 타입 (id, postId, parentId, author, content, createdAt)
-- `listComments({ postId })` — 해당 글의 댓글 전체를 작성 순으로 반환
-- `createComment({ postId, parentId?, author, content, editPassword })` — 댓글/답글 작성. `parentId`가 있으면 답글
-- `deleteComment({ id, password })` — 작성 시 비밀번호 또는 관리자 마스터 비밀번호(`POST_MASTER_PASSWORD`)로 삭제 (기존 `checkPostPassword`와 동일한 검증 방식)
-
-내용에는 비밀번호(`edit_password`)를 절대 DTO로 반환하지 않습니다.
-
-## 3. 쿼리 옵션 (`src/lib/platform.queries.ts`)
-
-- `commentsQueryOptions(postId)` 추가 (queryKey: `["comments", postId]`)
-
-## 4. UI (`src/routes/_main.board.$slug.$postNo.tsx`)
-
-- 게시판 글(`isBoardPost`)일 때만 본문 카드 아래에 `CommentsSection` 렌더링
-- `CommentsSection` 구성:
-  - 댓글 목록을 부모/답글 트리로 표시 (답글은 들여쓰기). 작성자, 작성일, 내용 표시
-  - 각 댓글에 "답글" 버튼 → 인라인 답글 입력 폼 토글
-  - 각 댓글에 "삭제" 버튼 → 비밀번호 입력 다이얼로그(기존 글 삭제 UI와 동일한 패턴)
-  - 하단에 새 댓글 작성 폼 (작성자, 내용, 비밀번호)
-  - 작성/삭제 후 `["comments", postId]` 무효화로 즉시 갱신
-- 디자인 토큰(rounded-2xl, bg-card, text-foreground 등) 기존 섹션과 통일
-
-## 기술 메모
-
-- 댓글 작성/삭제는 `useServerFn` + `useMutation`으로 호출하고 `onClick`에서 직접 서버 함수를 부르지 않습니다.
-- 부모 댓글이 삭제될 때 답글 처리: 부모 댓글 삭제 시 해당 댓글의 답글도 함께 삭제(서버에서 `parent_id`로 정리).
-- 답글의 답글(3단계)은 만들지 않고 2단계(댓글 → 답글)까지만 지원합니다.
+- 홈(`/home`)에서 이전/다음 버튼으로 슬라이드를 빠르게/천천히 넘기며 끊김·점프 없는지 확인
+- 스크롤 시 히어로 카드가 헤더 뒤로 들어가는지 확인
