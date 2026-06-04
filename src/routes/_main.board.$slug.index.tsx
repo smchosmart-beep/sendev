@@ -11,6 +11,7 @@ import { type PostDTO } from "@/lib/platform.functions";
 import { getEmbedUrl, getThumbnailUrl } from "@/lib/embed";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
+import { ThumbnailUploadButton } from "@/components/ThumbnailUploadButton";
 
 export const Route = createFileRoute("/_main/board/$slug/")({
   loader: async ({ context, params }) => {
