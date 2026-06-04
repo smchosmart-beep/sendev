@@ -46,7 +46,7 @@ function MainLayout() {
               <Code2 className="h-5 w-5" />
             </span>
             <span className="text-xl font-bold text-foreground sm:text-xl">
-              교사 개발자 플랫폼
+              SEN DEV CONNECT
             </span>
           </Link>
 
