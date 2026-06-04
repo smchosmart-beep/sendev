@@ -807,20 +807,30 @@ export const createReview = createServerFn({ method: "POST" })
     z
       .object({
         postId: z.string().uuid(),
-        reviewerName: z.string().trim().max(100).default(""),
+        reviewerName: z.string().trim().min(1).max(100),
         scores: z.record(z.string().uuid(), z.number().min(0).max(100)),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
     const db = await getAdmin();
-    const { error } = await db.from("reviews").insert({
-      post_id: data.postId,
-      reviewer_name: data.reviewerName,
-      scores: data.scores,
-    });
+    const { data: existing } = await db
+      .from("reviews")
+      .select("id")
+      .eq("post_id", data.postId)
+      .eq("reviewer_name", data.reviewerName)
+      .maybeSingle();
+
+    const { error } = await db.from("reviews").upsert(
+      {
+        post_id: data.postId,
+        reviewer_name: data.reviewerName,
+        scores: data.scores,
+      },
+      { onConflict: "post_id,reviewer_name" },
+    );
     if (error) throw new Error(error.message);
-    return { ok: true };
+    return { ok: true, updated: !!existing };
   });
 
 /* ------------------------------ Comments ------------------------------ */
