@@ -326,7 +326,7 @@ export const listEvents = createServerFn({ method: "GET" }).handler(
     const db = await getAdmin();
     const { data, error } = await db
       .from("events")
-      .select("id, title, date, time, location, description, attachments, links")
+      .select("id, title, date, time, location, target, description, attachments, links")
       .order("date", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []).map((e: any) => ({
@@ -335,10 +335,12 @@ export const listEvents = createServerFn({ method: "GET" }).handler(
       date: e.date,
       time: e.time,
       location: e.location,
+      target: e.target ?? "",
       description: e.description,
       attachments: Array.isArray(e.attachments) ? e.attachments : [],
       links: Array.isArray(e.links) ? e.links : [],
     }));
+
   },
 );
 
