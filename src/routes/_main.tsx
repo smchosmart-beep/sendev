@@ -40,7 +40,7 @@ function MainLayout() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-20 bg-card/90 shadow-sm backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center gap-3 px-6 py-4 sm:gap-10">
+        <div className="mx-auto flex w-full items-center gap-3 px-6 py-4 sm:gap-10">
           <Link to="/home" className="flex items-center gap-2">
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md">
               <Code2 className="h-5 w-5" />
