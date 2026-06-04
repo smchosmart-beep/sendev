@@ -204,8 +204,10 @@ function CategoriesPage() {
     setEditEnableQuestion(c.enableQuestion);
     setEditEnableGeneral(c.enableGeneral);
     setEditEnableProject(c.enableProject);
+    setEditEnableLink(c.enableLink);
     setEditGeneralName(c.generalName);
     setEditProjectName(c.projectName);
+    setEditLinkName(c.linkName);
     setEditTabGroup(c.tabGroup ?? "hackathon");
     if (c.hasPassword) {
       getPasswordFn({ data: { id: c.id } })
