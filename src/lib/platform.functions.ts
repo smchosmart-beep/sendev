@@ -242,8 +242,10 @@ export const updateCategory = createServerFn({ method: "POST" })
         enableQuestion: z.boolean().optional(),
         enableGeneral: z.boolean().optional(),
         enableProject: z.boolean().optional(),
+        enableLink: z.boolean().optional(),
         generalName: z.string().trim().max(100).optional(),
         projectName: z.string().trim().max(100).optional(),
+        linkName: z.string().trim().max(100).optional(),
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .optional(),
