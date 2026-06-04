@@ -66,6 +66,14 @@ export const reviewsQueryOptions = (postId: string) =>
     queryFn: () => listReviews({ data: { postId } }),
   });
 
+export const myReviewQueryOptions = (postId: string, reviewerName: string) =>
+  queryOptions({
+    queryKey: ["my-review", postId, reviewerName],
+    queryFn: () => getMyReview({ data: { postId, reviewerName } }),
+    enabled: reviewerName.trim().length > 0,
+  });
+
+
 export const commentsQueryOptions = (postId: string) =>
   queryOptions({
     queryKey: ["comments", postId],
