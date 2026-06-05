@@ -207,7 +207,7 @@ function BoardEvalCard({ board }: { board: CategoryDTO }) {
             </AlertDialog>
           ) : (
             <Button
-              className="rounded-xl active:scale-95"
+              className="w-full rounded-xl active:scale-95 sm:w-auto"
               disabled={busy}
               onClick={() => shuffleMutation.mutate()}
             >
