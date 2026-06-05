@@ -46,7 +46,7 @@ import {
   postsQueryOptions,
   commentsQueryOptions,
 } from "@/lib/platform.queries";
-import { seededShuffle, getOrderSeed } from "@/lib/series";
+import { stableEvalOrder, getOrderSeed } from "@/lib/series";
 import {
   createReview,
   updatePost,
