@@ -960,6 +960,9 @@ function CommentsSection({ postId }: { postId: string }) {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [deletePw, setDeletePw] = useState("");
 
+  // Lightbox state for viewing attached comment images in-app.
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
   const createMutation = useMutation({
     mutationFn: (vars: {
       parentId: string | null;
