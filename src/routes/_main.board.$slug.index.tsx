@@ -60,6 +60,26 @@ function BoardInner({
   const links = posts.filter((p) => p.type === "link");
   const linkItems = groupLinksBySeries(links);
 
+  // 공정 평가를 위한 기기별 고정 랜덤 순서.
+  // SSR/최초 렌더는 원본 순서(하이드레이션 안전), 마운트 후 셔플 적용.
+  const [seed, setSeed] = useState<number | null>(null);
+  const [reviewerName, setReviewerName] = useState("");
+  useEffect(() => {
+    setSeed(getOrderSeed());
+    const saved = window.localStorage.getItem(`sendev:nickname:${slug}`);
+    if (saved && saved.trim()) setReviewerName(saved.trim());
+  }, [slug]);
+
+  const orderedProjects = useMemo(
+    () => (seed === null ? projects : seededShuffle(projects, seed)),
+    [projects, seed],
+  );
+
+  const { data: reviewedIds = [] } = useQuery(
+    myReviewedPostIdsQueryOptions(reviewerName),
+  );
+  const reviewedSet = useMemo(() => new Set(reviewedIds), [reviewedIds]);
+
   return (
     <div className="space-y-6">
       {category.enableNotice && notices.length > 0 && (
