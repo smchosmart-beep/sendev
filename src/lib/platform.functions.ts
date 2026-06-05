@@ -614,6 +614,7 @@ export const updatePost = createServerFn({ method: "POST" })
         author: z.string().trim().max(100).optional(),
         githubUrl: z.string().trim().max(300).default(""),
         deployUrl: z.string().trim().max(300).default(""),
+        series: z.string().trim().max(100).optional(),
       })
       .parse(input),
   )
