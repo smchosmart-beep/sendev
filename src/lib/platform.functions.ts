@@ -642,6 +642,7 @@ export const updatePost = createServerFn({ method: "POST" })
       deploy_url: data.deployUrl,
       og_image_url: ogImageUrl,
     };
+    if (data.series !== undefined) patch.series = data.series;
     if (data.content !== undefined) patch.content = data.content;
     // Notices stay authored by the operations team; others can update author.
     if (existing?.type === "notice") {
