@@ -1221,9 +1221,31 @@ function CommentItem({
           </Button>
         </div>
       </div>
-      <p className="mt-2 whitespace-pre-wrap break-words text-sm text-foreground">
-        {comment.content}
-      </p>
+      {comment.content && (
+        <p className="mt-2 whitespace-pre-wrap break-words text-sm text-foreground">
+          {comment.content}
+        </p>
+      )}
+      {comment.imageUrls.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {comment.imageUrls.map((url, i) => (
+            <a
+              key={url}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block h-24 w-24 overflow-hidden rounded-lg border border-border transition hover:opacity-90"
+            >
+              <img
+                src={url}
+                alt={`첨부 이미지 ${i + 1}`}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
