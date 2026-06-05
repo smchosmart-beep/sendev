@@ -960,6 +960,9 @@ function CommentsSection({ postId }: { postId: string }) {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [deletePw, setDeletePw] = useState("");
 
+  // Lightbox state for viewing attached comment images in-app.
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
   const createMutation = useMutation({
     mutationFn: (vars: {
       parentId: string | null;
@@ -1025,6 +1028,7 @@ function CommentsSection({ postId }: { postId: string }) {
               <CommentItem
                 comment={c}
                 onReply={() => setReplyTo(replyTo === c.id ? null : c.id)}
+                onImageClick={setLightboxUrl}
                 onDelete={() => {
                   setDeleteTarget(c.id);
                   setDeletePw("");
@@ -1051,6 +1055,7 @@ function CommentsSection({ postId }: { postId: string }) {
                       <CommentItem
                         comment={r}
                         isReply
+                        onImageClick={setLightboxUrl}
                         onDelete={() => {
                           setDeleteTarget(r.id);
                           setDeletePw("");
@@ -1185,6 +1190,28 @@ function CommentsSection({ postId }: { postId: string }) {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Image lightbox */}
+      <Dialog
+        open={lightboxUrl !== null}
+        onOpenChange={(open) => {
+          if (!open) setLightboxUrl(null);
+        }}
+      >
+        <DialogContent className="max-w-3xl border-none bg-transparent p-0 shadow-none">
+          <DialogHeader className="sr-only">
+            <DialogTitle>첨부 이미지</DialogTitle>
+            <DialogDescription>댓글에 첨부된 이미지</DialogDescription>
+          </DialogHeader>
+          {lightboxUrl && (
+            <img
+              src={lightboxUrl}
+              alt="첨부 이미지"
+              className="mx-auto max-h-[85vh] w-auto max-w-full rounded-xl object-contain"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
@@ -1194,11 +1221,13 @@ function CommentItem({
   isReply = false,
   onReply,
   onDelete,
+  onImageClick,
 }: {
   comment: CommentDTO;
   isReply?: boolean;
   onReply?: () => void;
   onDelete: () => void;
+  onImageClick: (url: string) => void;
 }) {
   return (
     <div className="rounded-xl bg-muted/50 px-4 py-3">
@@ -1244,12 +1273,11 @@ function CommentItem({
       {comment.imageUrls.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">
           {comment.imageUrls.map((url, i) => (
-            <a
+            <button
               key={url}
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block h-24 w-24 overflow-hidden rounded-lg border border-border transition hover:opacity-90"
+              type="button"
+              onClick={() => onImageClick(url)}
+              className="block h-24 w-24 cursor-pointer overflow-hidden rounded-lg border border-border transition hover:opacity-90"
             >
               <img
                 src={url}
@@ -1257,7 +1285,7 @@ function CommentItem({
                 loading="lazy"
                 className="h-full w-full object-cover"
               />
-            </a>
+            </button>
           ))}
         </div>
       )}
