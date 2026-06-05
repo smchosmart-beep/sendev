@@ -102,6 +102,7 @@ function HomePage() {
               <Link
                 key={e.id}
                 to="/calendar"
+                search={{ date: e.date }}
                 className="group rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="flex items-center gap-2 text-sm font-medium text-primary">
