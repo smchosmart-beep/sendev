@@ -55,6 +55,7 @@ function BoardInner({
   const generals = posts.filter((p) => p.type === "general");
   const projects = posts.filter((p) => p.type === "project");
   const links = posts.filter((p) => p.type === "link");
+  const linkItems = groupLinksBySeries(links);
 
   return (
     <div className="space-y-6">
