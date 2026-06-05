@@ -1054,8 +1054,8 @@ function CommentsSection({ postId }: { postId: string }) {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (!content.trim()) {
-            toast.error("댓글 내용을 입력해주세요.");
+          if (!content.trim() && imageUrls.length === 0) {
+            toast.error("댓글 내용 또는 이미지를 입력해주세요.");
             return;
           }
           if (!password.trim()) {
@@ -1066,6 +1066,7 @@ function CommentsSection({ postId }: { postId: string }) {
             parentId: null,
             author: author.trim(),
             content: content.trim(),
+            imageUrls,
             editPassword: password.trim(),
           });
         }}
@@ -1095,6 +1096,11 @@ function CommentsSection({ postId }: { postId: string }) {
           rows={3}
           maxLength={5000}
           className="rounded-xl"
+        />
+        <CommentImagePicker
+          value={imageUrls}
+          onChange={setImageUrls}
+          disabled={createMutation.isPending}
         />
         <div className="flex justify-end">
           <Button
