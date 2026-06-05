@@ -363,7 +363,15 @@ function LinkCard({ post, slug }: { post: PostDTO; slug: string }) {
   );
 }
 
-function ProjectCard({ post, slug }: { post: PostDTO; slug: string }) {
+function ProjectCard({
+  post,
+  slug,
+  reviewed = false,
+}: {
+  post: PostDTO;
+  slug: string;
+  reviewed?: boolean;
+}) {
   // Prefer the cached OG image stored on the post. Only existing posts without a
   // cached value (and with a deploy URL) trigger a one-time backfill request,
   // which stores the result so future loads never hit the external site again.
