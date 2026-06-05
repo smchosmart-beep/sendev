@@ -1,14 +1,16 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
-import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers, CheckCircle2 } from "lucide-react";
 
 import {
   postsQueryOptions,
   categoriesQueryOptions,
   ogImageBackfillQueryOptions,
+  myReviewedPostIdsQueryOptions,
 } from "@/lib/platform.queries";
 import { type PostDTO } from "@/lib/platform.functions";
-import { groupLinksBySeries } from "@/lib/series";
+import { groupLinksBySeries, seededShuffle, getOrderSeed } from "@/lib/series";
 import { getEmbedUrl, getThumbnailUrl } from "@/lib/embed";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
