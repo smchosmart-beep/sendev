@@ -849,17 +849,27 @@ export const getMyReview = createServerFn({ method: "GET" })
       .parse(input),
   )
   .handler(
-    async ({ data }): Promise<{ found: boolean; createdAt?: string }> => {
+    async ({
+      data,
+    }): Promise<{
+      found: boolean;
+      createdAt?: string;
+      scores?: Record<string, number>;
+    }> => {
       const db = await getAdmin();
       const { data: row, error } = await db
         .from("reviews")
-        .select("created_at")
+        .select("created_at, scores")
         .eq("post_id", data.postId)
         .eq("reviewer_name", data.reviewerName)
         .maybeSingle();
       if (error) throw new Error(error.message);
       if (!row) return { found: false };
-      return { found: true, createdAt: row.created_at };
+      return {
+        found: true,
+        createdAt: row.created_at,
+        scores: (row.scores ?? {}) as Record<string, number>,
+      };
     },
   );
 

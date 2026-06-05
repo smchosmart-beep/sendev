@@ -665,6 +665,17 @@ function EvaluationSection({
         })
       : null;
 
+  // 저장된 본인 점수를 별점에 다시 채워, 제출/재방문 시 "내가 준 별점"이 보이도록 한다.
+  // 사용자가 아직 폼을 건드리지 않은 경우에만 채워 입력 중 값을 덮어쓰지 않는다.
+  const touchedRef = useRef(false);
+  useEffect(() => {
+    if (touchedRef.current) return;
+    if (myReview?.found && myReview.scores) {
+      setScores(myReview.scores);
+    }
+  }, [myReview]);
+
+
   const mutation = useMutation({
     mutationFn: () =>
       create({ data: { postId, reviewerName: reviewerName.trim(), scores } }),
@@ -681,7 +692,9 @@ function EvaluationSection({
       toast.success(
         res?.updated ? "평가가 갱신되었어요!" : "평가를 제출했어요!",
       );
-      setScores({});
+      // 방금 매긴 별점을 유지해 "반영 안 됨"으로 보이지 않게 한다.
+      // 이후 my-review 재조회로 저장된 점수가 다시 채워진다.
+      touchedRef.current = false;
     },
     onError: () => toast.error("제출 중 문제가 발생했어요."),
   });
@@ -797,10 +810,12 @@ function EvaluationSection({
                 <StarRating
                   max={c.maxScore}
                   value={scores[c.id] ?? 0}
-                  onChange={(v) =>
-                    setScores((prev) => ({ ...prev, [c.id]: v }))
-                  }
+                  onChange={(v) => {
+                    touchedRef.current = true;
+                    setScores((prev) => ({ ...prev, [c.id]: v }));
+                  }}
                 />
+
               </div>
             ))}
             <Button
