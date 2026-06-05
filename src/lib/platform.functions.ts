@@ -892,6 +892,7 @@ export interface CommentDTO {
   parentId: string | null;
   author: string;
   content: string;
+  imageUrls: string[];
   createdAt: string;
 }
 
@@ -902,6 +903,7 @@ function mapComment(c: any): CommentDTO {
     parentId: c.parent_id ?? null,
     author: c.author ?? "익명",
     content: c.content ?? "",
+    imageUrls: Array.isArray(c.image_urls) ? c.image_urls : [],
     createdAt: c.created_at,
   };
 }
@@ -912,7 +914,7 @@ export const listComments = createServerFn({ method: "GET" })
     const db = await getAdmin();
     const { data: rows, error } = await db
       .from("comments")
-      .select("id, post_id, parent_id, author, content, created_at")
+      .select("id, post_id, parent_id, author, content, image_urls, created_at")
       .eq("post_id", data.postId)
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
@@ -926,8 +928,12 @@ export const createComment = createServerFn({ method: "POST" })
         postId: z.string().uuid(),
         parentId: z.string().uuid().nullable().default(null),
         author: z.string().trim().max(100).default(""),
-        content: z.string().trim().min(1).max(5000),
+        content: z.string().trim().max(5000).default(""),
+        imageUrls: z.array(z.string().url().max(2000)).max(10).default([]),
         editPassword: z.string().trim().min(1).max(100),
+      })
+      .refine((v) => v.content.length > 0 || v.imageUrls.length > 0, {
+        message: "내용 또는 이미지를 입력해주세요.",
       })
       .parse(input),
   )
@@ -950,6 +956,7 @@ export const createComment = createServerFn({ method: "POST" })
       parent_id: parentId,
       author: data.author || "익명",
       content: data.content,
+      image_urls: data.imageUrls,
       edit_password: data.editPassword,
     });
     if (error) throw new Error(error.message);
