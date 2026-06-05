@@ -670,6 +670,7 @@ function EvaluationSection({
     onSuccess: (res: { ok: boolean; updated?: boolean }) => {
       queryClient.invalidateQueries({ queryKey: ["reviews", postId] });
       queryClient.invalidateQueries({ queryKey: ["my-review", postId] });
+      queryClient.invalidateQueries({ queryKey: ["my-reviewed"] });
       // 이 기기에 이 게시판의 닉네임을 고정 저장한다.
       const name = reviewerName.trim();
       if (typeof window !== "undefined" && name) {
