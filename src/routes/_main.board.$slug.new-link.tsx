@@ -5,12 +5,12 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { useSuspenseQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useSuspenseQuery, useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { categoriesQueryOptions } from "@/lib/platform.queries";
+import { categoriesQueryOptions, postsQueryOptions } from "@/lib/platform.queries";
 import { createPost } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
