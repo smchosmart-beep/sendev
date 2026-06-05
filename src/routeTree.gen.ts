@@ -29,6 +29,7 @@ import { Route as MainBoardSlugNewProjectRouteImport } from './routes/_main.boar
 import { Route as MainBoardSlugNewLinkRouteImport } from './routes/_main.board.$slug.new-link'
 import { Route as MainBoardSlugNewGeneralRouteImport } from './routes/_main.board.$slug.new-general'
 import { Route as MainBoardSlugPostNoRouteImport } from './routes/_main.board.$slug.$postNo'
+import { Route as MainBoardSlugSeriesSeriesRouteImport } from './routes/_main.board.$slug.series.$series'
 
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
@@ -130,6 +131,12 @@ const MainBoardSlugPostNoRoute = MainBoardSlugPostNoRouteImport.update({
   path: '/$postNo',
   getParentRoute: () => MainBoardSlugRoute,
 } as any)
+const MainBoardSlugSeriesSeriesRoute =
+  MainBoardSlugSeriesSeriesRouteImport.update({
+    id: '/series/$series',
+    path: '/series/$series',
+    getParentRoute: () => MainBoardSlugRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/board/$slug/new-project': typeof MainBoardSlugNewProjectRoute
   '/board/$slug/new-question': typeof MainBoardSlugNewQuestionRoute
   '/board/$slug/': typeof MainBoardSlugIndexRoute
+  '/board/$slug/series/$series': typeof MainBoardSlugSeriesSeriesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -170,6 +178,7 @@ export interface FileRoutesByTo {
   '/board/$slug/new-project': typeof MainBoardSlugNewProjectRoute
   '/board/$slug/new-question': typeof MainBoardSlugNewQuestionRoute
   '/board/$slug': typeof MainBoardSlugIndexRoute
+  '/board/$slug/series/$series': typeof MainBoardSlugSeriesSeriesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -193,6 +202,7 @@ export interface FileRoutesById {
   '/_main/board/$slug/new-project': typeof MainBoardSlugNewProjectRoute
   '/_main/board/$slug/new-question': typeof MainBoardSlugNewQuestionRoute
   '/_main/board/$slug/': typeof MainBoardSlugIndexRoute
+  '/_main/board/$slug/series/$series': typeof MainBoardSlugSeriesSeriesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -216,6 +226,7 @@ export interface FileRouteTypes {
     | '/board/$slug/new-project'
     | '/board/$slug/new-question'
     | '/board/$slug/'
+    | '/board/$slug/series/$series'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -235,6 +246,7 @@ export interface FileRouteTypes {
     | '/board/$slug/new-project'
     | '/board/$slug/new-question'
     | '/board/$slug'
+    | '/board/$slug/series/$series'
   id:
     | '__root__'
     | '/'
@@ -257,6 +269,7 @@ export interface FileRouteTypes {
     | '/_main/board/$slug/new-project'
     | '/_main/board/$slug/new-question'
     | '/_main/board/$slug/'
+    | '/_main/board/$slug/series/$series'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -407,6 +420,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainBoardSlugPostNoRouteImport
       parentRoute: typeof MainBoardSlugRoute
     }
+    '/_main/board/$slug/series/$series': {
+      id: '/_main/board/$slug/series/$series'
+      path: '/series/$series'
+      fullPath: '/board/$slug/series/$series'
+      preLoaderRoute: typeof MainBoardSlugSeriesSeriesRouteImport
+      parentRoute: typeof MainBoardSlugRoute
+    }
   }
 }
 
@@ -417,6 +437,7 @@ interface MainBoardSlugRouteChildren {
   MainBoardSlugNewProjectRoute: typeof MainBoardSlugNewProjectRoute
   MainBoardSlugNewQuestionRoute: typeof MainBoardSlugNewQuestionRoute
   MainBoardSlugIndexRoute: typeof MainBoardSlugIndexRoute
+  MainBoardSlugSeriesSeriesRoute: typeof MainBoardSlugSeriesSeriesRoute
 }
 
 const MainBoardSlugRouteChildren: MainBoardSlugRouteChildren = {
@@ -426,6 +447,7 @@ const MainBoardSlugRouteChildren: MainBoardSlugRouteChildren = {
   MainBoardSlugNewProjectRoute: MainBoardSlugNewProjectRoute,
   MainBoardSlugNewQuestionRoute: MainBoardSlugNewQuestionRoute,
   MainBoardSlugIndexRoute: MainBoardSlugIndexRoute,
+  MainBoardSlugSeriesSeriesRoute: MainBoardSlugSeriesSeriesRoute,
 }
 
 const MainBoardSlugRouteWithChildren = MainBoardSlugRoute._addFileChildren(
@@ -478,3 +500,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
