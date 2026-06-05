@@ -115,7 +115,7 @@ const tabs = [
   { to: "/admin/home", label: "홈 화면 구성", icon: Home },
   { to: "/admin/calendar", label: "캘린더 관리", icon: CalendarDays },
   { to: "/admin/notices", label: "공지사항 관리", icon: Megaphone },
-  { to: "/admin/criteria", label: "평가 기준 관리", icon: SlidersHorizontal },
+  { to: "/admin/criteria", label: "평가 관리", icon: SlidersHorizontal },
 ] as const;
 
 
