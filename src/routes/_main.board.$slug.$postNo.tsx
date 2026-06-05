@@ -982,7 +982,7 @@ function StarRating({
                 className="absolute inset-0 overflow-hidden"
                 style={{ width: `${fill * 100}%` }}
               >
-                <Star className="h-full w-full fill-primary text-primary" />
+                <Star className="h-full w-auto max-w-none fill-primary text-primary" />
               </span>
             </span>
           );
