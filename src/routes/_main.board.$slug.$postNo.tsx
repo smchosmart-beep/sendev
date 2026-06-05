@@ -936,6 +936,7 @@ function CommentsSection({ postId }: { postId: string }) {
   const [author, setAuthor] = useState("");
   const [content, setContent] = useState("");
   const [password, setPassword] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   // Reply form is open for at most one comment at a time.
   const [replyTo, setReplyTo] = useState<string | null>(null);
@@ -949,6 +950,7 @@ function CommentsSection({ postId }: { postId: string }) {
       parentId: string | null;
       author: string;
       content: string;
+      imageUrls: string[];
       editPassword: string;
     }) => create({ data: { postId, ...vars } }),
     onSuccess: (_res, vars) => {
@@ -960,6 +962,7 @@ function CommentsSection({ postId }: { postId: string }) {
         setAuthor("");
         setContent("");
         setPassword("");
+        setImageUrls([]);
       }
     },
     onError: () => toast.error("등록 중 문제가 발생했어요."),
