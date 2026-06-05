@@ -665,6 +665,17 @@ function EvaluationSection({
         })
       : null;
 
+  // 저장된 본인 점수를 별점에 다시 채워, 제출/재방문 시 "내가 준 별점"이 보이도록 한다.
+  // 사용자가 아직 폼을 건드리지 않은 경우에만 채워 입력 중 값을 덮어쓰지 않는다.
+  const touchedRef = useRef(false);
+  useEffect(() => {
+    if (touchedRef.current) return;
+    if (myReview?.found && myReview.scores) {
+      setScores(myReview.scores);
+    }
+  }, [myReview]);
+
+
   const mutation = useMutation({
     mutationFn: () =>
       create({ data: { postId, reviewerName: reviewerName.trim(), scores } }),
