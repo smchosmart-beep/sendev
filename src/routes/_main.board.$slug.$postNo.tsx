@@ -853,17 +853,39 @@ function EvaluationSection({
 
               </div>
             ))}
-            <Button
-              type="submit"
-              disabled={mutation.isPending}
-              className="rounded-xl active:scale-95"
-            >
-              {mutation.isPending
-                ? "제출 중..."
-                : alreadyReviewed
-                  ? "평가 수정"
-                  : "평가 제출"}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="submit"
+                disabled={mutation.isPending}
+                className="rounded-xl active:scale-95"
+              >
+                {mutation.isPending
+                  ? "제출 중..."
+                  : alreadyReviewed
+                    ? "평가 수정"
+                    : "평가 제출"}
+              </Button>
+              {alreadyReviewed && nextProjectNo !== null && (
+                <Button
+                  asChild
+                  variant="secondary"
+                  className="rounded-xl active:scale-95"
+                >
+                  <Link
+                    to="/board/$slug/$postNo"
+                    params={{ slug, postNo: String(nextProjectNo) }}
+                  >
+                    다음 산출물 평가
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              )}
+            </div>
+            {alreadyReviewed && nextProjectNo === null && (
+              <p className="text-xs font-medium text-primary">
+                🎉 이 게시판의 모든 산출물 평가를 마쳤어요.
+              </p>
+            )}
           </form>
         </div>
       )}
