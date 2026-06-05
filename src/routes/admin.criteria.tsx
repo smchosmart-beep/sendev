@@ -177,13 +177,13 @@ function BoardEvalCard({ board }: { board: CategoryDTO }) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           {board.evalOpen ? (
             <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
               <AlertDialogTrigger asChild>
                 <Button
                   variant="secondary"
-                  className="rounded-xl active:scale-95"
+                  className="w-full rounded-xl active:scale-95 sm:w-auto"
                   disabled={busy}
                 >
                   <Shuffle className="h-4 w-4" /> 순서 다시 섞기
