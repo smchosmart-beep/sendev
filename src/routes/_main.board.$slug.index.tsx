@@ -216,9 +216,18 @@ function BoardInner({
             />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {links.map((p) => (
-                <LinkCard key={p.id} post={p} slug={slug} />
-              ))}
+              {linkItems.map((item) =>
+                item.kind === "series" ? (
+                  <SeriesCard
+                    key={`series-${item.name}`}
+                    name={item.name}
+                    posts={item.posts}
+                    slug={slug}
+                  />
+                ) : (
+                  <LinkCard key={item.post.id} post={item.post} slug={slug} />
+                ),
+              )}
             </div>
           )}
         </section>
