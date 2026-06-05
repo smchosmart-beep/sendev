@@ -148,9 +148,9 @@ function BoardEvalCard({ board }: { board: CategoryDTO }) {
         <h2 className="text-lg font-semibold text-foreground">평가 진행 관리</h2>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span
               className={
                 board.evalOpen
@@ -177,13 +177,13 @@ function BoardEvalCard({ board }: { board: CategoryDTO }) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           {board.evalOpen ? (
             <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
               <AlertDialogTrigger asChild>
                 <Button
                   variant="secondary"
-                  className="rounded-xl active:scale-95"
+                  className="w-full rounded-xl active:scale-95 sm:w-auto"
                   disabled={busy}
                 >
                   <Shuffle className="h-4 w-4" /> 순서 다시 섞기
@@ -207,7 +207,7 @@ function BoardEvalCard({ board }: { board: CategoryDTO }) {
             </AlertDialog>
           ) : (
             <Button
-              className="rounded-xl active:scale-95"
+              className="w-full rounded-xl active:scale-95 sm:w-auto"
               disabled={busy}
               onClick={() => shuffleMutation.mutate()}
             >
@@ -218,7 +218,7 @@ function BoardEvalCard({ board }: { board: CategoryDTO }) {
           {board.evalOpen && (
             <Button
               variant="outline"
-              className="rounded-xl active:scale-95"
+              className="w-full rounded-xl active:scale-95 sm:w-auto"
               disabled={busy}
               onClick={() => closeMutation.mutate()}
             >
