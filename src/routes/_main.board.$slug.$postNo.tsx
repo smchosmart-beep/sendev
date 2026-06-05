@@ -1055,6 +1055,7 @@ function CommentsSection({ postId }: { postId: string }) {
                       <CommentItem
                         comment={r}
                         isReply
+                        onImageClick={setLightboxUrl}
                         onDelete={() => {
                           setDeleteTarget(r.id);
                           setDeletePw("");
