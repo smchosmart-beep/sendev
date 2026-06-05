@@ -18,6 +18,7 @@ import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import {
   ArrowLeft,
+  ArrowRight,
   User,
   Github,
   ExternalLink,
@@ -41,8 +42,11 @@ import {
   criteriaQueryOptions,
   reviewsQueryOptions,
   myReviewQueryOptions,
+  myReviewedPostIdsQueryOptions,
+  postsQueryOptions,
   commentsQueryOptions,
 } from "@/lib/platform.queries";
+import { seededShuffle, getOrderSeed } from "@/lib/series";
 import {
   createReview,
   updatePost,
