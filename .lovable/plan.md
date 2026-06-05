@@ -1,13 +1,13 @@
 ## 문제
 
-전체화면 버튼을 눌러도 이미지가 화면을 꽉 채우지 않습니다. `LightboxImage`의 이미지가 `max-h-[85vh]`로 고정돼 있고, 전체화면 컨테이너에 꽉 차도록 하는 스타일이 없어 모달 크기 그대로 보입니다.
+댓글 첨부 이미지 썸네일이 `h-24 w-24` 고정 정사각형(1:1)이라, 모바일에서 2열로 배치될 때 각 셀이 컬럼 너비를 채우지 못하고 오른쪽 공간이 낭비됩니다.
 
 ## 해결
 
-`LightboxImage`에서 `isFullscreen` 상태에 따라 스타일을 분기합니다.
+`CommentItem`의 썸네일 영역(`comment.imageUrls.map`)을 고정 정사각형 대신 반응형 그리드로 변경합니다.
 
-- **전체화면일 때**: 컨테이너를 화면 전체(`h-screen w-screen`)로 채우고 flex 중앙 정렬, 검정 배경. 이미지는 `max-h-full max-w-full h-full w-full object-contain`으로 화면을 최대한 채웁니다.
-- **일반 모달일 때**: 기존처럼 `max-h-[85vh]`, `w-fit` 유지.
-- 전체화면/일반에 따라 클래스만 조건부로 바꾸며 버튼 위치(좌측 상단)는 그대로 둡니다.
+- 컨테이너: `flex flex-wrap` → `grid grid-cols-2 sm:grid-cols-3 gap-2`로 변경해 모바일 2열 / 넓은 화면 3열로 셀이 컬럼 너비를 채우게 함.
+- 각 썸네일 버튼: `h-24 w-24` 제거하고 `w-full`로 컬럼 너비를 채움. 정사각형 강제 대신 원본 비율을 살리도록 이미지를 `h-auto object-contain`(또는 적당한 `aspect` 없이 자연 높이)으로 표시. 이미지가 컬럼 폭에 맞춰 들어가고 세로는 비율대로 늘어남.
+- 라이트박스 열기(onImageClick), hover 효과, 테두리/라운드 스타일은 그대로 유지.
 
 `src/routes/_main.board.$slug.$postNo.tsx` 한 곳만 수정합니다.

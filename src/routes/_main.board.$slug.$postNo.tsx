@@ -1329,19 +1329,19 @@ function CommentItem({
         </p>
       )}
       {comment.imageUrls.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
           {comment.imageUrls.map((url, i) => (
             <button
               key={url}
               type="button"
               onClick={() => onImageClick(url)}
-              className="block h-24 w-24 cursor-pointer overflow-hidden rounded-lg border border-border transition hover:opacity-90"
+              className="block w-full cursor-pointer overflow-hidden rounded-lg border border-border bg-muted transition hover:opacity-90"
             >
               <img
                 src={url}
                 alt={`첨부 이미지 ${i + 1}`}
                 loading="lazy"
-                className="h-full w-full object-cover"
+                className="h-auto w-full object-contain"
               />
             </button>
           ))}
