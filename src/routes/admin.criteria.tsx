@@ -148,9 +148,9 @@ function BoardEvalCard({ board }: { board: CategoryDTO }) {
         <h2 className="text-lg font-semibold text-foreground">평가 진행 관리</h2>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span
               className={
                 board.evalOpen
