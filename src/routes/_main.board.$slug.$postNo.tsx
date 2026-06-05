@@ -1190,6 +1190,28 @@ function CommentsSection({ postId }: { postId: string }) {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Image lightbox */}
+      <Dialog
+        open={lightboxUrl !== null}
+        onOpenChange={(open) => {
+          if (!open) setLightboxUrl(null);
+        }}
+      >
+        <DialogContent className="max-w-3xl border-none bg-transparent p-0 shadow-none">
+          <DialogHeader className="sr-only">
+            <DialogTitle>첨부 이미지</DialogTitle>
+            <DialogDescription>댓글에 첨부된 이미지</DialogDescription>
+          </DialogHeader>
+          {lightboxUrl && (
+            <img
+              src={lightboxUrl}
+              alt="첨부 이미지"
+              className="mx-auto max-h-[85vh] w-auto max-w-full rounded-xl object-contain"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
