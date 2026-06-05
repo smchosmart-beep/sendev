@@ -810,10 +810,12 @@ function EvaluationSection({
                 <StarRating
                   max={c.maxScore}
                   value={scores[c.id] ?? 0}
-                  onChange={(v) =>
-                    setScores((prev) => ({ ...prev, [c.id]: v }))
-                  }
+                  onChange={(v) => {
+                    touchedRef.current = true;
+                    setScores((prev) => ({ ...prev, [c.id]: v }));
+                  }}
                 />
+
               </div>
             ))}
             <Button
