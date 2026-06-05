@@ -877,8 +877,8 @@ export const listMyReviewedPostIds = createServerFn({ method: "GET" })
       .eq("reviewer_name", data.reviewerName);
     if (error) throw new Error(error.message);
     // 정렬해 반환 → 쿼리 데이터 안정화(불필요한 리렌더/리페치 방지)
-    const ids = Array.from(
-      new Set((rows ?? []).map((r: any) => r.post_id as string)),
+    const ids: string[] = Array.from(
+      new Set((rows ?? []).map((r: any) => String(r.post_id))),
     );
     ids.sort();
     return ids;
