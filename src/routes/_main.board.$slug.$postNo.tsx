@@ -725,6 +725,8 @@ function EvaluationSection({
   const { data: reviewedIds = [] } = useQuery(
     myReviewedPostIdsQueryOptions(reviewerForList),
   );
+  const projectCount = allPosts.filter((p) => p.type === "project").length;
+  const hasMultipleProjects = projectCount > 1;
   const nextProjectNo = (() => {
     if (orderSeed === null) return null;
     const projects = allPosts.filter((p) => p.type === "project");
