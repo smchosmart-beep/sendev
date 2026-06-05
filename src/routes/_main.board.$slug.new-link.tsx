@@ -40,7 +40,21 @@ function NewLinkPage() {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
+  const [series, setSeries] = useState("");
   const [editPassword, setEditPassword] = useState("");
+
+  // Suggest existing series names in this board for consistent grouping.
+  const { data: posts } = useQuery({
+    ...postsQueryOptions(category?.id ?? ""),
+    enabled: !!category,
+  });
+  const seriesOptions = Array.from(
+    new Set(
+      (posts ?? [])
+        .filter((p) => p.type === "link" && p.series.trim())
+        .map((p) => p.series.trim()),
+    ),
+  );
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -51,6 +65,7 @@ function NewLinkPage() {
           title,
           author,
           deployUrl: linkUrl,
+          series: series.trim(),
           editPassword,
         },
       }),
