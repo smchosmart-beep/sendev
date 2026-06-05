@@ -1206,15 +1206,63 @@ function CommentsSection({ postId }: { postId: string }) {
             <DialogDescription>댓글에 첨부된 이미지</DialogDescription>
           </DialogHeader>
           {lightboxUrl && (
-            <img
-              src={lightboxUrl}
-              alt="첨부 이미지"
-              className="mx-auto max-h-[85vh] w-auto max-w-full rounded-xl object-contain"
-            />
+            <LightboxImage url={lightboxUrl} />
           )}
         </DialogContent>
       </Dialog>
     </section>
+  );
+}
+
+function LightboxImage({ url }: { url: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
+
+  const toggleFullscreen = async () => {
+    const el = containerRef.current;
+    if (!el) return;
+    try {
+      if (!document.fullscreenElement) {
+        await el.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative mx-auto w-fit rounded-xl bg-black/80"
+    >
+      <img
+        src={url}
+        alt="첨부 이미지"
+        className="mx-auto max-h-[85vh] w-auto max-w-full rounded-xl object-contain"
+      />
+      <button
+        type="button"
+        onClick={toggleFullscreen}
+        className="absolute right-3 top-3 rounded-lg bg-black/50 p-2 text-white backdrop-blur-sm transition hover:bg-black/70"
+        title={isFullscreen ? "전체화면 종료" : "전체화면"}
+      >
+        {isFullscreen ? (
+          <Minimize className="h-5 w-5" />
+        ) : (
+          <Maximize className="h-5 w-5" />
+        )}
+      </button>
+    </div>
   );
 }
 
