@@ -302,6 +302,36 @@ export const deleteCategory = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Admin-only: opens evaluation for a board and shuffles the order by setting a
+// new random eval_seed. Pressing it again re-shuffles everyone's order.
+export const shuffleEvaluation = createServerFn({ method: "POST" })
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const seed = Math.floor(Math.random() * 0x7fffffff);
+    const { error } = await db
+      .from("categories")
+      .update({ eval_open: true, eval_seed: seed })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true, seed };
+  });
+
+// Admin-only: closes evaluation for a board (locks submission again).
+export const closeEvaluation = createServerFn({ method: "POST" })
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { error } = await db
+      .from("categories")
+      .update({ eval_open: false })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
+
 export const verifyBoardPassword = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
