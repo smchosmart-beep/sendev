@@ -863,6 +863,27 @@ export const getMyReview = createServerFn({ method: "GET" })
     },
   );
 
+export const listMyReviewedPostIds = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z
+      .object({ reviewerName: z.string().trim().min(1).max(100) })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<string[]> => {
+    const db = await getAdmin();
+    const { data: rows, error } = await db
+      .from("reviews")
+      .select("post_id")
+      .eq("reviewer_name", data.reviewerName);
+    if (error) throw new Error(error.message);
+    // 정렬해 반환 → 쿼리 데이터 안정화(불필요한 리렌더/리페치 방지)
+    const ids: string[] = Array.from(
+      new Set((rows ?? []).map((r: any) => String(r.post_id))),
+    );
+    ids.sort();
+    return ids;
+  });
+
 /* ------------------------------ Comments ------------------------------ */
 
 export interface CommentDTO {

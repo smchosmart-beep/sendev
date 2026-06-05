@@ -1,14 +1,16 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
-import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers, CheckCircle2 } from "lucide-react";
 
 import {
   postsQueryOptions,
   categoriesQueryOptions,
   ogImageBackfillQueryOptions,
+  myReviewedPostIdsQueryOptions,
 } from "@/lib/platform.queries";
 import { type PostDTO } from "@/lib/platform.functions";
-import { groupLinksBySeries } from "@/lib/series";
+import { groupLinksBySeries, seededShuffle, getOrderSeed } from "@/lib/series";
 import { getEmbedUrl, getThumbnailUrl } from "@/lib/embed";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -57,6 +59,26 @@ function BoardInner({
   const projects = posts.filter((p) => p.type === "project");
   const links = posts.filter((p) => p.type === "link");
   const linkItems = groupLinksBySeries(links);
+
+  // 공정 평가를 위한 기기별 고정 랜덤 순서.
+  // SSR/최초 렌더는 원본 순서(하이드레이션 안전), 마운트 후 셔플 적용.
+  const [seed, setSeed] = useState<number | null>(null);
+  const [reviewerName, setReviewerName] = useState("");
+  useEffect(() => {
+    setSeed(getOrderSeed());
+    const saved = window.localStorage.getItem(`sendev:nickname:${slug}`);
+    if (saved && saved.trim()) setReviewerName(saved.trim());
+  }, [slug]);
+
+  const orderedProjects = useMemo(
+    () => (seed === null ? projects : seededShuffle(projects, seed)),
+    [projects, seed],
+  );
+
+  const { data: reviewedIds = [] } = useQuery(
+    myReviewedPostIdsQueryOptions(reviewerName),
+  );
+  const reviewedSet = useMemo(() => new Set(reviewedIds), [reviewedIds]);
 
   return (
     <div className="space-y-6">
@@ -186,8 +208,13 @@ function BoardInner({
             />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {projects.map((p) => (
-                <ProjectCard key={p.id} post={p} slug={slug} />
+              {orderedProjects.map((p) => (
+                <ProjectCard
+                  key={p.id}
+                  post={p}
+                  slug={slug}
+                  reviewed={reviewedSet.has(p.id)}
+                />
               ))}
             </div>
           )}
@@ -336,7 +363,15 @@ function LinkCard({ post, slug }: { post: PostDTO; slug: string }) {
   );
 }
 
-function ProjectCard({ post, slug }: { post: PostDTO; slug: string }) {
+function ProjectCard({
+  post,
+  slug,
+  reviewed = false,
+}: {
+  post: PostDTO;
+  slug: string;
+  reviewed?: boolean;
+}) {
   // Prefer the cached OG image stored on the post. Only existing posts without a
   // cached value (and with a deploy URL) trigger a one-time backfill request,
   // which stores the result so future loads never hit the external site again.
@@ -368,6 +403,12 @@ function ProjectCard({ post, slug }: { post: PostDTO; slug: string }) {
           categoryId={post.categoryId}
           recommendedSize="1280×640px (가로형)"
         />
+        {reviewed && (
+          <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground shadow-sm">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            평가 완료
+          </span>
+        )}
       </div>
 
       <div className="p-5">

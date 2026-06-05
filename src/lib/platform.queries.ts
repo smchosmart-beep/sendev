@@ -9,6 +9,7 @@ import {
   listCriteria,
   listReviews,
   getMyReview,
+  listMyReviewedPostIds,
   listComments,
   fetchReadme,
   fetchOgImage,
@@ -73,6 +74,14 @@ export const myReviewQueryOptions = (postId: string, reviewerName: string) =>
     enabled: reviewerName.trim().length > 0,
   });
 
+
+export const myReviewedPostIdsQueryOptions = (reviewerName: string) =>
+  queryOptions({
+    queryKey: ["my-reviewed", reviewerName.trim()],
+    queryFn: () =>
+      listMyReviewedPostIds({ data: { reviewerName: reviewerName.trim() } }),
+    enabled: reviewerName.trim().length > 0,
+  });
 
 export const commentsQueryOptions = (postId: string) =>
   queryOptions({
