@@ -692,7 +692,9 @@ function EvaluationSection({
       toast.success(
         res?.updated ? "평가가 갱신되었어요!" : "평가를 제출했어요!",
       );
-      setScores({});
+      // 방금 매긴 별점을 유지해 "반영 안 됨"으로 보이지 않게 한다.
+      // 이후 my-review 재조회로 저장된 점수가 다시 채워진다.
+      touchedRef.current = false;
     },
     onError: () => toast.error("제출 중 문제가 발생했어요."),
   });
