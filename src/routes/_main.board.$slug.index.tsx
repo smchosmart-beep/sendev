@@ -208,8 +208,13 @@ function BoardInner({
             />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {projects.map((p) => (
-                <ProjectCard key={p.id} post={p} slug={slug} />
+              {orderedProjects.map((p) => (
+                <ProjectCard
+                  key={p.id}
+                  post={p}
+                  slug={slug}
+                  reviewed={reviewedSet.has(p.id)}
+                />
               ))}
             </div>
           )}
