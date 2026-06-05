@@ -1273,12 +1273,11 @@ function CommentItem({
       {comment.imageUrls.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">
           {comment.imageUrls.map((url, i) => (
-            <a
+            <button
               key={url}
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block h-24 w-24 overflow-hidden rounded-lg border border-border transition hover:opacity-90"
+              type="button"
+              onClick={() => onImageClick(url)}
+              className="block h-24 w-24 cursor-pointer overflow-hidden rounded-lg border border-border transition hover:opacity-90"
             >
               <img
                 src={url}
@@ -1286,7 +1285,7 @@ function CommentItem({
                 loading="lazy"
                 className="h-full w-full object-cover"
               />
-            </a>
+            </button>
           ))}
         </div>
       )}
