@@ -51,6 +51,7 @@ import {
   type CommentDTO,
 } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
+import { CommentImagePicker } from "@/components/CommentImagePicker";
 import { getEmbedUrl } from "@/lib/embed";
 import { Button } from "@/components/ui/button";
 import {
