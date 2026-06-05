@@ -883,7 +883,7 @@ function EvaluationSection({
                 </Button>
               )}
             </div>
-            {alreadyReviewed && nextProjectNo === null && (
+            {alreadyReviewed && hasMultipleProjects && nextProjectNo === null && (
               <p className="text-xs font-medium text-primary">
                 🎉 이 게시판의 모든 산출물 평가를 마쳤어요.
               </p>
