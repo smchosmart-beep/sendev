@@ -403,6 +403,12 @@ function ProjectCard({
           categoryId={post.categoryId}
           recommendedSize="1280×640px (가로형)"
         />
+        {reviewed && (
+          <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground shadow-sm">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            평가 완료
+          </span>
+        )}
       </div>
 
       <div className="p-5">
