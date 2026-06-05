@@ -1261,6 +1261,7 @@ function CommentForm({
   onSubmit: (vals: {
     author: string;
     content: string;
+    imageUrls: string[];
     editPassword: string;
   }) => void;
   onCancel?: () => void;
@@ -1268,13 +1269,14 @@ function CommentForm({
   const [author, setAuthor] = useState("");
   const [content, setContent] = useState("");
   const [password, setPassword] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (!content.trim()) {
-          toast.error("내용을 입력해주세요.");
+        if (!content.trim() && imageUrls.length === 0) {
+          toast.error("내용 또는 이미지를 입력해주세요.");
           return;
         }
         if (!password.trim()) {
@@ -1284,6 +1286,7 @@ function CommentForm({
         onSubmit({
           author: author.trim(),
           content: content.trim(),
+          imageUrls,
           editPassword: password.trim(),
         });
       }}
@@ -1313,6 +1316,11 @@ function CommentForm({
         rows={2}
         maxLength={5000}
         className="rounded-xl"
+      />
+      <CommentImagePicker
+        value={imageUrls}
+        onChange={setImageUrls}
+        disabled={pending}
       />
       <div className="flex justify-end gap-2">
         {onCancel && (
