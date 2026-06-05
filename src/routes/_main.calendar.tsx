@@ -28,6 +28,13 @@ import {
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_main/calendar")({
+  validateSearch: (search: Record<string, unknown>) => {
+    const date =
+      typeof search.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search.date)
+        ? search.date
+        : undefined;
+    return { date };
+  },
   head: () => ({
     meta: [
       { title: "Dev 캘린더 — 교사 개발자 플랫폼" },
@@ -43,6 +50,7 @@ export const Route = createFileRoute("/_main/calendar")({
   notFoundComponent: () => <div className="p-6 text-sm">페이지를 찾을 수 없어요.</div>,
   component: CalendarPage,
 });
+
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
