@@ -514,6 +514,7 @@ export const createPost = createServerFn({ method: "POST" })
         author: z.string().trim().max(100).default(""),
         githubUrl: z.string().trim().max(300).default(""),
         deployUrl: z.string().trim().max(300).default(""),
+        series: z.string().trim().max(100).default(""),
         editPassword: z.string().trim().min(1).max(100),
       })
       .parse(input),
