@@ -37,6 +37,8 @@ export interface CategoryDTO {
   projectName: string;
   linkName: string;
   tabGroup: TabGroup;
+  evalOpen: boolean;
+  evalSeed: number;
 }
 
 // Board slug: lowercase letters, digits and hyphens. Used in short URLs.
@@ -116,7 +118,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const { data, error } = await db
       .from("categories")
       .select(
-        "id, slug, name, description, sort_order, password, github_required, enable_notice, enable_question, enable_general, enable_project, enable_link, general_name, project_name, link_name, tab_group",
+        "id, slug, name, description, sort_order, password, github_required, enable_notice, enable_question, enable_general, enable_project, enable_link, general_name, project_name, link_name, tab_group, eval_open, eval_seed",
       )
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
@@ -137,6 +139,8 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       projectName: c.project_name ?? "산출물",
       linkName: c.link_name ?? "링크",
       tabGroup: (c.tab_group ?? "hackathon") as TabGroup,
+      evalOpen: !!c.eval_open,
+      evalSeed: Number(c.eval_seed ?? 0),
     }));
   },
 );
