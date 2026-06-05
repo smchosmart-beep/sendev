@@ -1028,6 +1028,7 @@ function CommentsSection({ postId }: { postId: string }) {
               <CommentItem
                 comment={c}
                 onReply={() => setReplyTo(replyTo === c.id ? null : c.id)}
+                onImageClick={setLightboxUrl}
                 onDelete={() => {
                   setDeleteTarget(c.id);
                   setDeletePw("");
