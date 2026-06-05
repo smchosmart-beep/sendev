@@ -964,7 +964,7 @@ function StarRating({
         aria-valuemax={max}
         aria-valuenow={value}
         tabIndex={0}
-        className="flex min-w-0 flex-1 cursor-pointer touch-none select-none"
+        className="inline-flex w-fit max-w-full cursor-pointer touch-none select-none"
         onPointerDown={(e) => {
           e.preventDefault();
           setDragging(true);
@@ -991,7 +991,7 @@ function StarRating({
         {Array.from({ length: max }).map((_, i) => {
           const fill = Math.min(1, Math.max(0, display - i)); // 0, 0.5, or 1
           return (
-            <span key={i} className="relative block aspect-square w-full max-w-8 flex-1">
+            <span key={i} className="relative block aspect-square w-8 shrink-0">
               <Star className="absolute inset-0 h-full w-full text-muted-foreground/40" />
               <span
                 className="absolute inset-0 overflow-hidden"
