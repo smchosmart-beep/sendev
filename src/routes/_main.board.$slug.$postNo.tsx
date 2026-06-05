@@ -1243,12 +1243,20 @@ function LightboxImage({ url }: { url: string }) {
   return (
     <div
       ref={containerRef}
-      className="relative mx-auto w-fit rounded-xl bg-black/80"
+      className={
+        isFullscreen
+          ? "relative flex h-screen w-screen items-center justify-center bg-black"
+          : "relative mx-auto w-fit rounded-xl bg-black/80"
+      }
     >
       <img
         src={url}
         alt="첨부 이미지"
-        className="mx-auto max-h-[85vh] w-auto max-w-full rounded-xl object-contain"
+        className={
+          isFullscreen
+            ? "h-full w-full object-contain"
+            : "mx-auto max-h-[85vh] w-auto max-w-full rounded-xl object-contain"
+        }
       />
       <button
         type="button"
