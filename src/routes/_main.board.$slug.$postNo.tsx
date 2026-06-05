@@ -28,6 +28,8 @@ import {
   Trash2,
   MessageCircle,
   CornerDownRight,
+  Maximize,
+  Minimize,
 } from "lucide-react";
 import { toast } from "sonner";
 
