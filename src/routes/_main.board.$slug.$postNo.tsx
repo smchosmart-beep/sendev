@@ -903,6 +903,7 @@ function EvaluationSection({
               </p>
             )}
           </form>
+          )}
         </div>
       )}
     </section>
