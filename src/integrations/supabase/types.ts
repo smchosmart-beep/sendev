@@ -23,6 +23,8 @@ export type Database = {
           enable_notice: boolean
           enable_project: boolean
           enable_question: boolean
+          eval_open: boolean
+          eval_seed: number
           general_name: string
           github_required: boolean
           id: string
@@ -42,6 +44,8 @@ export type Database = {
           enable_notice?: boolean
           enable_project?: boolean
           enable_question?: boolean
+          eval_open?: boolean
+          eval_seed?: number
           general_name?: string
           github_required?: boolean
           id?: string
@@ -61,6 +65,8 @@ export type Database = {
           enable_notice?: boolean
           enable_project?: boolean
           enable_question?: boolean
+          eval_open?: boolean
+          eval_seed?: number
           general_name?: string
           github_required?: boolean
           id?: string

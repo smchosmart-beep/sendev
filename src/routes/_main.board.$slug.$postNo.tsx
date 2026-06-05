@@ -46,7 +46,7 @@ import {
   postsQueryOptions,
   commentsQueryOptions,
 } from "@/lib/platform.queries";
-import { seededShuffle, getOrderSeed } from "@/lib/series";
+import { stableEvalOrder, getOrderSeed } from "@/lib/series";
 import {
   createReview,
   updatePost,
@@ -717,6 +717,10 @@ function EvaluationSection({
 
   // 연속 평가용: 기기별 고정 랜덤 순서로 다음 평가할 산출물을 계산한다.
   const { data: allPosts = [] } = useQuery(postsQueryOptions(categoryId));
+  const { data: categories = [] } = useQuery(categoriesQueryOptions());
+  const category = categories.find((c) => c.id === categoryId);
+  const evalOpen = category?.evalOpen ?? false;
+  const evalSeed = category?.evalSeed ?? 0;
   const [orderSeed, setOrderSeed] = useState<number | null>(null);
   useEffect(() => {
     setOrderSeed(getOrderSeed());
@@ -731,7 +735,7 @@ function EvaluationSection({
     if (orderSeed === null) return null;
     const projects = allPosts.filter((p) => p.type === "project");
     if (projects.length <= 1) return null;
-    const ordered = seededShuffle(projects, orderSeed);
+    const ordered = stableEvalOrder(projects, orderSeed, evalSeed);
     const currentIdx = ordered.findIndex((p) => p.id === postId);
     if (currentIdx === -1) return null;
     // 방금 제출한 현재 글 포함, 이미 평가한 산출물 집합
@@ -781,7 +785,17 @@ function EvaluationSection({
             </div>
           )}
 
-          {/* 제출 폼 */}
+          {/* 제출 폼 (관리자가 평가를 개시한 경우에만) */}
+          {!evalOpen ? (
+            <div className="rounded-xl border border-dashed border-border bg-muted/40 px-4 py-6 text-center">
+              <p className="text-sm font-medium text-foreground">
+                🔒 아직 평가가 시작되지 않았어요.
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                관리자가 평가를 개시하면 별점을 매길 수 있어요.
+              </p>
+            </div>
+          ) : (
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -889,6 +903,7 @@ function EvaluationSection({
               </p>
             )}
           </form>
+          )}
         </div>
       )}
     </section>

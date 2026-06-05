@@ -80,6 +80,37 @@ export function seededShuffle<T>(items: T[], seed: number): T[] {
   return arr;
 }
 
+// Stable string hash (FNV-1a like). Same string → same number.
+function hashString(s: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+// Orders items by a stable per-item key derived from two seeds + the item id.
+// Adding a new item does NOT reshuffle existing items' relative order — each
+// item keeps its own key. Changing `evalSeed` (admin shuffle) re-randomizes
+// everyone's order at once. `deviceSeed` keeps each device's order distinct.
+export function stableEvalOrder<T extends { id: string }>(
+  items: T[],
+  deviceSeed: number,
+  evalSeed: number,
+): T[] {
+  const base = (deviceSeed >>> 0) ^ (evalSeed >>> 0);
+  return [...items]
+    .map((item) => ({
+      item,
+      key: hashString(`${base}:${item.id}`),
+    }))
+    .sort((a, b) =>
+      a.key !== b.key ? a.key - b.key : a.item.id.localeCompare(b.item.id),
+    )
+    .map((x) => x.item);
+}
+
 const ORDER_SEED_KEY = "sendev:order-seed";
 
 // Reads a persistent per-device seed from localStorage, creating one on first
