@@ -182,6 +182,7 @@ export type Database = {
           id: string
           og_image_url: string
           post_no: number | null
+          series: string
           title: string
           type: string
         }
@@ -196,6 +197,7 @@ export type Database = {
           id?: string
           og_image_url?: string
           post_no?: number | null
+          series?: string
           title: string
           type: string
         }
@@ -210,6 +212,7 @@ export type Database = {
           id?: string
           og_image_url?: string
           post_no?: number | null
+          series?: string
           title?: string
           type?: string
         }
