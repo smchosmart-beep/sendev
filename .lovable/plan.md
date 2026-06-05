@@ -1,19 +1,22 @@
-# 평가 진행 관리 카드 모바일 레이아웃 정리
+## 문제
 
-`src/routes/admin.criteria.tsx`의 `BoardEvalCard` 카드만 수정합니다. 데스크톱 레이아웃은 그대로 두고, 모바일(작은 화면)에서만 깔끔하게 세로로 정렬되도록 반응형 클래스를 조정합니다.
+홈("다가오는 이벤트")의 일정 카드를 누르면 `/calendar`로 이동하지만 날짜 정보를 넘기지 않아서, 캘린더가 항상 오늘 날짜 기준으로 열립니다. (캘린더는 `viewYear/viewMonth`를 오늘로 초기화하고, `selectedDay`가 비어 있으면 오늘을 활성 셀로 사용)
 
-## 변경 내용
+## 해결 방향
 
-1. **콘텐츠/버튼 컨테이너**: 현재 `flex flex-wrap items-center gap-3` 를 모바일에서 세로 스택, `sm` 이상에서 가로 정렬로 변경
-   - 예: `flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center`
+홈 카드에서 이벤트 날짜를 URL search param으로 넘기고, 캘린더가 이를 읽어 해당 월로 이동 + 해당 날짜 셀을 선택하도록 합니다.
 
-2. **버튼 영역**: 모바일에서 버튼이 카드 폭에 맞게 꽉 차도록(`w-full`), `sm` 이상에서는 기존처럼 자동 폭으로 유지
-   - 버튼 컨테이너: `flex flex-col gap-2 sm:flex-row sm:items-center`
-   - 버튼들: 모바일 `w-full`, `sm:w-auto`
+### 1. 홈 (`src/routes/_main.home.tsx`)
+- 이벤트 카드의 `<Link to="/calendar">`에 `search={{ date: e.date }}`를 추가해 클릭한 일정의 날짜(`YYYY-MM-DD`)를 전달.
 
-3. **상태 배지 줄**: 모바일에서 배지와 "산출물 N개" 텍스트가 줄바꿈되어도 자연스럽도록 `flex-wrap` 유지.
+### 2. 캘린더 (`src/routes/_main.calendar.tsx`)
+- `validateSearch`로 옵셔널 `date` 문자열(`YYYY-MM-DD` 형식 검증) 파라미터를 추가.
+- `Route.useSearch()`로 `date`를 읽어:
+  - 존재하면 `viewYear`/`viewMonth`를 그 날짜의 연/월로 초기화.
+  - `selectedDay`를 그 날짜로 초기화 → 데스크톱/모바일 모두 해당 셀이 활성(선택)으로 표시됨.
+- `useState` 초기값을 search param 기준으로 설정(없으면 기존처럼 오늘 기준).
 
-## 동작
-- 모바일: 제목 → 상태 배지/개수 → 안내문 → 버튼(전체 폭)이 세로로 깔끔하게 쌓임.
-- 데스크톱: 기존 좌(텍스트)·우(버튼) 가로 배치 유지.
-- 로직, 서버 함수, 라우트 변경 없음 — 순수 UI 클래스 조정.
+### 기술 메모
+- 날짜 비교는 기존 ISO 문자열(`YYYY-MM-DD`) 방식 그대로 사용 → 타임존 이슈 없음.
+- search param이 없을 때의 동작(오늘 기준)은 그대로 유지.
+- 활성 셀 강조는 이미 구현된 `activeDay`(`selectedDay` 우선) 로직을 그대로 활용하므로 추가 UI 변경은 불필요.

@@ -28,6 +28,13 @@ import {
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_main/calendar")({
+  validateSearch: (search: Record<string, unknown>) => {
+    const date =
+      typeof search.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search.date)
+        ? search.date
+        : undefined;
+    return { date };
+  },
   head: () => ({
     meta: [
       { title: "Dev 캘린더 — 교사 개발자 플랫폼" },
@@ -44,6 +51,7 @@ export const Route = createFileRoute("/_main/calendar")({
   component: CalendarPage,
 });
 
+
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 function toIso(year: number, month: number, day: number) {
@@ -52,13 +60,21 @@ function toIso(year: number, month: number, day: number) {
 
 function CalendarPage() {
   const { data: events } = useSuspenseQuery(eventsQueryOptions());
+  const { date: dateParam } = Route.useSearch();
 
   const today = new Date();
-  const [viewYear, setViewYear] = useState(today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const initial = dateParam
+    ? (() => {
+        const [y, m] = dateParam.split("-").map(Number);
+        return { year: y, month: m - 1 };
+      })()
+    : { year: today.getFullYear(), month: today.getMonth() };
+  const [viewYear, setViewYear] = useState(initial.year);
+  const [viewMonth, setViewMonth] = useState(initial.month);
   const [selected, setSelected] = useState<EventDTO | null>(null);
   const [mobileView, setMobileView] = useState<"calendar" | "list">("calendar");
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [selectedDay, setSelectedDay] = useState<string | null>(dateParam ?? null);
+
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, EventDTO[]>();
