@@ -5,12 +5,12 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { useSuspenseQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useSuspenseQuery, useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { categoriesQueryOptions } from "@/lib/platform.queries";
+import { categoriesQueryOptions, postsQueryOptions } from "@/lib/platform.queries";
 import { createPost } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,21 @@ function NewLinkPage() {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
+  const [series, setSeries] = useState("");
   const [editPassword, setEditPassword] = useState("");
+
+  // Suggest existing series names in this board for consistent grouping.
+  const { data: posts } = useQuery({
+    ...postsQueryOptions(category?.id ?? ""),
+    enabled: !!category,
+  });
+  const seriesOptions = Array.from(
+    new Set(
+      (posts ?? [])
+        .filter((p) => p.type === "link" && p.series.trim())
+        .map((p) => p.series.trim()),
+    ),
+  );
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -51,6 +65,7 @@ function NewLinkPage() {
           title,
           author,
           deployUrl: linkUrl,
+          series: series.trim(),
           editPassword,
         },
       }),
@@ -137,6 +152,25 @@ function NewLinkPage() {
             />
             <p className="text-xs text-muted-foreground">
               유튜브, 캔바 등 링크 주소의 미리보기 이미지가 카드에 표시돼요.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="l-series">시리즈 (선택)</Label>
+            <Input
+              id="l-series"
+              value={series}
+              onChange={(e) => setSeries(e.target.value)}
+              list="series-options"
+              placeholder="예: 양실장의 바이브코딩 대학"
+              className="rounded-xl"
+            />
+            <datalist id="series-options">
+              {seriesOptions.map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
+            <p className="text-xs text-muted-foreground">
+              같은 시리즈명을 입력하면 게시판에서 하나의 카드로 묶여 표시돼요. 비워두면 단독 영상으로 등록돼요.
             </p>
           </div>
           <div className="space-y-2">

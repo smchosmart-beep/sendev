@@ -86,6 +86,7 @@ export interface PostDTO {
   githubUrl: string;
   deployUrl: string;
   ogImageUrl: string;
+  series: string;
   createdAt: string;
 }
 
@@ -448,7 +449,7 @@ export const deleteEvent = createServerFn({ method: "POST" })
 /* -------------------------------- Posts ------------------------------- */
 
 const POST_COLUMNS =
-  "id, category_id, post_no, type, title, content, author, github_url, deploy_url, og_image_url, created_at";
+  "id, category_id, post_no, type, title, content, author, github_url, deploy_url, og_image_url, series, created_at";
 
 export const listPosts = createServerFn({ method: "GET" })
   .inputValidator((input) =>
@@ -513,6 +514,7 @@ export const createPost = createServerFn({ method: "POST" })
         author: z.string().trim().max(100).default(""),
         githubUrl: z.string().trim().max(300).default(""),
         deployUrl: z.string().trim().max(300).default(""),
+        series: z.string().trim().max(100).default(""),
         editPassword: z.string().trim().min(1).max(100),
       })
       .parse(input),
@@ -557,6 +559,7 @@ export const createPost = createServerFn({ method: "POST" })
         github_url: data.githubUrl,
         deploy_url: data.deployUrl,
         og_image_url: ogImageUrl,
+        series: data.series,
         edit_password: data.editPassword,
       });
       if (!error) return { ok: true, postNo: nextNo };
@@ -611,6 +614,7 @@ export const updatePost = createServerFn({ method: "POST" })
         author: z.string().trim().max(100).optional(),
         githubUrl: z.string().trim().max(300).default(""),
         deployUrl: z.string().trim().max(300).default(""),
+        series: z.string().trim().max(100).optional(),
       })
       .parse(input),
   )
@@ -638,6 +642,7 @@ export const updatePost = createServerFn({ method: "POST" })
       deploy_url: data.deployUrl,
       og_image_url: ogImageUrl,
     };
+    if (data.series !== undefined) patch.series = data.series;
     if (data.content !== undefined) patch.content = data.content;
     // Notices stay authored by the operations team; others can update author.
     if (existing?.type === "notice") {
@@ -678,6 +683,7 @@ function mapPost(p: any): PostDTO {
     githubUrl: p.github_url,
     deployUrl: p.deploy_url ?? "",
     ogImageUrl: p.og_image_url ?? "",
+    series: p.series ?? "",
     createdAt: p.created_at,
   };
 }

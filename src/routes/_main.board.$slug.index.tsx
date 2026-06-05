@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
-import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play } from "lucide-react";
+import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers } from "lucide-react";
 
 import {
   postsQueryOptions,
@@ -8,6 +8,7 @@ import {
   ogImageBackfillQueryOptions,
 } from "@/lib/platform.queries";
 import { type PostDTO } from "@/lib/platform.functions";
+import { groupLinksBySeries } from "@/lib/series";
 import { getEmbedUrl, getThumbnailUrl } from "@/lib/embed";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,7 @@ function BoardInner({
   const generals = posts.filter((p) => p.type === "general");
   const projects = posts.filter((p) => p.type === "project");
   const links = posts.filter((p) => p.type === "link");
+  const linkItems = groupLinksBySeries(links);
 
   return (
     <div className="space-y-6">
@@ -215,9 +217,18 @@ function BoardInner({
             />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {links.map((p) => (
-                <LinkCard key={p.id} post={p} slug={slug} />
-              ))}
+              {linkItems.map((item) =>
+                item.kind === "series" ? (
+                  <SeriesCard
+                    key={`series-${item.name}`}
+                    name={item.name}
+                    posts={item.posts}
+                    slug={slug}
+                  />
+                ) : (
+                  <LinkCard key={item.post.id} post={item.post} slug={slug} />
+                ),
+              )}
             </div>
           )}
         </section>
@@ -225,6 +236,54 @@ function BoardInner({
     </div>
   );
 }
+
+function SeriesCard({
+  name,
+  posts,
+  slug,
+}: {
+  name: string;
+  posts: PostDTO[];
+  slug: string;
+}) {
+  // Use the first episode's cached thumbnail as the series cover.
+  const cover = posts.find((p) => p.ogImageUrl)?.ogImageUrl ?? null;
+  const fallbackThumb = getThumbnailUrl(posts[0]?.deployUrl);
+  const ogImage = cover || fallbackThumb || null;
+
+  return (
+    <Link
+      to="/board/$slug/series/$series"
+      params={{ slug, series: name }}
+      className="group block overflow-hidden rounded-2xl bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md active:scale-95"
+    >
+      <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-accent text-primary">
+        {ogImage ? (
+          <img
+            src={ogImage}
+            alt={`${name} 시리즈 미리보기`}
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <Layers className="h-10 w-10" />
+        )}
+        <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-foreground/75 px-2.5 py-1 text-xs font-medium text-background">
+          <Layers className="h-3.5 w-3.5" />
+          시리즈
+        </span>
+      </div>
+      <div className="p-5">
+        <h3 className="font-semibold text-foreground">{name}</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          영상 {posts.length}개
+        </p>
+      </div>
+    </Link>
+  );
+}
+
+
 
 function LinkCard({ post, slug }: { post: PostDTO; slug: string }) {
   const needsBackfill = !post.ogImageUrl && !!post.deployUrl;
