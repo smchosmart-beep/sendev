@@ -449,7 +449,7 @@ export const deleteEvent = createServerFn({ method: "POST" })
 /* -------------------------------- Posts ------------------------------- */
 
 const POST_COLUMNS =
-  "id, category_id, post_no, type, title, content, author, github_url, deploy_url, og_image_url, created_at";
+  "id, category_id, post_no, type, title, content, author, github_url, deploy_url, og_image_url, series, created_at";
 
 export const listPosts = createServerFn({ method: "GET" })
   .inputValidator((input) =>
