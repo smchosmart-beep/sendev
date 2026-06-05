@@ -155,6 +155,25 @@ function NewLinkPage() {
             </p>
           </div>
           <div className="space-y-2">
+            <Label htmlFor="l-series">시리즈 (선택)</Label>
+            <Input
+              id="l-series"
+              value={series}
+              onChange={(e) => setSeries(e.target.value)}
+              list="series-options"
+              placeholder="예: 양실장의 바이브코딩 대학"
+              className="rounded-xl"
+            />
+            <datalist id="series-options">
+              {seriesOptions.map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
+            <p className="text-xs text-muted-foreground">
+              같은 시리즈명을 입력하면 게시판에서 하나의 카드로 묶여 표시돼요. 비워두면 단독 영상으로 등록돼요.
+            </p>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="l-pw">수정·삭제 비밀번호</Label>
             <Input
               id="l-pw"
