@@ -81,6 +81,7 @@ export type Database = {
           created_at: string
           edit_password: string
           id: string
+          image_urls: Json
           parent_id: string | null
           post_id: string
         }
@@ -90,6 +91,7 @@ export type Database = {
           created_at?: string
           edit_password?: string
           id?: string
+          image_urls?: Json
           parent_id?: string | null
           post_id: string
         }
@@ -99,6 +101,7 @@ export type Database = {
           created_at?: string
           edit_password?: string
           id?: string
+          image_urls?: Json
           parent_id?: string | null
           post_id?: string
         }

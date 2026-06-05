@@ -51,6 +51,7 @@ import {
   type CommentDTO,
 } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
+import { CommentImagePicker } from "@/components/CommentImagePicker";
 import { getEmbedUrl } from "@/lib/embed";
 import { Button } from "@/components/ui/button";
 import {
@@ -935,6 +936,7 @@ function CommentsSection({ postId }: { postId: string }) {
   const [author, setAuthor] = useState("");
   const [content, setContent] = useState("");
   const [password, setPassword] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   // Reply form is open for at most one comment at a time.
   const [replyTo, setReplyTo] = useState<string | null>(null);
@@ -948,6 +950,7 @@ function CommentsSection({ postId }: { postId: string }) {
       parentId: string | null;
       author: string;
       content: string;
+      imageUrls: string[];
       editPassword: string;
     }) => create({ data: { postId, ...vars } }),
     onSuccess: (_res, vars) => {
@@ -959,6 +962,7 @@ function CommentsSection({ postId }: { postId: string }) {
         setAuthor("");
         setContent("");
         setPassword("");
+        setImageUrls([]);
       }
     },
     onError: () => toast.error("등록 중 문제가 발생했어요."),
@@ -1050,8 +1054,8 @@ function CommentsSection({ postId }: { postId: string }) {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (!content.trim()) {
-            toast.error("댓글 내용을 입력해주세요.");
+          if (!content.trim() && imageUrls.length === 0) {
+            toast.error("댓글 내용 또는 이미지를 입력해주세요.");
             return;
           }
           if (!password.trim()) {
@@ -1062,6 +1066,7 @@ function CommentsSection({ postId }: { postId: string }) {
             parentId: null,
             author: author.trim(),
             content: content.trim(),
+            imageUrls,
             editPassword: password.trim(),
           });
         }}
@@ -1091,6 +1096,11 @@ function CommentsSection({ postId }: { postId: string }) {
           rows={3}
           maxLength={5000}
           className="rounded-xl"
+        />
+        <CommentImagePicker
+          value={imageUrls}
+          onChange={setImageUrls}
+          disabled={createMutation.isPending}
         />
         <div className="flex justify-end">
           <Button
@@ -1211,9 +1221,31 @@ function CommentItem({
           </Button>
         </div>
       </div>
-      <p className="mt-2 whitespace-pre-wrap break-words text-sm text-foreground">
-        {comment.content}
-      </p>
+      {comment.content && (
+        <p className="mt-2 whitespace-pre-wrap break-words text-sm text-foreground">
+          {comment.content}
+        </p>
+      )}
+      {comment.imageUrls.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {comment.imageUrls.map((url, i) => (
+            <a
+              key={url}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block h-24 w-24 overflow-hidden rounded-lg border border-border transition hover:opacity-90"
+            >
+              <img
+                src={url}
+                alt={`첨부 이미지 ${i + 1}`}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -1229,6 +1261,7 @@ function CommentForm({
   onSubmit: (vals: {
     author: string;
     content: string;
+    imageUrls: string[];
     editPassword: string;
   }) => void;
   onCancel?: () => void;
@@ -1236,13 +1269,14 @@ function CommentForm({
   const [author, setAuthor] = useState("");
   const [content, setContent] = useState("");
   const [password, setPassword] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (!content.trim()) {
-          toast.error("내용을 입력해주세요.");
+        if (!content.trim() && imageUrls.length === 0) {
+          toast.error("내용 또는 이미지를 입력해주세요.");
           return;
         }
         if (!password.trim()) {
@@ -1252,6 +1286,7 @@ function CommentForm({
         onSubmit({
           author: author.trim(),
           content: content.trim(),
+          imageUrls,
           editPassword: password.trim(),
         });
       }}
@@ -1281,6 +1316,11 @@ function CommentForm({
         rows={2}
         maxLength={5000}
         className="rounded-xl"
+      />
+      <CommentImagePicker
+        value={imageUrls}
+        onChange={setImageUrls}
+        disabled={pending}
       />
       <div className="flex justify-end gap-2">
         {onCancel && (
