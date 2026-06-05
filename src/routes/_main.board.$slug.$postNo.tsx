@@ -715,6 +715,35 @@ function EvaluationSection({
     return { criterion: c, avg, count: vals.length };
   });
 
+  // 연속 평가용: 기기별 고정 랜덤 순서로 다음 평가할 산출물을 계산한다.
+  const { data: allPosts = [] } = useQuery(postsQueryOptions(categoryId));
+  const [orderSeed, setOrderSeed] = useState<number | null>(null);
+  useEffect(() => {
+    setOrderSeed(getOrderSeed());
+  }, []);
+  const reviewerForList = lockedName ?? debouncedName;
+  const { data: reviewedIds = [] } = useQuery(
+    myReviewedPostIdsQueryOptions(reviewerForList),
+  );
+  const nextProjectNo = (() => {
+    if (orderSeed === null) return null;
+    const projects = allPosts.filter((p) => p.type === "project");
+    if (projects.length <= 1) return null;
+    const ordered = seededShuffle(projects, orderSeed);
+    const currentIdx = ordered.findIndex((p) => p.id === postId);
+    if (currentIdx === -1) return null;
+    // 방금 제출한 현재 글 포함, 이미 평가한 산출물 집합
+    const reviewedSet = new Set<string>([...reviewedIds, postId]);
+    for (let step = 1; step <= ordered.length; step++) {
+      const cand = ordered[(currentIdx + step) % ordered.length];
+      if (cand.id === postId) continue;
+      if (!reviewedSet.has(cand.id)) return cand.postNo;
+    }
+    return null;
+  })();
+
+
+
   return (
     <section className="rounded-2xl bg-card p-6 shadow-sm">
       <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
