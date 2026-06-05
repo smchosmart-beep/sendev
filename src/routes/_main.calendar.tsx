@@ -60,13 +60,21 @@ function toIso(year: number, month: number, day: number) {
 
 function CalendarPage() {
   const { data: events } = useSuspenseQuery(eventsQueryOptions());
+  const { date: dateParam } = Route.useSearch();
 
   const today = new Date();
-  const [viewYear, setViewYear] = useState(today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const initial = dateParam
+    ? (() => {
+        const [y, m] = dateParam.split("-").map(Number);
+        return { year: y, month: m - 1 };
+      })()
+    : { year: today.getFullYear(), month: today.getMonth() };
+  const [viewYear, setViewYear] = useState(initial.year);
+  const [viewMonth, setViewMonth] = useState(initial.month);
   const [selected, setSelected] = useState<EventDTO | null>(null);
   const [mobileView, setMobileView] = useState<"calendar" | "list">("calendar");
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [selectedDay, setSelectedDay] = useState<string | null>(dateParam ?? null);
+
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, EventDTO[]>();
