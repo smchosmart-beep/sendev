@@ -88,6 +88,7 @@ export interface PostDTO {
   ogImageUrl: string;
   series: string;
   createdAt: string;
+  commentCount: number;
 }
 
 export interface CriterionDTO {
@@ -463,7 +464,25 @@ export const listPosts = createServerFn({ method: "GET" })
       .eq("category_id", data.categoryId)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (rows ?? []).map(mapPost);
+
+    const posts = rows ?? [];
+    const postIds = posts.map((p: any) => p.id);
+
+    // 게시물별 댓글 수(답글 포함)를 한 번의 조회로 집계한다.
+    const counts: Record<string, number> = {};
+    if (postIds.length > 0) {
+      const { data: commentRows, error: cErr } = await db
+        .from("comments")
+        .select("post_id")
+        .in("post_id", postIds);
+      if (cErr) throw new Error(cErr.message);
+      for (const c of commentRows ?? []) {
+        const pid = String((c as any).post_id);
+        counts[pid] = (counts[pid] ?? 0) + 1;
+      }
+    }
+
+    return posts.map((p: any) => mapPost(p, counts[String(p.id)] ?? 0));
   });
 
 export const getPost = createServerFn({ method: "GET" })
@@ -671,7 +690,7 @@ export const deletePost = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-function mapPost(p: any): PostDTO {
+function mapPost(p: any, commentCount = 0): PostDTO {
   return {
     id: p.id,
     categoryId: p.category_id,
@@ -685,6 +704,7 @@ function mapPost(p: any): PostDTO {
     ogImageUrl: p.og_image_url ?? "",
     series: p.series ?? "",
     createdAt: p.created_at,
+    commentCount,
   };
 }
 
