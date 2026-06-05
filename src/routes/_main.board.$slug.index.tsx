@@ -237,6 +237,54 @@ function BoardInner({
   );
 }
 
+function SeriesCard({
+  name,
+  posts,
+  slug,
+}: {
+  name: string;
+  posts: PostDTO[];
+  slug: string;
+}) {
+  // Use the first episode's cached thumbnail as the series cover.
+  const cover = posts.find((p) => p.ogImageUrl)?.ogImageUrl ?? null;
+  const fallbackThumb = getThumbnailUrl(posts[0]?.deployUrl);
+  const ogImage = cover || fallbackThumb || null;
+
+  return (
+    <Link
+      to="/board/$slug/series/$series"
+      params={{ slug, series: name }}
+      className="group block overflow-hidden rounded-2xl bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md active:scale-95"
+    >
+      <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-accent text-primary">
+        {ogImage ? (
+          <img
+            src={ogImage}
+            alt={`${name} 시리즈 미리보기`}
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <Layers className="h-10 w-10" />
+        )}
+        <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-foreground/75 px-2.5 py-1 text-xs font-medium text-background">
+          <Layers className="h-3.5 w-3.5" />
+          시리즈
+        </span>
+      </div>
+      <div className="p-5">
+        <h3 className="font-semibold text-foreground">{name}</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          영상 {posts.length}개
+        </p>
+      </div>
+    </Link>
+  );
+}
+
+
+
 function LinkCard({ post, slug }: { post: PostDTO; slug: string }) {
   const needsBackfill = !post.ogImageUrl && !!post.deployUrl;
   const { data: backfill } = useQuery(
