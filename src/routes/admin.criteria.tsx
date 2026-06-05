@@ -218,7 +218,7 @@ function BoardEvalCard({ board }: { board: CategoryDTO }) {
           {board.evalOpen && (
             <Button
               variant="outline"
-              className="rounded-xl active:scale-95"
+              className="w-full rounded-xl active:scale-95 sm:w-auto"
               disabled={busy}
               onClick={() => closeMutation.mutate()}
             >
