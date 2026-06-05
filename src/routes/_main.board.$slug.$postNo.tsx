@@ -785,7 +785,17 @@ function EvaluationSection({
             </div>
           )}
 
-          {/* 제출 폼 */}
+          {/* 제출 폼 (관리자가 평가를 개시한 경우에만) */}
+          {!evalOpen ? (
+            <div className="rounded-xl border border-dashed border-border bg-muted/40 px-4 py-6 text-center">
+              <p className="text-sm font-medium text-foreground">
+                🔒 아직 평가가 시작되지 않았어요.
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                관리자가 평가를 개시하면 별점을 매길 수 있어요.
+              </p>
+            </div>
+          ) : (
           <form
             onSubmit={(e) => {
               e.preventDefault();
