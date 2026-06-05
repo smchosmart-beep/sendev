@@ -1253,7 +1253,7 @@ function LightboxImage({ url }: { url: string }) {
       <button
         type="button"
         onClick={toggleFullscreen}
-        className="absolute right-3 top-3 rounded-lg bg-black/50 p-2 text-white backdrop-blur-sm transition hover:bg-black/70"
+        className="absolute left-3 top-3 rounded-lg bg-black/50 p-2 text-white backdrop-blur-sm transition hover:bg-black/70"
         title={isFullscreen ? "전체화면 종료" : "전체화면"}
       >
         {isFullscreen ? (
