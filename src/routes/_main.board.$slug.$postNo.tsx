@@ -1221,11 +1221,13 @@ function CommentItem({
   isReply = false,
   onReply,
   onDelete,
+  onImageClick,
 }: {
   comment: CommentDTO;
   isReply?: boolean;
   onReply?: () => void;
   onDelete: () => void;
+  onImageClick: (url: string) => void;
 }) {
   return (
     <div className="rounded-xl bg-muted/50 px-4 py-3">
