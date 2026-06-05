@@ -672,7 +672,7 @@ export const deletePost = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-function mapPost(p: any): PostDTO {
+function mapPost(p: any, commentCount = 0): PostDTO {
   return {
     id: p.id,
     categoryId: p.category_id,
@@ -686,6 +686,7 @@ function mapPost(p: any): PostDTO {
     ogImageUrl: p.og_image_url ?? "",
     series: p.series ?? "",
     createdAt: p.created_at,
+    commentCount,
   };
 }
 
