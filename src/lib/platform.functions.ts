@@ -88,6 +88,7 @@ export interface PostDTO {
   ogImageUrl: string;
   series: string;
   createdAt: string;
+  commentCount: number;
 }
 
 export interface CriterionDTO {
