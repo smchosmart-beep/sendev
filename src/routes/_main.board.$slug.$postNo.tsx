@@ -468,7 +468,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
         type="button"
         variant="secondary"
         size="sm"
-        onClick={openEdit}
+        onClick={openEditGate}
         className="rounded-xl active:scale-95"
       >
         <Pencil className="h-4 w-4" />
