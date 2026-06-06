@@ -757,11 +757,19 @@ export const movePost = createServerFn({ method: "POST" })
       }
       const { data: target, error: catErr } = await db
         .from("categories")
-        .select("slug")
+        .select("slug, enable_general, enable_question")
         .eq("id", data.targetCategoryId)
         .maybeSingle();
       if (catErr) throw new Error(catErr.message);
       if (!target) return { ok: false };
+      // Convert the post type to match the destination board so it shows up
+      // in the right section (general boards -> general, question boards ->
+      // question). Fall back to the existing type otherwise.
+      const newType = target.enable_general
+        ? "general"
+        : target.enable_question
+          ? "question"
+          : post.type;
       // Assign the next per-board number in the target board, retrying on
       // a unique collision (concurrent insert/move).
       for (let attempt = 0; attempt < 3; attempt++) {
@@ -775,7 +783,11 @@ export const movePost = createServerFn({ method: "POST" })
         const nextNo = (maxRow?.post_no ?? 0) + 1;
         const { error } = await db
           .from("posts")
-          .update({ category_id: data.targetCategoryId, post_no: nextNo })
+          .update({
+            category_id: data.targetCategoryId,
+            post_no: nextNo,
+            type: newType,
+          })
           .eq("id", data.id);
         if (!error) return { ok: true, slug: target.slug ?? "", postNo: nextNo };
         if (!String(error.message ?? "").toLowerCase().includes("duplicate")) {
