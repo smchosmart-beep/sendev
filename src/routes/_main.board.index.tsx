@@ -35,14 +35,14 @@ export const Route = createFileRoute("/_main/board/")({
   }),
   head: () => ({
     meta: [
-      { title: "게시판 — 교사 개발자 플랫폼" },
-      { name: "description", content: "관리자가 만든 게시판별로 공지사항과 산출물을 확인하세요." },
+      { title: "카테고리 — 교사 개발자 플랫폼" },
+      { name: "description", content: "관리자가 만든 카테고리별로 공지사항과 산출물을 확인하세요." },
     ],
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(categoriesQueryOptions()),
   errorComponent: ({ error }) => (
     <div role="alert" className="p-6 text-sm text-destructive">
-      게시판을 불러오지 못했어요: {error.message}
+      카테고리을 불러오지 못했어요: {error.message}
     </div>
   ),
   component: BoardListPage,
@@ -64,8 +64,8 @@ function BoardListPage() {
       {visible.length === 0 ? (
         <EmptyState
           icon={LayoutGrid}
-          title="아직 등록된 게시판이 없어요."
-          description="관리자 페이지에서 이 탭에 게시판을 추가해보세요!"
+          title="아직 등록된 카테고리이 없어요."
+          description="관리자 페이지에서 이 탭에 카테고리을 추가해보세요!"
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">

@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_main/board/$slug")({
     context.queryClient.ensureQueryData(categoriesQueryOptions()),
   errorComponent: ({ error }) => (
     <div role="alert" className="p-6 text-sm text-destructive">
-      게시판을 불러오지 못했어요: {error.message}
+      카테고리을 불러오지 못했어요: {error.message}
     </div>
   ),
   component: BoardLayout,
@@ -67,7 +67,7 @@ function BoardLayout() {
         <BackLink />
         <EmptyState
           icon={FolderGit2}
-          title="게시판을 찾을 수 없어요."
+          title="카테고리을 찾을 수 없어요."
           description="삭제되었거나 잘못된 주소일 수 있어요."
         />
       </div>
@@ -133,7 +133,7 @@ function PasswordGate({
         </span>
         <h2 className="text-lg font-semibold text-foreground">비밀번호로 입장</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          이 게시판은 비밀번호가 필요해요.
+          이 카테고리은 비밀번호가 필요해요.
         </p>
       </div>
       <form
@@ -171,7 +171,7 @@ function BackLink({ tab }: { tab?: TabGroup }) {
       className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:-translate-x-0.5 hover:text-foreground"
     >
       <ArrowLeft className="h-4 w-4" />
-      게시판 목록
+      카테고리 목록
     </Link>
   );
 }

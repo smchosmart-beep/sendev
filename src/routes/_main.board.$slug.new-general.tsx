@@ -74,7 +74,7 @@ function NewGeneralPage() {
         <BackLink slug={slug} />
         <EmptyState
           icon={MessageCircle}
-          title="게시판을 찾을 수 없어요."
+          title="카테고리을 찾을 수 없어요."
           description="삭제되었거나 잘못된 주소일 수 있어요."
         />
       </div>
@@ -170,7 +170,7 @@ function BackLink({ slug }: { slug: string }) {
       className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:-translate-x-0.5 hover:text-foreground"
     >
       <ArrowLeft className="h-4 w-4" />
-      게시판으로
+      카테고리으로
     </Link>
   );
 }

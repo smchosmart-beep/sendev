@@ -42,12 +42,12 @@ function NoticesAdmin() {
           공지사항 관리
         </h2>
         <p className="text-sm text-muted-foreground">
-          게시판을 선택해 공지사항을 작성하세요. 작성자는 자동으로 “운영진”으로
+          카테고리을 선택해 공지사항을 작성하세요. 작성자는 자동으로 “운영진”으로
           표시됩니다.
         </p>
 
         <div className="mt-4 space-y-2">
-          <Label htmlFor="n-board">게시판 선택</Label>
+          <Label htmlFor="n-board">카테고리 선택</Label>
           <select
             id="n-board"
             value={selectedId}
@@ -71,8 +71,8 @@ function NoticesAdmin() {
       ) : (
         <EmptyState
           icon={Megaphone}
-          title="게시판이 없어요."
-          description="먼저 ‘게시판 관리’에서 게시판을 만들어 주세요."
+          title="카테고리이 없어요."
+          description="먼저 ‘카테고리 관리’에서 카테고리을 만들어 주세요."
         />
       )}
     </div>

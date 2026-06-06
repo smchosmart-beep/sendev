@@ -16,7 +16,7 @@ export const Route = createFileRoute("/admin")({
       { title: "관리자 대시보드 — 교사 개발자 플랫폼" },
       {
         name: "description",
-        content: "게시판(카테고리) 관리와 공용 비밀번호 설정을 위한 관리자 전용 대시보드.",
+        content: "카테고리(카테고리) 관리와 공용 비밀번호 설정을 위한 관리자 전용 대시보드.",
       },
     ],
   }),
@@ -111,7 +111,7 @@ function AdminGate() {
 }
 
 const tabs = [
-  { to: "/admin/categories", label: "게시판 관리", icon: LayoutGrid },
+  { to: "/admin/categories", label: "카테고리 관리", icon: LayoutGrid },
   { to: "/admin/home", label: "홈 화면 구성", icon: Home },
   { to: "/admin/calendar", label: "캘린더 관리", icon: CalendarDays },
   { to: "/admin/notices", label: "공지사항 관리", icon: Megaphone },

@@ -703,7 +703,7 @@ function EvaluationSection({
   const [scores, setScores] = useState<Record<string, number>>({});
   const [reviewerName, setReviewerName] = useState("");
 
-  // 이 기기가 이 게시판에서 이미 고정한 닉네임 (localStorage 기반)
+  // 이 기기가 이 카테고리에서 이미 고정한 닉네임 (localStorage 기반)
   const storageKey = `sendev:nickname:${slug}`;
   const [lockedName, setLockedName] = useState<string | null>(null);
   useEffect(() => {
@@ -752,7 +752,7 @@ function EvaluationSection({
       queryClient.invalidateQueries({ queryKey: ["reviews", postId] });
       queryClient.invalidateQueries({ queryKey: ["my-review", postId] });
       queryClient.invalidateQueries({ queryKey: ["my-reviewed"] });
-      // 이 기기에 이 게시판의 닉네임을 고정 저장한다.
+      // 이 기기에 이 카테고리의 닉네임을 고정 저장한다.
       const name = reviewerName.trim();
       if (typeof window !== "undefined" && name) {
         window.localStorage.setItem(storageKey, name);
@@ -822,7 +822,7 @@ function EvaluationSection({
 
       {criteria.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          이 게시판은 아직 평가 기준이 설정되지 않았어요.
+          이 카테고리은 아직 평가 기준이 설정되지 않았어요.
         </p>
       ) : (
         <div className="space-y-8">
@@ -889,7 +889,7 @@ function EvaluationSection({
               />
               {lockedName !== null ? (
                 <p className="text-xs font-medium text-primary">
-                  🔒 이 기기는 이 게시판에서 '{lockedName}' 닉네임으로 고정되어
+                  🔒 이 기기는 이 카테고리에서 '{lockedName}' 닉네임으로 고정되어
                   있어요. 점수만 새로 매겨 다시 제출하면 평가가 갱신됩니다.
                 </p>
               ) : (
@@ -908,7 +908,7 @@ function EvaluationSection({
                     )
                   ) : null}
                   <p className="text-xs text-muted-foreground">
-                    닉네임은 중복 평가 방지용이므로 흔하지 않은 것으로 정해주세요. 한 기기에서는 이 게시판의 첫 닉네임으로 고정됩니다.
+                    닉네임은 중복 평가 방지용이므로 흔하지 않은 것으로 정해주세요. 한 기기에서는 이 카테고리의 첫 닉네임으로 고정됩니다.
                   </p>
                 </>
               )}
@@ -962,7 +962,7 @@ function EvaluationSection({
             </div>
             {alreadyReviewed && hasMultipleProjects && nextProjectNo === null && (
               <p className="text-xs font-medium text-primary">
-                🎉 이 게시판의 모든 산출물 평가를 마쳤어요.
+                🎉 이 카테고리의 모든 산출물 평가를 마쳤어요.
               </p>
             )}
           </form>
@@ -1591,7 +1591,7 @@ function BackLink({ slug }: { slug: string }) {
       className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:-translate-x-0.5 hover:text-foreground"
     >
       <ArrowLeft className="h-4 w-4" />
-      게시판으로
+      카테고리으로
     </Link>
   );
 }

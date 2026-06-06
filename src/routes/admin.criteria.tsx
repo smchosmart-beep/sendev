@@ -60,7 +60,7 @@ export const Route = createFileRoute("/admin/criteria")({
 
 function CriteriaPage() {
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
-  // 산출물 게시판이 활성화된 게시판만 평가 기준 대상으로 노출합니다.
+  // 산출물 게시판이 활성화된 카테고리만 평가 기준 대상으로 노출합니다.
   const projectCategories = categories.filter((c) => c.enableProject);
   const [selected, setSelected] = useState<string | null>(
     projectCategories[0]?.id ?? null,
@@ -70,8 +70,8 @@ function CriteriaPage() {
     return (
       <EmptyState
         icon={LayoutGrid}
-        title="산출물 게시판이 있는 게시판이 없어요."
-        description="평가 기준은 산출물 게시판이 활성화된 게시판에서만 설정할 수 있어요."
+        title="산출물 게시판이 있는 카테고리이 없어요."
+        description="평가 기준은 산출물 게시판이 활성화된 카테고리에서만 설정할 수 있어요."
       />
     );
   }
@@ -83,7 +83,7 @@ function CriteriaPage() {
   return (
     <div className="space-y-6">
       <section className="rounded-2xl bg-card p-6 shadow-sm">
-        <Label htmlFor="c-board" className="mb-3 block">게시판 선택</Label>
+        <Label htmlFor="c-board" className="mb-3 block">카테고리 선택</Label>
         <select
           id="c-board"
           value={activeId}
