@@ -210,6 +210,13 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
                   a: ({ node, ...props }) => (
                     <a {...props} target="_blank" rel="noopener noreferrer" />
                   ),
+                  p: ({ node, children, ...props }) => {
+                    const embed = soleLinkEmbed(node);
+                    if (embed) {
+                      return <EmbeddedFrame embedUrl={embed.embedUrl} href={embed.href} />;
+                    }
+                    return <p {...props}>{children}</p>;
+                  },
                 }}
               >
                 {post.content}
@@ -293,6 +300,57 @@ function LinkEmbedSection({
         </Button>
       )}
     </section>
+  );
+}
+
+// Detects a markdown paragraph whose only meaningful child is a single link,
+// and returns its embeddable URL if the link is a Canva/YouTube/Vimeo link.
+function soleLinkEmbed(
+  node: unknown,
+): { embedUrl: string; href: string } | null {
+  const n = node as
+    | { children?: Array<{ tagName?: string; properties?: { href?: string }; type?: string; value?: string }> }
+    | undefined;
+  const children = (n?.children ?? []).filter(
+    (c) => !(c.type === "text" && !(c.value ?? "").trim()),
+  );
+  if (children.length !== 1) return null;
+  const only = children[0];
+  if (only.tagName !== "a") return null;
+  const href = only.properties?.href;
+  if (!href) return null;
+  const embedUrl = getEmbedUrl(href);
+  if (!embedUrl) return null;
+  return { embedUrl, href };
+}
+
+// Renders an embedded player (Canva/YouTube/Vimeo) inline within post content,
+// with a small link to open the original below it.
+function EmbeddedFrame({ embedUrl, href }: { embedUrl: string; href: string }) {
+  return (
+    <span className="my-4 block">
+      <span className="block overflow-hidden rounded-2xl bg-card shadow-sm">
+        <span className="block aspect-video w-full">
+          <iframe
+            src={embedUrl}
+            title="임베드 미리보기"
+            loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allowFullScreen
+            className="h-full w-full border-0"
+          />
+        </span>
+      </span>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-2 inline-flex items-center gap-1 text-sm text-primary hover:underline"
+      >
+        <ExternalLink className="h-3.5 w-3.5" />
+        원본 링크 열기
+      </a>
+    </span>
   );
 }
 
