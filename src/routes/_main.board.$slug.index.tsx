@@ -95,7 +95,7 @@ function BoardInner({
               params={{ slug, postNo: String(n.postNo) }}
               className="flex items-center justify-between rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
             >
-              <span className="min-w-0 truncate font-medium text-foreground">{n.title}</span>
+              <span className="min-w-0 line-clamp-2 text-sm font-medium text-foreground">{n.title}</span>
               <span className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
                 {n.commentCount > 0 && (
                   <span className="flex items-center gap-1 text-primary">
@@ -142,7 +142,7 @@ function BoardInner({
                 params={{ slug, postNo: String(q.postNo) }}
                 className="flex items-center justify-between rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
               >
-                <span className="min-w-0 truncate font-medium text-foreground">{q.title}</span>
+                <span className="min-w-0 line-clamp-2 text-sm font-medium text-foreground">{q.title}</span>
                 <span className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
                   {q.commentCount > 0 && (
                     <span className="flex items-center gap-1 text-primary">
@@ -190,7 +190,7 @@ function BoardInner({
                 params={{ slug, postNo: String(g.postNo) }}
                 className="flex items-center justify-between rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
               >
-                <span className="min-w-0 truncate font-medium text-foreground">{g.title}</span>
+                <span className="min-w-0 line-clamp-2 text-sm font-medium text-foreground">{g.title}</span>
                 <span className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
                   {g.commentCount > 0 && (
                     <span className="flex items-center gap-1 text-primary">
