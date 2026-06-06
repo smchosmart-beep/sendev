@@ -194,6 +194,10 @@
     text-decoration: none;
     line-height: 1.4;
     transition: background 0.15s ease;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
   .tiptap-editor a:hover,
   .post-content a:hover {
