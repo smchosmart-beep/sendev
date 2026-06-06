@@ -1,28 +1,49 @@
-# 모바일 글쓰기/수정 컨테이너 넘침 수정
+## 목표
 
-## 문제
-모바일 세로 화면에서 글 수정 모달(및 글쓰기 에디터)에 **긴 URL**을 붙여넣으면, 그 URL이 줄바꿈되지 않아 에디터 → 모달 컨테이너가 화면 밖으로 늘어납니다. 그 결과 좌우가 화면을 벗어나 잘려 보입니다.
+일반게시판 / 질문 게시판 게시글 상세에서 수정·삭제 버튼 오른쪽에 **이동** 버튼을 추가한다. 이동 버튼을 누르면 관리자 비밀번호 입력 모달이 뜨고, 비밀번호가 맞으면 이동 대상을 **탭메뉴(해커톤/자료집/Dev Ground/Hello, World) 선택 → 게시판 선택** 순서로 고른 뒤 게시글을 그 게시판으로 옮긴다.
 
-## 원인
-- `src/styles.css`의 `.tiptap-editor` 본문(p)과 링크(a, `display:inline-flex` 알약형)에 줄바꿈 규칙이 없어 긴 단어/URL이 끊기지 않음.
-- 모달(`DialogContent`)과 에디터에 `min-width:0` / overflow 처리가 없어, 내부 콘텐츠가 넘치면 컨테이너 자체가 뷰포트보다 넓어짐.
+## 동작 흐름
 
-## 작업
+```text
+[이동] 클릭
+  → 비밀번호 모달 (관리자 비밀번호 입력)
+      비번 불일치 → 토스트 에러
+      비번 일치   → 이동 대상 선택 모달
+          1) 탭메뉴 선택 (4개 탭)
+          2) 해당 탭의 게시판(카테고리) 선택
+             - 현재 게시판은 제외
+             - 글 종류(일반/질문)를 지원하는 게시판만 노출
+          [이동하기] → 서버에서 이동 → 해당 게시판의 새 글 URL로 이동
+```
 
-1. `src/styles.css` — `.tiptap-editor` 줄바꿈 보강
-   - `.tiptap-editor`, `.tiptap-editor p`에 `overflow-wrap: anywhere; word-break: break-word;` 추가.
-   - 링크 알약(`.tiptap-editor a`)이 긴 URL일 때 줄바꿈되도록 `max-width: 100%; overflow-wrap: anywhere; word-break: break-word;` 추가(필요 시 `white-space: normal`).
+## 변경 사항
 
-2. `src/components/PostEditor.tsx` — 에디터 컨테이너 폭 고정
-   - 루트 `div`와 `EditorContent`에 `min-w-0`, `overflow-hidden`(가로) / `break-words` 적용해 부모 폭을 넘기지 않게 함.
+### 1. 서버 함수 추가 — `src/lib/platform.functions.ts`
 
-3. `src/routes/_main.board.$slug.$postNo.tsx` — 수정 모달 폭/스크롤 고정
-   - 수정 다이얼로그 `DialogContent`에 가로 넘침 방지(`overflow-hidden`)와 세로 스크롤(`max-h-[90vh] overflow-y-auto`) 적용, 폼/필드에 `min-w-0` 보장.
+새 `movePost` 서버 함수:
+- 입력: `{ id, password, targetCategoryId }`
+- 관리자 비밀번호(`POST_MASTER_PASSWORD`)만 허용 — 일반 글 비밀번호로는 이동 불가. 비밀번호 불일치 시 `{ ok: false }` 반환.
+- 글 종류가 `general` 또는 `question`인 경우에만 이동 허용.
+- 대상 게시판에서 다음 `post_no`를 채번하여 `category_id`와 `post_no`를 함께 갱신.
+- 성공 시 새 위치 정보(대상 게시판 slug, 새 post_no)를 반환해 클라이언트가 이동할 수 있게 함.
 
-## 기대 결과
-- 긴 URL/단어가 에디터 안에서 자동 줄바꿈되어 모달이 항상 화면 폭 안에 머무름.
-- 모바일 세로 화면에서 좌우 컨테이너가 화면 크기에 맞게 고정.
+비밀번호 전용 검증은 기존 `checkPostPassword`를 재사용하되, 관리자 비번만 통과시키도록 `master` 비교 경로만 사용(전용 헬퍼 또는 인라인 검증).
+
+### 2. 이동 UI — `src/routes/_main.board.$slug.$postNo.tsx`
+
+`ManagePost` 컴포넌트에:
+- 일반/질문 글(`post.type === "general" || "question"`)일 때만 수정·삭제 버튼 오른쪽에 **이동** 버튼(아이콘 포함) 추가.
+- 비밀번호 게이트 `Dialog` 추가 — 관리자 비밀번호 입력, 확인 중 로딩, 취소 버튼.
+- 비번 통과 후 **이동 대상 선택 `Dialog`** 추가:
+  - 탭메뉴 4개 중 선택(현재는 `categoriesQueryOptions` 데이터로 그룹화).
+  - 선택한 탭의 게시판 목록에서 현재 게시판 제외, 글 종류 지원 게시판만 표시.
+  - 게시판 선택 후 `movePost` 호출.
+- 성공 시 관련 쿼리 무효화 + 새 게시판 글 URL(`/board/$slug/$postNo`)로 이동 + 성공 토스트.
+
+탭 라벨은 `_main.board.index.tsx`의 `TAB_LABELS`와 동일한 매핑을 재사용한다.
 
 ## 기술 메모
-- 글쓰기 전용 페이지(new-question/general/link/project)도 동일한 PostEditor를 쓰므로 함께 개선됨.
-- 디자인 토큰/레이아웃 구조는 변경하지 않고 줄바꿈·overflow만 보정.
+
+- 글 종류별 게시판 노출 필터: 일반 글이면 `enableGeneral`, 질문 글이면 `enableQuestion`인 카테고리만 대상으로 노출.
+- `movePost`는 채번 충돌(중복 post_no) 대비를 위해 기존 createPost와 동일한 재시도 패턴을 따른다.
+- 비밀번호/관리자 비번은 서버에서만 비교되며 클라이언트로 노출되지 않는다.
