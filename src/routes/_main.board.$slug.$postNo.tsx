@@ -31,6 +31,7 @@ import {
   CornerDownRight,
   Maximize,
   Minimize,
+  FolderInput,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -51,11 +52,13 @@ import {
   createReview,
   updatePost,
   deletePost,
+  movePost,
   createComment,
   deleteComment,
   verifyPostPassword,
   type PostDTO,
   type CommentDTO,
+  type TabGroup,
 } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { CommentImagePicker } from "@/components/CommentImagePicker";
@@ -75,6 +78,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { PostEditor } from "@/components/PostEditor";
 
 const NUMERIC_RE = /^\d+$/;
+
+const TAB_LABELS: Record<TabGroup, string> = {
+  hackathon: "해커톤",
+  resources: "자료집",
+  devground: "Dev Ground",
+  helloworld: "Hello, World",
+};
+const TAB_ORDER: TabGroup[] = ["hackathon", "resources", "devground", "helloworld"];
 
 export const Route = createFileRoute("/_main/board/$slug/$postNo")({
   loader: ({ context, params }) => {
@@ -365,7 +376,9 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
   const queryClient = useQueryClient();
   const update = useServerFn(updatePost);
   const remove = useServerFn(deletePost);
+  const move = useServerFn(movePost);
   const verify = useServerFn(verifyPostPassword);
+  const canMove = post.type === "general" || post.type === "question";
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
   const category = categories.find((c) => c.id === post.categoryId);
   const projectName = category?.projectName || "산출물";
@@ -387,6 +400,14 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
   const [editGatePw, setEditGatePw] = useState("");
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  // Move flow state
+  const [moveGateOpen, setMoveGateOpen] = useState(false);
+  const [moveGatePw, setMoveGatePw] = useState("");
+  const [movePickOpen, setMovePickOpen] = useState(false);
+  const [moveTab, setMoveTab] = useState<TabGroup | null>(null);
+  const [moveTargetId, setMoveTargetId] = useState<string | null>(null);
+
 
   // Edit form state
   const [title, setTitle] = useState(post.title);
@@ -462,6 +483,75 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
     onError: () => toast.error("삭제 중 문제가 발생했어요."),
   });
 
+  // Move flow: verify the admin password, then open the target picker.
+  const moveVerifyMutation = useMutation({
+    mutationFn: () => verify({ data: { id: postId, password: moveGatePw } }),
+    onSuccess: (res) => {
+      if (!res.ok) {
+        toast.error("관리자 비밀번호가 일치하지 않아요.");
+        return;
+      }
+      setMoveTab(null);
+      setMoveTargetId(null);
+      setMoveGateOpen(false);
+      setMovePickOpen(true);
+    },
+    onError: () => toast.error("확인 중 문제가 발생했어요."),
+  });
+
+  const moveMutation = useMutation({
+    mutationFn: () =>
+      move({
+        data: {
+          id: postId,
+          password: moveGatePw,
+          targetCategoryId: moveTargetId ?? "",
+        },
+      }),
+    onSuccess: (res) => {
+      if (!res.ok) {
+        toast.error("이동에 실패했어요. 관리자 비밀번호를 확인해주세요.");
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
+      if (moveTargetId) {
+        queryClient.invalidateQueries({ queryKey: ["posts", moveTargetId] });
+      }
+      toast.success("게시글을 이동했어요!");
+      setMovePickOpen(false);
+      if (res.slug && res.postNo) {
+        navigate({
+          to: "/board/$slug/$postNo",
+          params: { slug: res.slug, postNo: String(res.postNo) },
+        });
+      }
+    },
+    onError: (err: unknown) =>
+      toast.error(err instanceof Error ? err.message : "이동 중 문제가 발생했어요."),
+  });
+
+  const openMoveGate = () => {
+    setMoveGatePw("");
+    setMoveGateOpen(true);
+  };
+
+  // Boards in the selected tab that support this post type, excluding current.
+  const moveTargets = categories.filter(
+    (c) =>
+      c.id !== categoryId &&
+      c.tabGroup === moveTab &&
+      (post.type === "general" ? c.enableGeneral : c.enableQuestion),
+  );
+  const tabsWithBoards = TAB_ORDER.filter((tab) =>
+    categories.some(
+      (c) =>
+        c.id !== categoryId &&
+        c.tabGroup === tab &&
+        (post.type === "general" ? c.enableGeneral : c.enableQuestion),
+    ),
+  );
+
+
   return (
     <div className="flex shrink-0 gap-2">
       <Button
@@ -487,6 +577,147 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
         <Trash2 className="h-4 w-4" />
         삭제
       </Button>
+      {canMove && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={openMoveGate}
+          className="rounded-xl active:scale-95"
+        >
+          <FolderInput className="h-4 w-4" />
+          이동
+        </Button>
+      )}
+
+      {/* Move password gate dialog */}
+      <Dialog open={moveGateOpen} onOpenChange={setMoveGateOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>게시글 이동</DialogTitle>
+            <DialogDescription>
+              관리자 비밀번호를 입력해야 다른 게시판으로 이동할 수 있어요.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!moveGatePw.trim()) {
+                toast.error("관리자 비밀번호를 입력해주세요.");
+                return;
+              }
+              moveVerifyMutation.mutate();
+            }}
+            className="space-y-4 py-2"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="mv-pw">관리자 비밀번호</Label>
+              <Input
+                id="mv-pw"
+                type="password"
+                value={moveGatePw}
+                onChange={(e) => setMoveGatePw(e.target.value)}
+                className="rounded-xl"
+                autoFocus
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setMoveGateOpen(false)}
+                className="rounded-xl active:scale-95"
+              >
+                취소
+              </Button>
+              <Button
+                type="submit"
+                disabled={moveVerifyMutation.isPending}
+                className="rounded-xl active:scale-95"
+              >
+                {moveVerifyMutation.isPending ? "확인 중..." : "확인"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Move target picker dialog */}
+      <Dialog open={movePickOpen} onOpenChange={setMovePickOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>이동할 게시판 선택</DialogTitle>
+            <DialogDescription>
+              탭 메뉴와 게시판을 차례대로 선택하세요.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-5 py-2">
+            <div className="space-y-2">
+              <Label>탭 메뉴</Label>
+              <div className="flex flex-wrap gap-2">
+                {tabsWithBoards.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    이동할 수 있는 게시판이 없어요.
+                  </p>
+                )}
+                {tabsWithBoards.map((tab) => (
+                  <Button
+                    key={tab}
+                    type="button"
+                    size="sm"
+                    variant={moveTab === tab ? "default" : "secondary"}
+                    onClick={() => {
+                      setMoveTab(tab);
+                      setMoveTargetId(null);
+                    }}
+                    className="rounded-xl active:scale-95"
+                  >
+                    {TAB_LABELS[tab]}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {moveTab && (
+              <div className="space-y-2">
+                <Label>게시판</Label>
+                <div className="flex flex-col gap-2">
+                  {moveTargets.map((c) => (
+                    <Button
+                      key={c.id}
+                      type="button"
+                      variant={moveTargetId === c.id ? "default" : "secondary"}
+                      onClick={() => setMoveTargetId(c.id)}
+                      className="justify-start rounded-xl active:scale-95"
+                    >
+                      {c.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setMovePickOpen(false)}
+              className="rounded-xl active:scale-95"
+            >
+              취소
+            </Button>
+            <Button
+              type="button"
+              disabled={!moveTargetId || moveMutation.isPending}
+              onClick={() => moveMutation.mutate()}
+              className="rounded-xl active:scale-95"
+            >
+              {moveMutation.isPending ? "이동 중..." : "이동하기"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Edit password gate dialog */}
       <Dialog open={editGateOpen} onOpenChange={setEditGateOpen}>
