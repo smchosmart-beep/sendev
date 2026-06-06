@@ -483,6 +483,75 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
     onError: () => toast.error("삭제 중 문제가 발생했어요."),
   });
 
+  // Move flow: verify the admin password, then open the target picker.
+  const moveVerifyMutation = useMutation({
+    mutationFn: () => verify({ data: { id: postId, password: moveGatePw } }),
+    onSuccess: (res) => {
+      if (!res.ok) {
+        toast.error("관리자 비밀번호가 일치하지 않아요.");
+        return;
+      }
+      setMoveTab(null);
+      setMoveTargetId(null);
+      setMoveGateOpen(false);
+      setMovePickOpen(true);
+    },
+    onError: () => toast.error("확인 중 문제가 발생했어요."),
+  });
+
+  const moveMutation = useMutation({
+    mutationFn: () =>
+      move({
+        data: {
+          id: postId,
+          password: moveGatePw,
+          targetCategoryId: moveTargetId ?? "",
+        },
+      }),
+    onSuccess: (res) => {
+      if (!res.ok) {
+        toast.error("이동에 실패했어요. 관리자 비밀번호를 확인해주세요.");
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
+      if (moveTargetId) {
+        queryClient.invalidateQueries({ queryKey: ["posts", moveTargetId] });
+      }
+      toast.success("게시글을 이동했어요!");
+      setMovePickOpen(false);
+      if (res.slug && res.postNo) {
+        navigate({
+          to: "/board/$slug/$postNo",
+          params: { slug: res.slug, postNo: String(res.postNo) },
+        });
+      }
+    },
+    onError: (err: unknown) =>
+      toast.error(err instanceof Error ? err.message : "이동 중 문제가 발생했어요."),
+  });
+
+  const openMoveGate = () => {
+    setMoveGatePw("");
+    setMoveGateOpen(true);
+  };
+
+  // Boards in the selected tab that support this post type, excluding current.
+  const moveTargets = categories.filter(
+    (c) =>
+      c.id !== categoryId &&
+      c.tabGroup === moveTab &&
+      (post.type === "general" ? c.enableGeneral : c.enableQuestion),
+  );
+  const tabsWithBoards = TAB_ORDER.filter((tab) =>
+    categories.some(
+      (c) =>
+        c.id !== categoryId &&
+        c.tabGroup === tab &&
+        (post.type === "general" ? c.enableGeneral : c.enableQuestion),
+    ),
+  );
+
+
   return (
     <div className="flex shrink-0 gap-2">
       <Button
