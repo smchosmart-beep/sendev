@@ -210,6 +210,13 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
                   a: ({ node, ...props }) => (
                     <a {...props} target="_blank" rel="noopener noreferrer" />
                   ),
+                  p: ({ node, children, ...props }) => {
+                    const embed = soleLinkEmbed(node);
+                    if (embed) {
+                      return <EmbeddedFrame embedUrl={embed.embedUrl} href={embed.href} />;
+                    }
+                    return <p {...props}>{children}</p>;
+                  },
                 }}
               >
                 {post.content}
