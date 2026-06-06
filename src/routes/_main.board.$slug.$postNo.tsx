@@ -488,6 +488,63 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
         삭제
       </Button>
 
+      {/* Edit password gate dialog */}
+      <Dialog open={editGateOpen} onOpenChange={setEditGateOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>{noun} 수정</DialogTitle>
+            <DialogDescription>
+              {post.type === "notice"
+                ? "관리자 비밀번호를 입력해야 수정할 수 있어요."
+                : "등록 시 설정한 비밀번호를 입력해야 수정할 수 있어요."}
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!editGatePw.trim()) {
+                toast.error("비밀번호를 입력해주세요.");
+                return;
+              }
+              editGateMutation.mutate();
+            }}
+            className="space-y-4 py-2"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="eg-pw">비밀번호</Label>
+              <Input
+                id="eg-pw"
+                type="password"
+                value={editGatePw}
+                onChange={(e) => setEditGatePw(e.target.value)}
+                className="rounded-xl"
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">
+                등록 시 설정한 비밀번호 또는 관리자 비밀번호를 입력하세요.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setEditGateOpen(false)}
+                className="rounded-xl active:scale-95"
+              >
+                취소
+              </Button>
+              <Button
+                type="submit"
+                disabled={editGateMutation.isPending}
+                className="rounded-xl active:scale-95"
+              >
+                {editGateMutation.isPending ? "확인 중..." : "확인"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-w-2xl rounded-2xl">
