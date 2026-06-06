@@ -757,17 +757,11 @@ export const movePost = createServerFn({ method: "POST" })
       }
       const { data: target, error: catErr } = await db
         .from("categories")
-        .select("slug, enable_general, enable_question")
+        .select("slug")
         .eq("id", data.targetCategoryId)
         .maybeSingle();
       if (catErr) throw new Error(catErr.message);
       if (!target) return { ok: false };
-      if (post.type === "general" && !target.enable_general) {
-        throw new Error("대상 게시판은 일반 글을 지원하지 않아요.");
-      }
-      if (post.type === "question" && !target.enable_question) {
-        throw new Error("대상 게시판은 질문 글을 지원하지 않아요.");
-      }
       // Assign the next per-board number in the target board, retrying on
       // a unique collision (concurrent insert/move).
       for (let attempt = 0; attempt < 3; attempt++) {
