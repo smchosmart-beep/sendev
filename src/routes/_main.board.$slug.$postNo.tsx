@@ -535,20 +535,13 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
     setMoveGateOpen(true);
   };
 
-  // Boards in the selected tab that support this post type, excluding current.
+  // Boards in the selected tab, excluding current. Post type is ignored —
+  // posts can move to any board.
   const moveTargets = categories.filter(
-    (c) =>
-      c.id !== categoryId &&
-      c.tabGroup === moveTab &&
-      (post.type === "general" ? c.enableGeneral : c.enableQuestion),
+    (c) => c.id !== categoryId && c.tabGroup === moveTab,
   );
   const tabsWithBoards = TAB_ORDER.filter((tab) =>
-    categories.some(
-      (c) =>
-        c.id !== categoryId &&
-        c.tabGroup === tab &&
-        (post.type === "general" ? c.enableGeneral : c.enableQuestion),
-    ),
+    categories.some((c) => c.id !== categoryId && c.tabGroup === tab),
   );
 
 
