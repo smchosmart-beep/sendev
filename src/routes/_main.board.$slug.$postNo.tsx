@@ -568,19 +568,6 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
                 </div>
               </>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="e-pw">비밀번호</Label>
-              <Input
-                id="e-pw"
-                type="password"
-                value={editPw}
-                onChange={(e) => setEditPw(e.target.value)}
-                className="rounded-xl"
-              />
-              <p className="text-xs text-muted-foreground">
-                등록 시 설정한 비밀번호 또는 관리자 비밀번호를 입력하세요.
-              </p>
-            </div>
             <DialogFooter>
               <Button
                 type="button"
