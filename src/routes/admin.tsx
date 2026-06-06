@@ -16,7 +16,7 @@ export const Route = createFileRoute("/admin")({
       { title: "관리자 대시보드 — 교사 개발자 플랫폼" },
       {
         name: "description",
-        content: "카테고리(카테고리) 관리와 공용 비밀번호 설정을 위한 관리자 전용 대시보드.",
+        content: "카테고리 관리와 공용 비밀번호 설정을 위한 관리자 전용 대시보드.",
       },
     ],
   }),
