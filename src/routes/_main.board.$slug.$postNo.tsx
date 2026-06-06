@@ -383,6 +383,8 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
       ? linkName
       : projectName;
 
+  const [editGateOpen, setEditGateOpen] = useState(false);
+  const [editGatePw, setEditGatePw] = useState("");
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -401,14 +403,29 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
     queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
   };
 
-  const openEdit = () => {
-    setTitle(post.title);
-    setContent(post.content);
-    setAuthor(post.author);
-    setGithubUrl(post.githubUrl);
-    setDeployUrl(post.deployUrl);
-    setEditPw("");
-    setEditOpen(true);
+  // Verify the password first, then open the edit form with fields prefilled.
+  const editGateMutation = useMutation({
+    mutationFn: () => verify({ data: { id: postId, password: editGatePw } }),
+    onSuccess: (res) => {
+      if (!res.ok) {
+        toast.error("비밀번호가 일치하지 않아요.");
+        return;
+      }
+      setTitle(post.title);
+      setContent(post.content);
+      setAuthor(post.author);
+      setGithubUrl(post.githubUrl);
+      setDeployUrl(post.deployUrl);
+      setEditPw(editGatePw);
+      setEditGateOpen(false);
+      setEditOpen(true);
+    },
+    onError: () => toast.error("확인 중 문제가 발생했어요."),
+  });
+
+  const openEditGate = () => {
+    setEditGatePw("");
+    setEditGateOpen(true);
   };
 
   const editMutation = useMutation({
