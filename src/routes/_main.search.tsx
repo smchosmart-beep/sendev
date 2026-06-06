@@ -99,9 +99,9 @@ function SearchPage() {
             onChange={(e) => setInput(e.target.value)}
             placeholder="검색어를 입력하세요"
             aria-label="검색어"
-            className="flex-1 rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            className="min-w-0 flex-1 rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
           />
-          <Button type="submit" className="rounded-xl active:scale-95">
+          <Button type="submit" className="shrink-0 rounded-xl active:scale-95">
             <Search className="h-4 w-4" />
             검색
           </Button>
