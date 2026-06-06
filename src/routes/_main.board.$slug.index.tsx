@@ -332,6 +332,86 @@ function BoardInner({
   );
 }
 
+function BoardPagination({
+  page,
+  pageCount,
+  onChange,
+}: {
+  page: number;
+  pageCount: number;
+  onChange: (page: number) => void;
+}) {
+  if (pageCount <= 1) return null;
+
+  const pages: (number | "ellipsis")[] = [];
+  const push = (p: number) => pages.push(p);
+  if (pageCount <= 7) {
+    for (let p = 1; p <= pageCount; p++) push(p);
+  } else {
+    push(1);
+    const start = Math.max(2, page - 1);
+    const end = Math.min(pageCount - 1, page + 1);
+    if (start > 2) pages.push("ellipsis");
+    for (let p = start; p <= end; p++) push(p);
+    if (end < pageCount - 1) pages.push("ellipsis");
+    push(pageCount);
+  }
+
+  const btnBase =
+    "flex h-9 min-w-9 items-center justify-center rounded-xl px-3 text-sm font-medium transition-colors active:scale-95";
+
+  return (
+    <nav
+      aria-label="페이지 이동"
+      className="flex items-center justify-center gap-1.5 pt-2"
+    >
+      <button
+        type="button"
+        aria-label="이전 페이지"
+        disabled={page <= 1}
+        onClick={() => onChange(page - 1)}
+        className={`${btnBase} bg-card text-foreground shadow-sm disabled:opacity-40`}
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+      {pages.map((p, i) =>
+        p === "ellipsis" ? (
+          <span
+            key={`e-${i}`}
+            className="flex h-9 w-9 items-center justify-center text-sm text-muted-foreground"
+          >
+            …
+          </span>
+        ) : (
+          <button
+            key={p}
+            type="button"
+            aria-current={p === page ? "page" : undefined}
+            onClick={() => onChange(p)}
+            className={`${btnBase} shadow-sm ${
+              p === page
+                ? "bg-primary text-primary-foreground"
+                : "bg-card text-foreground"
+            }`}
+          >
+            {p}
+          </button>
+        ),
+      )}
+      <button
+        type="button"
+        aria-label="다음 페이지"
+        disabled={page >= pageCount}
+        onClick={() => onChange(page + 1)}
+        className={`${btnBase} bg-card text-foreground shadow-sm disabled:opacity-40`}
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    </nav>
+  );
+}
+
+
 function SeriesCard({
   name,
   posts,
