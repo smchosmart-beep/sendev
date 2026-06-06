@@ -188,7 +188,7 @@ function BoardInner({
                 page={currentQPage}
                 pageCount={questionPageCount}
                 onChange={(p) =>
-                  navigate({ search: (prev) => ({ ...prev, qpage: p }) })
+                  navigate({ search: (prev: { qpage: number; gpage: number }) => ({ ...prev, qpage: p }) })
                 }
               />
             </>
