@@ -83,3 +83,29 @@ export function getThumbnailUrl(raw: string | null | undefined): string | null {
   if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
   return null;
 }
+
+// Canva does not expose a public thumbnail image (its screen?type=thumbnail
+// endpoint requires a logged-in session). But the public embed view renders
+// the actual first page, so we use it as a live preview thumbnail in cards.
+// Returns a non-interactive embed URL for Canva design links, else null.
+export function getCanvaPreviewUrl(
+  raw: string | null | undefined,
+): string | null {
+  if (!raw) return null;
+  const url = raw.trim();
+  if (!/^https?:\/\//i.test(url)) return null;
+
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return null;
+  }
+
+  const host = u.hostname.replace(/^www\./, "").toLowerCase();
+  if (host !== "canva.com") return null;
+  if (!u.pathname.includes("/design/")) return null;
+
+  const base = url.split("?")[0].replace(/\/(view|edit|watch)?\/?$/, "");
+  return `${base}/view?embed`;
+}

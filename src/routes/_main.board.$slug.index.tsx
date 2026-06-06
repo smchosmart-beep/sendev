@@ -11,7 +11,7 @@ import {
 } from "@/lib/platform.queries";
 import { type PostDTO } from "@/lib/platform.functions";
 import { groupLinksBySeries, seededShuffle, getOrderSeed } from "@/lib/series";
-import { getEmbedUrl, getThumbnailUrl } from "@/lib/embed";
+import { getEmbedUrl, getThumbnailUrl, getCanvaPreviewUrl } from "@/lib/embed";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { ThumbnailUploadButton } from "@/components/ThumbnailUploadButton";
@@ -344,6 +344,7 @@ function LinkCard({ post, slug }: { post: PostDTO; slug: string }) {
   const thumb = getThumbnailUrl(post.deployUrl);
   const ogImage = post.ogImageUrl || backfill?.image || thumb || null;
   const embeddable = !!getEmbedUrl(post.deployUrl);
+  const canvaPreview = getCanvaPreviewUrl(post.deployUrl);
 
   return (
     <Link
@@ -352,7 +353,16 @@ function LinkCard({ post, slug }: { post: PostDTO; slug: string }) {
       className="group block overflow-hidden rounded-2xl bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md active:scale-95"
     >
       <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-accent text-primary">
-        {ogImage ? (
+        {canvaPreview ? (
+          <iframe
+            src={canvaPreview}
+            title={`${post.title} 미리보기`}
+            loading="lazy"
+            tabIndex={-1}
+            className="pointer-events-none h-full w-full border-0"
+            allow="fullscreen"
+          />
+        ) : ogImage ? (
           <img
             src={ogImage}
             alt={`${post.title} 미리보기`}
