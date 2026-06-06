@@ -86,7 +86,7 @@ function NewLinkPage() {
         <BackLink slug={slug} />
         <EmptyState
           icon={LinkIcon}
-          title="게시판을 찾을 수 없어요."
+          title="카테고리을 찾을 수 없어요."
           description="삭제되었거나 잘못된 주소일 수 있어요."
         />
       </div>
@@ -170,7 +170,7 @@ function NewLinkPage() {
               ))}
             </datalist>
             <p className="text-xs text-muted-foreground">
-              같은 시리즈명을 입력하면 게시판에서 하나의 카드로 묶여 표시돼요. 비워두면 단독 영상으로 등록돼요.
+              같은 시리즈명을 입력하면 카테고리에서 하나의 카드로 묶여 표시돼요. 비워두면 단독 영상으로 등록돼요.
             </p>
           </div>
           <div className="space-y-2">
@@ -210,7 +210,7 @@ function BackLink({ slug }: { slug: string }) {
       className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:-translate-x-0.5 hover:text-foreground"
     >
       <ArrowLeft className="h-4 w-4" />
-      게시판으로
+      카테고리으로
     </Link>
   );
 }

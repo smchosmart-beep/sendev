@@ -582,7 +582,7 @@ export const createPost = createServerFn({ method: "POST" })
       .maybeSingle();
     if (cat?.github_required && data.type === "project") {
       if (!GITHUB_URL_RE.test(data.githubUrl)) {
-        throw new Error("이 게시판은 GitHub 링크가 필수입니다.");
+        throw new Error("이 카테고리은 GitHub 링크가 필수입니다.");
       }
     }
     // Notices are authored by the operations team.

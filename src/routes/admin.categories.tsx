@@ -63,7 +63,7 @@ export const Route = createFileRoute("/admin/categories")({
   loader: ({ context }) => context.queryClient.ensureQueryData(categoriesQueryOptions()),
   errorComponent: ({ error }) => (
     <div role="alert" className="p-6 text-sm text-destructive">
-      게시판을 불러오지 못했어요: {error.message}
+      카테고리을 불러오지 못했어요: {error.message}
     </div>
   ),
   component: CategoriesPage,
@@ -155,7 +155,7 @@ function CategoriesPage() {
       setProjectName("산출물");
       setLinkName("링크");
       setTabGroup("hackathon");
-      toast.success("새 게시판이 추가되었어요.");
+      toast.success("새 카테고리이 추가되었어요.");
     },
     onError: () => toast.error("추가 중 문제가 발생했어요."),
   });
@@ -184,7 +184,7 @@ function CategoriesPage() {
     onSuccess: () => {
       invalidate();
       setEditing(null);
-      toast.success("게시판 정보가 수정되었어요.");
+      toast.success("카테고리 정보가 수정되었어요.");
     },
     onError: () => toast.error("수정 중 문제가 발생했어요."),
   });
@@ -194,7 +194,7 @@ function CategoriesPage() {
     onSuccess: () => {
       invalidate();
       setDeleting(null);
-      toast.success("게시판이 삭제되었어요.");
+      toast.success("카테고리이 삭제되었어요.");
     },
     onError: () => toast.error("삭제 중 문제가 발생했어요."),
   });
@@ -230,13 +230,13 @@ function CategoriesPage() {
       <section className="rounded-2xl bg-card p-6 shadow-sm">
         <div className="mb-4 flex items-center gap-2">
           <FolderPlus className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold text-foreground">새 게시판 추가</h2>
+          <h2 className="text-lg font-semibold text-foreground">새 카테고리 추가</h2>
         </div>
         <form
           onSubmit={(e) => {
             e.preventDefault();
             if (!name.trim()) {
-              toast.error("게시판 이름을 입력해주세요.");
+              toast.error("카테고리 이름을 입력해주세요.");
               return;
             }
             addMutation.mutate();
@@ -258,11 +258,11 @@ function CategoriesPage() {
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              이 게시판이 상단 어느 탭에 표시될지 선택하세요.
+              이 카테고리이 상단 어느 탭에 표시될지 선택하세요.
             </p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="name">게시판 이름</Label>
+            <Label htmlFor="name">카테고리 이름</Label>
             <Input
               id="name"
               value={name}
@@ -277,7 +277,7 @@ function CategoriesPage() {
               id="pw"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="비워두면 공개 게시판"
+              placeholder="비워두면 공개 카테고리"
               className="rounded-xl"
             />
           </div>
@@ -300,14 +300,14 @@ function CategoriesPage() {
               id="desc"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="게시판에 대한 간단한 설명"
+              placeholder="카테고리에 대한 간단한 설명"
               className="rounded-xl"
             />
           </div>
           <div className="space-y-3 rounded-xl bg-muted/40 p-4 sm:col-span-2">
             <p className="text-sm font-medium text-foreground">사용할 게시판 종류</p>
             <p className="text-xs text-muted-foreground">
-              이 게시판에 표시할 섹션만 켜주세요.
+              이 카테고리에 표시할 섹션만 켜주세요.
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
               <SectionToggle id="add-sec-notice" label="공지사항" checked={enableNotice} onChange={setEnableNotice} />
@@ -363,7 +363,7 @@ function CategoriesPage() {
                 GitHub 링크 필수
               </Label>
               <p className="text-sm text-muted-foreground">
-                켜면 이 게시판에 산출물을 등록할 때 GitHub 링크를 반드시 입력해야 해요.
+                켜면 이 카테고리에 산출물을 등록할 때 GitHub 링크를 반드시 입력해야 해요.
               </p>
             </div>
             <Switch
@@ -387,7 +387,7 @@ function CategoriesPage() {
       {/* 목록 */}
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-foreground">게시판 목록</h2>
+          <h2 className="text-lg font-semibold text-foreground">카테고리 목록</h2>
           <Select
             value={listFilter}
             onValueChange={(v) => setListFilter(v as TabGroup | "all")}
@@ -409,8 +409,8 @@ function CategoriesPage() {
         {visibleCategories.length === 0 ? (
           <EmptyState
             icon={LayoutGrid}
-            title="해당하는 게시판이 없어요."
-            description="다른 탭을 선택하거나 위 폼으로 게시판을 만들어보세요!"
+            title="해당하는 카테고리이 없어요."
+            description="다른 탭을 선택하거나 위 폼으로 카테고리을 만들어보세요!"
           />
         ) : (
           <div className="space-y-4">
@@ -474,9 +474,9 @@ function CategoriesPage() {
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
-            <DialogTitle>게시판 수정</DialogTitle>
+            <DialogTitle>카테고리 수정</DialogTitle>
             <DialogDescription>
-              게시판 이름, 설명, 비밀번호를 변경할 수 있어요.
+              카테고리 이름, 설명, 비밀번호를 변경할 수 있어요.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -499,7 +499,7 @@ function CategoriesPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-name">게시판 이름</Label>
+              <Label htmlFor="edit-name">카테고리 이름</Label>
               <Input
                 id="edit-name"
                 value={editName}
@@ -532,7 +532,7 @@ function CategoriesPage() {
                 id="edit-pw"
                 value={editPassword}
                 onChange={(e) => setEditPassword(e.target.value)}
-                placeholder="비워두면 공개 게시판으로 변경"
+                placeholder="비워두면 공개 카테고리으로 변경"
                 className="rounded-xl"
               />
             </div>
@@ -610,7 +610,7 @@ function CategoriesPage() {
             <Button
               onClick={() => {
                 if (!editName.trim()) {
-                  toast.error("게시판 이름을 입력해주세요.");
+                  toast.error("카테고리 이름을 입력해주세요.");
                   return;
                 }
                 editMutation.mutate();
@@ -628,9 +628,9 @@ function CategoriesPage() {
       <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>게시판을 삭제할까요?</AlertDialogTitle>
+            <AlertDialogTitle>카테고리을 삭제할까요?</AlertDialogTitle>
             <AlertDialogDescription>
-              '{deleting?.name}' 게시판이 삭제됩니다. 이 작업은 되돌릴 수 없어요.
+              '{deleting?.name}' 카테고리이 삭제됩니다. 이 작업은 되돌릴 수 없어요.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
