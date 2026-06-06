@@ -53,6 +53,7 @@ import {
   deletePost,
   createComment,
   deleteComment,
+  verifyPostPassword,
   type PostDTO,
   type CommentDTO,
 } from "@/lib/platform.functions";
