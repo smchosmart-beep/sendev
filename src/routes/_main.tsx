@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Calendar, Code2, Settings, Trophy, BookOpen, Rocket, Terminal, Menu, Home } from "lucide-react";
+import { createFileRoute, Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
+import { Calendar, Code2, Settings, Trophy, BookOpen, Rocket, Terminal, Menu, Home, Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -12,9 +12,66 @@ import {
 } from "@/components/ui/sheet";
 import type { TabGroup } from "@/lib/platform.functions";
 
+type SearchMode = "title" | "title_content" | "author";
+
+const SEARCH_MODES: { value: SearchMode; label: string }[] = [
+  { value: "title", label: "제목" },
+  { value: "title_content", label: "제목+내용" },
+  { value: "author", label: "작성자" },
+];
+
+function MenuSearchBox({ onSubmitted }: { onSubmitted?: () => void }) {
+  const navigate = useNavigate();
+  const [q, setQ] = useState("");
+  const [mode, setMode] = useState<SearchMode>("title");
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const value = q.trim();
+    if (!value) return;
+    navigate({ to: "/search", search: { q: value, mode } });
+    onSubmitted?.();
+  };
+
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-2 rounded-2xl border border-border p-3">
+      <select
+        value={mode}
+        onChange={(e) => setMode(e.target.value as SearchMode)}
+        aria-label="검색 유형"
+        className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+      >
+        {SEARCH_MODES.map((m) => (
+          <option key={m.value} value={m.value}>
+            {m.label}
+          </option>
+        ))}
+      </select>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="게시글 검색"
+          aria-label="검색어"
+          className="min-w-0 flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+        />
+        <button
+          type="submit"
+          aria-label="검색"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm active:scale-95"
+        >
+          <Search className="h-4 w-4" />
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export const Route = createFileRoute("/_main")({
   component: MainLayout,
 });
+
 
 const homeTab = { to: "/home", label: "홈", icon: Home } as const;
 const calendarTab = { to: "/calendar", label: "캘린더", icon: Calendar } as const;
