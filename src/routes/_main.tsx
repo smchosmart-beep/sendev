@@ -226,6 +226,10 @@ function MainLayout() {
                   );
                 })}
 
+                <div className="mt-2">
+                  <MenuSearchBox onSubmitted={() => setMenuOpen(false)} />
+                </div>
+
                 <Link
                   to="/admin/categories"
                   onClick={() => setMenuOpen(false)}
@@ -234,6 +238,7 @@ function MainLayout() {
                   <Settings className="h-5 w-5" />
                   관리자
                 </Link>
+
               </nav>
             </SheetContent>
           </Sheet>
