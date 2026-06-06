@@ -31,6 +31,7 @@ import {
   CornerDownRight,
   Maximize,
   Minimize,
+  FolderInput,
 } from "lucide-react";
 import { toast } from "sonner";
 
