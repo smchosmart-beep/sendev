@@ -342,7 +342,7 @@ export function PostEditor({
   const currentColor = (editor?.getAttributes("textStyle").color as string) ?? null;
 
   return (
-    <div className={cn("rounded-xl border border-border bg-background", className)}>
+    <div className={cn("min-w-0 overflow-hidden rounded-xl border border-border bg-background", className)}>
       <div className="flex flex-wrap items-center gap-1 border-b border-border px-2 py-1.5">
         <ToolButton
           icon={Heading}
@@ -463,7 +463,7 @@ export function PostEditor({
       <EditorContent
         editor={editor}
         data-placeholder={placeholder}
-        className="px-3 py-2.5 text-sm text-foreground"
+        className="min-w-0 overflow-x-hidden break-words px-3 py-2.5 text-sm text-foreground"
       />
 
       <input

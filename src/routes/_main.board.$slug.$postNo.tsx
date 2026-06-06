@@ -547,7 +547,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
 
       {/* Edit dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-2xl rounded-2xl">
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto overflow-x-hidden rounded-2xl">
           <DialogHeader>
             <DialogTitle>{noun} 수정</DialogTitle>
             <DialogDescription>
@@ -563,7 +563,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
               }
               editMutation.mutate();
             }}
-            className="space-y-4 py-2"
+            className="min-w-0 space-y-4 py-2"
           >
             <div className="space-y-2">
               <Label htmlFor="e-title">제목</Label>
