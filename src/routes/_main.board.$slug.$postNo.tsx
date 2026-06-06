@@ -401,6 +401,14 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  // Move flow state
+  const [moveGateOpen, setMoveGateOpen] = useState(false);
+  const [moveGatePw, setMoveGatePw] = useState("");
+  const [movePickOpen, setMovePickOpen] = useState(false);
+  const [moveTab, setMoveTab] = useState<TabGroup | null>(null);
+  const [moveTargetId, setMoveTargetId] = useState<string | null>(null);
+
+
   // Edit form state
   const [title, setTitle] = useState(post.title);
   const [content, setContent] = useState(post.content);
