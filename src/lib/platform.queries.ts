@@ -6,6 +6,7 @@ import {
   listPosts,
   getPost,
   getPostByNo,
+  searchPosts,
   listCriteria,
   listReviews,
   getMyReview,
@@ -16,6 +17,17 @@ import {
   refreshOgImage,
   listHeroSlides,
 } from "./platform.functions";
+
+export const searchPostsQueryOptions = (
+  q: string,
+  mode: "title" | "title_content" | "author",
+) =>
+  queryOptions({
+    queryKey: ["search-posts", q.trim(), mode],
+    queryFn: () => searchPosts({ data: { q: q.trim(), mode } }),
+    enabled: q.trim().length > 0,
+  });
+
 
 export const heroSlidesQueryOptions = () =>
   queryOptions({
