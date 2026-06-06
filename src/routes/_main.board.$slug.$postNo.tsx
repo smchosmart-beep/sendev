@@ -563,7 +563,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
               }
               editMutation.mutate();
             }}
-            className="space-y-4 py-2"
+            className="min-w-0 space-y-4 py-2"
           >
             <div className="space-y-2">
               <Label htmlFor="e-title">제목</Label>
