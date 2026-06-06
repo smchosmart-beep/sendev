@@ -161,28 +161,37 @@ function BoardInner({
               description="궁금한 점을 자유롭게 질문해보세요."
             />
           ) : (
-            questions.map((q) => (
-              <Link
-                key={q.id}
-                to="/board/$slug/$postNo"
-                params={{ slug, postNo: String(q.postNo) }}
-                className="flex items-center justify-between gap-5 rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
-              >
-                <span className="flex-1 min-w-0 line-clamp-2 text-sm font-medium text-foreground">{q.title}</span>
-                <span className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
-                  {q.commentCount > 0 && (
-                    <span className="flex items-center gap-1 text-primary">
-                      <MessageCircle className="h-3.5 w-3.5" />
-                      {q.commentCount}
+            <>
+              {pagedQuestions.map((q) => (
+                <Link
+                  key={q.id}
+                  to="/board/$slug/$postNo"
+                  params={{ slug, postNo: String(q.postNo) }}
+                  className="flex items-center justify-between gap-5 rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+                >
+                  <span className="flex-1 min-w-0 line-clamp-2 text-sm font-medium text-foreground">{q.title}</span>
+                  <span className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
+                    {q.commentCount > 0 && (
+                      <span className="flex items-center gap-1 text-primary">
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        {q.commentCount}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1 whitespace-nowrap">
+                      <User className="h-3.5 w-3.5" />
+                      {q.author}
                     </span>
-                  )}
-                  <span className="flex items-center gap-1 whitespace-nowrap">
-                    <User className="h-3.5 w-3.5" />
-                    {q.author}
                   </span>
-                </span>
-              </Link>
-            ))
+                </Link>
+              ))}
+              <BoardPagination
+                page={currentQPage}
+                pageCount={questionPageCount}
+                onChange={(p) =>
+                  navigate({ search: (prev) => ({ ...prev, qpage: p }) })
+                }
+              />
+            </>
           )}
         </section>
       )}
