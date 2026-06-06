@@ -51,11 +51,13 @@ import {
   createReview,
   updatePost,
   deletePost,
+  movePost,
   createComment,
   deleteComment,
   verifyPostPassword,
   type PostDTO,
   type CommentDTO,
+  type TabGroup,
 } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { CommentImagePicker } from "@/components/CommentImagePicker";
