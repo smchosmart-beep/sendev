@@ -1,7 +1,7 @@
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers, CheckCircle2 } from "lucide-react";
+import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 
 import {
   postsQueryOptions,
@@ -16,7 +16,18 @@ import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { ThumbnailUploadButton } from "@/components/ThumbnailUploadButton";
 
+const PAGE_SIZE = 10;
+
+function toPage(value: unknown): number {
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 1 ? n : 1;
+}
+
 export const Route = createFileRoute("/_main/board/$slug/")({
+  validateSearch: (search: Record<string, unknown>): { qpage: number; gpage: number } => ({
+    qpage: toPage(search.qpage),
+    gpage: toPage(search.gpage),
+  }),
   loader: async ({ context, params }) => {
     const categories = await context.queryClient.ensureQueryData(
       categoriesQueryOptions(),
@@ -53,12 +64,27 @@ function BoardInner({
   category: import("@/lib/platform.functions").CategoryDTO;
 }) {
   const { data: posts } = useSuspenseQuery(postsQueryOptions(category.id));
+  const { qpage, gpage } = Route.useSearch();
+  const navigate = useNavigate({ from: "/board/$slug" });
   const notices = posts.filter((p) => p.type === "notice");
   const questions = posts.filter((p) => p.type === "question");
   const generals = posts.filter((p) => p.type === "general");
   const projects = posts.filter((p) => p.type === "project");
   const links = posts.filter((p) => p.type === "link");
   const linkItems = groupLinksBySeries(links);
+
+  const questionPageCount = Math.max(1, Math.ceil(questions.length / PAGE_SIZE));
+  const generalPageCount = Math.max(1, Math.ceil(generals.length / PAGE_SIZE));
+  const currentQPage = Math.min(qpage, questionPageCount);
+  const currentGPage = Math.min(gpage, generalPageCount);
+  const pagedQuestions = questions.slice(
+    (currentQPage - 1) * PAGE_SIZE,
+    currentQPage * PAGE_SIZE,
+  );
+  const pagedGenerals = generals.slice(
+    (currentGPage - 1) * PAGE_SIZE,
+    currentGPage * PAGE_SIZE,
+  );
 
   // 공정 평가를 위한 기기별 고정 랜덤 순서.
   // SSR/최초 렌더는 원본 순서(하이드레이션 안전), 마운트 후 셔플 적용.
@@ -135,28 +161,37 @@ function BoardInner({
               description="궁금한 점을 자유롭게 질문해보세요."
             />
           ) : (
-            questions.map((q) => (
-              <Link
-                key={q.id}
-                to="/board/$slug/$postNo"
-                params={{ slug, postNo: String(q.postNo) }}
-                className="flex items-center justify-between gap-5 rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
-              >
-                <span className="flex-1 min-w-0 line-clamp-2 text-sm font-medium text-foreground">{q.title}</span>
-                <span className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
-                  {q.commentCount > 0 && (
-                    <span className="flex items-center gap-1 text-primary">
-                      <MessageCircle className="h-3.5 w-3.5" />
-                      {q.commentCount}
+            <>
+              {pagedQuestions.map((q) => (
+                <Link
+                  key={q.id}
+                  to="/board/$slug/$postNo"
+                  params={{ slug, postNo: String(q.postNo) }}
+                  className="flex items-center justify-between gap-5 rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+                >
+                  <span className="flex-1 min-w-0 line-clamp-2 text-sm font-medium text-foreground">{q.title}</span>
+                  <span className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
+                    {q.commentCount > 0 && (
+                      <span className="flex items-center gap-1 text-primary">
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        {q.commentCount}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1 whitespace-nowrap">
+                      <User className="h-3.5 w-3.5" />
+                      {q.author}
                     </span>
-                  )}
-                  <span className="flex items-center gap-1 whitespace-nowrap">
-                    <User className="h-3.5 w-3.5" />
-                    {q.author}
                   </span>
-                </span>
-              </Link>
-            ))
+                </Link>
+              ))}
+              <BoardPagination
+                page={currentQPage}
+                pageCount={questionPageCount}
+                onChange={(p) =>
+                  navigate({ search: (prev: { qpage: number; gpage: number }) => ({ ...prev, qpage: p }) })
+                }
+              />
+            </>
           )}
         </section>
       )}
@@ -183,28 +218,37 @@ function BoardInner({
               description="자유롭게 글을 남겨보세요."
             />
           ) : (
-            generals.map((g) => (
-              <Link
-                key={g.id}
-                to="/board/$slug/$postNo"
-                params={{ slug, postNo: String(g.postNo) }}
-                className="flex items-center justify-between gap-5 rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
-              >
-                <span className="flex-1 min-w-0 line-clamp-2 text-sm font-medium text-foreground">{g.title}</span>
-                <span className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
-                  {g.commentCount > 0 && (
-                    <span className="flex items-center gap-1 text-primary">
-                      <MessageCircle className="h-3.5 w-3.5" />
-                      {g.commentCount}
+            <>
+              {pagedGenerals.map((g) => (
+                <Link
+                  key={g.id}
+                  to="/board/$slug/$postNo"
+                  params={{ slug, postNo: String(g.postNo) }}
+                  className="flex items-center justify-between gap-5 rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+                >
+                  <span className="flex-1 min-w-0 line-clamp-2 text-sm font-medium text-foreground">{g.title}</span>
+                  <span className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
+                    {g.commentCount > 0 && (
+                      <span className="flex items-center gap-1 text-primary">
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        {g.commentCount}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1 whitespace-nowrap">
+                      <User className="h-3.5 w-3.5" />
+                      {g.author}
                     </span>
-                  )}
-                  <span className="flex items-center gap-1 whitespace-nowrap">
-                    <User className="h-3.5 w-3.5" />
-                    {g.author}
                   </span>
-                </span>
-              </Link>
-            ))
+                </Link>
+              ))}
+              <BoardPagination
+                page={currentGPage}
+                pageCount={generalPageCount}
+                onChange={(p) =>
+                  navigate({ search: (prev: { qpage: number; gpage: number }) => ({ ...prev, gpage: p }) })
+                }
+              />
+            </>
           )}
         </section>
       )}
@@ -287,6 +331,86 @@ function BoardInner({
     </div>
   );
 }
+
+function BoardPagination({
+  page,
+  pageCount,
+  onChange,
+}: {
+  page: number;
+  pageCount: number;
+  onChange: (page: number) => void;
+}) {
+  if (pageCount <= 1) return null;
+
+  const pages: (number | "ellipsis")[] = [];
+  const push = (p: number) => pages.push(p);
+  if (pageCount <= 7) {
+    for (let p = 1; p <= pageCount; p++) push(p);
+  } else {
+    push(1);
+    const start = Math.max(2, page - 1);
+    const end = Math.min(pageCount - 1, page + 1);
+    if (start > 2) pages.push("ellipsis");
+    for (let p = start; p <= end; p++) push(p);
+    if (end < pageCount - 1) pages.push("ellipsis");
+    push(pageCount);
+  }
+
+  const btnBase =
+    "flex h-9 min-w-9 items-center justify-center rounded-xl px-3 text-sm font-medium transition-colors active:scale-95";
+
+  return (
+    <nav
+      aria-label="페이지 이동"
+      className="flex items-center justify-center gap-1.5 pt-2"
+    >
+      <button
+        type="button"
+        aria-label="이전 페이지"
+        disabled={page <= 1}
+        onClick={() => onChange(page - 1)}
+        className={`${btnBase} bg-card text-foreground shadow-sm disabled:opacity-40`}
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+      {pages.map((p, i) =>
+        p === "ellipsis" ? (
+          <span
+            key={`e-${i}`}
+            className="flex h-9 w-9 items-center justify-center text-sm text-muted-foreground"
+          >
+            …
+          </span>
+        ) : (
+          <button
+            key={p}
+            type="button"
+            aria-current={p === page ? "page" : undefined}
+            onClick={() => onChange(p)}
+            className={`${btnBase} shadow-sm ${
+              p === page
+                ? "bg-primary text-primary-foreground"
+                : "bg-card text-foreground"
+            }`}
+          >
+            {p}
+          </button>
+        ),
+      )}
+      <button
+        type="button"
+        aria-label="다음 페이지"
+        disabled={page >= pageCount}
+        onClick={() => onChange(page + 1)}
+        className={`${btnBase} bg-card text-foreground shadow-sm disabled:opacity-40`}
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    </nav>
+  );
+}
+
 
 function SeriesCard({
   name,
