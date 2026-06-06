@@ -1,43 +1,28 @@
-# 글 수정 플로우 변경
+# 모바일 글쓰기/수정 컨테이너 넘침 수정
 
-## 목표
-현재 "수정" 버튼을 누르면 비밀번호 입력란이 포함된 수정 폼이 바로 열립니다. 이를 "삭제"처럼 **비밀번호 확인 모달을 먼저** 띄우고, 비밀번호가 맞을 때만 수정 폼이 열리도록 변경합니다.
+## 문제
+모바일 세로 화면에서 글 수정 모달(및 글쓰기 에디터)에 **긴 URL**을 붙여넣으면, 그 URL이 줄바꿈되지 않아 에디터 → 모달 컨테이너가 화면 밖으로 늘어납니다. 그 결과 좌우가 화면을 벗어나 잘려 보입니다.
 
-## 변경할 동작
+## 원인
+- `src/styles.css`의 `.tiptap-editor` 본문(p)과 링크(a, `display:inline-flex` 알약형)에 줄바꿈 규칙이 없어 긴 단어/URL이 끊기지 않음.
+- 모달(`DialogContent`)과 에디터에 `min-width:0` / overflow 처리가 없어, 내부 콘텐츠가 넘치면 컨테이너 자체가 뷰포트보다 넓어짐.
 
-```text
-[현재]
-수정 클릭 → 수정 폼(제목/내용/비밀번호 한 화면) → 제출 시 비밀번호 검증
+## 작업
 
-[변경 후]
-수정 클릭 → 비밀번호 입력 모달 → 일치 시 수정 폼 열림(비밀번호란 없음)
-                              → 불일치 시 오류 토스트, 모달 유지
-```
+1. `src/styles.css` — `.tiptap-editor` 줄바꿈 보강
+   - `.tiptap-editor`, `.tiptap-editor p`에 `overflow-wrap: anywhere; word-break: break-word;` 추가.
+   - 링크 알약(`.tiptap-editor a`)이 긴 URL일 때 줄바꿈되도록 `max-width: 100%; overflow-wrap: anywhere; word-break: break-word;` 추가(필요 시 `white-space: normal`).
 
-## 적용 파일
-`src/routes/_main.board.$slug.$postNo.tsx` 의 `ManagePost` 컴포넌트만 수정합니다. (백엔드 변경 없음 — 기존 `verifyPostPassword` 서버 함수 활용)
+2. `src/components/PostEditor.tsx` — 에디터 컨테이너 폭 고정
+   - 루트 `div`와 `EditorContent`에 `min-w-0`, `overflow-hidden`(가로) / `break-words` 적용해 부모 폭을 넘기지 않게 함.
 
-## 상세 작업
+3. `src/routes/_main.board.$slug.$postNo.tsx` — 수정 모달 폭/스크롤 고정
+   - 수정 다이얼로그 `DialogContent`에 가로 넘침 방지(`overflow-hidden`)와 세로 스크롤(`max-h-[90vh] overflow-y-auto`) 적용, 폼/필드에 `min-w-0` 보장.
 
-1. **상태 추가**
-   - 비밀번호 확인 모달용 `editGateOpen` 상태와 입력값 `editGatePw` 추가.
-   - 검증에 성공한 비밀번호는 기존 `editPw`에 저장해 수정 제출 시 재사용.
-
-2. **수정 버튼 동작 변경**
-   - "수정" 버튼 클릭 시 수정 폼(`editOpen`)이 아니라 비밀번호 확인 모달(`editGateOpen`)을 엽니다.
-
-3. **비밀번호 확인 모달 추가** (삭제 모달과 동일한 디자인)
-   - 제목: "{noun} 수정", 안내문: "등록 시 설정한 비밀번호 또는 관리자 비밀번호를 입력하세요." (공지는 관리자 비밀번호 안내).
-   - `verifyPostPassword` 서버 함수로 검증.
-   - 성공: `editPw`에 입력값 저장, 폼 필드를 현재 글 값으로 초기화, 확인 모달 닫고 수정 폼 열기.
-   - 실패: "비밀번호가 일치하지 않아요." 토스트, 모달 유지.
-
-4. **수정 폼에서 비밀번호 입력란 제거**
-   - 이미 검증을 마쳤으므로 수정 폼 하단의 비밀번호 필드와 제출 시 비밀번호 검사 로직 제거.
-   - 제출은 저장해둔 `editPw`로 `updatePost` 호출 (검증은 통과하지만 안전하게 그대로 전달).
-
-5. **삭제 플로우는 그대로 유지** (이미 비밀번호 모달 방식).
+## 기대 결과
+- 긴 URL/단어가 에디터 안에서 자동 줄바꿈되어 모달이 항상 화면 폭 안에 머무름.
+- 모바일 세로 화면에서 좌우 컨테이너가 화면 크기에 맞게 고정.
 
 ## 기술 메모
-- `verifyPostPassword`는 `useServerFn`으로 호출하며 `{ data: { id, password } }` 형태, `{ ok }` 반환.
-- 관리자 비밀번호도 `checkPostPassword`에서 함께 처리되므로 추가 분기 불필요.
+- 글쓰기 전용 페이지(new-question/general/link/project)도 동일한 PostEditor를 쓰므로 함께 개선됨.
+- 디자인 토큰/레이아웃 구조는 변경하지 않고 줄바꿈·overflow만 보정.
