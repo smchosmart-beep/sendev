@@ -577,6 +577,147 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
         <Trash2 className="h-4 w-4" />
         삭제
       </Button>
+      {canMove && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={openMoveGate}
+          className="rounded-xl active:scale-95"
+        >
+          <FolderInput className="h-4 w-4" />
+          이동
+        </Button>
+      )}
+
+      {/* Move password gate dialog */}
+      <Dialog open={moveGateOpen} onOpenChange={setMoveGateOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>게시글 이동</DialogTitle>
+            <DialogDescription>
+              관리자 비밀번호를 입력해야 다른 게시판으로 이동할 수 있어요.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!moveGatePw.trim()) {
+                toast.error("관리자 비밀번호를 입력해주세요.");
+                return;
+              }
+              moveVerifyMutation.mutate();
+            }}
+            className="space-y-4 py-2"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="mv-pw">관리자 비밀번호</Label>
+              <Input
+                id="mv-pw"
+                type="password"
+                value={moveGatePw}
+                onChange={(e) => setMoveGatePw(e.target.value)}
+                className="rounded-xl"
+                autoFocus
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setMoveGateOpen(false)}
+                className="rounded-xl active:scale-95"
+              >
+                취소
+              </Button>
+              <Button
+                type="submit"
+                disabled={moveVerifyMutation.isPending}
+                className="rounded-xl active:scale-95"
+              >
+                {moveVerifyMutation.isPending ? "확인 중..." : "확인"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Move target picker dialog */}
+      <Dialog open={movePickOpen} onOpenChange={setMovePickOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>이동할 게시판 선택</DialogTitle>
+            <DialogDescription>
+              탭 메뉴와 게시판을 차례대로 선택하세요.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-5 py-2">
+            <div className="space-y-2">
+              <Label>탭 메뉴</Label>
+              <div className="flex flex-wrap gap-2">
+                {tabsWithBoards.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    이동할 수 있는 게시판이 없어요.
+                  </p>
+                )}
+                {tabsWithBoards.map((tab) => (
+                  <Button
+                    key={tab}
+                    type="button"
+                    size="sm"
+                    variant={moveTab === tab ? "default" : "secondary"}
+                    onClick={() => {
+                      setMoveTab(tab);
+                      setMoveTargetId(null);
+                    }}
+                    className="rounded-xl active:scale-95"
+                  >
+                    {TAB_LABELS[tab]}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {moveTab && (
+              <div className="space-y-2">
+                <Label>게시판</Label>
+                <div className="flex flex-col gap-2">
+                  {moveTargets.map((c) => (
+                    <Button
+                      key={c.id}
+                      type="button"
+                      variant={moveTargetId === c.id ? "default" : "secondary"}
+                      onClick={() => setMoveTargetId(c.id)}
+                      className="justify-start rounded-xl active:scale-95"
+                    >
+                      {c.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setMovePickOpen(false)}
+              className="rounded-xl active:scale-95"
+            >
+              취소
+            </Button>
+            <Button
+              type="button"
+              disabled={!moveTargetId || moveMutation.isPending}
+              onClick={() => moveMutation.mutate()}
+              className="rounded-xl active:scale-95"
+            >
+              {moveMutation.isPending ? "이동 중..." : "이동하기"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Edit password gate dialog */}
       <Dialog open={editGateOpen} onOpenChange={setEditGateOpen}>
