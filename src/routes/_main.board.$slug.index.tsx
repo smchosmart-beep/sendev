@@ -16,7 +16,18 @@ import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { ThumbnailUploadButton } from "@/components/ThumbnailUploadButton";
 
+const PAGE_SIZE = 10;
+
+function toPage(value: unknown): number {
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 1 ? n : 1;
+}
+
 export const Route = createFileRoute("/_main/board/$slug/")({
+  validateSearch: (search: Record<string, unknown>): { qpage: number; gpage: number } => ({
+    qpage: toPage(search.qpage),
+    gpage: toPage(search.gpage),
+  }),
   loader: async ({ context, params }) => {
     const categories = await context.queryClient.ensureQueryData(
       categoriesQueryOptions(),
