@@ -157,12 +157,22 @@ function MainLayout() {
           </nav>
 
           <Link
+            to="/search"
+            search={{ q: "", mode: "title" }}
+            aria-label="검색"
+            className="hidden h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:flex"
+          >
+            <Search className="h-5 w-5" />
+          </Link>
+
+          <Link
             to="/admin/categories"
             aria-label="관리자"
             className="hidden h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:flex"
           >
             <Settings className="h-5 w-5" />
           </Link>
+
 
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger
