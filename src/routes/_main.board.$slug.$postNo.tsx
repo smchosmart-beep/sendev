@@ -1880,7 +1880,7 @@ function BackLink({ slug }: { slug: string }) {
       className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:-translate-x-0.5 hover:text-foreground"
     >
       <ArrowLeft className="h-4 w-4" />
-      카테고리으로
+      게시글 목록
     </Link>
   );
 }
