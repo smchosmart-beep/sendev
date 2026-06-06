@@ -538,10 +538,18 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
   // Boards in the selected tab, excluding current. Post type is ignored —
   // posts can move to any board.
   const moveTargets = categories.filter(
-    (c) => c.id !== categoryId && c.tabGroup === moveTab,
+    (c) =>
+      c.id !== categoryId &&
+      c.tabGroup === moveTab &&
+      (c.enableGeneral || c.enableQuestion),
   );
   const tabsWithBoards = TAB_ORDER.filter((tab) =>
-    categories.some((c) => c.id !== categoryId && c.tabGroup === tab),
+    categories.some(
+      (c) =>
+        c.id !== categoryId &&
+        c.tabGroup === tab &&
+        (c.enableGeneral || c.enableQuestion),
+    ),
   );
 
 

@@ -1,23 +1,31 @@
-## 목표
+# 이동 시 글 종류를 대상 게시판에 맞게 변환
 
-게시글 이동 모달에서 **글 종류(일반/질문)에 따른 게시판 필터를 제거**해, 4개 탭과 그 안의 모든 게시판(현재 게시판 제외)으로 자유롭게 이동할 수 있게 한다.
+## 문제
+질문글을 일반게시판으로 이동해도 글의 `type`이 `question`으로 유지되어, 대상 카테고리의 질문 섹션이 꺼져 있으면 목록에 표시되지 않는다.
 
-## 원인
+## 해결 방향
+이동할 때 대상 게시판이 지원하는 종류로 글의 `type`을 자동 변환한다.
+- 대상 게시판이 일반게시판(`enable_general`)을 지원하면 → `type = "general"`
+- 아니면 질문게시판(`enable_question`)을 지원하면 → `type = "question"`
+- (현재 모든 카테고리는 일반/질문 중 하나만 활성화되어 있어 규칙이 모호하지 않음)
 
-현재 이동 대상은 "글 종류를 지원하는 게시판"만 노출하도록 필터링되어 있다. DB상 질문(`enableQuestion`)을 허용하는 게시판은 **해커톤 탭에만** 있어, 질문 글을 이동할 때 해커톤 탭 하나만 나타난다.
+또한 글이 안 보이는 곳으로 가지 않도록, 이동 대상 목록을 **일반 또는 질문 게시판이 켜진 카테고리**로 제한한다(링크/산출물 전용 게시판은 텍스트 글 이동 대상에서 제외).
 
 ## 변경 사항
 
-### 1. 클라이언트 — `src/routes/_main.board.$slug.$postNo.tsx`
+### `src/lib/platform.functions.ts` — `movePost`
+- 대상 카테고리 조회 시 `slug` 외에 `enable_general`, `enable_question`도 함께 select.
+- 이동 update에 `type` 결정 로직 추가:
+  - `enable_general` true → `general`
+  - 아니고 `enable_question` true → `question`
+  - 둘 다 아니면 기존 type 유지(이 경우는 클라이언트에서 대상 목록에 안 뜨도록 막음)
+- `update({ category_id, post_no, type: newType })` 형태로 한 번에 갱신.
 
-- `moveTargets` 필터에서 `post.type === "general" ? c.enableGeneral : c.enableQuestion` 조건 제거 → 현재 게시판(`c.id !== categoryId`)만 제외하고 같은 탭의 모든 게시판 노출.
-- `tabsWithBoards` 필터에서도 동일하게 글 종류 조건 제거 → 현재 게시판을 제외한 게시판이 하나라도 있는 모든 탭 노출.
-
-### 2. 서버 — `src/lib/platform.functions.ts` (`movePost`)
-
-- 대상 게시판의 `enable_general` / `enable_question` 지원 여부 검사(765~770줄)를 제거한다. 그대로 두면 클라이언트에서 선택해도 서버에서 "대상 게시판은 ~글을 지원하지 않아요" 에러로 막히기 때문.
-- 관리자 비밀번호 검증, 일반/질문 글만 이동 가능 제한, 채번 로직은 그대로 유지.
+### `src/routes/_main.board.$slug.$postNo.tsx`
+- `moveTargets` / `tabsWithBoards` 필터에 "일반 또는 질문 게시판이 켜진 카테고리" 조건 추가:
+  - `c.enableGeneral || c.enableQuestion`
+- 이렇게 하면 해커톤(질문) 탭은 그대로 보이고, 링크/산출물 전용 게시판(youtube, 사례집)만 텍스트 글 이동 대상에서 빠진다.
 
 ## 기술 메모
-
-- 글 종류 무시 이동이므로 대상 게시판 조회 시 `enable_*` 컬럼은 더 이상 필요 없지만 `slug`는 유지(이동 후 URL 이동에 사용).
+- 이동 후 `navigate`가 대상 글로 이동하는데, type이 바뀌어도 `postNo` 기반 URL이라 그대로 동작.
+- DB 스키마 변경 없음. 데이터 마이그레이션 불필요.
