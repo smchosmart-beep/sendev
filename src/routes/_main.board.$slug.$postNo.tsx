@@ -494,9 +494,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
           <DialogHeader>
             <DialogTitle>{noun} 수정</DialogTitle>
             <DialogDescription>
-              {post.type === "notice"
-                ? "관리자 비밀번호를 입력해야 수정할 수 있어요."
-                : "등록 시 설정한 비밀번호를 입력해야 수정할 수 있어요."}
+              내용을 수정한 뒤 저장하세요.
             </DialogDescription>
           </DialogHeader>
           <form
@@ -504,10 +502,6 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
               e.preventDefault();
               if (!title.trim() || (!isBoardPost && !author.trim())) {
                 toast.error("제목과 작성자를 입력해주세요.");
-                return;
-              }
-              if (!editPw.trim()) {
-                toast.error("비밀번호를 입력해주세요.");
                 return;
               }
               editMutation.mutate();
