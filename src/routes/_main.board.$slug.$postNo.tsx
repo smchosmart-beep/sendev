@@ -79,6 +79,14 @@ import { PostEditor } from "@/components/PostEditor";
 
 const NUMERIC_RE = /^\d+$/;
 
+const TAB_LABELS: Record<TabGroup, string> = {
+  hackathon: "해커톤",
+  resources: "자료집",
+  devground: "Dev Ground",
+  helloworld: "Hello, World",
+};
+const TAB_ORDER: TabGroup[] = ["hackathon", "resources", "devground", "helloworld"];
+
 export const Route = createFileRoute("/_main/board/$slug/$postNo")({
   loader: ({ context, params }) => {
     if (NUMERIC_RE.test(params.postNo)) {
