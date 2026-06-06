@@ -201,14 +201,19 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
         </div>
 
         {isBoardPost && (
-          <article className="post-content prose prose-sm mt-6 max-w-none border-t border-border pt-6 prose-headings:text-foreground prose-p:text-foreground prose-a:text-primary prose-a:no-underline prose-strong:text-foreground prose-code:text-primary prose-li:text-foreground prose-table:text-foreground">
+          <article className="post-content prose prose-sm mt-6 max-w-none break-words border-t border-border pt-6 [&_a]:break-words [&_a]:[overflow-wrap:anywhere] prose-headings:text-foreground prose-p:text-foreground prose-a:text-primary prose-a:no-underline prose-strong:text-foreground prose-code:text-primary prose-li:text-foreground prose-table:text-foreground">
             {post.content.trim() ? (
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
                 components={{
-                  a: ({ node, ...props }) => (
-                    <a {...props} target="_blank" rel="noopener noreferrer" />
+                  a: ({ node, className, ...props }) => (
+                    <a
+                      {...props}
+                      className={`break-words [overflow-wrap:anywhere] ${className ?? ""}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    />
                   ),
                   p: ({ node, children, ...props }) => {
                     const embed = soleLinkEmbed(node);
