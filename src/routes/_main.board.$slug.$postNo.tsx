@@ -53,6 +53,7 @@ import {
   deletePost,
   createComment,
   deleteComment,
+  verifyPostPassword,
   type PostDTO,
   type CommentDTO,
 } from "@/lib/platform.functions";
@@ -364,6 +365,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
   const queryClient = useQueryClient();
   const update = useServerFn(updatePost);
   const remove = useServerFn(deletePost);
+  const verify = useServerFn(verifyPostPassword);
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
   const category = categories.find((c) => c.id === post.categoryId);
   const projectName = category?.projectName || "산출물";
@@ -381,6 +383,8 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
       ? linkName
       : projectName;
 
+  const [editGateOpen, setEditGateOpen] = useState(false);
+  const [editGatePw, setEditGatePw] = useState("");
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -399,14 +403,29 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
     queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
   };
 
-  const openEdit = () => {
-    setTitle(post.title);
-    setContent(post.content);
-    setAuthor(post.author);
-    setGithubUrl(post.githubUrl);
-    setDeployUrl(post.deployUrl);
-    setEditPw("");
-    setEditOpen(true);
+  // Verify the password first, then open the edit form with fields prefilled.
+  const editGateMutation = useMutation({
+    mutationFn: () => verify({ data: { id: postId, password: editGatePw } }),
+    onSuccess: (res) => {
+      if (!res.ok) {
+        toast.error("비밀번호가 일치하지 않아요.");
+        return;
+      }
+      setTitle(post.title);
+      setContent(post.content);
+      setAuthor(post.author);
+      setGithubUrl(post.githubUrl);
+      setDeployUrl(post.deployUrl);
+      setEditPw(editGatePw);
+      setEditGateOpen(false);
+      setEditOpen(true);
+    },
+    onError: () => toast.error("확인 중 문제가 발생했어요."),
+  });
+
+  const openEditGate = () => {
+    setEditGatePw("");
+    setEditGateOpen(true);
   };
 
   const editMutation = useMutation({
@@ -449,7 +468,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
         type="button"
         variant="secondary"
         size="sm"
-        onClick={openEdit}
+        onClick={openEditGate}
         className="rounded-xl active:scale-95"
       >
         <Pencil className="h-4 w-4" />
@@ -469,9 +488,9 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
         삭제
       </Button>
 
-      {/* Edit dialog */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-2xl rounded-2xl">
+      {/* Edit password gate dialog */}
+      <Dialog open={editGateOpen} onOpenChange={setEditGateOpen}>
+        <DialogContent className="rounded-2xl">
           <DialogHeader>
             <DialogTitle>{noun} 수정</DialogTitle>
             <DialogDescription>
@@ -483,12 +502,63 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (!title.trim() || (!isBoardPost && !author.trim())) {
-                toast.error("제목과 작성자를 입력해주세요.");
+              if (!editGatePw.trim()) {
+                toast.error("비밀번호를 입력해주세요.");
                 return;
               }
-              if (!editPw.trim()) {
-                toast.error("비밀번호를 입력해주세요.");
+              editGateMutation.mutate();
+            }}
+            className="space-y-4 py-2"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="eg-pw">비밀번호</Label>
+              <Input
+                id="eg-pw"
+                type="password"
+                value={editGatePw}
+                onChange={(e) => setEditGatePw(e.target.value)}
+                className="rounded-xl"
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">
+                등록 시 설정한 비밀번호 또는 관리자 비밀번호를 입력하세요.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setEditGateOpen(false)}
+                className="rounded-xl active:scale-95"
+              >
+                취소
+              </Button>
+              <Button
+                type="submit"
+                disabled={editGateMutation.isPending}
+                className="rounded-xl active:scale-95"
+              >
+                {editGateMutation.isPending ? "확인 중..." : "확인"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-2xl rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>{noun} 수정</DialogTitle>
+            <DialogDescription>
+              내용을 수정한 뒤 저장하세요.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!title.trim() || (!isBoardPost && !author.trim())) {
+                toast.error("제목과 작성자를 입력해주세요.");
                 return;
               }
               editMutation.mutate();
@@ -555,19 +625,6 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
                 </div>
               </>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="e-pw">비밀번호</Label>
-              <Input
-                id="e-pw"
-                type="password"
-                value={editPw}
-                onChange={(e) => setEditPw(e.target.value)}
-                className="rounded-xl"
-              />
-              <p className="text-xs text-muted-foreground">
-                등록 시 설정한 비밀번호 또는 관리자 비밀번호를 입력하세요.
-              </p>
-            </div>
             <DialogFooter>
               <Button
                 type="button"
