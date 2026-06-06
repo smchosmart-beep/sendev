@@ -11,7 +11,7 @@ import {
 } from "@/lib/platform.queries";
 import { type PostDTO } from "@/lib/platform.functions";
 import { groupLinksBySeries, seededShuffle, getOrderSeed } from "@/lib/series";
-import { getEmbedUrl, getThumbnailUrl } from "@/lib/embed";
+import { getEmbedUrl, getThumbnailUrl, getCanvaPreviewUrl } from "@/lib/embed";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { ThumbnailUploadButton } from "@/components/ThumbnailUploadButton";
