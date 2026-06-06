@@ -463,7 +463,7 @@ export function PostEditor({
       <EditorContent
         editor={editor}
         data-placeholder={placeholder}
-        className="px-3 py-2.5 text-sm text-foreground"
+        className="min-w-0 overflow-x-hidden break-words px-3 py-2.5 text-sm text-foreground"
       />
 
       <input
