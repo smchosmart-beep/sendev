@@ -547,7 +547,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
 
       {/* Edit dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-2xl rounded-2xl">
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto overflow-x-hidden rounded-2xl">
           <DialogHeader>
             <DialogTitle>{noun} 수정</DialogTitle>
             <DialogDescription>
