@@ -245,7 +245,7 @@ function BoardInner({
                 page={currentGPage}
                 pageCount={generalPageCount}
                 onChange={(p) =>
-                  navigate({ search: (prev) => ({ ...prev, gpage: p }) })
+                  navigate({ search: (prev: { qpage: number; gpage: number }) => ({ ...prev, gpage: p }) })
                 }
               />
             </>
