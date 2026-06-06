@@ -560,6 +560,62 @@ export const getPostByNo = createServerFn({ method: "GET" })
     return row ? mapPost(row) : null;
   });
 
+// Searches all posts by title, title+content, or author across every category.
+export const searchPosts = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z
+      .object({
+        q: z.string().trim().min(1).max(100),
+        mode: z.enum(["title", "title_content", "author"]).default("title"),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<SearchResultDTO[]> => {
+    const db = await getAdmin();
+    // Escape PostgREST ilike wildcards in the user query.
+    const term = data.q.replace(/[%_,]/g, (m) => `\\${m}`);
+    const pattern = `%${term}%`;
+
+    let query = db
+      .from("posts")
+      .select(`${POST_COLUMNS}, categories!inner(slug, name)`)
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (data.mode === "title") {
+      query = query.ilike("title", pattern);
+    } else if (data.mode === "author") {
+      query = query.ilike("author", pattern);
+    } else {
+      query = query.or(`title.ilike.${pattern},content.ilike.${pattern}`);
+    }
+
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+
+    const posts = rows ?? [];
+    const postIds = posts.map((p: any) => p.id);
+
+    const counts: Record<string, number> = {};
+    if (postIds.length > 0) {
+      const { data: commentRows, error: cErr } = await db
+        .from("comments")
+        .select("post_id")
+        .in("post_id", postIds);
+      if (cErr) throw new Error(cErr.message);
+      for (const c of commentRows ?? []) {
+        const pid = String((c as any).post_id);
+        counts[pid] = (counts[pid] ?? 0) + 1;
+      }
+    }
+
+    return posts.map((p: any) => ({
+      ...mapPost(p, counts[String(p.id)] ?? 0),
+      categorySlug: p.categories?.slug ?? "",
+      categoryName: p.categories?.name ?? "",
+    }));
+  });
+
 
 export const createPost = createServerFn({ method: "POST" })
   .inputValidator((input) =>
