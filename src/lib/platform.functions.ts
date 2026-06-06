@@ -724,6 +724,74 @@ export const deletePost = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Admin-only: moves a general/question post to another board (category).
+// Only the admin master password is accepted — per-post passwords cannot move.
+export const movePost = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        password: z.string().max(100),
+        targetCategoryId: z.string().uuid(),
+      })
+      .parse(input),
+  )
+  .handler(
+    async ({
+      data,
+    }): Promise<{ ok: boolean; slug?: string; postNo?: number }> => {
+      const master = process.env.POST_MASTER_PASSWORD;
+      if (!master || data.password.length === 0 || data.password !== master) {
+        return { ok: false };
+      }
+      const db = await getAdmin();
+      const { data: post, error: postErr } = await db
+        .from("posts")
+        .select("type, category_id")
+        .eq("id", data.id)
+        .maybeSingle();
+      if (postErr) throw new Error(postErr.message);
+      if (!post) return { ok: false };
+      if (post.type !== "general" && post.type !== "question") {
+        throw new Error("일반/질문 게시글만 이동할 수 있어요.");
+      }
+      const { data: target, error: catErr } = await db
+        .from("categories")
+        .select("slug, enable_general, enable_question")
+        .eq("id", data.targetCategoryId)
+        .maybeSingle();
+      if (catErr) throw new Error(catErr.message);
+      if (!target) return { ok: false };
+      if (post.type === "general" && !target.enable_general) {
+        throw new Error("대상 게시판은 일반 글을 지원하지 않아요.");
+      }
+      if (post.type === "question" && !target.enable_question) {
+        throw new Error("대상 게시판은 질문 글을 지원하지 않아요.");
+      }
+      // Assign the next per-board number in the target board, retrying on
+      // a unique collision (concurrent insert/move).
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const { data: maxRow } = await db
+          .from("posts")
+          .select("post_no")
+          .eq("category_id", data.targetCategoryId)
+          .order("post_no", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const nextNo = (maxRow?.post_no ?? 0) + 1;
+        const { error } = await db
+          .from("posts")
+          .update({ category_id: data.targetCategoryId, post_no: nextNo })
+          .eq("id", data.id);
+        if (!error) return { ok: true, slug: target.slug ?? "", postNo: nextNo };
+        if (!String(error.message ?? "").toLowerCase().includes("duplicate")) {
+          throw new Error(error.message);
+        }
+      }
+      throw new Error("게시글 번호를 부여하지 못했어요. 다시 시도해주세요.");
+    },
+  );
+
 function mapPost(p: any, commentCount = 0): PostDTO {
   return {
     id: p.id,
