@@ -93,6 +93,11 @@ export interface PostDTO {
   commentCount: number;
 }
 
+export interface SearchResultDTO extends PostDTO {
+  categorySlug: string;
+  categoryName: string;
+}
+
 export interface CriterionDTO {
   id: string;
   categoryId: string;
