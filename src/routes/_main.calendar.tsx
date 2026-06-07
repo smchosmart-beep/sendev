@@ -489,12 +489,10 @@ function CalendarPage() {
 
 
 
-              {selected.description && (
                 <p className="flex items-start gap-2 whitespace-pre-wrap rounded-xl bg-muted p-4 text-muted-foreground">
                   <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  <span>{selected.description}</span>
+                  <span>{selected.description || "작성된 메모가 없습니다."}</span>
                 </p>
-              )}
               {selected.attachments.length > 0 && (
                 <div className="space-y-1">
                   <p className="text-xs font-semibold text-muted-foreground">첨부 파일</p>
