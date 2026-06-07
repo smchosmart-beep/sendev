@@ -135,15 +135,15 @@ function HomePage() {
                     </span>
                   )}
                 </div>
-                {e.description && (
-                  <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
-                    {e.description}
+                {e.placeAddress && (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {e.placeAddress}
                   </p>
                 )}
-                {e.placeAddress && (
-                  <p className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <StickyNote className="h-4 w-4 shrink-0 text-primary" />
-                    {e.placeAddress}
+                {e.description && (
+                  <p className="mt-3 flex items-start gap-1.5 text-sm text-muted-foreground">
+                    <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    <span className="line-clamp-2">{e.description}</span>
                   </p>
                 )}
                 {e.latitude != null && e.longitude != null ? (
