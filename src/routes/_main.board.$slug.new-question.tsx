@@ -111,10 +111,6 @@ function NewQuestionPage() {
               toast.error("제목과 작성자를 입력해주세요.");
               return;
             }
-            if (!editPassword.trim()) {
-              toast.error("수정·삭제용 비밀번호를 입력해주세요.");
-              return;
-            }
             if (!hasStored && nicknamePassword.trim() !== nicknamePasswordConfirm.trim()) {
               toast.error("닉네임 비밀번호가 일치하지 않아요.");
               return;
