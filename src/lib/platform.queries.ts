@@ -133,3 +133,17 @@ export const ogImageBackfillQueryOptions = (
     staleTime: Infinity,
     retry: false,
   });
+
+
+export const userProfilesQueryOptions = () =>
+  queryOptions({
+    queryKey: ["user-profiles"],
+    queryFn: () => listUserProfiles(),
+  });
+
+export const profileMapQueryOptions = () =>
+  queryOptions({
+    queryKey: ["profile-map"],
+    queryFn: () => getProfileMap(),
+    staleTime: 5 * 60 * 1000,
+  });
