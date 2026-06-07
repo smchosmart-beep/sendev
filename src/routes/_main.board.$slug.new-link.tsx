@@ -65,6 +65,7 @@ function NewLinkPage() {
           type: "link",
           title,
           author,
+          nicknamePassword,
           deployUrl: linkUrl,
           series: series.trim(),
           editPassword,
