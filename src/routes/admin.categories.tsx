@@ -597,13 +597,11 @@ function CategoriesPage() {
             <div className="space-y-3 rounded-xl bg-muted/40 p-4">
               <p className="text-sm font-medium text-foreground">사용할 게시판 종류</p>
               <div className="grid gap-2 sm:grid-cols-2">
-                <SectionToggle id="edit-sec-notice" label="공지사항" checked={editEnableNotice} onChange={setEditEnableNotice} />
-                <SectionToggle id="edit-sec-question" label="질문 게시판" checked={editEnableQuestion} onChange={setEditEnableQuestion} />
-                <SectionToggle id="edit-sec-general" label="일반게시판" checked={editEnableGeneral} onChange={setEditEnableGeneral} />
+                <SectionToggle id="edit-sec-post" label="글 게시판" checked={editEnablePost} onChange={setEditEnablePost} />
                 <SectionToggle id="edit-sec-project" label="산출물 게시판" checked={editEnableProject} onChange={setEditEnableProject} />
                 <SectionToggle id="edit-sec-link" label="링크 게시판" checked={editEnableLink} onChange={setEditEnableLink} />
               </div>
-              {editEnableGeneral && (
+              {editEnablePost && (
                 <div className="space-y-2 pt-1">
                   <Label htmlFor="edit-general-name">일반게시판 이름</Label>
                   <Input
