@@ -1672,10 +1672,9 @@ export const createComment = createServerFn({ method: "POST" })
     const { error } = await db.from("comments").insert({
       post_id: data.postId,
       parent_id: parentId,
-      author: data.author || "익명",
+      author: data.author,
       content: data.content,
       image_urls: data.imageUrls,
-      edit_password: data.editPassword,
     });
     if (error) throw new Error(error.message);
     return { ok: true };
