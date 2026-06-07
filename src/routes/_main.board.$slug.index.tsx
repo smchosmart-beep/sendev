@@ -67,7 +67,7 @@ function BoardInner({
   slug: string;
   category: import("@/lib/platform.functions").CategoryDTO;
 }) {
-  const { data: posts } = useSuspenseQuery(postsQueryOptions(category.id));
+  const { data: posts } = useSuspenseQuery(postsQueryOptions(category.id, getBoardPassword(slug)));
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
   const { qpage, gpage } = Route.useSearch();
   const navigate = useNavigate({ from: "/board/$slug" });
