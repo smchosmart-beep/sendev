@@ -155,6 +155,9 @@ function NewGeneralPage() {
             />
             <p className="text-xs text-muted-foreground">
               이 닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 인증합니다.
+              {hasStored
+                ? " 저장된 닉네임을 불러왔어요."
+                : " 등록하면 이 기기에서 다음부터 자동으로 채워져요."}
             </p>
           </div>
           <div className="space-y-2">
