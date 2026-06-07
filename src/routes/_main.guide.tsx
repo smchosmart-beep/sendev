@@ -38,7 +38,7 @@ export const Route = createFileRoute("/_main/guide")({
 const sections = [
   { id: "why-nickname", label: "닉네임·비밀번호를 쓰는 이유" },
   { id: "find-password", label: "닉네임 비밀번호 찾기" },
-  { id: "password-diff", label: "두 가지 비밀번호의 차이" },
+  { id: "password-diff", label: "닉네임 비밀번호 안내" },
   { id: "level", label: "레벨(LV) 제도" },
   { id: "badge", label: "배지 제도" },
   { id: "security", label: "보안 안전성" },
@@ -133,33 +133,32 @@ function GuidePage() {
         </p>
       </Section>
 
-      <Section id="password-diff" icon={KeySquare} title="글 수정·삭제 비밀번호 vs 닉네임 비밀번호">
-        <p>비밀번호는 역할이 서로 다른 두 종류가 있습니다.</p>
+      <Section id="password-diff" icon={KeySquare} title="닉네임 비밀번호 사용 안내">
+        <p>
+          이 사이트에서는 <strong>닉네임 비밀번호 하나</strong>로 모든 활동을 보호합니다. 별도의 회원가입 없이 닉네임과
+          비밀번호만으로 글·댓글 작성, 수정·삭제, 산출물 평가 등을 할 수 있습니다.
+        </p>
         <ul className="ml-5 list-disc space-y-2">
           <li>
-            <strong>글/댓글 수정·삭제 비밀번호</strong>: 개별 게시글이나 댓글을 작성할 때 입력하는 비밀번호로,
-            <strong> 해당 글 하나</strong>를 수정하거나 삭제할 때만 사용합니다.
+            <strong>글·댓글 작성</strong>: 닉네임과 닉네임 비밀번호를 입력하면 작성됩니다. 처음 사용하는 닉네임은
+            비밀번호를 <strong>두 번 입력</strong>해 등록하고, 이후에는 한 번만 입력해 본인 확인을 합니다.
           </li>
           <li>
-            <strong>닉네임 비밀번호</strong>: 닉네임 <strong>소유권</strong>을 증명하는 비밀번호입니다. 레벨·배지·
-            활동 기록이 연결되며, 닉네임 변경이나 복구도 이 비밀번호로 진행합니다.
+            <strong>글·댓글 수정·삭제</strong>: 수정이나 삭제를 할 때도 <strong>같은 닉네임 비밀번호</strong>로
+            본인 확인을 합니다. 다른 사람이 내 닉네임으로 글이나 댓글을 지우는 것을 막습니다.
+          </li>
+          <li>
+            <strong>산출물 평가</strong>: 별점 평가를 남길 때도 닉네임 비밀번호로 본인 확인을 합니다. 같은 닉네임으로
+            여러 번 평가하거나, 다른 사람이 내 닉네임을 도용해 평가하는 것을 방지합니다.
           </li>
         </ul>
-        <p>즉, 글 비밀번호는 "그 글 한 개"용, 닉네임 비밀번호는 "내 닉네임 전체"용입니다.</p>
-        <p>
-          산출물에 <strong>별점 평가</strong>를 남길 때도 닉네임 비밀번호로 본인 확인을 합니다. 닉네임을 처음 쓰면
-          비밀번호가 등록되고, 다음부터는 같은 비밀번호로만 그 닉네임으로 평가할 수 있어 다른 사람이 내 닉네임을
-          도용해 평가하는 것을 막아줍니다.
-        </p>
         <p>
           일부 평가는 운영자가 미리 정한 <strong>평가자 명단</strong>의 닉네임만 참여할 수 있습니다. 이런 경우
           명단에 없는 닉네임으로는 평가가 제출되지 않으니, 평가가 되지 않으면 운영자에게 명단 등록을 문의해 주세요.
         </p>
         <p>
           비밀번호 입력칸 오른쪽의 <strong>눈 버튼</strong>을 누르면 입력한 비밀번호를 잠깐 평문으로 확인할 수
-          있어 오타를 막을 수 있습니다. <strong>닉네임 비밀번호를 처음 등록할 때</strong>는 새 글·댓글·답글·산출물
-          평가 모두에서 닉네임 비밀번호를 <strong>두 번 입력</strong>해 서로 일치하는지 확인합니다(이미 등록한
-          닉네임은 한 번만 입력). 글·댓글의 <strong>수정·삭제 비밀번호</strong>는 한 번만 입력합니다.
+          있어 오타를 막을 수 있습니다.
         </p>
       </Section>
 
