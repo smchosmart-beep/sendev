@@ -157,6 +157,8 @@ function MainLayout() {
             })}
           </nav>
 
+          <NicknameSetup variant="icon" />
+
           <Link
             to="/search"
             search={{ q: "", mode: "title" }}
