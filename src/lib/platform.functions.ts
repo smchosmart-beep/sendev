@@ -2424,8 +2424,13 @@ export const getMyDashboard = createServerFn({ method: "POST" })
       };
     };
 
+    const points = myPosts.length * 5 + myComments0.length * 1;
+
     return {
       username: prof.username ?? name,
+      level: levelFromActivity(myPosts.length, myComments0.length),
+      points,
+      award: prof.award ?? "",
       myPosts,
       myComments: myComments0.map(mapDashComment),
       repliesToMe: repliesRows.map(mapDashComment),
