@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, MapPin, Clock, ArrowRight, Sparkles, StickyNote } from "lucide-react";
+import { CalendarDays, MapPin, Clock, ArrowRight, Sparkles, StickyNote, Users } from "lucide-react";
 
 import {
   heroSlidesQueryOptions,
@@ -128,6 +128,12 @@ function HomePage() {
                       {e.location}
                     </span>
                   )}
+                  {e.target && (
+                    <span className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      {e.target}
+                    </span>
+                  )}
                 </div>
                 {e.description && (
                   <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
@@ -140,7 +146,7 @@ function HomePage() {
                     {e.placeAddress}
                   </p>
                 )}
-                {e.latitude != null && e.longitude != null && (
+                {e.latitude != null && e.longitude != null ? (
                   <KakaoMap
                     lat={e.latitude}
                     lng={e.longitude}
@@ -148,6 +154,11 @@ function HomePage() {
                     asLink={false}
                     className="mt-3 h-32 w-full rounded-lg"
                   />
+                ) : (
+                  <div className="mt-3 flex h-32 w-full flex-col items-center justify-center gap-1 rounded-lg bg-muted text-muted-foreground">
+                    <MapPin className="h-6 w-6 opacity-50" />
+                    <span className="text-xs">위치 정보 없음</span>
+                  </div>
                 )}
               </Link>
             ))}
