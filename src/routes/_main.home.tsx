@@ -42,12 +42,13 @@ function todayStr() {
 
 function formatDate(date: string) {
   const d = new Date(`${date}T00:00:00`);
-  return d.toLocaleDateString("ko-KR", {
+  const base = d.toLocaleDateString("ko-KR", {
     year: "numeric",
     month: "long",
     day: "numeric",
-    weekday: "short",
   });
+  const weekday = d.toLocaleDateString("ko-KR", { weekday: "short" });
+  return `${base} (${weekday})`;
 }
 
 function HomePage() {
