@@ -8,7 +8,7 @@ const stripKorean = (s: string) => s.replace(/[\u1100-\u11FF\u3130-\u318F\uAC00-
 
 import { cn } from "@/lib/utils";
 import { verifyAdmin } from "@/lib/platform.functions";
-import { setAdminPassword } from "@/lib/admin-auth";
+import { setAdminPassword, getAdminPassword } from "@/lib/admin-auth";
 
 const ADMIN_SESSION_KEY = "admin-access-granted";
 
@@ -35,7 +35,12 @@ function AdminGate() {
   const [showPw, setShowPw] = useState(false);
 
   useEffect(() => {
-    setGranted(sessionStorage.getItem(ADMIN_SESSION_KEY) === "1");
+    // Only treat the session as granted if the password is also still stored;
+    // otherwise admin server calls would send an empty password and be rejected.
+    setGranted(
+      sessionStorage.getItem(ADMIN_SESSION_KEY) === "1" &&
+        getAdminPassword().length > 0,
+    );
     setMounted(true);
   }, []);
 
