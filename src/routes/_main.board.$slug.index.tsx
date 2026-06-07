@@ -243,6 +243,7 @@ function BoardInner({
                     <span className="flex items-center gap-1 whitespace-nowrap">
                       <User className="h-3.5 w-3.5" />
                       {g.author}
+                      <AuthorBadge author={g.author} profileMap={profileMap} />
                     </span>
                   </span>
                 </Link>
