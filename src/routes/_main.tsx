@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Calendar, Code2, Settings, Trophy, BookOpen, Rocket, Terminal, Menu, Home, Search, UserRound } from "lucide-react";
+import { Calendar, Code2, Settings, Trophy, BookOpen, Rocket, Terminal, Menu, Home, Search, UserRound, HelpCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -74,6 +74,7 @@ export const Route = createFileRoute("/_main")({
 });
 
 
+const guideTab = { to: "/guide", label: "사용자 가이드", icon: HelpCircle } as const;
 const homeTab = { to: "/home", label: "홈", icon: Home } as const;
 const calendarTab = { to: "/calendar", label: "캘린더", icon: Calendar } as const;
 
@@ -88,6 +89,7 @@ const boardTabs: { group: TabGroup; label: string; icon: typeof Trophy }[] = [
 function MainLayout() {
   const location = useRouterState({ select: (s) => s.location });
   const pathname = location.pathname;
+  const isGuide = pathname.startsWith("/guide");
   const isHome = pathname.startsWith("/home");
   const isCalendar = pathname.startsWith("/calendar");
 
@@ -109,6 +111,19 @@ function MainLayout() {
           </Link>
 
           <nav className="mx-auto hidden flex-wrap justify-center gap-2 sm:flex sm:gap-7">
+            <Link
+              to={guideTab.to}
+              className={cn(
+                "flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95",
+                isGuide
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "text-muted-foreground hover:-translate-y-0.5 hover:text-foreground",
+              )}
+            >
+              <guideTab.icon className="h-4 w-4" />
+              {guideTab.label}
+            </Link>
+
             <Link
               to={homeTab.to}
               className={cn(
@@ -197,6 +212,20 @@ function MainLayout() {
                 <SheetTitle>메뉴</SheetTitle>
               </SheetHeader>
               <nav className="mt-6 flex flex-col gap-2">
+                <Link
+                  to={guideTab.to}
+                  onClick={() => setMenuOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors",
+                    isGuide
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  <guideTab.icon className="h-5 w-5" />
+                  {guideTab.label}
+                </Link>
+
                 <Link
                   to={homeTab.to}
                   onClick={() => setMenuOpen(false)}
