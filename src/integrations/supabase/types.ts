@@ -215,6 +215,33 @@ export type Database = {
         }
         Relationships: []
       }
+      post_likes: {
+        Row: {
+          created_at: string
+          id: string
+          liker_key: string
+          liker_name: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          liker_key: string
+          liker_name?: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          liker_key?: string
+          liker_name?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           author: string

@@ -35,6 +35,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { LikeButton } from "@/components/LikeButton";
+
 import {
   postQueryOptions,
   postByNoQueryOptions,
@@ -250,6 +252,11 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
           </article>
         )}
       </div>
+
+      <div className="flex items-center gap-2">
+        <LikeButton targetType="post" targetId={post.id} />
+      </div>
+
 
       {isLink && (
         <LinkEmbedSection
@@ -1801,7 +1808,11 @@ function CommentItem({
           ))}
         </div>
       )}
+      <div className="mt-2">
+        <LikeButton targetType="comment" targetId={comment.id} size="sm" />
+      </div>
     </div>
+
   );
 }
 

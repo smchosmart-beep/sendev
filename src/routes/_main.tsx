@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Calendar, Code2, Settings, Trophy, BookOpen, Rocket, Terminal, Menu, Home, Search } from "lucide-react";
+import { Calendar, Code2, Settings, Trophy, BookOpen, Rocket, Terminal, Menu, Home, Search, UserRound } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -169,6 +169,15 @@ function MainLayout() {
           </Link>
 
           <Link
+            to="/mypage"
+            aria-label="내 페이지"
+            className="hidden h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:flex"
+          >
+            <UserRound className="h-5 w-5" />
+          </Link>
+
+
+          <Link
             to="/admin/categories"
             aria-label="관리자"
             className="hidden h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:flex"
@@ -246,6 +255,16 @@ function MainLayout() {
                 <div className="mt-2">
                   <NicknameSetup variant="menu" onOpened={() => setMenuOpen(false)} />
                 </div>
+
+                <Link
+                  to="/mypage"
+                  onClick={() => setMenuOpen(false)}
+                  className="mt-2 flex items-center gap-3 rounded-2xl border border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <UserRound className="h-5 w-5" />
+                  내 페이지
+                </Link>
+
 
 
 
