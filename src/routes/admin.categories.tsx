@@ -467,6 +467,39 @@ function CategoriesPage() {
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
+                  {listFilter !== "all" && (() => {
+                    const group = categories
+                      .filter(
+                        (x) =>
+                          (x.tabGroup ?? "hackathon") === (c.tabGroup ?? "hackathon"),
+                      )
+                      .sort((a, b) => a.sortOrder - b.sortOrder);
+                    const idx = group.findIndex((x) => x.id === c.id);
+                    return (
+                      <div className="flex flex-col gap-1">
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          disabled={idx <= 0 || swapMutation.isPending}
+                          onClick={() => moveCategory(c, "up")}
+                          className="h-6 w-7 rounded-lg active:scale-95"
+                          aria-label="위로 이동"
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          disabled={idx >= group.length - 1 || swapMutation.isPending}
+                          onClick={() => moveCategory(c, "down")}
+                          className="h-6 w-7 rounded-lg active:scale-95"
+                          aria-label="아래로 이동"
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    );
+                  })()}
                   <Button
                     variant="secondary"
                     size="sm"
