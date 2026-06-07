@@ -11,7 +11,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import type { TabGroup } from "@/lib/platform.functions";
-import { NicknameSetup } from "@/components/NicknameSetup";
+
 
 type SearchMode = "title" | "title_content" | "author";
 
