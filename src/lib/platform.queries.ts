@@ -156,3 +156,10 @@ export const awardIconQueryOptions = () =>
     queryFn: () => getAwardIcon(),
     staleTime: 5 * 60 * 1000,
   });
+
+export const awardIconRulesQueryOptions = () =>
+  queryOptions({
+    queryKey: ["award-icon-rules"],
+    queryFn: () => listAwardIconRules(),
+    staleTime: 5 * 60 * 1000,
+  });
