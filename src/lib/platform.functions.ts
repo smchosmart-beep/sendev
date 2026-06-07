@@ -1915,6 +1915,116 @@ export const verifyProfileAdmin = createServerFn({ method: "POST" })
     return { ok: data.password === secret };
   });
 
+// Normalizes a recovery answer so trivial differences (case, spacing) don't
+// block a legitimate owner. Hashed the same way as passwords.
+function normalizeAnswer(answer: string): string {
+  return answer.normalize("NFKC").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+// Sets/updates the recovery question + answer for a nickname. Requires the
+// current nickname password, so only the owner can configure recovery.
+export const setRecoveryQuestion = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        username: z.string().trim().min(1).max(100),
+        password: z.string().min(1).max(200),
+        question: z.string().trim().min(2).max(200),
+        answer: z.string().trim().min(1).max(200),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ ok: boolean }> => {
+    const db = await getAdmin();
+    const key = normalizeName(data.username);
+    const { data: row, error } = await db
+      .from("user_profiles")
+      .select("id, nickname_password")
+      .eq("username_key", key)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row || !row.nickname_password) {
+      throw new Error("등록되지 않은 닉네임이거나 비밀번호가 설정되지 않았습니다.");
+    }
+    if ((await hashSecret(data.password)) !== row.nickname_password) {
+      throw new Error("비밀번호가 일치하지 않습니다.");
+    }
+    const hashedAnswer = await hashSecret(normalizeAnswer(data.answer));
+    const { error: upErr } = await db
+      .from("user_profiles")
+      .update({
+        recovery_question: data.question.trim(),
+        recovery_answer: hashedAnswer,
+      })
+      .eq("id", row.id);
+    if (upErr) throw new Error(upErr.message);
+    return { ok: true };
+  });
+
+// Returns ONLY the recovery question text for a nickname (never the answer).
+// Used to start the lost-password recovery flow.
+export const getRecoveryQuestion = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z.object({ username: z.string().trim().min(1).max(100) }).parse(input),
+  )
+  .handler(async ({ data }): Promise<{ question: string | null }> => {
+    const db = await getAdmin();
+    const key = normalizeName(data.username);
+    const { data: row, error } = await db
+      .from("user_profiles")
+      .select("recovery_question, recovery_answer, nickname_password")
+      .eq("username_key", key)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    // Only expose a question when a claim + recovery answer both exist.
+    if (!row || !row.nickname_password || !row.recovery_answer) {
+      return { question: null };
+    }
+    const q = (row.recovery_question ?? "").trim();
+    return { question: q.length > 0 ? q : null };
+  });
+
+// Lets the owner reset their nickname password by answering the recovery
+// question correctly. No admin involvement, no impersonation via posts.
+export const recoverNicknamePassword = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        username: z.string().trim().min(1).max(100),
+        answer: z.string().trim().min(1).max(200),
+        newPassword: z.string().min(4).max(200),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ ok: boolean }> => {
+    const db = await getAdmin();
+    const key = normalizeName(data.username);
+    const { data: row, error } = await db
+      .from("user_profiles")
+      .select("id, recovery_answer")
+      .eq("username_key", key)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row || !row.recovery_answer) {
+      throw new Error(
+        "이 닉네임에는 복구 질문이 설정되어 있지 않습니다. 관리자에게 초기화를 요청해주세요.",
+      );
+    }
+    const incoming = await hashSecret(normalizeAnswer(data.answer));
+    if (incoming !== row.recovery_answer) {
+      throw new Error("복구 답변이 일치하지 않습니다.");
+    }
+    const hashed = await hashSecret(data.newPassword.trim());
+    const { error: upErr } = await db
+      .from("user_profiles")
+      .update({ nickname_password: hashed })
+      .eq("id", row.id);
+    if (upErr) throw new Error(upErr.message);
+    return { ok: true };
+  });
+
+
+
 // ============================================================
 // Award badge icon: a single global lucide icon name chosen by the admin.
 // Stored in site_settings under the 'award_icon' key.
