@@ -631,8 +631,9 @@ function ProfilesAdmin() {
                 {paged.map((p: UserProfileDTO) => (
                   <li
                     key={p.id}
-                    className="flex items-center gap-3 px-5 py-4"
+                    className="px-5 py-4"
                   >
+                    <div className="flex items-center gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium text-foreground">{p.username}</p>
                       <div className="mt-1 flex flex-wrap items-center gap-2">
