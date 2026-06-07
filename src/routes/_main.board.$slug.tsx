@@ -93,8 +93,10 @@ function BoardLayout() {
       {!mounted ? null : needsGate ? (
         <PasswordGate
           categoryId={category.id}
-          onUnlock={() => {
-            sessionStorage.setItem(unlockKey(category.id), "1");
+          onUnlock={(pw) => {
+            // Store the verified password so board queries can pass it to the
+            // server, which re-checks it before returning protected content.
+            sessionStorage.setItem(unlockKey(category.slug), pw);
             setUnlocked(true);
           }}
         />
@@ -110,7 +112,7 @@ function PasswordGate({
   onUnlock,
 }: {
   categoryId: string;
-  onUnlock: () => void;
+  onUnlock: (password: string) => void;
 }) {
   const verify = useServerFn(verifyBoardPassword);
   const [password, setPassword] = useState("");
@@ -119,7 +121,7 @@ function PasswordGate({
     onSuccess: (res) => {
       if (res.ok) {
         toast.success("입장했어요!");
-        onUnlock();
+        onUnlock(password);
       } else {
         toast.error("비밀번호가 올바르지 않아요.");
       }
