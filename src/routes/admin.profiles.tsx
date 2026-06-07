@@ -718,6 +718,43 @@ function ProfilesAdmin() {
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
+                    </div>
+                    {addingFor === p.id && (
+                      <div className="mt-3 flex items-center gap-2 rounded-xl bg-muted/60 p-2">
+                        <Input
+                          autoFocus
+                          value={addingValue}
+                          onChange={(e) => setAddingValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              submitInlineAdd(p);
+                            }
+                          }}
+                          placeholder="배지 이름 (예: AI교육 부문 대상)"
+                          className="rounded-lg bg-background"
+                        />
+                        <Button
+                          type="button"
+                          onClick={() => submitInlineAdd(p)}
+                          disabled={inlineAddMutation.isPending}
+                          className="rounded-lg active:scale-95"
+                        >
+                          추가
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => {
+                            setAddingFor(null);
+                            setAddingValue("");
+                          }}
+                          className="rounded-lg active:scale-95"
+                        >
+                          취소
+                        </Button>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
