@@ -67,6 +67,7 @@ function BoardInner({
   category: import("@/lib/platform.functions").CategoryDTO;
 }) {
   const { data: posts } = useSuspenseQuery(postsQueryOptions(category.id));
+  const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
   const { qpage, gpage } = Route.useSearch();
   const navigate = useNavigate({ from: "/board/$slug" });
   const notices = posts.filter((p) => p.type === "notice");
