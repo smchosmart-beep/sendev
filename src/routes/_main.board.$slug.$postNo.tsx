@@ -187,9 +187,10 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
           <ManagePost post={post} slug={slug} />
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1.5">
             <User className="h-4 w-4" />
             {post.author}
+            <AuthorBadge author={post.author} profileMap={profileMap} size="md" />
           </span>
           <span>{new Date(post.createdAt).toLocaleDateString("ko-KR")}</span>
           {!isLink && post.githubUrl && (
