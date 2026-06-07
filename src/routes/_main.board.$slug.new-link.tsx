@@ -50,7 +50,7 @@ function NewLinkPage() {
   } = useNicknameIdentity();
   const [linkUrl, setLinkUrl] = useState("");
   const [series, setSeries] = useState("");
-  const [editPassword, setEditPassword] = useState("");
+  
   const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
   
 
