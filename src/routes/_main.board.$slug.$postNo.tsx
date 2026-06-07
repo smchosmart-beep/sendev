@@ -1846,6 +1846,7 @@ function CommentForm({
           toast.error("삭제용 비밀번호를 입력해주세요.");
           return;
         }
+        persistIdentity();
         onSubmit({
           author: author.trim(),
           content: content.trim(),
