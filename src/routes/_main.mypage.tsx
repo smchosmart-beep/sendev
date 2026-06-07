@@ -11,6 +11,7 @@ import {
   Loader2,
   Trophy,
   Star,
+  Pencil,
   icons as lucideIcons,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   getMyDashboard,
+  renameNickname,
   resolveAwardIcon,
   type DashboardDTO,
   type DashCommentDTO,
