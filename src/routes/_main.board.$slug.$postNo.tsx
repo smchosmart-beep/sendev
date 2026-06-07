@@ -1740,9 +1740,8 @@ function CommentsSection({ postId }: { postId: string }) {
           >
             <div className="space-y-2">
               <Label htmlFor="c-del-pw">비밀번호</Label>
-              <Input
+              <PasswordInput
                 id="c-del-pw"
-                type="password"
                 value={deletePw}
                 onChange={(e) => setDeletePw(e.target.value)}
                 className="rounded-xl"
