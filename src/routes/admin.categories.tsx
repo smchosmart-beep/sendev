@@ -366,7 +366,7 @@ function CategoriesPage() {
               className="rounded-xl"
             />
           </div>
-          <div className="space-y-3 rounded-xl bg-muted/40 p-4 sm:col-span-2">
+          <div className={`space-y-3 rounded-xl bg-muted/40 p-4 sm:col-span-2 ${isGroup ? "hidden" : ""}`}>
             <p className="text-sm font-medium text-foreground">사용할 게시판 종류</p>
             <p className="text-xs text-muted-foreground">
               이 카테고리에 표시할 섹션만 켜주세요.
