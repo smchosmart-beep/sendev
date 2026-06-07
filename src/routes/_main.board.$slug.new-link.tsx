@@ -10,7 +10,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { categoriesQueryOptions, postsQueryOptions } from "@/lib/platform.queries";
+import { categoriesQueryOptions, postsQueryOptions, getBoardPassword } from "@/lib/platform.queries";
 import { createPost } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,7 @@ function NewLinkPage() {
 
   // Suggest existing series names in this board for consistent grouping.
   const { data: posts } = useQuery({
-    ...postsQueryOptions(category?.id ?? ""),
+    ...postsQueryOptions(category?.id ?? "", getBoardPassword(slug)),
     enabled: !!category,
   });
   const seriesOptions = Array.from(
