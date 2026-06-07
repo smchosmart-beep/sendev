@@ -606,7 +606,7 @@ function CategoriesPage() {
                           size="icon"
                           disabled={idx <= 0 || swapMutation.isPending}
                           onClick={() => moveCategory(c, "up")}
-                          className="h-8 w-8 rounded-lg active:scale-95"
+                          className="h-8 flex-1 rounded-lg active:scale-95"
                           aria-label="위로 이동"
                         >
                           <ChevronUp className="h-4 w-4" />
@@ -616,7 +616,7 @@ function CategoriesPage() {
                           size="icon"
                           disabled={idx >= siblings.length - 1 || swapMutation.isPending}
                           onClick={() => moveCategory(c, "down")}
-                          className="h-8 w-8 rounded-lg active:scale-95"
+                          className="h-8 flex-1 rounded-lg active:scale-95"
                           aria-label="아래로 이동"
                         >
                           <ChevronDown className="h-4 w-4" />
