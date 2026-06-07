@@ -112,7 +112,7 @@ function BoardEvalCard({ board }: { board: CategoryDTO }) {
   const close = useServerFn(closeEvaluation);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const { data: posts = [] } = useQuery(postsQueryOptions(board.id));
+  const { data: posts = [] } = useQuery(postsQueryOptions(board.id, "", getAdminPassword()));
   const projectCount = posts.filter((p) => p.type === "project").length;
 
   const invalidate = () => {

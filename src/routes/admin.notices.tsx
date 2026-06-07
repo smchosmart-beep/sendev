@@ -172,7 +172,7 @@ function NoticeForm({ categoryId }: { categoryId: string }) {
 
 function NoticeList({ categoryId }: { categoryId: string }) {
   const queryClient = useQueryClient();
-  const { data: posts = [] } = useQuery(postsQueryOptions(categoryId));
+  const { data: posts = [] } = useQuery(postsQueryOptions(categoryId, "", getAdminPassword()));
   const remove = useServerFn(deletePost);
   const notices = posts.filter((p) => p.type === "notice");
 
