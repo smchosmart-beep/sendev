@@ -60,7 +60,7 @@ function NewGeneralPage() {
       create({
         data: {
           categoryId: category!.id,
-          type: "general",
+          type: "post",
           title,
           content,
           author,
