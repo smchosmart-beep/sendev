@@ -510,6 +510,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
   const [title, setTitle] = useState(post.title);
   const [content, setContent] = useState(post.content);
   const [author, setAuthor] = useState(post.author);
+  const [pinned, setPinned] = useState(post.pinned);
   const [githubUrl, setGithubUrl] = useState(post.githubUrl);
   const [deployUrl, setDeployUrl] = useState(post.deployUrl);
   const [editPw, setEditPw] = useState("");
