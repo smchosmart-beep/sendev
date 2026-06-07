@@ -79,6 +79,7 @@ function NewLinkPage() {
         },
       }),
     onSuccess: (res) => {
+      persistIdentity();
       queryClient.invalidateQueries({ queryKey: ["posts", category!.id] });
       toast.success(`${linkName}이(가) 등록되었어요!`);
       navigate({
