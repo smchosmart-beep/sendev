@@ -8,7 +8,7 @@ const stripKorean = (s: string) => s.replace(/[\u1100-\u11FF\u3130-\u318F\uAC00-
 
 import { cn } from "@/lib/utils";
 import { verifyAdmin } from "@/lib/platform.functions";
-import { setAdminPassword } from "@/lib/admin-auth";
+import { setAdminPassword, getAdminPassword } from "@/lib/admin-auth";
 
 const ADMIN_SESSION_KEY = "admin-access-granted";
 
