@@ -156,6 +156,42 @@ function GuidePage() {
           누적 점수가 높을수록 레벨이 올라가며, 최대 <strong>LV 99</strong>까지 도달할 수 있습니다. 레벨은 별도
           신청 없이 활동만으로 자동 반영됩니다.
         </p>
+
+        <div className="mt-4 overflow-hidden rounded-2xl border border-border">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/60">
+              <tr>
+                <th className="px-4 py-2.5 text-left font-semibold text-foreground">레벨 구간</th>
+                <th className="px-4 py-2.5 text-left font-semibold text-foreground">필요 누적 점수</th>
+                <th className="px-4 py-2.5 text-left font-semibold text-foreground">예상 활동량</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {[
+                { range: "LV 1", pts: "0 ~ 15점", act: "—" },
+                { range: "LV 2 ~ 9", pts: "16 ~ 95점", act: "글 3~19편 또는 댓글 16~95개" },
+                { range: "LV 10 ~ 19", pts: "96 ~ 196점", act: "글 19~39편 또는 댓글 96~196개" },
+                { range: "LV 20 ~ 29", pts: "197 ~ 297점", act: "글 39~59편 또는 댓글 197~297개" },
+                { range: "LV 30 ~ 39", pts: "298 ~ 398점", act: "글 59~79편 또는 댓글 298~398개" },
+                { range: "LV 40 ~ 49", pts: "399 ~ 499점", act: "글 79~99편 또는 댓글 399~499개" },
+                { range: "LV 50 ~ 59", pts: "500 ~ 601점", act: "글 100~120편 또는 댓글 500~601개" },
+                { range: "LV 60 ~ 69", pts: "602 ~ 702점", act: "글 120~140편 또는 댓글 602~702개" },
+                { range: "LV 70 ~ 79", pts: "703 ~ 803점", act: "글 140~160편 또는 댓글 703~803개" },
+                { range: "LV 80 ~ 89", pts: "804 ~ 904점", act: "글 160~180편 또는 댓글 804~904개" },
+                { range: "LV 90 ~ 99", pts: "905 ~ 1,000점", act: "글 181~200편 또는 댓글 905~1,000개" },
+              ].map((row, i) => (
+                <tr key={i} className="odd:bg-muted/30">
+                  <td className="px-4 py-2 font-medium text-foreground">{row.range}</td>
+                  <td className="px-4 py-2 text-muted-foreground">{row.pts}</td>
+                  <td className="px-4 py-2 text-muted-foreground">{row.act}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          * 레벨 계산 공식: 레벨 = round(누적점수 × 99 ÷ 1,000), 최소 LV 1 / 최대 LV 99. 글과 댓글 점수가 합산됩니다.
+        </p>
       </Section>
 
       <Section id="badge" icon={Award} title="배지 제도">
