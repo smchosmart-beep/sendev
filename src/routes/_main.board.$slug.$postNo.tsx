@@ -1721,6 +1721,23 @@ function CommentsSection({ postId }: { postId: string }) {
           maxLength={100}
           className="rounded-xl"
         />
+        {!hasStored && (
+          <>
+            <PasswordInput
+              value={nicknamePasswordConfirm}
+              onChange={(e) => setNicknamePasswordConfirm(e.target.value)}
+              placeholder="닉네임 비밀번호 확인 (닉네임 입력 시)"
+              maxLength={100}
+              className="rounded-xl"
+            />
+            {nicknamePasswordConfirm.length > 0 &&
+              nicknamePassword.trim() !== nicknamePasswordConfirm.trim() && (
+                <p className="text-xs text-destructive">
+                  닉네임 비밀번호가 일치하지 않아요.
+                </p>
+              )}
+          </>
+        )}
         <p className="text-xs text-muted-foreground">
           닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 인증합니다. 익명은 입력하지 않아도 돼요.
           {hasStored && " 저장된 닉네임을 불러왔어요."}
