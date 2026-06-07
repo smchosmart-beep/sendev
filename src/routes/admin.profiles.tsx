@@ -302,13 +302,12 @@ function ProfilesAdmin() {
                 취소
               </Button>
             )}
+          </div>
+        </form>
       </div>
 
       <AwardIconPicker />
 
-
-        </form>
-      </div>
 
       {profiles.length === 0 ? (
         <EmptyState
