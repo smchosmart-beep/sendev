@@ -589,6 +589,40 @@ function CategoriesPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-3 rounded-xl bg-muted/40 p-4">
+              <SectionToggle
+                id="edit-is-group"
+                label="그룹(폴더)으로 만들기"
+                checked={editIsGroup}
+                onChange={setEditIsGroup}
+              />
+              <div className="space-y-2 pt-1">
+                <Label htmlFor="edit-parent">상위 폴더 (선택)</Label>
+                <Select
+                  value={editParentId || "none"}
+                  onValueChange={(v) => setEditParentId(v === "none" ? "" : v)}
+                >
+                  <SelectTrigger id="edit-parent" className="rounded-xl bg-background">
+                    <SelectValue placeholder="최상위" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">최상위 (폴더 없음)</SelectItem>
+                    {categories
+                      .filter(
+                        (c) =>
+                          c.isGroup &&
+                          c.id !== editing?.id &&
+                          (c.tabGroup ?? "hackathon") === editTabGroup,
+                      )
+                      .map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="edit-name">카테고리 이름</Label>
               <Input
