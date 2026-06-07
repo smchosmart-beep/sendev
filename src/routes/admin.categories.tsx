@@ -144,9 +144,7 @@ function CategoriesPage() {
       setDescription("");
       setPassword("");
       setGithubRequired(false);
-      setEnableNotice(true);
-      setEnableQuestion(true);
-      setEnableGeneral(true);
+      setEnablePost(true);
       setEnableProject(true);
       setEnableLink(false);
       setGeneralName("일반게시판");
