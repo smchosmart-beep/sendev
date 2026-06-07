@@ -165,7 +165,7 @@ function ProfilesAdmin() {
       ) : (
         <div className="overflow-hidden rounded-2xl bg-card shadow-sm">
           <ul className="divide-y divide-border">
-            {profiles.map((p) => (
+            {profiles.map((p: UserProfileDTO) => (
               <li
                 key={p.id}
                 className="flex items-center gap-3 px-5 py-4"
