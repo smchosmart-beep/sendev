@@ -2636,3 +2636,126 @@ export const getMyDashboard = createServerFn({ method: "POST" })
       },
     };
   });
+
+// Renames a nickname while preserving all linked activity (level, badges,
+// posts, comments, likes given/received, reviews). Because authorship is stored
+// as free text, we migrate every occurrence of the old name to the new one.
+export const renameNickname = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        username: z.string().trim().min(1).max(100),
+        password: z.string().min(1).max(200),
+        newUsername: z.string().trim().min(1).max(100),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ ok: boolean; username: string }> => {
+    const db = await getAdmin();
+    const oldName = data.username.trim();
+    const oldKey = normalizeName(oldName);
+    const newName = data.newUsername.trim();
+    const newKey = normalizeName(newName);
+
+    // Validate the new name.
+    if (!newName) {
+      throw new Error("새 닉네임을 입력해주세요.");
+    }
+    if (newKey === "익명" || newKey === "운영진") {
+      throw new Error("사용할 수 없는 닉네임입니다.");
+    }
+
+    // Authenticate as the current owner.
+    const { data: prof, error: pErr } = await db
+      .from("user_profiles")
+      .select("username, nickname_password")
+      .eq("username_key", oldKey)
+      .maybeSingle();
+    if (pErr) throw new Error(pErr.message);
+    if (!prof || !prof.nickname_password) {
+      throw new Error("등록되지 않은 닉네임이거나 비밀번호가 설정되지 않았습니다.");
+    }
+    if ((await hashSecret(data.password)) !== prof.nickname_password) {
+      throw new Error("비밀번호가 일치하지 않습니다.");
+    }
+
+    const keyChanged = newKey !== oldKey;
+
+    // Collision check (skip when only the display casing/spacing changes).
+    if (keyChanged) {
+      const { data: existing, error: exErr } = await db
+        .from("user_profiles")
+        .select("id")
+        .eq("username_key", newKey)
+        .maybeSingle();
+      if (exErr) throw new Error(exErr.message);
+      if (existing) {
+        throw new Error("이미 사용 중인 닉네임이에요. 다른 닉네임을 입력해주세요.");
+      }
+
+      const newPat = escapeIlike(newName);
+      const { data: takenPost, error: tpErr } = await db
+        .from("posts")
+        .select("id")
+        .ilike("author", newPat)
+        .limit(1);
+      if (tpErr) throw new Error(tpErr.message);
+      const { data: takenComment, error: tcErr } = await db
+        .from("comments")
+        .select("id")
+        .ilike("author", newPat)
+        .limit(1);
+      if (tcErr) throw new Error(tcErr.message);
+      if ((takenPost?.length ?? 0) > 0 || (takenComment?.length ?? 0) > 0) {
+        throw new Error("이미 다른 사용자가 사용 중인 닉네임이에요. 다른 닉네임을 입력해주세요.");
+      }
+    }
+
+    const oldPat = escapeIlike(oldName);
+
+    // Migrate the profile (keeps level, password, recovery Q&A intact).
+    const { error: upProfErr } = await db
+      .from("user_profiles")
+      .update({ username: newName, username_key: newKey })
+      .eq("username_key", oldKey);
+    if (upProfErr) throw new Error(upProfErr.message);
+
+    // Migrate badges.
+    const { error: awErr } = await db
+      .from("user_awards")
+      .update({ username: newName, username_key: newKey })
+      .eq("username_key", oldKey);
+    if (awErr) throw new Error(awErr.message);
+
+    // Migrate authored posts & comments (case-insensitive exact match).
+    const { error: postErr } = await db
+      .from("posts")
+      .update({ author: newName })
+      .ilike("author", oldPat);
+    if (postErr) throw new Error(postErr.message);
+
+    const { error: commentErr } = await db
+      .from("comments")
+      .update({ author: newName })
+      .ilike("author", oldPat);
+    if (commentErr) throw new Error(commentErr.message);
+
+    // Migrate likes given (display name + normalized key).
+    const { error: likeErr } = await db
+      .from("post_likes")
+      .update({ liker_name: newName, liker_key: newKey })
+      .eq("liker_key", oldKey);
+    if (likeErr) throw new Error(likeErr.message);
+
+    // Migrate reviews. Unique (post_id, reviewer_name) could rarely collide;
+    // update what we can and ignore conflicts so the rename still succeeds.
+    const { error: reviewErr } = await db
+      .from("reviews")
+      .update({ reviewer_name: newName })
+      .ilike("reviewer_name", oldPat);
+    if (reviewErr && !/duplicate|unique/i.test(reviewErr.message)) {
+      throw new Error(reviewErr.message);
+    }
+
+    return { ok: true, username: newName };
+  });
