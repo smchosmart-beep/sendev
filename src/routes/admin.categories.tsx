@@ -3,7 +3,7 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { FolderPlus, Folder, Pencil, Trash2, LayoutGrid, Lock, Github, ChevronUp, ChevronDown } from "lucide-react";
+import { FolderPlus, Folder, Pencil, Trash2, LayoutGrid, Lock, Github, ChevronUp, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 import { categoriesQueryOptions } from "@/lib/platform.queries";
@@ -117,10 +117,37 @@ function CategoriesPage() {
   const [deleting, setDeleting] = useState<CategoryDTO | null>(null);
 
   const [listFilter, setListFilter] = useState<TabGroup | "all">("all");
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const toggleFolder = (id: string) =>
+    setExpandedFolders((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   const visibleCategories =
     listFilter === "all"
       ? categories
       : categories.filter((c) => (c.tabGroup ?? "hackathon") === listFilter);
+
+  // Build a folder-aware ordered list: top-level items by sort_order, with each
+  // expanded folder's children rendered (indented) directly beneath it.
+  const childrenOf = (parentId: string) =>
+    visibleCategories
+      .filter((c) => (c.parentId ?? null) === parentId)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  const orderedRows: { category: CategoryDTO; depth: number }[] = [];
+  visibleCategories
+    .filter((c) => !c.parentId)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .forEach((top) => {
+      orderedRows.push({ category: top, depth: 0 });
+      if (top.isGroup && expandedFolders.has(top.id)) {
+        childrenOf(top.id).forEach((child) =>
+          orderedRows.push({ category: child, depth: 1 }),
+        );
+      }
+    });
 
   const addMutation = useMutation({
     mutationFn: () =>
@@ -214,11 +241,19 @@ function CategoriesPage() {
     onError: () => toast.error("순서 변경 중 문제가 발생했어요."),
   });
 
-  // Same-tab neighbors sorted by sort_order, used to compute up/down swaps.
-  const moveCategory = (c: CategoryDTO, dir: "up" | "down") => {
-    const group = categories
-      .filter((x) => (x.tabGroup ?? "hackathon") === (c.tabGroup ?? "hackathon"))
+  // Siblings within the same tab AND the same parent folder, sorted by
+  // sort_order. Used to compute up/down swaps so movement stays inside a folder.
+  const siblingsOf = (c: CategoryDTO) =>
+    categories
+      .filter(
+        (x) =>
+          (x.tabGroup ?? "hackathon") === (c.tabGroup ?? "hackathon") &&
+          (x.parentId ?? null) === (c.parentId ?? null),
+      )
       .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  const moveCategory = (c: CategoryDTO, dir: "up" | "down") => {
+    const group = siblingsOf(c);
     const idx = group.findIndex((x) => x.id === c.id);
     const other = dir === "up" ? group[idx - 1] : group[idx + 1];
     if (!other) return;
@@ -474,12 +509,36 @@ function CategoriesPage() {
           />
         ) : (
           <div className="space-y-4">
-            {visibleCategories.map((c) => (
+            {orderedRows.map(({ category: c, depth }) => {
+              const siblings = siblingsOf(c);
+              const idx = siblings.findIndex((x) => x.id === c.id);
+              const childCount = c.isGroup ? childrenOf(c.id).length : 0;
+              const expanded = expandedFolders.has(c.id);
+              return (
               <div
                 key={c.id}
-                className="flex items-center justify-between gap-4 rounded-2xl bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                style={depth > 0 ? { marginLeft: depth * 24 } : undefined}
+                className={`flex items-center justify-between gap-4 rounded-2xl bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                  depth > 0 ? "border-l-4 border-primary/30" : ""
+                }`}
               >
-                <div className="min-w-0">
+                <div className="flex min-w-0 items-start gap-2">
+                  {c.isGroup && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => toggleFolder(c.id)}
+                      className="h-7 w-7 shrink-0 rounded-lg active:scale-95"
+                      aria-label={expanded ? "폴더 접기" : "폴더 펼치기"}
+                    >
+                      {expanded ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
+                  <div className="min-w-0">
                   <h3 className="flex items-center gap-2 truncate text-base font-semibold text-foreground">
                     {c.isGroup && <Folder className="h-4 w-4 shrink-0 text-primary" />}
                     {c.name}
@@ -498,7 +557,7 @@ function CategoriesPage() {
                     <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                       {TAB_LABEL[c.tabGroup ?? "hackathon"]}
                     </span>
-                    {c.isGroup && <SectionBadge label="폴더" />}
+                    {c.isGroup && <SectionBadge label={`폴더 · 하위 ${childCount}개`} />}
                     {c.parentId && (
                       <SectionBadge
                         label={`📁 ${categories.find((p) => p.id === c.parentId)?.name ?? "상위"}`}
@@ -514,17 +573,10 @@ function CategoriesPage() {
                       <SectionBadge label={c.linkName || "링크"} />
                     )}
                   </div>
+                  </div>
                 </div>
                 <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-                  {listFilter !== "all" && (() => {
-                    const group = categories
-                      .filter(
-                        (x) =>
-                          (x.tabGroup ?? "hackathon") === (c.tabGroup ?? "hackathon"),
-                      )
-                      .sort((a, b) => a.sortOrder - b.sortOrder);
-                    const idx = group.findIndex((x) => x.id === c.id);
-                    return (
+                  {siblings.length > 1 && (
                       <div className="flex flex-col gap-1">
                         <Button
                           variant="secondary"
@@ -539,7 +591,7 @@ function CategoriesPage() {
                         <Button
                           variant="secondary"
                           size="icon"
-                          disabled={idx >= group.length - 1 || swapMutation.isPending}
+                          disabled={idx >= siblings.length - 1 || swapMutation.isPending}
                           onClick={() => moveCategory(c, "down")}
                           className="h-6 w-7 rounded-lg active:scale-95"
                           aria-label="아래로 이동"
@@ -547,8 +599,7 @@ function CategoriesPage() {
                           <ChevronDown className="h-4 w-4" />
                         </Button>
                       </div>
-                    );
-                  })()}
+                  )}
                   <Button
                     variant="secondary"
                     size="sm"
@@ -569,7 +620,8 @@ function CategoriesPage() {
                   </Button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
