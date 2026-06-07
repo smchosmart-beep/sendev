@@ -1152,12 +1152,11 @@ function EvaluationSection({
       queryClient.invalidateQueries({ queryKey: ["reviews", postId] });
       queryClient.invalidateQueries({ queryKey: ["my-review", postId] });
       queryClient.invalidateQueries({ queryKey: ["my-reviewed"] });
-      // 이 기기에 이 카테고리의 닉네임을 고정 저장한다.
+      // 이 기기에 이 카테고리의 닉네임을 기본값으로 저장한다(다음 입력 시 자동 채움).
       const name = reviewerName.trim();
       if (typeof window !== "undefined" && name) {
         window.localStorage.setItem(storageKey, name);
       }
-      setLockedName(name || null);
       // 닉네임+비밀번호를 식별자 저장소에 저장해 다음 평가/글/댓글에서 자동 채움.
       if (name) saveIdentity(name, nicknamePassword.trim());
       toast.success(
