@@ -18,6 +18,7 @@ import { eventsQueryOptions } from "@/lib/platform.queries";
 import { type EventDTO } from "@/lib/platform.functions";
 import { getHolidayName } from "@/lib/holidays";
 import { EmptyState } from "@/components/EmptyState";
+import { KakaoMap } from "@/components/KakaoMap";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
