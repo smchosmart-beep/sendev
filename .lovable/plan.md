@@ -1,12 +1,32 @@
-Update `AuthorBadge.tsx` so that the level badge (Lv.X) is hidden when the author name is `"운영진"`. This ensures notice posts authored by "운영진" only display the award icon (e.g. crown), not the level badge.
+## 목표
+현재의 익명(닉네임+닉네임 비밀번호) 방식은 그대로 유지하되, 닉네임을 한 번 등록해두면 글·댓글 작성 시 자동으로 채워지도록 한다. 강제하지 않고 "권장"으로 안내한다.
 
-**Technical detail**
-In `src/components/AuthorBadge.tsx`, change the `hasLevel` rendering condition from:
-```tsx
-{hasLevel && ( ... )}
-```
-to:
-```tsx
-{hasLevel && author !== "운영진" && ( ... )}
-```
-This is a one-line conditional change with no other file modifications required.
+## 현재 동작
+- 로그인 없음. 글/댓글을 쓸 때마다 작성자명 + 닉네임 비밀번호를 매번 입력.
+- 닉네임 비밀번호는 처음 쓰면 등록(claim)되고 이후 같은 값으로 인증(`ensureNicknameOwnership`).
+- 이미 평가(리뷰) 영역에는 `localStorage` 기반 닉네임 고정 패턴이 존재 (`sendev:nickname:${slug}`).
+
+## 변경 내용
+
+### 1. 공용 신원(identity) 저장 훅 추가
+- `src/hooks/useLocalIdentity.ts` (신규): `localStorage` 키 `sendev:identity`에 `{ author, nicknamePassword }`를 저장/불러오기/초기화하는 훅.
+- SSR 안전(`typeof window` 가드), 값 변경 시 동기화.
+
+### 2. 글쓰기 폼 4종에 자동 채움 적용
+대상: `new-general`, `new-question`, `new-project`, `new-link` 라우트의 작성 폼.
+- 마운트 시 저장된 신원이 있으면 `author` / `nicknamePassword` 입력란을 미리 채운다.
+- 제출 성공 시 입력한 `author`+`nicknamePassword`(익명이 아니고 비밀번호가 있을 때)를 저장한다.
+- 폼 상단에 작은 안내: 저장된 닉네임이 있으면 "'OO'(으)로 작성 중 · 변경" 표시, 없으면 "닉네임을 등록하면 다음부터 자동으로 채워져요" 권장 문구.
+
+### 3. 댓글 폼에도 동일 적용
+`_main.board.$slug.$postNo.tsx`의 댓글 작성 폼(및 대댓글 폼)에 같은 자동 채움/저장 로직 연결.
+
+### 4. 닉네임 설정(권장) 진입점 추가
+- 좌측 메뉴(`_main.tsx` Sheet)에 "내 닉네임 설정" 항목 추가.
+- 클릭 시 다이얼로그: 닉네임 + 닉네임 비밀번호 입력 → 저장(localStorage). 기존 닉네임이 있으면 표시 및 "초기화" 버튼 제공.
+- 강제 아님: 글/댓글 버튼은 그대로 동작하며 미설정 시에도 막지 않는다.
+
+## 기술 메모
+- 서버/DB 변경 없음. 전부 프론트엔드(클라이언트 상태 + 기존 서버 함수 재사용).
+- 닉네임 비밀번호를 localStorage에 저장하므로, 같은 기기를 공유하는 환경에선 노출될 수 있음. "초기화" 버튼으로 해제 가능하게 하여 완화.
+- 기존 리뷰 영역의 `sendev:nickname:${slug}`와는 별개 키를 사용(역할이 다름).

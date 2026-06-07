@@ -78,6 +78,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AutoTextarea } from "@/components/ui/auto-textarea";
 import { PostEditor } from "@/components/PostEditor";
+import { useNicknameIdentity } from "@/hooks/useNicknameIdentity";
 
 const NUMERIC_RE = /^\d+$/;
 
@@ -1379,10 +1380,16 @@ function CommentsSection({ postId }: { postId: string }) {
     queryClient.invalidateQueries({ queryKey: ["comments", postId] });
 
   // New top-level comment form state.
-  const [author, setAuthor] = useState("");
+  const {
+    author,
+    setAuthor,
+    nicknamePassword,
+    setNicknamePassword,
+    hasStored,
+    persistIdentity,
+  } = useNicknameIdentity();
   const [content, setContent] = useState("");
   const [password, setPassword] = useState("");
-  const [nicknamePassword, setNicknamePassword] = useState("");
   const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   // Reply form is open for at most one comment at a time.
@@ -1410,10 +1417,10 @@ function CommentsSection({ postId }: { postId: string }) {
       if (vars.parentId) {
         setReplyTo(null);
       } else {
-        setAuthor("");
+        // Keep the nickname/identity fields filled for the next comment.
+        persistIdentity();
         setContent("");
         setPassword("");
-        setNicknamePassword("");
         setImageUrls([]);
       }
     },
@@ -1554,6 +1561,7 @@ function CommentsSection({ postId }: { postId: string }) {
         />
         <p className="text-xs text-muted-foreground">
           닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 인증합니다. 익명은 입력하지 않아도 돼요.
+          {hasStored && " 저장된 닉네임을 불러왔어요."}
         </p>
         <AutoTextarea
           value={content}
@@ -1814,10 +1822,16 @@ function CommentForm({
   }) => void;
   onCancel?: () => void;
 }) {
-  const [author, setAuthor] = useState("");
+  const {
+    author,
+    setAuthor,
+    nicknamePassword,
+    setNicknamePassword,
+    hasStored,
+    persistIdentity,
+  } = useNicknameIdentity();
   const [content, setContent] = useState("");
   const [password, setPassword] = useState("");
-  const [nicknamePassword, setNicknamePassword] = useState("");
   const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   return (
@@ -1832,6 +1846,7 @@ function CommentForm({
           toast.error("삭제용 비밀번호를 입력해주세요.");
           return;
         }
+        persistIdentity();
         onSubmit({
           author: author.trim(),
           content: content.trim(),
@@ -1867,6 +1882,11 @@ function CommentForm({
         maxLength={100}
         className="rounded-xl"
       />
+      {hasStored && (
+        <p className="text-xs text-muted-foreground">
+          저장된 닉네임을 불러왔어요.
+        </p>
+      )}
       <AutoTextarea
         value={content}
         onChange={(e) => setContent(e.target.value)}

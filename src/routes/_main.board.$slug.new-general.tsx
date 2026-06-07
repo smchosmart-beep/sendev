@@ -17,6 +17,7 @@ import { PostEditor } from "@/components/PostEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useNicknameIdentity } from "@/hooks/useNicknameIdentity";
 
 export const Route = createFileRoute("/_main/board/$slug/new-general")({
   loader: ({ context }) =>
@@ -40,8 +41,14 @@ function NewGeneralPage() {
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [author, setAuthor] = useState("");
-  const [nicknamePassword, setNicknamePassword] = useState("");
+  const {
+    author,
+    setAuthor,
+    nicknamePassword,
+    setNicknamePassword,
+    hasStored,
+    persistIdentity,
+  } = useNicknameIdentity();
   const [editPassword, setEditPassword] = useState("");
 
   const mutation = useMutation({
@@ -60,6 +67,7 @@ function NewGeneralPage() {
         },
       }),
     onSuccess: (res) => {
+      persistIdentity();
       queryClient.invalidateQueries({ queryKey: ["posts", category!.id] });
       toast.success("글이 등록되었어요!");
       navigate({
@@ -147,6 +155,9 @@ function NewGeneralPage() {
             />
             <p className="text-xs text-muted-foreground">
               이 닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 인증합니다.
+              {hasStored
+                ? " 저장된 닉네임을 불러왔어요."
+                : " 등록하면 이 기기에서 다음부터 자동으로 채워져요."}
             </p>
           </div>
           <div className="space-y-2">
