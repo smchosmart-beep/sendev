@@ -260,7 +260,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
             {post.content.trim() ? (
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw]}
+                rehypePlugins={[rehypeRaw, [rehypeSanitize, POST_HTML_SCHEMA]]}
                 components={{
                   a: ({ node, className, ...props }) => (
                     <a
