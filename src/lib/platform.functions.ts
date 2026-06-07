@@ -786,10 +786,13 @@ export const createPost = createServerFn({ method: "POST" })
         series: z.string().trim().max(100).default(""),
         editPassword: z.string().trim().min(1).max(100),
         nicknamePassword: z.string().trim().max(100).default(""),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    // Notices may only be created by an authenticated admin.
+    if (data.type === "notice") requireAdmin(data.adminPassword);
     const db = await getAdmin();
     // Enforce per-board GitHub link requirement.
     const { data: cat } = await db
