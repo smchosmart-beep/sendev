@@ -1417,10 +1417,10 @@ function CommentsSection({ postId }: { postId: string }) {
       if (vars.parentId) {
         setReplyTo(null);
       } else {
-        setAuthor("");
+        // Keep the nickname/identity fields filled for the next comment.
+        persistIdentity();
         setContent("");
         setPassword("");
-        setNicknamePassword("");
         setImageUrls([]);
       }
     },
