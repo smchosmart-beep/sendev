@@ -373,10 +373,12 @@ export const updateCategory = createServerFn({ method: "POST" })
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .optional(),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const patch: Record<string, unknown> = {
       name: data.name,
