@@ -53,6 +53,7 @@ function NewGeneralPage() {
           title,
           content,
           author,
+          nicknamePassword,
           githubUrl: "",
           deployUrl: "",
           editPassword,
