@@ -90,6 +90,10 @@ export function KakaoMap({ lat, lng, name, className, level = 3, asLink = true }
     );
   }
 
+  if (!asLink) {
+    return <div ref={ref} className={className} />;
+  }
+
   return (
     <a href={kakaoUrl} target="_blank" rel="noreferrer" className="block">
       <div ref={ref} className={className} />
