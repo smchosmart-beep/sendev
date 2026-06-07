@@ -529,11 +529,13 @@ export const createEvent = createServerFn({ method: "POST" })
         ...placeFields,
         attachments: z.array(attachmentSchema).max(10).default([]),
         links: z.array(linkSchema).max(10).default([]),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { placeAddress, latitude, longitude, ...rest } = data;
+    requireAdmin(data.adminPassword);
+    const { adminPassword: _ap, placeAddress, latitude, longitude, ...rest } = data;
     const db = await getAdmin();
     const { error } = await db.from("events").insert({
       ...rest,
@@ -559,11 +561,13 @@ export const updateEvent = createServerFn({ method: "POST" })
         ...placeFields,
         attachments: z.array(attachmentSchema).max(10).default([]),
         links: z.array(linkSchema).max(10).default([]),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { id, placeAddress, latitude, longitude, ...rest } = data;
+    requireAdmin(data.adminPassword);
+    const { id, adminPassword: _ap, placeAddress, latitude, longitude, ...rest } = data;
     const db = await getAdmin();
     const { error } = await db
       .from("events")
