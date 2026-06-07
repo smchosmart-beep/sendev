@@ -32,6 +32,10 @@ import {
   awardIconRulesQueryOptions,
 } from "@/lib/platform.queries";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
+import {
+  ForgotPasswordDialog,
+  RecoveryQuestionCard,
+} from "@/components/NicknameRecovery";
 
 export const Route = createFileRoute("/_main/mypage")({
   head: () => ({
@@ -85,6 +89,8 @@ function MyPage() {
     return (
       <Dashboard
         data={data}
+        username={username.trim()}
+        password={password}
         stored={!!identity?.author}
         onClearStored={() => {
           clear();
@@ -100,6 +106,7 @@ function MyPage() {
 
   return (
     <div className="mx-auto max-w-md py-8">
+
       <div className="mb-6 text-center">
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
           <UserRound className="h-6 w-6" />
@@ -148,9 +155,13 @@ function MyPage() {
             )}
             로그인
           </Button>
-          <p className="text-xs text-muted-foreground">
-            닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 인증합니다.
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              처음 쓰면 비밀번호가 등록돼요.
+            </p>
+            <ForgotPasswordDialog />
+          </div>
+
         </form>
       </Card>
     </div>
@@ -160,17 +171,22 @@ function MyPage() {
 
 function Dashboard({
   data,
+  username,
+  password,
   stored,
   onClearStored,
   onLogout,
 }: {
   data: DashboardDTO;
+  username: string;
+  password: string;
   stored: boolean;
   onClearStored: () => void;
   onLogout: () => void;
 }) {
   return (
     <div className="space-y-6 py-4">
+
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-muted-foreground">내 페이지</p>
@@ -190,6 +206,12 @@ function Dashboard({
       </div>
 
       <LevelCard level={data.level} points={data.points} awards={data.awards} />
+
+      {password && (
+        <RecoveryQuestionCard username={username} password={password} />
+      )}
+
+
 
 
       <div className="grid grid-cols-3 gap-3">

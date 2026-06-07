@@ -1,17 +1,47 @@
 ## 목표
-AuthorBadge 컴포넌트의 대표 배지("시스템 관리자" 등)와 "+N" 칩에 마우스 오버 시 클릭을 유도하는 인터랙티브 애니메이션을 추가한다.
+닉네임 비밀번호를 잃어버린 **진짜 본인**이, 관리자 개입 없이 **복구용 질문/답변**으로 직접 새 비밀번호를 설정할 수 있게 한다. 이를 통해 "글로 초기화 요청 → 사칭 가능" 문제를 해결한다.
 
-## 변경 범위
-- 파일: `src/components/AuthorBadge.tsx`
+## 동작 흐름
 
-## 세부 작업
-1. **대표 배지 span**에 `hover:scale-105`, `transition-transform`, `duration-200`, `hover:shadow-md` 추가
-2. **"+N" 칩 span**에 동일한 `hover:scale-105`, `transition-transform`, `duration-200`, `hover:shadow-md` 추가 (또는 살짝 더 강조된 `hover:scale-110`)
-3. **버튼 wrapper**에 `cursor-pointer` 명시 및 `transition-all` 적용
-4. **선택적 효과**: hover 시 `ring-1 ring-primary/30` 또는 배경색 강화로 클릭 가능함을 시각적으로 강조
-5. 프로젝트 내 기존 `.hover-scale` 유틸리티 클래스 활용 검토 (적용 가능 시 사용)
+```text
+[복구 질문 등록] (본인 인증 후)
+  마이페이지 로그인(닉네임+비번 확인) → 복구 질문/답변 설정·수정
 
-## 품질 기준
-- 마우스 오버 시 요소가 살짝 커지고 그림자가 진해져야 함
-- 애니메이션이 200ms 내외의 짧은 duration으로 부드럽게 동작해야 함
-- Popover 열기 기능과 충돌 없이 정상 작동해야 함
+[비밀번호 분실 복구] (비번 없이)
+  "비밀번호를 잊으셨나요?" → 닉네임 입력
+    → 등록된 복구 질문 표시
+    → 답변 + 새 비밀번호 입력
+    → 답변이 맞으면 새 비밀번호로 재설정 (관리자 불필요)
+    → 복구 질문이 없는 닉네임이면 "관리자 초기화 필요" 안내
+```
+
+## 데이터베이스 변경 (마이그레이션)
+`user_profiles` 테이블에 2개 컬럼 추가:
+- `recovery_question text not null default ''` — 복구 질문(평문, 비밀 아님)
+- `recovery_answer text not null default ''` — 복구 답변(해시 저장, 비밀번호와 동일 방식)
+
+기존 닉네임은 빈 값으로 시작 → 복구 질문 미설정 상태로 안전하게 동작.
+
+## 서버 함수 추가 (`src/lib/platform.functions.ts`)
+1. **`setRecoveryQuestion`** (username, password, question, answer)
+   - 현재 비밀번호를 검증한 뒤에만 질문/답변 저장 (답변은 trim+소문자 정규화 후 해시).
+   - 본인만 등록/수정 가능.
+2. **`getRecoveryQuestion`** (username)
+   - 해당 닉네임의 질문 텍스트만 반환(`{ question: string | null }`). 답변은 절대 반환하지 않음.
+3. **`recoverNicknamePassword`** (username, answer, newPassword)
+   - 저장된 답변 해시와 입력 답변(정규화·해시) 비교 → 일치 시 `nickname_password`를 새 비밀번호 해시로 갱신.
+   - 입력 검증: 새 비밀번호 4자 이상.
+
+## UI 변경
+1. **마이페이지(`_main.mypage.tsx`)**: 닉네임 로그인 성공 후 "복구 질문 설정/변경" 섹션 추가. 질문 입력 + 답변 입력 + 저장 버튼.
+2. **복구 다이얼로그(신규 컴포넌트 또는 마이페이지 내)**: 로그인 폼에 "비밀번호를 잊으셨나요?" 링크 → 닉네임 입력 → 질문 표시 → 답변+새 비번 입력 → 재설정. 복구 질문 미설정 시 안내 메시지.
+3. **`NicknameSetup.tsx`**(선택): 동일한 "비밀번호 찾기" 진입점을 다이얼로그에도 노출.
+
+## 보안 고려사항
+- 복구 답변은 비밀번호와 동일하게 해시 저장, 클라이언트로 절대 노출 안 함.
+- `getRecoveryQuestion`은 질문 텍스트만 노출(개인정보가 담기지 않도록 안내 문구 추가).
+- 답변 정규화(공백 제거·소문자)로 사용성 확보하되, 무차별 대입 방지를 위해 답변 입력 길이/형식을 zod로 제한.
+
+## 기존 관리자 초기화와의 관계
+- 기존 "관리자 수동 초기화"(`resetNicknamePassword`)는 그대로 **백업 수단**으로 유지(복구 질문 미설정자 대비).
+- 복구 질문 기반 셀프 복구가 1차 수단이 됨.
