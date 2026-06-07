@@ -448,6 +448,8 @@ function ProfilesAdmin() {
 
       <AwardIconPicker />
 
+      <AwardIconRules />
+
 
       {profiles.length === 0 ? (
         <EmptyState
