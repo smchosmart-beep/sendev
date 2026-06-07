@@ -29,13 +29,11 @@ function ProfilesAdmin() {
   const remove = useServerFn(deleteUserProfile);
 
   const [username, setUsername] = useState("");
-  const [level, setLevel] = useState("");
   const [award, setAward] = useState("");
   const [editing, setEditing] = useState<UserProfileDTO | null>(null);
 
   const reset = () => {
     setUsername("");
-    setLevel("");
     setAward("");
     setEditing(null);
   };
@@ -45,7 +43,6 @@ function ProfilesAdmin() {
       upsert({
         data: {
           username: username.trim(),
-          level: level.trim() ? Number(level) : null,
           award: award.trim(),
         },
       }),
@@ -71,7 +68,6 @@ function ProfilesAdmin() {
   const startEdit = (p: UserProfileDTO) => {
     setEditing(p);
     setUsername(p.username);
-    setLevel(p.level != null ? String(p.level) : "");
     setAward(p.award);
   };
 
@@ -79,10 +75,6 @@ function ProfilesAdmin() {
     e.preventDefault();
     if (!username.trim()) {
       toast.error("사용자명을 입력해 주세요.");
-      return;
-    }
-    if (level.trim() && (Number.isNaN(Number(level)) || Number(level) < 1 || Number(level) > 99)) {
-      toast.error("레벨은 1~99 사이의 숫자로 입력해 주세요.");
       return;
     }
     saveMutation.mutate();
