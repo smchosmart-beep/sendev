@@ -552,7 +552,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
     mutationFn: () =>
       update({
         data: isBoardPost
-          ? { id: postId, password: editPw, title, content, author }
+          ? { id: postId, password: editPw, title, content, author, pinned }
           : { id: postId, password: editPw, title, author, githubUrl, deployUrl },
       }),
     onSuccess: (res) => {
