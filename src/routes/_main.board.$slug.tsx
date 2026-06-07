@@ -137,7 +137,7 @@ function PasswordGate({
         </span>
         <h2 className="text-lg font-semibold text-foreground">비밀번호로 입장</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          이 카테고리은 비밀번호가 필요해요.
+          이 카테고리는 비밀번호가 필요해요.
         </p>
       </div>
       <form
