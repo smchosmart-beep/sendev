@@ -1164,7 +1164,7 @@ function EvaluationSection({
   });
 
   // 연속 평가용: 기기별 고정 랜덤 순서로 다음 평가할 산출물을 계산한다.
-  const { data: allPosts = [] } = useQuery(postsQueryOptions(categoryId));
+  const { data: allPosts = [] } = useQuery(postsQueryOptions(categoryId, getBoardPassword(slug)));
   const { data: categories = [] } = useQuery(categoriesQueryOptions());
   const category = categories.find((c) => c.id === categoryId);
   const evalOpen = category?.evalOpen ?? false;
