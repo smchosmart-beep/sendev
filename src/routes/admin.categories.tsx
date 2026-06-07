@@ -158,6 +158,9 @@ function CategoriesPage() {
       setProjectName("산출물");
       setLinkName("링크");
       setTabGroup("hackathon");
+      setIsGroup(false);
+      setParentId("");
+
       toast.success("새 카테고리이 추가되었어요.");
     },
     onError: () => toast.error("추가 중 문제가 발생했어요."),
