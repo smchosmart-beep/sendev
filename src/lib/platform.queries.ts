@@ -21,6 +21,7 @@ import {
   listHeroSlides,
   listUserProfiles,
   getProfileMap,
+  getNicknameStatus,
   getAwardIcon,
   listAwardIconRules,
 } from "./platform.functions";
@@ -204,6 +205,15 @@ export const profileMapQueryOptions = () =>
     queryFn: () => getProfileMap(),
     staleTime: 5 * 60 * 1000,
   });
+
+export const nicknameStatusQueryOptions = (name: string) =>
+  queryOptions({
+    queryKey: ["nickname-status", name.trim().toLowerCase()],
+    queryFn: () => getNicknameStatus({ data: { name: name.trim() } }),
+    enabled: name.trim().length > 0,
+    staleTime: 30 * 1000,
+  });
+
 
 export const awardIconQueryOptions = () =>
   queryOptions({

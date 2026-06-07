@@ -84,7 +84,7 @@ import { PasswordInput } from "@/components/PasswordInput";
 import { Label } from "@/components/ui/label";
 import { AutoTextarea } from "@/components/ui/auto-textarea";
 import { PostEditor } from "@/components/PostEditor";
-import { useNicknameIdentity, useStoredIdentity } from "@/hooks/useNicknameIdentity";
+import { useNicknameIdentity, useStoredIdentity, useNicknameClaimed } from "@/hooks/useNicknameIdentity";
 
 const NUMERIC_RE = /^\d+$/;
 
@@ -1088,8 +1088,9 @@ function EvaluationSection({
   const [reviewerName, setReviewerName] = useState("");
   const [nicknamePassword, setNicknamePassword] = useState("");
   const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
-  // 저장된 비밀번호가 없으면(이 기기에서 최초 등록) 확인 입력을 한 번 더 받는다.
-  const reviewPwIsNew = !identity?.nicknamePassword;
+  // 서버에 아직 등록되지 않은 닉네임(처음 사용)일 때만 확인 입력을 한 번 더 받는다.
+  const { claimed: reviewerClaimed } = useNicknameClaimed(reviewerName);
+  const reviewPwIsNew = !reviewerClaimed;
 
   // 저장된 닉네임 비밀번호를 자동으로 채워, 한 번 등록하면 평가에서도 재입력하지 않게 한다.
   useEffect(() => {
@@ -1531,6 +1532,8 @@ function CommentsSection({ postId }: { postId: string }) {
   const [content, setContent] = useState("");
   const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const { claimed } = useNicknameClaimed(author);
+  const needsConfirm = !claimed;
 
   // Reply form is open for at most one comment at a time.
   const [replyTo, setReplyTo] = useState<string | null>(null);
@@ -1667,7 +1670,7 @@ function CommentsSection({ postId }: { postId: string }) {
             return;
           }
           if (
-            !hasStored &&
+            needsConfirm &&
             nicknamePassword.trim() !== nicknamePasswordConfirm.trim()
           ) {
             toast.error("닉네임 비밀번호가 일치하지 않아요.");
@@ -1699,7 +1702,7 @@ function CommentsSection({ postId }: { postId: string }) {
             className="rounded-xl"
           />
         </div>
-        {!hasStored && (
+        {needsConfirm && (
           <>
             <PasswordInput
               value={nicknamePasswordConfirm}
@@ -1718,7 +1721,11 @@ function CommentsSection({ postId }: { postId: string }) {
         )}
         <p className="text-xs text-muted-foreground">
           닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 본인 확인합니다. 이 비밀번호로 댓글 삭제도 진행해요.
-          {hasStored && " 저장된 닉네임을 불러왔어요."}
+          {claimed
+            ? " 이미 등록된 닉네임이에요. 등록한 비밀번호를 입력해 주세요."
+            : hasStored
+              ? " 저장된 닉네임을 불러왔어요."
+              : ""}
         </p>
         <AutoTextarea
           value={content}
@@ -1999,6 +2006,8 @@ function CommentForm({
   const [content, setContent] = useState("");
   const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const { claimed } = useNicknameClaimed(author);
+  const needsConfirm = !claimed;
 
   return (
     <form
@@ -2017,7 +2026,7 @@ function CommentForm({
           return;
         }
         if (
-          !hasStored &&
+          needsConfirm &&
           nicknamePassword.trim() !== nicknamePasswordConfirm.trim()
         ) {
           toast.error("닉네임 비밀번호가 일치하지 않아요.");
@@ -2049,7 +2058,7 @@ function CommentForm({
           className="rounded-xl"
         />
       </div>
-      {!hasStored && (
+      {needsConfirm && (
         <>
           <PasswordInput
             value={nicknamePasswordConfirm}
@@ -2066,11 +2075,15 @@ function CommentForm({
             )}
         </>
       )}
-      {hasStored && (
+      {claimed ? (
+        <p className="text-xs text-muted-foreground">
+          이미 등록된 닉네임이에요. 등록한 비밀번호를 입력해 주세요.
+        </p>
+      ) : hasStored ? (
         <p className="text-xs text-muted-foreground">
           저장된 닉네임을 불러왔어요.
         </p>
-      )}
+      ) : null}
       <AutoTextarea
         value={content}
         onChange={(e) => setContent(e.target.value)}

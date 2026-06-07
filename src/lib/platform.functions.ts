@@ -119,6 +119,25 @@ async function ensureNicknameOwnership(
   if (upErr) throw new Error(upErr.message);
 }
 
+// Returns whether a nickname is already "claimed" (has a registered password).
+// Used by write forms to decide if the user must confirm a new password.
+// Returns only a boolean — never the password hash.
+export const getNicknameStatus = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z.object({ name: z.string().trim().max(100).default("") }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const key = normalizeName(data.name);
+    if (!key || key === "익명") return { claimed: false };
+    const db = await getAdmin();
+    const { data: row } = await db
+      .from("user_profiles")
+      .select("nickname_password")
+      .eq("username_key", key)
+      .maybeSingle();
+    return { claimed: !!row && !!row.nickname_password };
+  });
+
 export type TabGroup = "hackathon" | "resources" | "devground" | "helloworld";
 
 export interface CategoryDTO {

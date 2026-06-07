@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/PasswordInput";
-import { useNicknameIdentity } from "@/hooks/useNicknameIdentity";
+import { useNicknameIdentity, useNicknameClaimed } from "@/hooks/useNicknameIdentity";
 
 export const Route = createFileRoute("/_main/board/$slug/new-general")({
   loader: ({ context }) =>
@@ -51,6 +51,9 @@ function NewGeneralPage() {
     persistIdentity,
   } = useNicknameIdentity();
   const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
+  const { claimed } = useNicknameClaimed(author);
+  // 등록되지 않은 닉네임(처음 사용)일 때만 비밀번호 확인을 한 번 더 받는다.
+  const needsConfirm = !claimed;
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -109,7 +112,7 @@ function NewGeneralPage() {
               toast.error("제목과 작성자를 입력해주세요.");
               return;
             }
-            if (!hasStored && nicknamePassword.trim() !== nicknamePasswordConfirm.trim()) {
+            if (needsConfirm && nicknamePassword.trim() !== nicknamePasswordConfirm.trim()) {
               toast.error("닉네임 비밀번호가 일치하지 않아요.");
               return;
             }
@@ -155,12 +158,14 @@ function NewGeneralPage() {
             />
             <p className="text-xs text-muted-foreground">
               이 닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 인증합니다.
-              {hasStored
-                ? " 저장된 닉네임을 불러왔어요."
-                : " 등록하면 이 기기에서 다음부터 자동으로 채워져요."}
+              {claimed
+                ? " 이미 등록된 닉네임이에요. 등록한 비밀번호를 입력해 주세요."
+                : hasStored
+                  ? " 저장된 닉네임을 불러왔어요."
+                  : " 등록하면 이 기기에서 다음부터 자동으로 채워져요."}
             </p>
           </div>
-          {!hasStored && (
+          {needsConfirm && (
             <div className="space-y-2">
               <Label htmlFor="g-nickpw-confirm">닉네임 비밀번호 확인</Label>
               <PasswordInput

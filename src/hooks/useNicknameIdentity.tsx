@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+
+import { nicknameStatusQueryOptions } from "@/lib/platform.queries";
 
 // Lightweight, anonymous "profile" stored only in this browser.
 // Keeps the existing nickname + nickname-password flow, but remembers the
@@ -105,3 +108,28 @@ export function useNicknameIdentity() {
     persistIdentity,
   };
 }
+
+// Tells whether the entered nickname is already registered (claimed) on the
+// server. Debounces the input so we don't query on every keystroke.
+// Until resolved (or empty name), treats the nickname as NOT claimed (i.e. a
+// first-time registration that should confirm its password).
+export function useNicknameClaimed(name: string) {
+  const [debounced, setDebounced] = useState(name.trim());
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(name.trim()), 400);
+    return () => clearTimeout(t);
+  }, [name]);
+
+  const { data, isFetching } = useQuery({
+    ...nicknameStatusQueryOptions(debounced),
+  });
+
+  const isSynced = debounced === name.trim();
+  const claimed = !!data?.claimed && isSynced;
+  const isResolved =
+    debounced.length === 0 || (isSynced && data !== undefined && !isFetching);
+
+  return { claimed, isResolved };
+}
+

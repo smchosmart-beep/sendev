@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/PasswordInput";
-import { useNicknameIdentity } from "@/hooks/useNicknameIdentity";
+import { useNicknameIdentity, useNicknameClaimed } from "@/hooks/useNicknameIdentity";
 
 export const Route = createFileRoute("/_main/board/$slug/new-link")({
   loader: ({ context }) =>
@@ -52,6 +52,8 @@ function NewLinkPage() {
   const [series, setSeries] = useState("");
   
   const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
+  const { claimed } = useNicknameClaimed(author);
+  const needsConfirm = !claimed;
   
 
   // Suggest existing series names in this board for consistent grouping.
@@ -128,7 +130,7 @@ function NewLinkPage() {
               toast.error("링크 형식이 올바르지 않아요. (예: https://...)");
               return;
             }
-            if (!hasStored && nicknamePassword.trim() !== nicknamePasswordConfirm.trim()) {
+            if (needsConfirm && nicknamePassword.trim() !== nicknamePasswordConfirm.trim()) {
               toast.error("닉네임 비밀번호가 일치하지 않아요.");
               return;
             }
@@ -165,12 +167,14 @@ function NewLinkPage() {
             />
             <p className="text-xs text-muted-foreground">
               이 닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 인증합니다.
-              {hasStored
-                ? " 저장된 닉네임을 불러왔어요."
-                : " 등록하면 이 기기에서 다음부터 자동으로 채워져요."}
+              {claimed
+                ? " 이미 등록된 닉네임이에요. 등록한 비밀번호를 입력해 주세요."
+                : hasStored
+                  ? " 저장된 닉네임을 불러왔어요."
+                  : " 등록하면 이 기기에서 다음부터 자동으로 채워져요."}
             </p>
           </div>
-          {!hasStored && (
+          {needsConfirm && (
             <div className="space-y-2">
               <Label htmlFor="l-nickpw-confirm">닉네임 비밀번호 확인</Label>
               <PasswordInput
