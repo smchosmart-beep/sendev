@@ -1830,7 +1830,7 @@ export const resetNicknamePassword = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-
+// Verifies the dedicated profile-admin password. The secret value lives only
 // in PROFILE_ADMIN_PASSWORD (server env) and is never returned to clients.
 export const verifyProfileAdmin = createServerFn({ method: "POST" })
   .inputValidator((input) =>
