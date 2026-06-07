@@ -509,12 +509,36 @@ function CategoriesPage() {
           />
         ) : (
           <div className="space-y-4">
-            {visibleCategories.map((c) => (
+            {orderedRows.map(({ category: c, depth }) => {
+              const siblings = siblingsOf(c);
+              const idx = siblings.findIndex((x) => x.id === c.id);
+              const childCount = c.isGroup ? childrenOf(c.id).length : 0;
+              const expanded = expandedFolders.has(c.id);
+              return (
               <div
                 key={c.id}
-                className="flex items-center justify-between gap-4 rounded-2xl bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                style={depth > 0 ? { marginLeft: depth * 24 } : undefined}
+                className={`flex items-center justify-between gap-4 rounded-2xl bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                  depth > 0 ? "border-l-4 border-primary/30" : ""
+                }`}
               >
-                <div className="min-w-0">
+                <div className="flex min-w-0 items-start gap-2">
+                  {c.isGroup && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => toggleFolder(c.id)}
+                      className="h-7 w-7 shrink-0 rounded-lg active:scale-95"
+                      aria-label={expanded ? "폴더 접기" : "폴더 펼치기"}
+                    >
+                      {expanded ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
+                  <div className="min-w-0">
                   <h3 className="flex items-center gap-2 truncate text-base font-semibold text-foreground">
                     {c.isGroup && <Folder className="h-4 w-4 shrink-0 text-primary" />}
                     {c.name}
@@ -533,7 +557,7 @@ function CategoriesPage() {
                     <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                       {TAB_LABEL[c.tabGroup ?? "hackathon"]}
                     </span>
-                    {c.isGroup && <SectionBadge label="폴더" />}
+                    {c.isGroup && <SectionBadge label={`폴더 · 하위 ${childCount}개`} />}
                     {c.parentId && (
                       <SectionBadge
                         label={`📁 ${categories.find((p) => p.id === c.parentId)?.name ?? "상위"}`}
@@ -549,17 +573,10 @@ function CategoriesPage() {
                       <SectionBadge label={c.linkName || "링크"} />
                     )}
                   </div>
+                  </div>
                 </div>
                 <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-                  {listFilter !== "all" && (() => {
-                    const group = categories
-                      .filter(
-                        (x) =>
-                          (x.tabGroup ?? "hackathon") === (c.tabGroup ?? "hackathon"),
-                      )
-                      .sort((a, b) => a.sortOrder - b.sortOrder);
-                    const idx = group.findIndex((x) => x.id === c.id);
-                    return (
+                  {siblings.length > 1 && (
                       <div className="flex flex-col gap-1">
                         <Button
                           variant="secondary"
@@ -574,7 +591,7 @@ function CategoriesPage() {
                         <Button
                           variant="secondary"
                           size="icon"
-                          disabled={idx >= group.length - 1 || swapMutation.isPending}
+                          disabled={idx >= siblings.length - 1 || swapMutation.isPending}
                           onClick={() => moveCategory(c, "down")}
                           className="h-6 w-7 rounded-lg active:scale-95"
                           aria-label="아래로 이동"
@@ -582,8 +599,7 @@ function CategoriesPage() {
                           <ChevronDown className="h-4 w-4" />
                         </Button>
                       </div>
-                    );
-                  })()}
+                  )}
                   <Button
                     variant="secondary"
                     size="sm"
@@ -604,7 +620,8 @@ function CategoriesPage() {
                   </Button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
