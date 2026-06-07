@@ -2078,6 +2078,23 @@ function CommentForm({
         maxLength={100}
         className="rounded-xl"
       />
+      {!hasStored && (
+        <>
+          <PasswordInput
+            value={nicknamePasswordConfirm}
+            onChange={(e) => setNicknamePasswordConfirm(e.target.value)}
+            placeholder="닉네임 비밀번호 확인 (닉네임 입력 시)"
+            maxLength={100}
+            className="rounded-xl"
+          />
+          {nicknamePasswordConfirm.length > 0 &&
+            nicknamePassword.trim() !== nicknamePasswordConfirm.trim() && (
+              <p className="text-xs text-destructive">
+                닉네임 비밀번호가 일치하지 않아요.
+              </p>
+            )}
+        </>
+      )}
       {hasStored && (
         <p className="text-xs text-muted-foreground">
           저장된 닉네임을 불러왔어요.
