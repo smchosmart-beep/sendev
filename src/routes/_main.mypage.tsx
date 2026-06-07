@@ -189,7 +189,7 @@ function Dashboard({
         </div>
       </div>
 
-      <LevelCard level={data.level} points={data.points} award={data.award} />
+      <LevelCard level={data.level} points={data.points} awards={data.awards} />
 
 
       <div className="grid grid-cols-3 gap-3">
@@ -310,19 +310,25 @@ function StatCard({
 function LevelCard({
   level,
   points,
-  award,
+  awards,
 }: {
   level: number | null;
   points: number;
-  award: string;
+  awards: string[];
 }) {
   const { data: awardIcon } = useQuery(awardIconQueryOptions());
   const { data: awardRules } = useQuery(awardIconRulesQueryOptions());
 
-  const hasAward = award.trim().length > 0;
-  const iconName = resolveAwardIcon(award, awardRules ?? [], awardIcon ?? "Trophy");
-  const AwardIcon =
-    (lucideIcons as Record<string, typeof Trophy>)[iconName] || Trophy;
+  const badges = (awards ?? []).filter((a) => a.trim().length > 0);
+  const hasAward = badges.length > 0;
+  const iconFor = (name: string) => {
+    const iconName = resolveAwardIcon(
+      name,
+      awardRules ?? [],
+      awardIcon ?? "Trophy",
+    );
+    return (lucideIcons as Record<string, typeof Trophy>)[iconName] || Trophy;
+  };
 
   // Points needed to reach the next level (level = round(points*99/1000)).
   const nextLevelPoints =
@@ -354,12 +360,24 @@ function LevelCard({
         </div>
 
         <div className="flex flex-col items-start gap-1.5">
-          <span className="text-xs font-medium text-muted-foreground">보유 배지</span>
+          <span className="text-xs font-medium text-muted-foreground">
+            보유 배지{hasAward ? ` ${badges.length}개` : ""}
+          </span>
           {hasAward ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-sm font-medium text-secondary-foreground shadow-sm">
-              <AwardIcon className="h-4 w-4 shrink-0" />
-              {award}
-            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {badges.map((name, i) => {
+                const AwardIcon = iconFor(name);
+                return (
+                  <span
+                    key={`${name}-${i}`}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-sm font-medium text-secondary-foreground shadow-sm"
+                  >
+                    <AwardIcon className="h-4 w-4 shrink-0" />
+                    {name}
+                  </span>
+                );
+              })}
+            </div>
           ) : (
             <span className="text-xs text-muted-foreground">아직 받은 배지가 없어요.</span>
           )}

@@ -389,6 +389,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_awards: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+          username: string
+          username_key: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+          username: string
+          username_key: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          username?: string
+          username_key?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           award: string

@@ -1655,11 +1655,16 @@ export const swapCategoryOrder = createServerFn({ method: "POST" })
 // app, so badges are matched by exact (normalized) name.
 // ============================================================
 
+export interface UserAwardDTO {
+  id: string;
+  name: string;
+}
+
 export interface UserProfileDTO {
   id: string;
   username: string;
   level: number | null;
-  award: string;
+  awards: UserAwardDTO[];
   postCount: number;
   commentCount: number;
   points: number;
@@ -1668,7 +1673,7 @@ export interface UserProfileDTO {
 // Public display map keyed by normalized username.
 export interface ProfileBadge {
   level: number | null;
-  award: string;
+  awards: string[];
 }
 export type ProfileMap = Record<string, ProfileBadge>;
 
@@ -1714,16 +1719,37 @@ async function getActivityCounts(db: any): Promise<
   return counts;
 }
 
+// Fetches all awards grouped by normalized username_key, ordered by sort_order.
+async function getAwardsByKey(
+  db: any,
+): Promise<Map<string, UserAwardDTO[]>> {
+  const map = new Map<string, UserAwardDTO[]>();
+  const { data, error } = await db
+    .from("user_awards")
+    .select("id, username_key, name, sort_order")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw new Error(error.message);
+  for (const r of data ?? []) {
+    const key = r.username_key as string;
+    const list = map.get(key) ?? [];
+    list.push({ id: String(r.id), name: r.name ?? "" });
+    map.set(key, list);
+  }
+  return map;
+}
+
 // Admin: full list of profile mappings with computed levels + activity.
 export const listUserProfiles = createServerFn({ method: "GET" }).handler(
   async () => {
     const db = await getAdmin();
-    const [profilesRes, counts] = await Promise.all([
+    const [profilesRes, counts, awardsByKey] = await Promise.all([
       db
         .from("user_profiles")
-        .select("id, username, username_key, award")
+        .select("id, username, username_key")
         .order("username", { ascending: true }),
       getActivityCounts(db),
+      getAwardsByKey(db),
     ]);
     if (profilesRes.error) throw new Error(profilesRes.error.message);
     return (profilesRes.data ?? []).map((r: any): UserProfileDTO => {
@@ -1731,7 +1757,7 @@ export const listUserProfiles = createServerFn({ method: "GET" }).handler(
       return {
         id: r.id,
         username: r.username,
-        award: r.award ?? "",
+        awards: awardsByKey.get(r.username_key) ?? [],
         postCount: c.postCount,
         commentCount: c.commentCount,
         points: c.postCount * 5 + c.commentCount * 1,
@@ -1746,39 +1772,37 @@ export const listUserProfiles = createServerFn({ method: "GET" }).handler(
 export const getProfileMap = createServerFn({ method: "GET" }).handler(
   async () => {
     const db = await getAdmin();
-    const [awardsRes, counts] = await Promise.all([
-      db.from("user_profiles").select("username_key, award"),
+    const [awardsByKey, counts] = await Promise.all([
+      getAwardsByKey(db),
       getActivityCounts(db),
     ]);
-    if (awardsRes.error) throw new Error(awardsRes.error.message);
 
     const map: ProfileMap = {};
     // Activity-based levels for everyone who has posted or commented.
     for (const [key, c] of counts) {
       map[key] = {
         level: levelFromActivity(c.postCount, c.commentCount),
-        award: "",
+        awards: [],
       };
     }
     // Merge admin-managed awards.
-    for (const r of awardsRes.data ?? []) {
-      const award = r.award ?? "";
-      const existing = map[r.username_key];
-      if (existing) existing.award = award;
-      else map[r.username_key] = { level: null, award };
+    for (const [key, list] of awardsByKey) {
+      const awards = list.map((a) => a.name).filter((n) => n.trim().length > 0);
+      const existing = map[key];
+      if (existing) existing.awards = awards;
+      else map[key] = { level: null, awards };
     }
     return map;
   },
 );
 
-// Admin: create or update an award mapping (keyed by normalized username).
-// Levels are auto-computed and not stored here.
+// Admin: register/keep a username mapping (so it can be password-managed).
+// Levels are auto-computed; awards are managed separately via addUserAward.
 export const upsertUserProfile = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
       .object({
         username: z.string().trim().min(1).max(100),
-        award: z.string().trim().max(200).default(""),
       })
       .parse(input),
   )
@@ -1791,10 +1815,59 @@ export const upsertUserProfile = createServerFn({ method: "POST" })
         {
           username: data.username.trim(),
           username_key: usernameKey,
-          award: data.award,
         },
         { onConflict: "username_key" },
       );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// Admin: add a single badge to a user (keyed by normalized username).
+export const addUserAward = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        username: z.string().trim().min(1).max(100),
+        name: z.string().trim().min(1).max(200),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const usernameKey = normalizeUsername(data.username);
+    // Ensure a profile row exists so the name can be managed.
+    await db
+      .from("user_profiles")
+      .upsert(
+        { username: data.username.trim(), username_key: usernameKey },
+        { onConflict: "username_key" },
+      );
+    // Append after existing badges.
+    const { count } = await db
+      .from("user_awards")
+      .select("id", { count: "exact", head: true })
+      .eq("username_key", usernameKey);
+    const { error } = await db.from("user_awards").insert({
+      username: data.username.trim(),
+      username_key: usernameKey,
+      name: data.name,
+      sort_order: count ?? 0,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// Admin: delete a single badge.
+export const deleteUserAward = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z.object({ id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { error } = await db
+      .from("user_awards")
+      .delete()
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -2181,7 +2254,7 @@ export interface DashboardDTO {
   username: string;
   level: number | null;
   points: number;
-  award: string;
+  awards: string[];
   myPosts: DashPostDTO[];
   myComments: DashCommentDTO[];
   repliesToMe: DashCommentDTO[];
@@ -2245,7 +2318,7 @@ export const getMyDashboard = createServerFn({ method: "POST" })
     // Re-authenticate.
     const { data: prof, error: pErr } = await db
       .from("user_profiles")
-      .select("username, nickname_password, award")
+      .select("username, nickname_password")
       .eq("username_key", key)
       .maybeSingle();
     if (pErr) throw new Error(pErr.message);
@@ -2426,11 +2499,23 @@ export const getMyDashboard = createServerFn({ method: "POST" })
 
     const points = myPosts.length * 5 + myComments0.length * 1;
 
+    // Badges from the dedicated awards table (ordered).
+    const { data: awardRows, error: awErr } = await db
+      .from("user_awards")
+      .select("name, sort_order, created_at")
+      .eq("username_key", key)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
+    if (awErr) throw new Error(awErr.message);
+    const awards = (awardRows ?? [])
+      .map((a: any) => (a.name ?? "").trim())
+      .filter((n: string) => n.length > 0);
+
     return {
       username: prof.username ?? name,
       level: levelFromActivity(myPosts.length, myComments0.length),
       points,
-      award: prof.award ?? "",
+      awards,
       myPosts,
       myComments: myComments0.map(mapDashComment),
       repliesToMe: repliesRows.map(mapDashComment),

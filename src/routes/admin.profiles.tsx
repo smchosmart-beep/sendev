@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { UserCog, Trophy, Pencil, Trash2, Lock, AlertCircle, KeyRound, Plus, icons as lucideIcons } from "lucide-react";
+import { UserCog, Trophy, Trash2, Lock, AlertCircle, KeyRound, Plus, X, icons as lucideIcons } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
@@ -13,6 +13,8 @@ import {
 } from "@/lib/platform.queries";
 import {
   upsertUserProfile,
+  addUserAward,
+  deleteUserAward,
   deleteUserProfile,
   resetNicknamePassword,
   verifyProfileAdmin,
@@ -328,42 +330,56 @@ function ProfilesAdmin() {
   const { data: awardIcon } = useQuery(awardIconQueryOptions());
   const { data: awardRules = [] } = useQuery(awardIconRulesQueryOptions());
   const upsert = useServerFn(upsertUserProfile);
+  const addAward = useServerFn(addUserAward);
+  const removeAward = useServerFn(deleteUserAward);
   const remove = useServerFn(deleteUserProfile);
   const resetPw = useServerFn(resetNicknamePassword);
 
 
   const [username, setUsername] = useState("");
   const [award, setAward] = useState("");
-  const [editing, setEditing] = useState<UserProfileDTO | null>(null);
 
   const reset = () => {
     setUsername("");
     setAward("");
-    setEditing(null);
+  };
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["user-profiles"] });
+    queryClient.invalidateQueries({ queryKey: ["profile-map"] });
   };
 
   const saveMutation = useMutation({
-    mutationFn: () =>
-      upsert({
-        data: {
-          username: username.trim(),
-          award: award.trim(),
-        },
-      }),
+    mutationFn: async () => {
+      const name = username.trim();
+      const badge = award.trim();
+      if (badge) {
+        await addAward({ data: { username: name, name: badge } });
+      } else {
+        await upsert({ data: { username: name } });
+      }
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["user-profiles"] });
-      queryClient.invalidateQueries({ queryKey: ["profile-map"] });
-      toast.success(editing ? "프로필을 수정했어요." : "프로필을 추가했어요.");
+      invalidate();
+      toast.success(award.trim() ? "배지를 추가했어요." : "사용자를 등록했어요.");
       reset();
     },
     onError: () => toast.error("저장 중 문제가 발생했어요."),
   });
 
+  const removeAwardMutation = useMutation({
+    mutationFn: (id: string) => removeAward({ data: { id } }),
+    onSuccess: () => {
+      invalidate();
+      toast.success("배지를 삭제했어요.");
+    },
+    onError: () => toast.error("삭제 중 문제가 발생했어요."),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => remove({ data: { id } }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["user-profiles"] });
-      queryClient.invalidateQueries({ queryKey: ["profile-map"] });
+      invalidate();
       toast.success("프로필을 삭제했어요.");
     },
     onError: () => toast.error("삭제 중 문제가 발생했어요."),
@@ -379,9 +395,8 @@ function ProfilesAdmin() {
   });
 
   const startEdit = (p: UserProfileDTO) => {
-    setEditing(p);
     setUsername(p.username);
-    setAward(p.award);
+    setAward("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -402,8 +417,9 @@ function ProfilesAdmin() {
         </h2>
         <p className="text-sm text-muted-foreground">
           작성자 이름과 해커톤 수상 정보를 연결해 주세요. 레벨은{" "}
-          <b>활동 점수(게시글×5 + 댓글×1)</b>로 자동 산정됩니다. 글·댓글에서{" "}
-          <b>이름이 정확히 일치</b>하면 자동으로 뱃지가 표시됩니다.
+          <b>활동 점수(게시글×5 + 댓글×1)</b>로 자동 산정됩니다. 한 사용자에게{" "}
+          <b>배지를 여러 개</b> 추가할 수 있고, 글·댓글에서 <b>이름이 정확히 일치</b>하면
+          자동으로 뱃지가 표시됩니다.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-5 grid gap-4 sm:grid-cols-12">
@@ -418,7 +434,7 @@ function ProfilesAdmin() {
             />
           </div>
           <div className="space-y-2 sm:col-span-7">
-            <Label htmlFor="p-award">배지 추가</Label>
+            <Label htmlFor="p-award">배지 추가 (선택)</Label>
             <Input
               id="p-award"
               value={award}
@@ -433,16 +449,20 @@ function ProfilesAdmin() {
               disabled={saveMutation.isPending}
               className="rounded-xl active:scale-95"
             >
-              {saveMutation.isPending ? "저장 중..." : editing ? "수정 저장" : "추가"}
+              {saveMutation.isPending
+                ? "저장 중..."
+                : award.trim()
+                  ? "배지 추가"
+                  : "사용자 등록"}
             </Button>
-            {editing && (
+            {(username || award) && (
               <Button
                 type="button"
                 variant="secondary"
                 onClick={reset}
                 className="rounded-xl active:scale-95"
               >
-                취소
+                초기화
               </Button>
             )}
           </div>
@@ -452,6 +472,8 @@ function ProfilesAdmin() {
       <AwardIconPicker />
 
       <AwardIconRules />
+
+
 
 
       {profiles.length === 0 ? (
@@ -478,9 +500,9 @@ function ProfilesAdmin() {
                     ) : (
                       <span className="text-xs text-muted-foreground">활동 없음</span>
                     )}
-                    {p.award.trim() && (() => {
+                    {p.awards.map((a) => {
                       const iconName = resolveAwardIcon(
-                        p.award,
+                        a.name,
                         awardRules,
                         awardIcon ?? "Trophy",
                       );
@@ -488,24 +510,41 @@ function ProfilesAdmin() {
                         (lucideIcons as Record<string, typeof Trophy>)[iconName] ||
                         Trophy;
                       return (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                        <span
+                          key={a.id}
+                          className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
+                        >
                           <AwardIcon className="h-3 w-3" />
-                          {p.award}
+                          {a.name}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (confirm(`'${a.name}' 배지를 삭제할까요?`)) {
+                                removeAwardMutation.mutate(a.id);
+                              }
+                            }}
+                            aria-label="배지 삭제"
+                            className="ml-0.5 rounded-full p-0.5 text-muted-foreground transition hover:bg-destructive hover:text-destructive-foreground"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
                         </span>
                       );
-                    })()}
+                    })}
                     <span className="text-xs text-muted-foreground">
                       게시글 {p.postCount} · 댓글 {p.commentCount} · {p.points}점
                     </span>
                   </div>
+
                 </div>
                 <button
                   type="button"
                   onClick={() => startEdit(p)}
-                  aria-label="수정"
+                  aria-label="이 사용자에 배지 추가"
+                  title="이 사용자에 배지 추가"
                   className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-sm active:scale-95"
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                 </button>
                 <button
                   type="button"
