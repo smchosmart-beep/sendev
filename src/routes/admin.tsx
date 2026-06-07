@@ -82,28 +82,39 @@ function AdminGate() {
         <p className="mt-1 text-center text-sm text-muted-foreground">
           관리자 비밀번호를 입력해 주세요.
         </p>
-        <input
-          type="password"
-          autoFocus
-          lang="en"
-          inputMode="text"
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-          value={value}
-          onChange={(e) => {
-            setValue(stripKorean(e.target.value));
-            setError(false);
-          }}
-          onCompositionEnd={(e) => {
-            setValue(stripKorean((e.target as HTMLInputElement).value));
-          }}
-          placeholder="영문 비밀번호를 입력해 주세요"
-          className={cn(
-            "mt-6 w-full rounded-xl border bg-background px-4 py-3 text-sm text-foreground outline-none transition-colors",
-            error ? "border-destructive focus:border-destructive" : "border-border focus:border-primary",
-          )}
-        />
+        <div className="relative mt-6">
+          <input
+            type={showPw ? "text" : "password"}
+            autoFocus
+            lang="en"
+            inputMode="text"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            value={value}
+            onChange={(e) => {
+              setValue(stripKorean(e.target.value));
+              setError(false);
+            }}
+            onCompositionEnd={(e) => {
+              setValue(stripKorean((e.target as HTMLInputElement).value));
+            }}
+            placeholder="영문 비밀번호를 입력해 주세요"
+            className={cn(
+              "w-full rounded-xl border bg-background px-4 py-3 pr-12 text-sm text-foreground outline-none transition-colors",
+              error ? "border-destructive focus:border-destructive" : "border-border focus:border-primary",
+            )}
+          />
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => setShowPw((v) => !v)}
+            aria-label={showPw ? "비밀번호 숨기기" : "비밀번호 보기"}
+            className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
         {error && (
           <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-destructive">
             <AlertCircle className="h-4 w-4" />
