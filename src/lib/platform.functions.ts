@@ -1734,3 +1734,15 @@ export const deleteUserProfile = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// Verifies the dedicated profile-admin password. The secret value lives only
+// in PROFILE_ADMIN_PASSWORD (server env) and is never returned to clients.
+export const verifyProfileAdmin = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z.object({ password: z.string().max(200) }).parse(input),
+  )
+  .handler(async ({ data }): Promise<{ ok: boolean }> => {
+    const secret = process.env.PROFILE_ADMIN_PASSWORD;
+    if (!secret || data.password.length === 0) return { ok: false };
+    return { ok: data.password === secret };
+  });
