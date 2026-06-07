@@ -32,6 +32,10 @@ import {
   awardIconRulesQueryOptions,
 } from "@/lib/platform.queries";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
+import {
+  ForgotPasswordDialog,
+  RecoveryQuestionCard,
+} from "@/components/NicknameRecovery";
 
 export const Route = createFileRoute("/_main/mypage")({
   head: () => ({
