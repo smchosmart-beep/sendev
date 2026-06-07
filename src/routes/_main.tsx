@@ -169,6 +169,15 @@ function MainLayout() {
           </Link>
 
           <Link
+            to="/mypage"
+            aria-label="내 페이지"
+            className="hidden h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:flex"
+          >
+            <UserRound className="h-5 w-5" />
+          </Link>
+
+
+          <Link
             to="/admin/categories"
             aria-label="관리자"
             className="hidden h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:flex"
