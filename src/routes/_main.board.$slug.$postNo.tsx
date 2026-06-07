@@ -1003,7 +1003,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
                 className="rounded-xl"
               />
               <p className="text-xs text-muted-foreground">
-                등록 시 설정한 비밀번호 또는 관리자 비밀번호를 입력하세요.
+                작성자의 닉네임 비밀번호 또는 관리자 비밀번호를 입력하세요.
               </p>
             </div>
             <DialogFooter>
