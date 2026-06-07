@@ -28,6 +28,7 @@ import {
   Loader2,
   Pencil,
   Trash2,
+  Share2,
   MessageCircle,
   CornerDownRight,
   Maximize,
