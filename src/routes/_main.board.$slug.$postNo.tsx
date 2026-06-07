@@ -710,9 +710,8 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
           >
             <div className="space-y-2">
               <Label htmlFor="mv-pw">관리자 비밀번호</Label>
-              <Input
+              <PasswordInput
                 id="mv-pw"
-                type="password"
                 value={moveGatePw}
                 onChange={(e) => setMoveGatePw(e.target.value)}
                 className="rounded-xl"
