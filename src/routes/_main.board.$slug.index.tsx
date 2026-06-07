@@ -468,6 +468,7 @@ function SeriesCard({
 
 
 function LinkCard({ post, slug }: { post: PostDTO; slug: string }) {
+  const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
   const needsBackfill = !post.ogImageUrl && !!post.deployUrl;
   const { data: backfill } = useQuery(
     ogImageBackfillQueryOptions(needsBackfill ? post.id : "", post.deployUrl ?? ""),
