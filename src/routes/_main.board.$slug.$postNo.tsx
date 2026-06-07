@@ -237,9 +237,13 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
                     />
                   ),
                   p: ({ node, children, ...props }) => {
-                    const embed = soleLinkEmbed(node);
-                    if (embed) {
-                      return <EmbeddedFrame embedUrl={embed.embedUrl} href={embed.href} />;
+                    const href = soleLinkHref(node);
+                    if (href) {
+                      const embedUrl = getEmbedUrl(href);
+                      if (embedUrl) {
+                        return <EmbeddedFrame embedUrl={embedUrl} href={href} />;
+                      }
+                      return <LinkPreviewCard href={href} />;
                     }
                     return <p {...props}>{children}</p>;
                   },
