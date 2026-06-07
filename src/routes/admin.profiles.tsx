@@ -294,6 +294,19 @@ function ProfilesAdmin() {
                 <button
                   type="button"
                   onClick={() => {
+                    if (confirm(`'${p.username}'의 닉네임 비밀번호를 초기화할까요? 분실 시에만 사용하세요.`)) {
+                      resetPwMutation.mutate(p.id);
+                    }
+                  }}
+                  aria-label="닉네임 비밀번호 초기화"
+                  title="닉네임 비밀번호 초기화"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-sm active:scale-95"
+                >
+                  <KeyRound className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
                     if (confirm(`'${p.username}' 프로필을 삭제할까요?`)) {
                       deleteMutation.mutate(p.id);
                     }
