@@ -1571,8 +1571,9 @@ export const swapCategoryOrder = createServerFn({ method: "POST" })
 
 
 // ============================================================
-// User profiles: admin-managed mapping of author name -> level/award.
-// No auth in this app, so badges are matched by exact (normalized) name.
+// User profiles: levels are computed automatically from activity
+// (posts × 5 + comments × 1), awards are admin-managed. No auth in this
+// app, so badges are matched by exact (normalized) name.
 // ============================================================
 
 export interface UserProfileDTO {
@@ -1580,6 +1581,9 @@ export interface UserProfileDTO {
   username: string;
   level: number | null;
   award: string;
+  postCount: number;
+  commentCount: number;
+  points: number;
 }
 
 // Public display map keyed by normalized username.
@@ -1594,51 +1598,107 @@ export function normalizeUsername(name: string): string {
   return name.trim().toLowerCase();
 }
 
-function mapUserProfile(r: any): UserProfileDTO {
-  return {
-    id: r.id,
-    username: r.username,
-    level: r.level ?? null,
-    award: r.award ?? "",
-  };
+// Activity scoring: posts are worth 5 points, comments 1 point.
+// Linear mapping so that ~200 posts (1000 points) reaches Lv.99.
+export function levelFromActivity(
+  postCount: number,
+  commentCount: number,
+): number | null {
+  const points = postCount * 5 + commentCount * 1;
+  if (points <= 0) return null;
+  const level = Math.round((points * 99) / 1000);
+  return Math.min(99, Math.max(1, level));
 }
 
-// Admin: full list of profile mappings.
+// Aggregates posts + comments by normalized author name.
+async function getActivityCounts(db: any): Promise<
+  Map<string, { postCount: number; commentCount: number }>
+> {
+  const counts = new Map<string, { postCount: number; commentCount: number }>();
+  const bump = (name: string, kind: "post" | "comment") => {
+    const key = normalizeUsername(name ?? "");
+    if (!key) return;
+    const cur = counts.get(key) ?? { postCount: 0, commentCount: 0 };
+    if (kind === "post") cur.postCount += 1;
+    else cur.commentCount += 1;
+    counts.set(key, cur);
+  };
+
+  const [postsRes, commentsRes] = await Promise.all([
+    db.from("posts").select("author"),
+    db.from("comments").select("author"),
+  ]);
+  if (postsRes.error) throw new Error(postsRes.error.message);
+  if (commentsRes.error) throw new Error(commentsRes.error.message);
+  for (const r of postsRes.data ?? []) bump(r.author, "post");
+  for (const r of commentsRes.data ?? []) bump(r.author, "comment");
+  return counts;
+}
+
+// Admin: full list of profile mappings with computed levels + activity.
 export const listUserProfiles = createServerFn({ method: "GET" }).handler(
   async () => {
     const db = await getAdmin();
-    const { data, error } = await db
-      .from("user_profiles")
-      .select("id, username, level, award")
-      .order("username", { ascending: true });
-    if (error) throw new Error(error.message);
-    return (data ?? []).map(mapUserProfile);
+    const [profilesRes, counts] = await Promise.all([
+      db
+        .from("user_profiles")
+        .select("id, username, username_key, award")
+        .order("username", { ascending: true }),
+      getActivityCounts(db),
+    ]);
+    if (profilesRes.error) throw new Error(profilesRes.error.message);
+    return (profilesRes.data ?? []).map((r: any): UserProfileDTO => {
+      const c = counts.get(r.username_key) ?? { postCount: 0, commentCount: 0 };
+      return {
+        id: r.id,
+        username: r.username,
+        award: r.award ?? "",
+        postCount: c.postCount,
+        commentCount: c.commentCount,
+        points: c.postCount * 5 + c.commentCount * 1,
+        level: levelFromActivity(c.postCount, c.commentCount),
+      };
+    });
   },
 );
 
 // Public: lightweight map for rendering badges next to author names.
+// Levels come from activity; awards come from admin-managed profiles.
 export const getProfileMap = createServerFn({ method: "GET" }).handler(
   async () => {
     const db = await getAdmin();
-    const { data, error } = await db
-      .from("user_profiles")
-      .select("username_key, level, award");
-    if (error) throw new Error(error.message);
+    const [awardsRes, counts] = await Promise.all([
+      db.from("user_profiles").select("username_key, award"),
+      getActivityCounts(db),
+    ]);
+    if (awardsRes.error) throw new Error(awardsRes.error.message);
+
     const map: ProfileMap = {};
-    for (const r of data ?? []) {
-      map[r.username_key] = { level: r.level ?? null, award: r.award ?? "" };
+    // Activity-based levels for everyone who has posted or commented.
+    for (const [key, c] of counts) {
+      map[key] = {
+        level: levelFromActivity(c.postCount, c.commentCount),
+        award: "",
+      };
+    }
+    // Merge admin-managed awards.
+    for (const r of awardsRes.data ?? []) {
+      const award = r.award ?? "";
+      const existing = map[r.username_key];
+      if (existing) existing.award = award;
+      else map[r.username_key] = { level: null, award };
     }
     return map;
   },
 );
 
-// Admin: create or update a mapping (keyed by normalized username).
+// Admin: create or update an award mapping (keyed by normalized username).
+// Levels are auto-computed and not stored here.
 export const upsertUserProfile = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
       .object({
         username: z.string().trim().min(1).max(100),
-        level: z.number().int().min(1).max(99).nullable().default(null),
         award: z.string().trim().max(200).default(""),
       })
       .parse(input),
@@ -1652,7 +1712,6 @@ export const upsertUserProfile = createServerFn({ method: "POST" })
         {
           username: data.username.trim(),
           username_key: usernameKey,
-          level: data.level,
           award: data.award,
         },
         { onConflict: "username_key" },
