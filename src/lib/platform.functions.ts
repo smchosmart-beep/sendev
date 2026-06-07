@@ -387,9 +387,9 @@ export const updateCategory = createServerFn({ method: "POST" })
         // undefined = leave password unchanged
         password: z.string().trim().max(100).optional(),
         githubRequired: z.boolean().optional(),
-        enableNotice: z.boolean().optional(),
-        enableQuestion: z.boolean().optional(),
-        enableGeneral: z.boolean().optional(),
+        parentId: z.string().uuid().nullable().optional(),
+        isGroup: z.boolean().optional(),
+        enablePost: z.boolean().optional(),
         enableProject: z.boolean().optional(),
         enableLink: z.boolean().optional(),
         generalName: z.string().trim().max(100).optional(),
@@ -405,6 +405,10 @@ export const updateCategory = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     requireAdmin(data.adminPassword);
     const db = await getAdmin();
+    // Prevent setting a category's parent to itself.
+    if (data.parentId !== undefined && data.parentId === data.id) {
+      throw new Error("자기 자신을 상위 폴더로 지정할 수 없어요.");
+    }
     const patch: Record<string, unknown> = {
       name: data.name,
       description: data.description,
@@ -415,11 +419,9 @@ export const updateCategory = createServerFn({ method: "POST" })
     if (data.password !== undefined) patch.password = data.password;
     if (data.githubRequired !== undefined)
       patch.github_required = data.githubRequired;
-    if (data.enableNotice !== undefined) patch.enable_notice = data.enableNotice;
-    if (data.enableQuestion !== undefined)
-      patch.enable_question = data.enableQuestion;
-    if (data.enableGeneral !== undefined)
-      patch.enable_general = data.enableGeneral;
+    if (data.parentId !== undefined) patch.parent_id = data.parentId;
+    if (data.isGroup !== undefined) patch.is_group = data.isGroup;
+    if (data.enablePost !== undefined) patch.enable_post = data.enablePost;
     if (data.enableProject !== undefined)
       patch.enable_project = data.enableProject;
     if (data.enableLink !== undefined) patch.enable_link = data.enableLink;
