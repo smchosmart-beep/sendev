@@ -637,7 +637,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
     (c) =>
       c.id !== categoryId &&
       c.tabGroup === moveTab &&
-      (c.enableGeneral || c.enableQuestion),
+      c.enablePost,
   );
   const tabsWithBoards = TAB_ORDER.filter((tab) =>
     categories.some(
