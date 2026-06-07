@@ -533,6 +533,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
       setTitle(post.title);
       setContent(post.content);
       setAuthor(post.author);
+      setPinned(post.pinned);
       setGithubUrl(post.githubUrl);
       setDeployUrl(post.deployUrl);
       setEditPw(editGatePw);
