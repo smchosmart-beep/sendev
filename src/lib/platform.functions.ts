@@ -148,9 +148,9 @@ export interface CategoryDTO {
   sortOrder: number;
   hasPassword: boolean;
   githubRequired: boolean;
-  enableNotice: boolean;
-  enableQuestion: boolean;
-  enableGeneral: boolean;
+  parentId: string | null;
+  isGroup: boolean;
+  enablePost: boolean;
   enableProject: boolean;
   enableLink: boolean;
   generalName: string;
@@ -212,7 +212,8 @@ export interface PostDTO {
   id: string;
   categoryId: string;
   postNo: number;
-  type: "notice" | "project" | "question" | "general" | "link";
+  type: "post" | "project" | "link";
+  pinned: boolean;
   title: string;
   content: string;
   author: string;
@@ -254,7 +255,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const { data, error } = await db
       .from("categories")
       .select(
-        "id, slug, name, description, sort_order, password, github_required, enable_notice, enable_question, enable_general, enable_project, enable_link, general_name, project_name, link_name, tab_group, eval_open, eval_seed, review_allowlist_only",
+        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, general_name, project_name, link_name, tab_group, eval_open, eval_seed, review_allowlist_only",
       )
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
@@ -266,9 +267,9 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       sortOrder: c.sort_order,
       hasPassword: !!c.password,
       githubRequired: !!c.github_required,
-      enableNotice: c.enable_notice ?? true,
-      enableQuestion: c.enable_question ?? true,
-      enableGeneral: c.enable_general ?? true,
+      parentId: c.parent_id ?? null,
+      isGroup: !!c.is_group,
+      enablePost: c.enable_post ?? true,
       enableProject: c.enable_project ?? true,
       enableLink: c.enable_link ?? false,
       generalName: c.general_name ?? "일반게시판",
@@ -328,9 +329,9 @@ export const createCategory = createServerFn({ method: "POST" })
         description: z.string().trim().max(500).default(""),
         password: z.string().trim().max(100).default(""),
         githubRequired: z.boolean().default(false),
-        enableNotice: z.boolean().default(true),
-        enableQuestion: z.boolean().default(true),
-        enableGeneral: z.boolean().default(true),
+        parentId: z.string().uuid().nullable().optional(),
+        isGroup: z.boolean().default(false),
+        enablePost: z.boolean().default(true),
         enableProject: z.boolean().default(true),
         enableLink: z.boolean().default(false),
         generalName: z.string().trim().max(100).default("일반게시판"),
@@ -360,9 +361,9 @@ export const createCategory = createServerFn({ method: "POST" })
       description: data.description,
       password: data.password,
       github_required: data.githubRequired,
-      enable_notice: data.enableNotice,
-      enable_question: data.enableQuestion,
-      enable_general: data.enableGeneral,
+      parent_id: data.parentId ?? null,
+      is_group: data.isGroup,
+      enable_post: data.enablePost,
       enable_project: data.enableProject,
       enable_link: data.enableLink,
       general_name: data.generalName || "일반게시판",
@@ -386,9 +387,9 @@ export const updateCategory = createServerFn({ method: "POST" })
         // undefined = leave password unchanged
         password: z.string().trim().max(100).optional(),
         githubRequired: z.boolean().optional(),
-        enableNotice: z.boolean().optional(),
-        enableQuestion: z.boolean().optional(),
-        enableGeneral: z.boolean().optional(),
+        parentId: z.string().uuid().nullable().optional(),
+        isGroup: z.boolean().optional(),
+        enablePost: z.boolean().optional(),
         enableProject: z.boolean().optional(),
         enableLink: z.boolean().optional(),
         generalName: z.string().trim().max(100).optional(),
@@ -404,6 +405,10 @@ export const updateCategory = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     requireAdmin(data.adminPassword);
     const db = await getAdmin();
+    // Prevent setting a category's parent to itself.
+    if (data.parentId !== undefined && data.parentId === data.id) {
+      throw new Error("자기 자신을 상위 폴더로 지정할 수 없어요.");
+    }
     const patch: Record<string, unknown> = {
       name: data.name,
       description: data.description,
@@ -414,11 +419,9 @@ export const updateCategory = createServerFn({ method: "POST" })
     if (data.password !== undefined) patch.password = data.password;
     if (data.githubRequired !== undefined)
       patch.github_required = data.githubRequired;
-    if (data.enableNotice !== undefined) patch.enable_notice = data.enableNotice;
-    if (data.enableQuestion !== undefined)
-      patch.enable_question = data.enableQuestion;
-    if (data.enableGeneral !== undefined)
-      patch.enable_general = data.enableGeneral;
+    if (data.parentId !== undefined) patch.parent_id = data.parentId;
+    if (data.isGroup !== undefined) patch.is_group = data.isGroup;
+    if (data.enablePost !== undefined) patch.enable_post = data.enablePost;
     if (data.enableProject !== undefined)
       patch.enable_project = data.enableProject;
     if (data.enableLink !== undefined) patch.enable_link = data.enableLink;
@@ -680,7 +683,7 @@ export const deleteEvent = createServerFn({ method: "POST" })
 /* -------------------------------- Posts ------------------------------- */
 
 const POST_COLUMNS =
-  "id, category_id, post_no, type, title, content, author, github_url, deploy_url, og_image_url, series, created_at";
+  "id, category_id, post_no, type, pinned, title, content, author, github_url, deploy_url, og_image_url, series, created_at";
 
 // Returns true when the caller may read a protected board's content. Open
 // boards (no password) always pass. Protected boards pass only when the
@@ -876,7 +879,8 @@ export const createPost = createServerFn({ method: "POST" })
     z
       .object({
         categoryId: z.string().uuid(),
-        type: z.enum(["notice", "project", "question", "general", "link"]),
+        type: z.enum(["post", "project", "link"]).default("post"),
+        pinned: z.boolean().default(false),
         title: z.string().trim().min(1).max(200),
         content: z.string().max(20000).default(""),
         author: z.string().trim().max(100).default(""),
@@ -889,8 +893,6 @@ export const createPost = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    // Notices may only be created by an authenticated admin.
-    if (data.type === "notice") requireAdmin(data.adminPassword);
     const db = await getAdmin();
     // Enforce per-board GitHub link requirement.
     const { data: cat } = await db
@@ -903,15 +905,9 @@ export const createPost = createServerFn({ method: "POST" })
         throw new Error("이 카테고리은 GitHub 링크가 필수입니다.");
       }
     }
-    // Notices are authored by the operations team.
-    const author = data.type === "notice" ? "운영진" : data.author;
+    const author = data.author;
     // Verify the author owns this nickname (or claim it on first use).
-    await ensureNicknameOwnership(
-      db,
-      author,
-      data.nicknamePassword,
-      data.type === "notice",
-    );
+    await ensureNicknameOwnership(db, author, data.nicknamePassword, false);
     // Resolve and cache the deploy site's OG image once at creation time so the
     // board never re-fetches the external site on subsequent loads.
     const ogImageUrl = data.deployUrl
@@ -931,6 +927,7 @@ export const createPost = createServerFn({ method: "POST" })
         category_id: data.categoryId,
         post_no: nextNo,
         type: data.type,
+        pinned: data.type === "post" ? data.pinned : false,
         title: data.title,
         content: data.content,
         author,
@@ -1008,6 +1005,7 @@ export const updatePost = createServerFn({ method: "POST" })
         title: z.string().trim().min(1).max(200),
         content: z.string().max(20000).optional(),
         author: z.string().trim().max(100).optional(),
+        pinned: z.boolean().optional(),
         githubUrl: z.string().trim().max(300).default(""),
         deployUrl: z.string().trim().max(300).default(""),
         series: z.string().trim().max(100).optional(),
@@ -1040,11 +1038,10 @@ export const updatePost = createServerFn({ method: "POST" })
     };
     if (data.series !== undefined) patch.series = data.series;
     if (data.content !== undefined) patch.content = data.content;
-    // Notices stay authored by the operations team; others can update author.
-    if (existing?.type === "notice") {
-      patch.author = "운영진";
-    } else if (data.author !== undefined) {
-      patch.author = data.author;
+    if (data.author !== undefined) patch.author = data.author;
+    // Only "post" type entries can be pinned (notice).
+    if (data.pinned !== undefined && existing?.type === "post") {
+      patch.pinned = data.pinned;
     }
     const { error } = await db.from("posts").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -1067,7 +1064,7 @@ export const deletePost = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// Admin-only: moves a general/question post to another board (category).
+// Admin-only: moves a post to another board (category).
 // Only the admin master password is accepted — per-post passwords cannot move.
 export const movePost = createServerFn({ method: "POST" })
   .inputValidator((input) =>
@@ -1095,24 +1092,17 @@ export const movePost = createServerFn({ method: "POST" })
         .maybeSingle();
       if (postErr) throw new Error(postErr.message);
       if (!post) return { ok: false };
-      if (post.type !== "general" && post.type !== "question") {
-        throw new Error("일반/질문 게시글만 이동할 수 있어요.");
+      if (post.type !== "post") {
+        throw new Error("글 게시판 글만 이동할 수 있어요.");
       }
       const { data: target, error: catErr } = await db
         .from("categories")
-        .select("slug, enable_general, enable_question")
+        .select("slug, enable_post")
         .eq("id", data.targetCategoryId)
         .maybeSingle();
       if (catErr) throw new Error(catErr.message);
       if (!target) return { ok: false };
-      // Convert the post type to match the destination board so it shows up
-      // in the right section (general boards -> general, question boards ->
-      // question). Fall back to the existing type otherwise.
-      const newType = target.enable_general
-        ? "general"
-        : target.enable_question
-          ? "question"
-          : post.type;
+      const newType = "post";
       // Assign the next per-board number in the target board, retrying on
       // a unique collision (concurrent insert/move).
       for (let attempt = 0; attempt < 3; attempt++) {
@@ -1147,6 +1137,7 @@ function mapPost(p: any, commentCount = 0): PostDTO {
     categoryId: p.category_id,
     postNo: p.post_no ?? 0,
     type: p.type,
+    pinned: !!p.pinned,
     title: p.title,
     content: p.content ?? "",
     author: p.author,
