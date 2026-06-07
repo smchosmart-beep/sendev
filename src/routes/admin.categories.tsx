@@ -627,7 +627,7 @@ function CategoriesPage() {
                     variant="secondary"
                     size="sm"
                     onClick={() => openEdit(c)}
-                    className="rounded-xl transition-all duration-200 active:scale-95"
+                    className="w-full justify-center rounded-xl transition-all duration-200 active:scale-95"
                   >
                     <Pencil className="h-4 w-4" />
                     수정
@@ -636,7 +636,7 @@ function CategoriesPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setDeleting(c)}
-                    className="rounded-xl text-destructive transition-all duration-200 hover:bg-destructive/10 active:scale-95"
+                    className="w-full justify-center rounded-xl text-destructive transition-all duration-200 hover:bg-destructive/10 active:scale-95"
                   >
                     <Trash2 className="h-4 w-4" />
                     삭제
