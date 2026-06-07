@@ -2,22 +2,26 @@ import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { UserCog, Trophy, Pencil, Trash2, Lock, AlertCircle, KeyRound } from "lucide-react";
+import { UserCog, Trophy, Pencil, Trash2, Lock, AlertCircle, KeyRound, icons as lucideIcons } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
-import { userProfilesQueryOptions } from "@/lib/platform.queries";
+import { userProfilesQueryOptions, awardIconQueryOptions } from "@/lib/platform.queries";
 import {
   upsertUserProfile,
   deleteUserProfile,
   resetNicknamePassword,
   verifyProfileAdmin,
+  setAwardIcon,
+  AWARD_ICON_NAMES,
   type UserProfileDTO,
+  type AwardIconName,
 } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
 
 // 한글 자모/완성형 음절 제거 (영문 비밀번호 강제)
 const stripKorean = (s: string) =>
