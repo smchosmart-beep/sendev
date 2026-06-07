@@ -1323,6 +1323,20 @@ function EvaluationSection({
                 </>
               )}
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="reviewer-pw">닉네임 비밀번호</Label>
+              <Input
+                id="reviewer-pw"
+                type="password"
+                value={nicknamePassword}
+                onChange={(e) => setNicknamePassword(e.target.value)}
+                placeholder="닉네임 비밀번호"
+                maxLength={100}
+              />
+              <p className="text-xs text-muted-foreground">
+                닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 본인 확인을 해요. 글·댓글과 같은 비밀번호를 사용합니다.
+              </p>
+            </div>
             {criteria.map((c) => (
               <div key={c.id} className="space-y-2">
                 <Label className="flex items-center gap-2">
