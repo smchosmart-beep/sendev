@@ -228,6 +228,8 @@ function AwardIconRules() {
 
   const [keyword, setKeyword] = useState("");
   const [icon, setIcon] = useState<AwardIconName>("Trophy");
+  const { confirm, confirmDialog } = useConfirm();
+
 
   const addMutation = useMutation({
     mutationFn: () => add({ data: { keyword: keyword.trim(), icon, adminPassword: getProfileAdminPassword() } }),
