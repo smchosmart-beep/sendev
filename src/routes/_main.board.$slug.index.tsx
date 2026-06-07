@@ -106,7 +106,7 @@ function BoardInner({
 
   return (
     <div className="space-y-6">
-      {category.enableNotice && notices.length > 0 && (
+      {category.enablePost && notices.length > 0 && (
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
             <Megaphone className="h-5 w-5 text-primary" />
