@@ -50,7 +50,6 @@ function NewGeneralPage() {
     hasStored,
     persistIdentity,
   } = useNicknameIdentity();
-  const [editPassword, setEditPassword] = useState("");
   const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
 
   const mutation = useMutation({
