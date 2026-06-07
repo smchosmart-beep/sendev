@@ -148,9 +148,8 @@ function NoticeForm({ categoryId }: { categoryId: string }) {
       </div>
       <div className="space-y-2">
         <Label htmlFor="n-pw">관리자 비밀번호</Label>
-        <Input
+        <PasswordInput
           id="n-pw"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="수정·삭제 시 사용할 관리자 비밀번호"
