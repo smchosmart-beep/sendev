@@ -1529,7 +1529,6 @@ function CommentsSection({ postId }: { postId: string }) {
     persistIdentity,
   } = useNicknameIdentity();
   const [content, setContent] = useState("");
-  const [password, setPassword] = useState("");
   const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
   const [imageUrls, setImageUrls] = useState<string[]>([]);
 
