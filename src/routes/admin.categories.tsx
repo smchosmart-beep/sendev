@@ -88,9 +88,7 @@ function CategoriesPage() {
   const [description, setDescription] = useState("");
   const [password, setPassword] = useState("");
   const [githubRequired, setGithubRequired] = useState(false);
-  const [enableNotice, setEnableNotice] = useState(true);
-  const [enableQuestion, setEnableQuestion] = useState(true);
-  const [enableGeneral, setEnableGeneral] = useState(true);
+  const [enablePost, setEnablePost] = useState(true);
   const [enableProject, setEnableProject] = useState(true);
   const [enableLink, setEnableLink] = useState(false);
   const [generalName, setGeneralName] = useState("일반게시판");
