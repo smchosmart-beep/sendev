@@ -1842,7 +1842,7 @@ function CommentForm({
           className="rounded-xl"
         />
       </div>
-      <Textarea
+      <AutoTextarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="답글을 입력하세요"
