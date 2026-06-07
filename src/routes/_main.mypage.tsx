@@ -181,6 +181,8 @@ function Dashboard({
         </div>
       </div>
 
+      <LevelCard level={data.level} points={data.points} award={data.award} />
+
 
       <div className="grid grid-cols-3 gap-3">
         <StatCard icon={FileText} label="작성한 글" value={data.myPosts.length} />
