@@ -1098,15 +1098,13 @@ function EvaluationSection({
     }
   }, [identity]);
 
-  // 이 기기가 이 카테고리에서 이미 고정한 닉네임 (localStorage 기반)
+  // 이 기기에서 마지막으로 사용한 닉네임을 기본값으로만 채운다(고정하지 않음).
   const storageKey = `sendev:nickname:${slug}`;
-  const [lockedName, setLockedName] = useState<string | null>(null);
   useEffect(() => {
     if (typeof window === "undefined") return;
     const saved = window.localStorage.getItem(storageKey);
     if (saved && saved.trim()) {
-      setLockedName(saved.trim());
-      setReviewerName(saved.trim());
+      setReviewerName((prev) => (prev ? prev : saved.trim()));
     }
   }, [storageKey]);
 
@@ -1154,12 +1152,11 @@ function EvaluationSection({
       queryClient.invalidateQueries({ queryKey: ["reviews", postId] });
       queryClient.invalidateQueries({ queryKey: ["my-review", postId] });
       queryClient.invalidateQueries({ queryKey: ["my-reviewed"] });
-      // 이 기기에 이 카테고리의 닉네임을 고정 저장한다.
+      // 이 기기에 이 카테고리의 닉네임을 기본값으로 저장한다(다음 입력 시 자동 채움).
       const name = reviewerName.trim();
       if (typeof window !== "undefined" && name) {
         window.localStorage.setItem(storageKey, name);
       }
-      setLockedName(name || null);
       // 닉네임+비밀번호를 식별자 저장소에 저장해 다음 평가/글/댓글에서 자동 채움.
       if (name) saveIdentity(name, nicknamePassword.trim());
       toast.success(
@@ -1195,7 +1192,7 @@ function EvaluationSection({
   useEffect(() => {
     setOrderSeed(getOrderSeed());
   }, []);
-  const reviewerForList = lockedName ?? debouncedName;
+  const reviewerForList = debouncedName;
   const { data: reviewedIds = [] } = useQuery(
     myReviewedPostIdsQueryOptions(reviewerForList),
   );
@@ -1302,34 +1299,23 @@ function EvaluationSection({
                 onChange={(e) => setReviewerName(e.target.value)}
                 placeholder="닉네임을 입력하세요"
                 maxLength={100}
-                disabled={lockedName !== null}
-                readOnly={lockedName !== null}
               />
-              {lockedName !== null ? (
-                <p className="text-xs font-medium text-primary">
-                  🔒 이 기기는 이 카테고리에서 '{lockedName}' 닉네임으로 고정되어
-                  있어요. 점수만 새로 매겨 다시 제출하면 평가가 갱신됩니다.
-                </p>
-              ) : (
-                <>
-                  {debouncedName ? (
-                    alreadyReviewed ? (
-                      <p className="text-xs font-medium text-primary">
-                        ✅ 이미 평가하셨어요
-                        {myReviewDate ? ` · ${myReviewDate} 제출` : ""} (점수를 새로
-                        매겨 다시 제출하면 갱신돼요)
-                      </p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">
-                        아직 평가하지 않으셨어요.
-                      </p>
-                    )
-                  ) : null}
-                  <p className="text-xs text-muted-foreground">
-                    닉네임은 중복 평가 방지용이므로 흔하지 않은 것으로 정해주세요. 한 기기에서는 이 카테고리의 첫 닉네임으로 고정됩니다.
+              {debouncedName ? (
+                alreadyReviewed ? (
+                  <p className="text-xs font-medium text-primary">
+                    ✅ 이미 평가하셨어요
+                    {myReviewDate ? ` · ${myReviewDate} 제출` : ""} (점수를 새로
+                    매겨 다시 제출하면 갱신돼요)
                   </p>
-                </>
-              )}
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    아직 평가하지 않으셨어요.
+                  </p>
+                )
+              ) : null}
+              <p className="text-xs text-muted-foreground">
+                닉네임은 중복 평가 방지용이므로 흔하지 않은 것으로 정해주세요. 같은 닉네임으로 다시 제출하면 비밀번호 확인 후 평가가 갱신됩니다.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="reviewer-pw">닉네임 비밀번호</Label>
