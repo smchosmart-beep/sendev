@@ -771,6 +771,13 @@ export const createPost = createServerFn({ method: "POST" })
     }
     // Notices are authored by the operations team.
     const author = data.type === "notice" ? "운영진" : data.author;
+    // Verify the author owns this nickname (or claim it on first use).
+    await ensureNicknameOwnership(
+      db,
+      author,
+      data.nicknamePassword,
+      data.type === "notice",
+    );
     // Resolve and cache the deploy site's OG image once at creation time so the
     // board never re-fetches the external site on subsequent loads.
     const ogImageUrl = data.deployUrl
