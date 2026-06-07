@@ -13,6 +13,8 @@ import {
 } from "@/lib/platform.queries";
 import {
   upsertUserProfile,
+  addUserAward,
+  deleteUserAward,
   deleteUserProfile,
   resetNicknamePassword,
   verifyProfileAdmin,
