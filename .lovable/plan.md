@@ -1,26 +1,20 @@
-# 평가자 닉네임 일괄 추가 기능
+# 미리보기 깨짐 / 평가자 기능 오류 복구
 
-기존 "+ 추가" 버튼은 그대로 두고, 그 오른쪽에 **"+ 일괄 추가"** 버튼을 추가합니다. 누르면 구글 시트/엑셀에서 복사한 닉네임을 한 번에 붙여넣어 등록하는 모달이 뜹니다.
+## 진단
+세 가지 증상(토글 안 됨, 추가 버튼 안 됨, 평가 현황 안 보임)은 개별 버그가 아니라 **앱 전체가 로드되지 않는 단일 원인**에서 비롯됐습니다.
 
-## 동작
-- 모달 안 큰 텍스트영역(textarea)에 닉네임을 붙여넣기(Ctrl+V).
-- 줄바꿈, 탭, 쉼표로 구분된 값을 모두 분리 → 공백 제거 → 빈 값/중복 제거.
-- 미리보기로 "추가될 닉네임 N개" 표시.
-- "등록" 누르면 일괄 등록, 이미 명단에 있는 닉네임은 자동 무시(중복 방지).
-- 완료 후 토스트("N명을 명단에 추가했어요."), 명단 갱신, 모달 닫힘.
+- 미리보기 런타임 오류: `Failed to fetch dynamically imported module ... tanstack-start-client-entry` → 클라이언트 번들 자체가 로드 실패.
+- 개발 서버 로그(11:52): `SyntaxError: Expected corresponding JSX closing tag for <div> (236:8)` in `src/routes/_main.board.$slug.new-general.tsx` → 이전 작업(비밀번호 확인 입력 추가) 중간 상태에서 JSX 깨짐이 발생해 **개발 서버가 그 시점에 크래시**.
+- 그 이후 로그가 없음 = 개발 서버가 죽은 채로 깨진/오래된 번들을 계속 서빙. 그래서 관리자 페이지의 모든 상호작용(토글·추가)과 데이터 조회(평가 현황)가 동작하지 않음.
 
-## 기술 변경
+현재 `new-general.tsx`를 비롯한 소스 파일의 JSX 태그는 균형이 맞아 **이미 정상 상태**입니다(이후 편집으로 복구됨). 즉 코드 수정이 아니라 죽은 개발 서버를 살리는 것이 핵심.
 
-**1. 서버 함수 (`src/lib/platform.functions.ts`)**
-- `addReviewAllowlistNames` 신규 추가: `{ categoryId, reviewerNames: string[], adminPassword }` 입력 검증(이름 최대 200개, 각 1~100자). 각 이름을 정규화 후 `review_allowlist`에 기존과 동일한 upsert(`onConflict: category_id,reviewer_key`, `ignoreDuplicates: true`)로 한 번에 insert. 추가된 건수 반환.
+## 조치
+1. 네 개 새 글 작성 파일(`new-general`/`new-question`/`new-project`/`new-link`)의 JSX 태그 균형을 최종 확인(이상 시 즉시 수정).
+2. 개발 서버 재시작(`restart_dev_server`)으로 최신 소스 기준 번들 재생성.
+3. 미리보기 `/admin/categories`에서 실제 검증:
+   - "명단에 있는 닉네임만 평가 허용" 토글 on/off 동작
+   - "+ 추가" 및 "+ 일괄 추가" 동작
+   - "평가 현황 점검"에 제출된 평가가 표시되는지 확인
 
-**2. 화면 (`src/routes/admin.criteria.tsx` – `ReviewAllowlistCard`)**
-- shadcn `Dialog`, `Textarea` import.
-- `bulkOpen`, `bulkText` 상태와 `addBulkMutation` 추가(`useServerFn(addReviewAllowlistNames)`).
-- 기존 form의 "+ 추가" 버튼 오른쪽에 `<Button variant="outline">+ 일괄 추가</Button>` 배치(form submit과 분리되도록 `type="button"`).
-- 모달 내용: 안내문("구글 시트/엑셀에서 닉네임을 복사해 붙여넣으세요"), textarea, 파싱된 미리보기 개수, 취소/등록 버튼.
-
-**3. 사용자 가이드 (`src/routes/_main.guide.tsx`)**
-- 평가자 명단 관련 설명에 "+ 일괄 추가"로 스프레드시트 닉네임을 한 번에 등록할 수 있다는 문구 추가.
-
-서버 스키마/DB 변경은 없습니다(기존 `review_allowlist` 테이블 사용).
+데이터/스키마 변경은 없습니다.
