@@ -140,12 +140,12 @@ function HomePage() {
                     {e.placeAddress}
                   </p>
                 )}
-                {e.description && (
-                  <p className="mt-3 flex items-start gap-1.5 text-sm text-muted-foreground">
-                    <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    <span className="line-clamp-2">{e.description}</span>
-                  </p>
-                )}
+                <p className="mt-3 flex items-start gap-1.5 text-sm text-muted-foreground">
+                  <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <span className="line-clamp-2">
+                    {e.description || "작성된 메모가 없습니다."}
+                  </span>
+                </p>
                 {e.latitude != null && e.longitude != null ? (
                   <div
                     role="button"
