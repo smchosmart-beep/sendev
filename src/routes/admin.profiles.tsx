@@ -141,7 +141,7 @@ function AwardIconPicker() {
     mutationFn: (icon: AwardIconName) => save({ data: { icon } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["award-icon"] });
-      toast.success("수상 배지 아이콘을 변경했어요.");
+      toast.success("기본 배지 아이콘을 변경했어요.");
     },
     onError: () => toast.error("아이콘 저장 중 문제가 발생했어요."),
   });
@@ -150,7 +150,7 @@ function AwardIconPicker() {
     <div className="rounded-2xl bg-card p-6 shadow-sm">
       <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-foreground">
         <Trophy className="h-5 w-5 text-primary" />
-        수상 배지 아이콘
+        기본 배지 아이콘
       </h2>
       <p className="text-sm text-muted-foreground">
         어떤 키워드 규칙에도 맞지 않을 때 사용할 <b>기본 아이콘</b>입니다.
@@ -227,7 +227,7 @@ function AwardIconRules() {
     <div className="rounded-2xl bg-card p-6 shadow-sm">
       <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-foreground">
         <Trophy className="h-5 w-5 text-primary" />
-        수상명 키워드 규칙
+        배지 키워드 규칙
       </h2>
       <p className="text-sm text-muted-foreground">
         수상명에 키워드가 포함되면 해당 아이콘을 사용합니다. (예: "대상" → 왕관)
@@ -415,7 +415,7 @@ function ProfilesAdmin() {
             />
           </div>
           <div className="space-y-2 sm:col-span-7">
-            <Label htmlFor="p-award">해커톤 수상</Label>
+            <Label htmlFor="p-award">배지 추가</Label>
             <Input
               id="p-award"
               value={award}
