@@ -19,6 +19,7 @@ import {
   setAwardIcon,
   addAwardIconRule,
   deleteAwardIconRule,
+  resolveAwardIcon,
   AWARD_ICON_NAMES,
   type UserProfileDTO,
   type AwardIconName,
@@ -324,6 +325,8 @@ function ProfilesAdmin() {
   const { data: profiles = [] as UserProfileDTO[] } = useQuery(
     userProfilesQueryOptions(),
   );
+  const { data: awardIcon } = useQuery(awardIconQueryOptions());
+  const { data: awardRules = [] } = useQuery(awardIconRulesQueryOptions());
   const upsert = useServerFn(upsertUserProfile);
   const remove = useServerFn(deleteUserProfile);
   const resetPw = useServerFn(resetNicknamePassword);
@@ -475,12 +478,22 @@ function ProfilesAdmin() {
                     ) : (
                       <span className="text-xs text-muted-foreground">활동 없음</span>
                     )}
-                    {p.award.trim() && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
-                        <Trophy className="h-3 w-3" />
-                        {p.award}
-                      </span>
-                    )}
+                    {p.award.trim() && (() => {
+                      const iconName = resolveAwardIcon(
+                        p.award,
+                        awardRules,
+                        awardIcon ?? "Trophy",
+                      );
+                      const AwardIcon =
+                        (lucideIcons as Record<string, typeof Trophy>)[iconName] ||
+                        Trophy;
+                      return (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                          <AwardIcon className="h-3 w-3" />
+                          {p.award}
+                        </span>
+                      );
+                    })()}
                     <span className="text-xs text-muted-foreground">
                       게시글 {p.postCount} · 댓글 {p.commentCount} · {p.points}점
                     </span>
