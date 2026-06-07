@@ -1,56 +1,26 @@
-# 비밀번호 입력 개선: 보기(눈) 버튼 + 두 번 입력 확인
+# 평가자 닉네임 일괄 추가 기능
 
-## 목표
-비밀번호 오타로 의도와 다르게 등록되는 것을 막는다.
-1. 모든 비밀번호 입력칸에 평문을 볼 수 있는 눈(보기/숨김) 토글 버튼 추가.
-2. 새 글 작성 시 닉네임 비밀번호와 수정·삭제 비밀번호를 두 번 입력받아 일치 여부를 확인.
+기존 "+ 추가" 버튼은 그대로 두고, 그 오른쪽에 **"+ 일괄 추가"** 버튼을 추가합니다. 누르면 구글 시트/엑셀에서 복사한 닉네임을 한 번에 붙여넣어 등록하는 모달이 뜹니다.
 
-## 1. 재사용 컴포넌트 `PasswordInput`
-`src/components/PasswordInput.tsx` 신규 생성.
-- shadcn `Input`을 감싸고, 오른쪽 안에 `Eye` / `EyeOff`(lucide-react) 토글 버튼 배치.
-- 내부 state로 `type`을 `password` ↔ `text` 전환. 버튼에 `aria-label`("비밀번호 보기"/"숨기기"), `tabIndex={-1}`로 폼 흐름 방해 최소화.
-- `Input`의 모든 props를 그대로 전달(value, onChange, placeholder, id, maxLength, className 등). 오른쪽 패딩(`pr-10`) 확보.
-- 기존 디자인 토큰만 사용(`text-muted-foreground` 등), 커스텀 색상 금지.
+## 동작
+- 모달 안 큰 텍스트영역(textarea)에 닉네임을 붙여넣기(Ctrl+V).
+- 줄바꿈, 탭, 쉼표로 구분된 값을 모두 분리 → 공백 제거 → 빈 값/중복 제거.
+- 미리보기로 "추가될 닉네임 N개" 표시.
+- "등록" 누르면 일괄 등록, 이미 명단에 있는 닉네임은 자동 무시(중복 방지).
+- 완료 후 토스트("N명을 명단에 추가했어요."), 명단 갱신, 모달 닫힘.
 
-이 컴포넌트로 현재 `type="password"`인 모든 입력칸을 교체한다.
+## 기술 변경
 
-### 교체 대상 (전체)
-```text
-components/NicknameSetup.tsx
-components/NicknameRecovery.tsx
-components/ThumbnailUploadButton.tsx
-routes/_main.board.$slug.tsx
-routes/_main.board.$slug.new-general.tsx
-routes/_main.board.$slug.new-question.tsx
-routes/_main.board.$slug.new-project.tsx
-routes/_main.board.$slug.new-link.tsx
-routes/_main.board.$slug.$postNo.tsx (수정/삭제/댓글/평가 등 모든 비번칸)
-routes/_main.mypage.tsx
-routes/admin.tsx
-routes/admin.notices.tsx
-routes/admin.profiles.tsx
-```
+**1. 서버 함수 (`src/lib/platform.functions.ts`)**
+- `addReviewAllowlistNames` 신규 추가: `{ categoryId, reviewerNames: string[], adminPassword }` 입력 검증(이름 최대 200개, 각 1~100자). 각 이름을 정규화 후 `review_allowlist`에 기존과 동일한 upsert(`onConflict: category_id,reviewer_key`, `ignoreDuplicates: true`)로 한 번에 insert. 추가된 건수 반환.
 
-## 2. 두 번 입력(일치 확인)
-적용 위치: **새 글 작성 폼 4종** (general / question / project / link).
+**2. 화면 (`src/routes/admin.criteria.tsx` – `ReviewAllowlistCard`)**
+- shadcn `Dialog`, `Textarea` import.
+- `bulkOpen`, `bulkText` 상태와 `addBulkMutation` 추가(`useServerFn(addReviewAllowlistNames)`).
+- 기존 form의 "+ 추가" 버튼 오른쪽에 `<Button variant="outline">+ 일괄 추가</Button>` 배치(form submit과 분리되도록 `type="button"`).
+- 모달 내용: 안내문("구글 시트/엑셀에서 닉네임을 복사해 붙여넣으세요"), textarea, 파싱된 미리보기 개수, 취소/등록 버튼.
 
-각 폼에 확인 입력칸을 추가한다.
-- **닉네임 비밀번호 확인**: 저장된 닉네임이 없을 때(`hasStored === false`, 즉 신규 등록 상황)에만 노출. 자동 채워진 경우(`hasStored === true`)에는 숨김.
-- **수정·삭제 비밀번호 확인**: 항상 노출(글마다 새로 정하는 값이므로).
+**3. 사용자 가이드 (`src/routes/_main.guide.tsx`)**
+- 평가자 명단 관련 설명에 "+ 일괄 추가"로 스프레드시트 닉네임을 한 번에 등록할 수 있다는 문구 추가.
 
-제출 직전 검증(toast로 안내):
-- 닉네임 비밀번호 확인칸이 보이는데 원본과 다르면 "닉네임 비밀번호가 일치하지 않아요." → 중단.
-- 수정·삭제 비밀번호와 확인칸이 다르면 "수정·삭제 비밀번호가 일치하지 않아요." → 중단.
-- 일치하지 않을 때 확인칸 아래 작은 빨간 도움말 텍스트도 함께 표시.
-
-확인칸도 `PasswordInput` 사용. 확인용 로컬 state(`nicknamePasswordConfirm`, `editPasswordConfirm`) 추가.
-
-`NicknameSetup` 다이얼로그에도 신규 등록(저장된 닉네임 없음)일 때 닉네임 비밀번호 확인칸을 동일 규칙으로 추가.
-
-## 3. 가이드 업데이트
-`src/routes/_main.guide.tsx`의 닉네임/비밀번호 관련 설명에 "비밀번호 입력칸의 눈 버튼으로 입력값을 확인할 수 있고, 새 글 작성 시 비밀번호를 두 번 입력해 일치를 확인한다"는 안내 추가.
-
-## 기술 메모
-- 서버 로직(`platform.functions.ts`) 변경 없음 — 전부 프론트엔드 표현/검증 계층.
-- 아이콘은 `lucide-react`의 `Eye`, `EyeOff` 사용.
-- 확인 검증은 클라이언트 측 UX 보조이며 기존 서버 검증/등록 동작은 그대로 유지.
+서버 스키마/DB 변경은 없습니다(기존 `review_allowlist` 테이블 사용).
