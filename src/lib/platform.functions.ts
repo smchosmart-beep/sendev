@@ -1264,6 +1264,38 @@ export const createReview = createServerFn({ method: "POST" })
     // Verify the reviewer owns this nickname (or claim it on first use),
     // matching the post/comment flow so reviews can't be spoofed.
     await ensureNicknameOwnership(db, data.reviewerName, data.nicknamePassword, false);
+
+    // If the post's category restricts reviews to a pre-approved nickname
+    // allowlist, enforce membership before accepting the review.
+    const { data: postRow, error: postErr } = await db
+      .from("posts")
+      .select("category_id")
+      .eq("id", data.postId)
+      .maybeSingle();
+    if (postErr) throw new Error(postErr.message);
+    if (!postRow) throw new Error("평가 대상을 찾을 수 없어요.");
+
+    const { data: catRow, error: catErr } = await db
+      .from("categories")
+      .select("review_allowlist_only")
+      .eq("id", postRow.category_id)
+      .maybeSingle();
+    if (catErr) throw new Error(catErr.message);
+
+    if (catRow?.review_allowlist_only) {
+      const key = normalizeName(data.reviewerName);
+      const { data: allowed, error: allowErr } = await db
+        .from("review_allowlist")
+        .select("id")
+        .eq("category_id", postRow.category_id)
+        .eq("reviewer_key", key)
+        .maybeSingle();
+      if (allowErr) throw new Error(allowErr.message);
+      if (!allowed) {
+        throw new Error("이 평가는 등록된 평가자 명단의 닉네임만 참여할 수 있어요.");
+      }
+    }
+
     const { data: existing } = await db
       .from("reviews")
       .select("id")
