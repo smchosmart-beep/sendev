@@ -919,7 +919,6 @@ export const createPost = createServerFn({ method: "POST" })
         deploy_url: data.deployUrl,
         og_image_url: ogImageUrl,
         series: data.series,
-        edit_password: data.editPassword,
       });
       if (!error) return { ok: true, postNo: nextNo };
       // Retry on unique violation (concurrent insert); otherwise fail.
