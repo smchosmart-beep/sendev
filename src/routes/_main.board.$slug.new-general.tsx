@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/PasswordInput";
-import { useNicknameIdentity } from "@/hooks/useNicknameIdentity";
+import { useNicknameIdentity, useNicknameClaimed } from "@/hooks/useNicknameIdentity";
 
 export const Route = createFileRoute("/_main/board/$slug/new-general")({
   loader: ({ context }) =>
