@@ -10,6 +10,7 @@ import { userProfilesQueryOptions } from "@/lib/platform.queries";
 import {
   upsertUserProfile,
   deleteUserProfile,
+  resetNicknamePassword,
   verifyProfileAdmin,
   type UserProfileDTO,
 } from "@/lib/platform.functions";
