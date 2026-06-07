@@ -1922,7 +1922,7 @@ function CommentItem({
             })}
           </span>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1 self-end sm:self-auto">
           {onReply && (
             <Button
               type="button"
