@@ -60,6 +60,10 @@ export function NicknameSetup({ variant = "icon", onOpened }: NicknameSetupProps
       toast.error("닉네임 비밀번호는 4자 이상으로 입력해주세요.");
       return;
     }
+    if (isNewRegistration && nicknamePassword.trim() !== nicknamePasswordConfirm.trim()) {
+      toast.error("닉네임 비밀번호가 일치하지 않아요.");
+      return;
+    }
     save(name, nicknamePassword.trim());
     toast.success("닉네임이 이 기기에 저장되었어요.");
     setOpen(false);
