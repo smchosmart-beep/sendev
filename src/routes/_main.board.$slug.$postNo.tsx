@@ -46,6 +46,7 @@ import {
   myReviewedPostIdsQueryOptions,
   postsQueryOptions,
   commentsQueryOptions,
+  profileMapQueryOptions,
 } from "@/lib/platform.queries";
 import { stableEvalOrder, getOrderSeed } from "@/lib/series";
 import {
