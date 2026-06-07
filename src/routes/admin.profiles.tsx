@@ -364,6 +364,10 @@ function ProfilesAdmin() {
   const [sort, setSort] = useState<"name" | "points-desc" | "points-asc">("name");
   const [page, setPage] = useState(1);
 
+  // 목록 행 내 인라인 배지 추가
+  const [addingFor, setAddingFor] = useState<string | null>(null);
+  const [addingValue, setAddingValue] = useState("");
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const list = (profiles as UserProfileDTO[]).filter((p) => {
@@ -431,6 +435,27 @@ function ProfilesAdmin() {
     onError: () => toast.error("삭제 중 문제가 발생했어요."),
   });
 
+  const inlineAddMutation = useMutation({
+    mutationFn: ({ username, name }: { username: string; name: string }) =>
+      addAward({ data: { username, name } }),
+    onSuccess: () => {
+      invalidate();
+      toast.success("배지를 추가했어요.");
+      setAddingFor(null);
+      setAddingValue("");
+    },
+    onError: () => toast.error("배지 추가 중 문제가 발생했어요."),
+  });
+
+  const submitInlineAdd = (p: UserProfileDTO) => {
+    const name = addingValue.trim();
+    if (!name) {
+      toast.error("배지 이름을 입력해 주세요.");
+      return;
+    }
+    inlineAddMutation.mutate({ username: p.username, name });
+  };
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => remove({ data: { id } }),
     onSuccess: () => {
@@ -449,10 +474,8 @@ function ProfilesAdmin() {
     onError: () => toast.error("초기화 중 문제가 발생했어요."),
   });
 
-  const startEdit = (p: UserProfileDTO) => {
-    setUsername(p.username);
-    setAward("");
-  };
+
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -606,8 +629,9 @@ function ProfilesAdmin() {
                 {paged.map((p: UserProfileDTO) => (
                   <li
                     key={p.id}
-                    className="flex items-center gap-3 px-5 py-4"
+                    className="px-5 py-4"
                   >
+                    <div className="flex items-center gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium text-foreground">{p.username}</p>
                       <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -657,7 +681,10 @@ function ProfilesAdmin() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => startEdit(p)}
+                      onClick={() => {
+                        setAddingFor((prev) => (prev === p.id ? null : p.id));
+                        setAddingValue("");
+                      }}
                       aria-label="이 사용자에 배지 추가"
                       title="이 사용자에 배지 추가"
                       className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-sm active:scale-95"
@@ -689,6 +716,43 @@ function ProfilesAdmin() {
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
+                    </div>
+                    {addingFor === p.id && (
+                      <div className="mt-3 flex items-center gap-2 rounded-xl bg-muted/60 p-2">
+                        <Input
+                          autoFocus
+                          value={addingValue}
+                          onChange={(e) => setAddingValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              submitInlineAdd(p);
+                            }
+                          }}
+                          placeholder="배지 이름 (예: AI교육 부문 대상)"
+                          className="rounded-lg bg-background"
+                        />
+                        <Button
+                          type="button"
+                          onClick={() => submitInlineAdd(p)}
+                          disabled={inlineAddMutation.isPending}
+                          className="rounded-lg active:scale-95"
+                        >
+                          추가
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => {
+                            setAddingFor(null);
+                            setAddingValue("");
+                          }}
+                          className="rounded-lg active:scale-95"
+                        >
+                          취소
+                        </Button>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
