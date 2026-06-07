@@ -83,7 +83,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AutoTextarea } from "@/components/ui/auto-textarea";
 import { PostEditor } from "@/components/PostEditor";
-import { useNicknameIdentity } from "@/hooks/useNicknameIdentity";
+import { useNicknameIdentity, useStoredIdentity } from "@/hooks/useNicknameIdentity";
 
 const NUMERIC_RE = /^\d+$/;
 
