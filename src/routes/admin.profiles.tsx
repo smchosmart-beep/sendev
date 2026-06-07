@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { UserCog, Trophy, Pencil, Trash2, Lock, AlertCircle, KeyRound, Plus, icons as lucideIcons } from "lucide-react";
+import { UserCog, Trophy, Pencil, Trash2, Lock, AlertCircle, KeyRound, Plus, X, icons as lucideIcons } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
