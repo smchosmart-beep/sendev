@@ -939,6 +939,21 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
                     />
                   </div>
                 )}
+                {post.type === "post" && (
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="e-pinned"
+                      checked={pinned}
+                      onCheckedChange={(v) => setPinned(v === true)}
+                    />
+                    <Label
+                      htmlFor="e-pinned"
+                      className="cursor-pointer text-sm font-normal text-muted-foreground"
+                    >
+                      상단 고정(공지)
+                    </Label>
+                  </div>
+                )}
               </>
             ) : (
               <>
