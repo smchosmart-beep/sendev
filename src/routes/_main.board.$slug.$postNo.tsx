@@ -1380,10 +1380,16 @@ function CommentsSection({ postId }: { postId: string }) {
     queryClient.invalidateQueries({ queryKey: ["comments", postId] });
 
   // New top-level comment form state.
-  const [author, setAuthor] = useState("");
+  const {
+    author,
+    setAuthor,
+    nicknamePassword,
+    setNicknamePassword,
+    hasStored,
+    persistIdentity,
+  } = useNicknameIdentity();
   const [content, setContent] = useState("");
   const [password, setPassword] = useState("");
-  const [nicknamePassword, setNicknamePassword] = useState("");
   const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   // Reply form is open for at most one comment at a time.
