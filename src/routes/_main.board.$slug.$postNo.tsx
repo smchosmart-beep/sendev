@@ -148,7 +148,7 @@ function PostDetailRoute() {
 
 // Resolves an old UUID-based post link to its canonical short URL.
 function LegacyPostRedirect({ slug, postId }: { slug: string; postId: string }) {
-  const { data: post, isLoading } = useQuery(postQueryOptions(postId));
+  const { data: post, isLoading } = useQuery(postQueryOptions(postId, getBoardPassword(slug)));
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
 
   if (isLoading) {
