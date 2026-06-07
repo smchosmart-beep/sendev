@@ -217,7 +217,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
           <h1 className="text-2xl font-bold text-foreground break-words">{post.title}</h1>
           <ManagePost post={post} slug={slug} />
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+        <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <User className="h-4 w-4" />
             {post.author}
