@@ -158,7 +158,7 @@ function AwardIconPicker() {
   const save = useServerFn(setAwardIcon);
 
   const mutation = useMutation({
-    mutationFn: (icon: AwardIconName) => save({ data: { icon } }),
+    mutationFn: (icon: AwardIconName) => save({ data: { icon, adminPassword: getProfileAdminPassword() } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["award-icon"] });
       toast.success("기본 배지 아이콘을 변경했어요.");
@@ -215,7 +215,7 @@ function AwardIconRules() {
   const [icon, setIcon] = useState<AwardIconName>("Trophy");
 
   const addMutation = useMutation({
-    mutationFn: () => add({ data: { keyword: keyword.trim(), icon } }),
+    mutationFn: () => add({ data: { keyword: keyword.trim(), icon, adminPassword: getProfileAdminPassword() } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["award-icon-rules"] });
       toast.success("규칙을 추가했어요.");
@@ -226,7 +226,7 @@ function AwardIconRules() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => remove({ data: { id } }),
+    mutationFn: (id: string) => remove({ data: { id, adminPassword: getProfileAdminPassword() } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["award-icon-rules"] });
       toast.success("규칙을 삭제했어요.");
@@ -413,9 +413,9 @@ function ProfilesAdmin() {
       const name = username.trim();
       const badge = award.trim();
       if (badge) {
-        await addAward({ data: { username: name, name: badge } });
+        await addAward({ data: { username: name, name: badge, adminPassword: getProfileAdminPassword() } });
       } else {
-        await upsert({ data: { username: name } });
+        await upsert({ data: { username: name, adminPassword: getProfileAdminPassword() } });
       }
     },
     onSuccess: () => {
@@ -427,7 +427,7 @@ function ProfilesAdmin() {
   });
 
   const removeAwardMutation = useMutation({
-    mutationFn: (id: string) => removeAward({ data: { id } }),
+    mutationFn: (id: string) => removeAward({ data: { id, adminPassword: getProfileAdminPassword() } }),
     onSuccess: () => {
       invalidate();
       toast.success("배지를 삭제했어요.");
@@ -437,7 +437,7 @@ function ProfilesAdmin() {
 
   const inlineAddMutation = useMutation({
     mutationFn: ({ username, name }: { username: string; name: string }) =>
-      addAward({ data: { username, name } }),
+      addAward({ data: { username, name, adminPassword: getProfileAdminPassword() } }),
     onSuccess: () => {
       invalidate();
       toast.success("배지를 추가했어요.");
@@ -457,7 +457,7 @@ function ProfilesAdmin() {
   };
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => remove({ data: { id } }),
+    mutationFn: (id: string) => remove({ data: { id, adminPassword: getProfileAdminPassword() } }),
     onSuccess: () => {
       invalidate();
       toast.success("프로필을 삭제했어요.");
@@ -466,7 +466,7 @@ function ProfilesAdmin() {
   });
 
   const resetPwMutation = useMutation({
-    mutationFn: (id: string) => resetPw({ data: { id } }),
+    mutationFn: (id: string) => resetPw({ data: { id, adminPassword: getProfileAdminPassword() } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-profiles"] });
       toast.success("닉네임 비밀번호를 초기화했어요. 다음 작성자가 다시 등록합니다.");
