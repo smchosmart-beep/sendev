@@ -1277,6 +1277,13 @@ function EvaluationSection({
                 toast.error("닉네임 비밀번호를 입력해주세요.");
                 return;
               }
+              if (
+                reviewPwIsNew &&
+                nicknamePassword.trim() !== nicknamePasswordConfirm.trim()
+              ) {
+                toast.error("닉네임 비밀번호가 일치하지 않아요.");
+                return;
+              }
               for (const c of criteria) {
                 if (!scores[c.id] || scores[c.id] <= 0) {
                   toast.error("모든 항목에 별점을 매겨주세요.");
