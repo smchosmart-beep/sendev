@@ -16,6 +16,8 @@ import {
   fetchOgImage,
   refreshOgImage,
   listHeroSlides,
+  listUserProfiles,
+  getProfileMap,
 } from "./platform.functions";
 
 export const searchPostsQueryOptions = (
