@@ -1826,6 +1826,7 @@ function CommentForm({
           content: content.trim(),
           imageUrls,
           editPassword: password.trim(),
+          nicknamePassword: nicknamePassword.trim(),
         });
       }}
       className={`space-y-3 rounded-xl border border-border p-4 ${compact ? "ml-4" : ""}`}
