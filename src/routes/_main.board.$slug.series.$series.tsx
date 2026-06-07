@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_main/board/$slug/series/$series")({
     );
     const category = categories.find((c) => c.slug === params.slug);
     if (category) {
-      await context.queryClient.ensureQueryData(postsQueryOptions(category.id));
+      await context.queryClient.ensureQueryData(postsQueryOptions(category.id, getBoardPassword(params.slug)));
     }
   },
   errorComponent: ({ error }) => (
