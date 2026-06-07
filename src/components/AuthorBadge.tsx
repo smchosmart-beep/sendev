@@ -76,18 +76,7 @@ export function AuthorBadge({
           Lv.{profile.level}
         </span>
       )}
-      {hasAward && (
-        <span
-          className={cn(
-            "inline-flex items-center gap-1 rounded-full bg-secondary font-medium leading-none text-secondary-foreground shadow-sm",
-            padding,
-          )}
-        >
-          <PrimaryIcon className="h-3 w-3 shrink-0" />
-          {primary}
-        </span>
-      )}
-      {extraCount > 0 && (
+      {hasAward && extraCount > 0 ? (
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <button
@@ -97,13 +86,26 @@ export function AuthorBadge({
                 e.stopPropagation();
                 setOpen((v) => !v);
               }}
-              className={cn(
-                "inline-flex items-center rounded-full bg-secondary font-bold leading-none text-secondary-foreground shadow-sm transition hover:bg-secondary/80",
-                padding,
-              )}
+              className="inline-flex items-center gap-1 align-middle"
               aria-label={`배지 ${awards.length}개 전체 보기`}
             >
-              +{extraCount}
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full bg-secondary font-medium leading-none text-secondary-foreground shadow-sm transition hover:bg-secondary/80",
+                  padding,
+                )}
+              >
+                <PrimaryIcon className="h-3 w-3 shrink-0" />
+                {primary}
+              </span>
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-full bg-secondary font-bold leading-none text-secondary-foreground shadow-sm transition hover:bg-secondary/80",
+                  padding,
+                )}
+              >
+                +{extraCount}
+              </span>
             </button>
           </PopoverTrigger>
           <PopoverContent
@@ -130,7 +132,20 @@ export function AuthorBadge({
             </ul>
           </PopoverContent>
         </Popover>
+      ) : (
+        hasAward && (
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full bg-secondary font-medium leading-none text-secondary-foreground shadow-sm",
+              padding,
+            )}
+          >
+            <PrimaryIcon className="h-3 w-3 shrink-0" />
+            {primary}
+          </span>
+        )
       )}
+
     </span>
   );
 }
