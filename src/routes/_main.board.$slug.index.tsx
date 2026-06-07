@@ -539,6 +539,7 @@ function ProjectCard({
   slug: string;
   reviewed?: boolean;
 }) {
+  const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
   // Prefer the cached OG image stored on the post. Only existing posts without a
   // cached value (and with a deploy URL) trigger a one-time backfill request,
   // which stores the result so future loads never hit the external site again.
