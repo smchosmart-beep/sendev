@@ -1087,6 +1087,9 @@ function EvaluationSection({
   const [scores, setScores] = useState<Record<string, number>>({});
   const [reviewerName, setReviewerName] = useState("");
   const [nicknamePassword, setNicknamePassword] = useState("");
+  const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
+  // 저장된 비밀번호가 없으면(이 기기에서 최초 등록) 확인 입력을 한 번 더 받는다.
+  const reviewPwIsNew = !identity?.nicknamePassword;
 
   // 저장된 닉네임 비밀번호를 자동으로 채워, 한 번 등록하면 평가에서도 재입력하지 않게 한다.
   useEffect(() => {
