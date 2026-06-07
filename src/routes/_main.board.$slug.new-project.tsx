@@ -51,6 +51,8 @@ function NewProjectPage() {
   const [githubUrl, setGithubUrl] = useState("");
   const [deployUrl, setDeployUrl] = useState("");
   const [editPassword, setEditPassword] = useState("");
+  const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
+  const [editPasswordConfirm, setEditPasswordConfirm] = useState("");
 
   const mutation = useMutation({
     mutationFn: () =>
