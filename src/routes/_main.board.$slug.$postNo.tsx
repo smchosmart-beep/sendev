@@ -1413,6 +1413,7 @@ function CommentsSection({ postId }: { postId: string }) {
         setAuthor("");
         setContent("");
         setPassword("");
+        setNicknamePassword("");
         setImageUrls([]);
       }
     },
