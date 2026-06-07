@@ -518,7 +518,7 @@ function CategoriesPage() {
               <div
                 key={c.id}
                 style={depth > 0 ? { marginLeft: depth * 24 } : undefined}
-                className={`flex items-center justify-between gap-4 rounded-2xl bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                className={`flex items-start justify-between gap-4 rounded-2xl bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
                   depth > 0 ? "border-l-4 border-primary/30" : ""
                 }`}
               >
