@@ -1643,10 +1643,9 @@ export const createComment = createServerFn({ method: "POST" })
       .object({
         postId: z.string().uuid(),
         parentId: z.string().uuid().nullable().default(null),
-        author: z.string().trim().max(100).default(""),
+        author: z.string().trim().min(1).max(100),
         content: z.string().trim().max(5000).default(""),
         imageUrls: z.array(z.string().url().max(2000)).max(10).default([]),
-        editPassword: z.string().trim().min(1).max(100),
         nicknamePassword: z.string().trim().max(100).default(""),
       })
       .refine((v) => v.content.length > 0 || v.imageUrls.length > 0, {
