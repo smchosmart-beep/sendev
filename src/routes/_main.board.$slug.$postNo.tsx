@@ -1098,15 +1098,13 @@ function EvaluationSection({
     }
   }, [identity]);
 
-  // 이 기기가 이 카테고리에서 이미 고정한 닉네임 (localStorage 기반)
+  // 이 기기에서 마지막으로 사용한 닉네임을 기본값으로만 채운다(고정하지 않음).
   const storageKey = `sendev:nickname:${slug}`;
-  const [lockedName, setLockedName] = useState<string | null>(null);
   useEffect(() => {
     if (typeof window === "undefined") return;
     const saved = window.localStorage.getItem(storageKey);
     if (saved && saved.trim()) {
-      setLockedName(saved.trim());
-      setReviewerName(saved.trim());
+      setReviewerName((prev) => (prev ? prev : saved.trim()));
     }
   }, [storageKey]);
 
