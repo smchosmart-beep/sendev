@@ -152,9 +152,13 @@ function MyPage() {
 
 function Dashboard({
   data,
+  stored,
+  onClearStored,
   onLogout,
 }: {
   data: DashboardDTO;
+  stored: boolean;
+  onClearStored: () => void;
   onLogout: () => void;
 }) {
   return (
@@ -164,11 +168,19 @@ function Dashboard({
           <p className="text-sm text-muted-foreground">내 페이지</p>
           <h1 className="text-2xl font-bold text-foreground">{data.username}</h1>
         </div>
-        <Button variant="outline" size="sm" onClick={onLogout}>
-          <LogOut className="mr-1.5 h-4 w-4" />
-          로그아웃
-        </Button>
+        <div className="flex items-center gap-2">
+          {stored && (
+            <Button variant="ghost" size="sm" onClick={onClearStored}>
+              기기 저장 해제
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={onLogout}>
+            <LogOut className="mr-1.5 h-4 w-4" />
+            로그아웃
+          </Button>
+        </div>
       </div>
+
 
       <div className="grid grid-cols-3 gap-3">
         <StatCard icon={FileText} label="작성한 글" value={data.myPosts.length} />
