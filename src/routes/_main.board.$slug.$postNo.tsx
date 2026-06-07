@@ -1084,9 +1084,18 @@ function EvaluationSection({
   );
   const { data: reviews = [] } = useQuery(reviewsQueryOptions(postId));
   const create = useServerFn(createReview);
+  const { identity, save: saveIdentity } = useStoredIdentity();
 
   const [scores, setScores] = useState<Record<string, number>>({});
   const [reviewerName, setReviewerName] = useState("");
+  const [nicknamePassword, setNicknamePassword] = useState("");
+
+  // 저장된 닉네임 비밀번호를 자동으로 채워, 한 번 등록하면 평가에서도 재입력하지 않게 한다.
+  useEffect(() => {
+    if (identity?.nicknamePassword) {
+      setNicknamePassword((prev) => (prev ? prev : identity.nicknamePassword));
+    }
+  }, [identity]);
 
   // 이 기기가 이 카테고리에서 이미 고정한 닉네임 (localStorage 기반)
   const storageKey = `sendev:nickname:${slug}`;
