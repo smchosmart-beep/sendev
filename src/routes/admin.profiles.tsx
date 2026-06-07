@@ -153,10 +153,12 @@ function ProfilesAdmin() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium text-foreground">{p.username}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
-                    {p.level != null && (
+                    {p.level != null ? (
                       <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
                         Lv.{p.level}
                       </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">활동 없음</span>
                     )}
                     {p.award.trim() && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
@@ -164,9 +166,9 @@ function ProfilesAdmin() {
                         {p.award}
                       </span>
                     )}
-                    {p.level == null && !p.award.trim() && (
-                      <span className="text-xs text-muted-foreground">정보 없음</span>
-                    )}
+                    <span className="text-xs text-muted-foreground">
+                      게시글 {p.postCount} · 댓글 {p.commentCount} · {p.points}점
+                    </span>
                   </div>
                 </div>
                 <button
