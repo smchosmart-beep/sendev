@@ -41,6 +41,7 @@ import { LikeButton } from "@/components/LikeButton";
 import {
   postQueryOptions,
   postByNoQueryOptions,
+  getBoardPassword,
   categoriesQueryOptions,
   readmeQueryOptions,
   criteriaQueryOptions,
