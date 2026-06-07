@@ -157,8 +157,6 @@ function MainLayout() {
             })}
           </nav>
 
-          <NicknameSetup variant="icon" />
-
           <Link
             to="/search"
             search={{ q: "", mode: "title" }}
@@ -167,6 +165,7 @@ function MainLayout() {
           >
             <Search className="h-5 w-5" />
           </Link>
+
 
           <Link
             to="/mypage"
