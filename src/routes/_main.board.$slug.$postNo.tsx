@@ -204,8 +204,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
     );
   }
 
-  const isBoardPost =
-    post.type === "notice" || post.type === "question" || post.type === "general";
+  const isBoardPost = post.type === "post";
   const isLink = post.type === "link";
   const embedUrl = isLink ? getEmbedUrl(post.deployUrl) : null;
 
@@ -476,7 +475,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
   const remove = useServerFn(deletePost);
   const move = useServerFn(movePost);
   const verify = useServerFn(verifyPostPassword);
-  const canMove = post.type === "general" || post.type === "question";
+  const canMove = post.type === "post";
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
   const category = categories.find((c) => c.id === post.categoryId);
   const projectName = category?.projectName || "산출물";
@@ -484,10 +483,9 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
 
   const postId = post.id;
   const categoryId = post.categoryId;
-  const isBoardPost =
-    post.type === "notice" || post.type === "question" || post.type === "general";
+  const isBoardPost = post.type === "post";
   const noun = isBoardPost
-    ? post.type === "notice"
+    ? post.pinned
       ? "공지"
       : "글"
     : post.type === "link"
@@ -639,14 +637,14 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
     (c) =>
       c.id !== categoryId &&
       c.tabGroup === moveTab &&
-      (c.enableGeneral || c.enableQuestion),
+      c.enablePost,
   );
   const tabsWithBoards = TAB_ORDER.filter((tab) =>
     categories.some(
       (c) =>
         c.id !== categoryId &&
         c.tabGroup === tab &&
-        (c.enableGeneral || c.enableQuestion),
+        c.enablePost,
     ),
   );
 
@@ -842,7 +840,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
           <DialogHeader>
             <DialogTitle>{noun} 수정</DialogTitle>
             <DialogDescription>
-              {post.type === "notice"
+              {post.pinned
                 ? "관리자 비밀번호를 입력해야 수정할 수 있어요."
                 : "작성자의 닉네임 비밀번호를 입력해야 수정할 수 있어요."}
             </DialogDescription>
@@ -927,7 +925,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
                   <Label>내용</Label>
                   <PostEditor value={content} onChange={setContent} rows={8} />
                 </div>
-                {(post.type === "question" || post.type === "general") && (
+                {post.type === "post" && (
                   <div className="space-y-2">
                     <Label htmlFor="e-author">작성자</Label>
                     <Input

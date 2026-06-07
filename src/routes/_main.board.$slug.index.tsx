@@ -71,21 +71,14 @@ function BoardInner({
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
   const { qpage, gpage } = Route.useSearch();
   const navigate = useNavigate({ from: "/board/$slug" });
-  const notices = posts.filter((p) => p.type === "notice");
-  const questions = posts.filter((p) => p.type === "question");
-  const generals = posts.filter((p) => p.type === "general");
+  const notices = posts.filter((p) => p.type === "post" && p.pinned);
+  const generals = posts.filter((p) => p.type === "post" && !p.pinned);
   const projects = posts.filter((p) => p.type === "project");
   const links = posts.filter((p) => p.type === "link");
   const linkItems = groupLinksBySeries(links);
 
-  const questionPageCount = Math.max(1, Math.ceil(questions.length / PAGE_SIZE));
   const generalPageCount = Math.max(1, Math.ceil(generals.length / PAGE_SIZE));
-  const currentQPage = Math.min(qpage, questionPageCount);
   const currentGPage = Math.min(gpage, generalPageCount);
-  const pagedQuestions = questions.slice(
-    (currentQPage - 1) * PAGE_SIZE,
-    currentQPage * PAGE_SIZE,
-  );
   const pagedGenerals = generals.slice(
     (currentGPage - 1) * PAGE_SIZE,
     currentGPage * PAGE_SIZE,
@@ -113,7 +106,7 @@ function BoardInner({
 
   return (
     <div className="space-y-6">
-      {category.enableNotice && notices.length > 0 && (
+      {category.enablePost && notices.length > 0 && (
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
             <Megaphone className="h-5 w-5 text-primary" />
@@ -148,68 +141,7 @@ function BoardInner({
         </section>
       )}
 
-      {category.enableQuestion && (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
-              <MessageCircleQuestion className="h-5 w-5 text-primary" />
-              질문게시판
-            </h2>
-            <Button asChild variant="secondary" className="rounded-xl active:scale-95">
-              <Link to="/board/$slug/new-question" params={{ slug }}>
-                <Plus className="h-4 w-4" />
-                질문 등록
-              </Link>
-            </Button>
-          </div>
-
-          {questions.length === 0 ? (
-            <EmptyState
-              icon={MessageCircleQuestion}
-              title="아직 등록된 질문이 없어요."
-              description="궁금한 점을 자유롭게 질문해보세요."
-            />
-          ) : (
-            <>
-              {pagedQuestions.map((q) => (
-                <Link
-                  key={q.id}
-                  to="/board/$slug/$postNo"
-                  params={{ slug, postNo: String(q.postNo) }}
-                  className="flex items-center justify-between gap-5 rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
-                >
-                  <span className="flex-1 min-w-0 line-clamp-2 text-sm font-medium text-foreground">{q.title}</span>
-                  <span className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
-                    {q.commentCount > 0 && (
-                      <span className="flex items-center gap-1 text-primary">
-                        <MessageCircle className="h-3.5 w-3.5" />
-                        {q.commentCount}
-                      </span>
-                    )}
-                    <span className="flex flex-col items-end gap-0.5 sm:flex-row sm:items-center sm:gap-1">
-                      <span className="flex items-center gap-1 whitespace-nowrap">
-                        <User className="h-3.5 w-3.5" />
-                        {q.author}
-                        <AuthorBadge author={q.author} profileMap={profileMap} only="level" />
-                      </span>
-                      <AuthorBadge author={q.author} profileMap={profileMap} only="awards" />
-                    </span>
-                  </span>
-                </Link>
-              ))}
-              <BoardPagination
-                page={currentQPage}
-                pageCount={questionPageCount}
-                onChange={(p) =>
-                  navigate({ search: (prev: { qpage: number; gpage: number }) => ({ ...prev, qpage: p }) })
-                }
-              />
-            </>
-          )}
-        </section>
-      )}
-
-      {category.enableGeneral && (
+      {category.enablePost && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">

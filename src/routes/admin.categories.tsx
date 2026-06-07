@@ -88,9 +88,7 @@ function CategoriesPage() {
   const [description, setDescription] = useState("");
   const [password, setPassword] = useState("");
   const [githubRequired, setGithubRequired] = useState(false);
-  const [enableNotice, setEnableNotice] = useState(true);
-  const [enableQuestion, setEnableQuestion] = useState(true);
-  const [enableGeneral, setEnableGeneral] = useState(true);
+  const [enablePost, setEnablePost] = useState(true);
   const [enableProject, setEnableProject] = useState(true);
   const [enableLink, setEnableLink] = useState(false);
   const [generalName, setGeneralName] = useState("일반게시판");
@@ -104,9 +102,7 @@ function CategoriesPage() {
   const [editDescription, setEditDescription] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [editGithubRequired, setEditGithubRequired] = useState(false);
-  const [editEnableNotice, setEditEnableNotice] = useState(true);
-  const [editEnableQuestion, setEditEnableQuestion] = useState(true);
-  const [editEnableGeneral, setEditEnableGeneral] = useState(true);
+  const [editEnablePost, setEditEnablePost] = useState(true);
   const [editEnableProject, setEditEnableProject] = useState(true);
   const [editEnableLink, setEditEnableLink] = useState(false);
   const [editGeneralName, setEditGeneralName] = useState("일반게시판");
@@ -132,9 +128,7 @@ function CategoriesPage() {
           description: description.trim(),
           password: password.trim(),
           githubRequired,
-          enableNotice,
-          enableQuestion,
-          enableGeneral,
+          enablePost,
           enableProject,
           enableLink,
           generalName: generalName.trim(),
@@ -150,9 +144,7 @@ function CategoriesPage() {
       setDescription("");
       setPassword("");
       setGithubRequired(false);
-      setEnableNotice(true);
-      setEnableQuestion(true);
-      setEnableGeneral(true);
+      setEnablePost(true);
       setEnableProject(true);
       setEnableLink(false);
       setGeneralName("일반게시판");
@@ -175,9 +167,7 @@ function CategoriesPage() {
           description: editDescription.trim(),
           password: editPassword,
           githubRequired: editGithubRequired,
-          enableNotice: editEnableNotice,
-          enableQuestion: editEnableQuestion,
-          enableGeneral: editEnableGeneral,
+          enablePost: editEnablePost,
           enableProject: editEnableProject,
           enableLink: editEnableLink,
           generalName: editGeneralName.trim(),
@@ -231,9 +221,7 @@ function CategoriesPage() {
     setEditDescription(c.description);
     setEditPassword("");
     setEditGithubRequired(c.githubRequired);
-    setEditEnableNotice(c.enableNotice);
-    setEditEnableQuestion(c.enableQuestion);
-    setEditEnableGeneral(c.enableGeneral);
+    setEditEnablePost(c.enablePost);
     setEditEnableProject(c.enableProject);
     setEditEnableLink(c.enableLink);
     setEditGeneralName(c.generalName);
@@ -335,13 +323,11 @@ function CategoriesPage() {
               이 카테고리에 표시할 섹션만 켜주세요.
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
-              <SectionToggle id="add-sec-notice" label="공지사항" checked={enableNotice} onChange={setEnableNotice} />
-              <SectionToggle id="add-sec-question" label="질문 게시판" checked={enableQuestion} onChange={setEnableQuestion} />
-              <SectionToggle id="add-sec-general" label="일반게시판" checked={enableGeneral} onChange={setEnableGeneral} />
+              <SectionToggle id="add-sec-post" label="글 게시판" checked={enablePost} onChange={setEnablePost} />
               <SectionToggle id="add-sec-project" label="산출물 게시판" checked={enableProject} onChange={setEnableProject} />
               <SectionToggle id="add-sec-link" label="링크 게시판" checked={enableLink} onChange={setEnableLink} />
             </div>
-            {enableGeneral && (
+            {enablePost && (
               <div className="space-y-2 pt-1">
                 <Label htmlFor="add-general-name">일반게시판 이름</Label>
                 <Input
@@ -462,9 +448,7 @@ function CategoriesPage() {
                     <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                       {TAB_LABEL[c.tabGroup ?? "hackathon"]}
                     </span>
-                    {c.enableNotice && <SectionBadge label="공지사항" />}
-                    {c.enableQuestion && <SectionBadge label="질문 게시판" />}
-                    {c.enableGeneral && <SectionBadge label={c.generalName || "일반게시판"} />}
+                    {c.enablePost && <SectionBadge label={c.generalName || "글 게시판"} />}
                     {c.enableProject && <SectionBadge label={c.projectName || "산출물"} />}
                     {c.enableLink && <SectionBadge label={c.linkName || "링크"} />}
                   </div>
@@ -613,13 +597,11 @@ function CategoriesPage() {
             <div className="space-y-3 rounded-xl bg-muted/40 p-4">
               <p className="text-sm font-medium text-foreground">사용할 게시판 종류</p>
               <div className="grid gap-2 sm:grid-cols-2">
-                <SectionToggle id="edit-sec-notice" label="공지사항" checked={editEnableNotice} onChange={setEditEnableNotice} />
-                <SectionToggle id="edit-sec-question" label="질문 게시판" checked={editEnableQuestion} onChange={setEditEnableQuestion} />
-                <SectionToggle id="edit-sec-general" label="일반게시판" checked={editEnableGeneral} onChange={setEditEnableGeneral} />
+                <SectionToggle id="edit-sec-post" label="글 게시판" checked={editEnablePost} onChange={setEditEnablePost} />
                 <SectionToggle id="edit-sec-project" label="산출물 게시판" checked={editEnableProject} onChange={setEditEnableProject} />
                 <SectionToggle id="edit-sec-link" label="링크 게시판" checked={editEnableLink} onChange={setEditEnableLink} />
               </div>
-              {editEnableGeneral && (
+              {editEnablePost && (
                 <div className="space-y-2 pt-1">
                   <Label htmlFor="edit-general-name">일반게시판 이름</Label>
                   <Input

@@ -174,7 +174,7 @@ function NoticeList({ categoryId }: { categoryId: string }) {
   const queryClient = useQueryClient();
   const { data: posts = [] } = useQuery(postsQueryOptions(categoryId, "", getAdminPassword()));
   const remove = useServerFn(deletePost);
-  const notices = posts.filter((p) => p.type === "notice");
+  const notices = posts.filter((p) => p.type === "post" && p.pinned);
 
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string;
