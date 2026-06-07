@@ -1,45 +1,72 @@
-# 비밀번호 이중 입력(확인) 정상화
+# 게시판 트리 구조 확장 + 게시글 통합 계획
 
-## 문제
-"처음 작성하는 사용자에게 비밀번호를 두 번 입력받기"가 현재 **이 기기에 저장된 신원(localStorage `hasStored`)** 기준으로만 판단됩니다. 그래서:
+## 목표
+1. 게시판(카테고리)을 **트리 구조**로 확장 — 폴더(게시판 그룹)는 중첩 가능, 그 하위에 실제 게시판이 위치.
+2. **공지/질문/일반** 세 게시글 타입을 하나의 "글" 스트림으로 통합 (산출물·링크는 기존대로 별도 유지).
+3. **공지**를 관리자 전용에서 해제 — 누구나 작성 가능, 공지는 단지 상단 고정/강조되는 글.
+4. 기존 4개 탭(해커톤·자료집·Dev Ground·Hello World)은 유지하되 트리와 별개로 둠.
 
-- 같은 기기에서 이미 한 번이라도 닉네임을 쓴 사용자가 **새 닉네임**을 입력하면 확인 입력칸이 나타나지 않아, 새 닉네임이 단 한 번 입력으로 등록됨 (오타 위험).
-- 다른 기기/시크릿창에서 **이미 등록된 닉네임**을 입력하면 불필요하게 두 번 입력을 요구함.
+## 데이터 구조 변경 (마이그레이션)
 
-올바른 기준은 "입력한 닉네임이 서버에 이미 비밀번호로 등록(claim)되어 있는가" 입니다.
+### categories 테이블
+- `parent_id uuid` 추가 (자기참조, `ON DELETE CASCADE`) — 트리 부모.
+- `is_group boolean default false` 추가 — true면 폴더(게시판 그룹, 글 없음), false면 실제 게시판.
+- `tab_group`은 최상위 노드에서만 의미 있게 유지(별개 분류).
+- 기존 카테고리는 모두 최상위(`parent_id = null`), `is_group = false`로 그대로 동작.
 
-## 해결 방향
-"처음 여부"를 서버의 닉네임 등록 상태로 판단하도록 변경합니다. 입력한 닉네임이 **아직 등록되지 않았을 때만** 비밀번호 확인 입력을 표시·요구합니다. localStorage 자동 채우기 편의는 그대로 유지합니다.
+### posts 테이블
+- `type` 체크 제약을 변경: `notice/question/general` → 단일 값 `post`로 통합. `project`, `link`는 유지.
+  - 즉 허용값: `post`, `project`, `link`.
+- `pinned boolean default false` 추가 — 공지(상단 고정) 표시용.
+- 데이터 이관: 기존 `notice` → `type='post', pinned=true`, 기존 `question`/`general` → `type='post', pinned=false`.
 
-## 작업 내용
+### categories 토글 정리
+- `enable_notice/enable_question/enable_general` 3개를 `enable_post`(글 게시판) 하나로 통합. `general_name`은 글 게시판 이름으로 재활용.
+- `enable_project`, `enable_link`는 그대로.
 
-### 1. 서버: 닉네임 등록 여부 조회 함수 추가
-`src/lib/platform.functions.ts`
-- `getNicknameStatus` (GET, `createServerFn`) 신설: 입력 `name`(trim, 1~100자)으로 `user_profiles`에서 해당 닉네임의 `nickname_password` 존재 여부를 조회해 `{ claimed: boolean }` 반환. 비밀번호 값 자체는 노출하지 않음.
+## 화면/코드 변경
 
-### 2. 쿼리/훅 추가
-- `src/lib/platform.queries.ts`: `nicknameStatusQueryOptions(name)` 추가 (빈 이름이면 비활성, 짧은 staleTime).
-- `src/hooks/useNicknameIdentity.tsx`: 입력 닉네임이 등록됐는지 알려주는 보조 훅 `useNicknameClaimed(name)` 추가. 닉네임 입력을 디바운스(약 400ms)한 뒤 위 쿼리를 호출하고 `{ claimed, isResolved }`를 반환. 미입력/조회 전에는 "미등록(처음)"으로 간주.
+### 1. 게시판 트리 사이드/목록 (스크린샷 형태)
+- `/board` 목록 페이지를 **트리 뷰**로 개편: 폴더(접기/펼치기) → 하위 폴더/게시판을 들여쓰기로 표시. 폴더 아이콘/게시판 아이콘 구분, 펼침 화살표(`ChevronRight/Down`).
+- 폴더 클릭 시 펼침, 게시판 클릭 시 해당 게시판으로 이동.
+- 기존 탭(4개)은 트리 상단 분류 필터로 유지.
 
-### 3. 폼들: 확인칸 표시 조건 변경
-아래 모든 작성 폼에서, 확인 입력칸 표시 및 제출 검증 조건을 `!hasStored` → **`입력한 닉네임이 미등록(claimed === false)`** 로 변경. 등록된 닉네임이면 확인칸을 숨기고 단일 입력만 받음.
+### 2. 게시판 내부 (`_main.board.$slug.index.tsx`)
+- 통합된 "글" 섹션 하나로 표시: `pinned=true`(공지)인 글을 상단에 고정 강조, 나머지는 최신순 목록 + 페이지네이션.
+- 글쓰기 버튼 하나로 통합("글쓰기"). 작성 폼에서 "상단 고정(공지)" 체크로 누구나 공지 작성 가능.
+- 산출물/링크 섹션은 기존 로직 유지.
 
-- `src/routes/_main.board.$slug.new-general.tsx`
-- `src/routes/_main.board.$slug.new-link.tsx`
-- `src/routes/_main.board.$slug.new-project.tsx`
-- `src/routes/_main.board.$slug.new-question.tsx`
-- `src/routes/_main.board.$slug.$postNo.tsx`
-  - 댓글 작성 폼
-  - 답글(reply) 작성 폼
-  - 평가(review) 제출 폼 (현재 `reviewPwIsNew = !identity?.nicknamePassword` 기준 → 동일하게 서버 등록여부 기준으로 통일)
+### 3. 글 작성/수정 폼
+- `new-question`/`new-general` 라우트를 단일 `new-post` 작성 폼으로 통합(기존 두 라우트는 새 폼으로 리다이렉트/대체).
+- "상단 고정(공지)" 체크박스 추가 → `pinned` 저장.
 
-검증 로직(제출 시 비밀번호 불일치 차단)과 안내 문구는 유지하되, "이 닉네임을 처음 쓰면" 안내가 실제 동작과 일치하도록 유지.
+### 4. 관리자 카테고리 페이지 (`admin.categories.tsx`)
+- 카테고리 생성/수정 시 **상위 폴더 선택**(드롭다운, 트리 경로 표시)과 **폴더 여부(is_group)** 토글 추가.
+- 토글 정리(`enable_post` 등) 반영.
+- 목록을 트리 형태로 표시.
 
-### 4. 가이드 문구 확인
-`src/routes/_main.guide.tsx`의 닉네임 비밀번호 안내가 "닉네임을 처음 등록할 때만 비밀번호 확인을 한 번 더 받는다"는 동작과 일치하는지 확인하고 필요 시 한 줄 보정.
+### 5. 공지 관리 페이지 (`admin.notices.tsx`)
+- 별도 공지 작성 개념이 사라지므로 단순화하거나 제거(누구나 일반 글쓰기에서 공지 체크로 대체). 관리자는 글 고정/해제·삭제만.
+
+### 6. 서버 함수 (`platform.functions.ts` / `platform.queries.ts`)
+- `listCategories`에 `parentId`, `isGroup` 포함, 트리 구성 유틸 추가.
+- `createPost`/`updatePost`에 `pinned` 추가, `type` 통합 반영.
+- 게시판 목록 필터 로직(`notice/question/general` 분리)을 `post`+`pinned` 기준으로 변경.
+- 통합으로 더 이상 쓰지 않는 타입 분기 정리.
+
+### 7. 가이드 페이지 (`/guide`)
+- 트리 구조 게시판, 통합된 글쓰기, 공지(상단 고정) 작성법 설명 업데이트.
+
+## 단계 순서
+1. 마이그레이션(스키마 + 데이터 이관) 적용.
+2. 서버 함수/쿼리 옵션 업데이트.
+3. 관리자 카테고리(트리/폴더) UI.
+4. 게시판 트리 목록 뷰.
+5. 게시판 내부 통합 글 목록 + 통합 작성 폼 + 공지 고정.
+6. 공지 관리 페이지 정리.
+7. 가이드 문서 업데이트 및 전체 점검.
 
 ## 기술 메모
-- 닉네임 비교는 `trim()` 후 정확히 일치(서버 `ensureNicknameOwnership`와 동일 기준). 대소문자/공백 처리도 서버 검증과 일치시킴.
-- `getNicknameStatus`는 읽기 전용·비민감 정보만 반환하므로 인증 미들웨어 불필요.
-- 디바운스로 닉네임 한 글자마다 요청이 나가지 않도록 함.
-- DB 마이그레이션 불필요(`nickname_password`, `claimed_at` 기존 컬럼 사용).
+- 트리 깊이 제한 없음(재귀 렌더). 순환 참조 방지: 부모 선택 시 자기 자신/자손 제외.
+- 기존 URL(`/board/$slug`, `/board/$slug/$postNo`)과 post_no 체계는 그대로 유지하여 링크 호환.
+- `validate_category_tab_group` 트리거는 유지(최상위 노드 대상).
