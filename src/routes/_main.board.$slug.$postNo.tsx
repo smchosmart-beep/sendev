@@ -824,7 +824,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
             <DialogDescription>
               {post.type === "notice"
                 ? "관리자 비밀번호를 입력해야 수정할 수 있어요."
-                : "등록 시 설정한 비밀번호를 입력해야 수정할 수 있어요."}
+                : "작성자의 닉네임 비밀번호를 입력해야 수정할 수 있어요."}
             </DialogDescription>
           </DialogHeader>
           <form
