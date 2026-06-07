@@ -2000,8 +2000,7 @@ function CommentForm({
           maxLength={100}
           className="rounded-xl"
         />
-        <Input
-          type="password"
+        <PasswordInput
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="삭제용 비밀번호"
@@ -2009,8 +2008,7 @@ function CommentForm({
           className="rounded-xl"
         />
       </div>
-      <Input
-        type="password"
+      <PasswordInput
         value={nicknamePassword}
         onChange={(e) => setNicknamePassword(e.target.value)}
         placeholder="닉네임 비밀번호 (닉네임 입력 시 필수)"
