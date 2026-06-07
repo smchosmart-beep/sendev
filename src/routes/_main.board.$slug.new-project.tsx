@@ -161,9 +161,8 @@ function NewProjectPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="p-nickpw">닉네임 비밀번호</Label>
-            <Input
+            <PasswordInput
               id="p-nickpw"
-              type="password"
               value={nicknamePassword}
               onChange={(e) => setNicknamePassword(e.target.value)}
               placeholder="이 닉네임을 보호할 비밀번호"
@@ -176,6 +175,22 @@ function NewProjectPage() {
                 : " 등록하면 이 기기에서 다음부터 자동으로 채워져요."}
             </p>
           </div>
+          {!hasStored && (
+            <div className="space-y-2">
+              <Label htmlFor="p-nickpw-confirm">닉네임 비밀번호 확인</Label>
+              <PasswordInput
+                id="p-nickpw-confirm"
+                value={nicknamePasswordConfirm}
+                onChange={(e) => setNicknamePasswordConfirm(e.target.value)}
+                placeholder="비밀번호를 한 번 더 입력"
+                className="rounded-xl"
+              />
+              {nicknamePasswordConfirm.length > 0 &&
+                nicknamePassword.trim() !== nicknamePasswordConfirm.trim() && (
+                  <p className="text-xs text-destructive">비밀번호가 일치하지 않아요.</p>
+                )}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="p-github">
               GitHub 링크{githubRequired && <span className="ml-1 text-destructive">*</span>}
