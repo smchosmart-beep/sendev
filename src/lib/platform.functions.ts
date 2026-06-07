@@ -1665,10 +1665,12 @@ export const uploadHeroImage = createServerFn({ method: "POST" })
         name: z.string().trim().min(1).max(255),
         contentType: z.string().trim().max(200).default("image/jpeg"),
         dataBase64: z.string().min(1).max(15_000_000),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }): Promise<{ url: string }> => {
+    requireAdmin(data.adminPassword);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const bytes = Buffer.from(data.dataBase64, "base64");
     const extMatch = data.name.match(/\.([a-zA-Z0-9]{1,10})$/);
@@ -1692,10 +1694,12 @@ export const createHeroSlide = createServerFn({ method: "POST" })
         imageUrl: z.string().trim().url().max(2000),
         caption: z.string().trim().max(200).default(""),
         linkUrl: z.string().trim().max(2000).default(""),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { data: rows } = await db
       .from("hero_slides")
@@ -1714,8 +1718,9 @@ export const createHeroSlide = createServerFn({ method: "POST" })
   });
 
 export const deleteHeroSlide = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input) => z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input))
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db.from("hero_slides").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -1729,10 +1734,12 @@ export const swapHeroSlideOrder = createServerFn({ method: "POST" })
       .object({
         id: z.string().uuid(),
         otherId: z.string().uuid(),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { data: rows, error } = await db
       .from("hero_slides")
@@ -1754,10 +1761,12 @@ export const swapCategoryOrder = createServerFn({ method: "POST" })
       .object({
         id: z.string().uuid(),
         otherId: z.string().uuid(),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { data: rows, error } = await db
       .from("categories")
