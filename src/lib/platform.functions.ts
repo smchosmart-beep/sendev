@@ -2245,7 +2245,7 @@ export const getMyDashboard = createServerFn({ method: "POST" })
     // Re-authenticate.
     const { data: prof, error: pErr } = await db
       .from("user_profiles")
-      .select("username, nickname_password")
+      .select("username, nickname_password, award")
       .eq("username_key", key)
       .maybeSingle();
     if (pErr) throw new Error(pErr.message);
