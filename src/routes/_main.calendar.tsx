@@ -12,6 +12,7 @@ import {
   Download,
   List,
   LayoutGrid,
+  StickyNote,
 } from "lucide-react";
 
 import { eventsQueryOptions } from "@/lib/platform.queries";
