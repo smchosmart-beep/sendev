@@ -1449,6 +1449,97 @@ export const fetchOgImage = createServerFn({ method: "GET" })
     return { image: await resolveOgImage(data.url) };
   });
 
+export interface LinkPreview {
+  image: string | null;
+  title: string | null;
+  siteName: string | null;
+}
+
+// Server-only OG metadata resolver for arbitrary links placed in post bodies.
+// Extracts image, title (og:title → <title>), and site name (og:site_name →
+// hostname). Returns null fields when the page can't be read.
+async function resolveOgMeta(url: string): Promise<LinkPreview> {
+  let hostname: string | null = null;
+  try {
+    hostname = new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    /* ignore */
+  }
+  const empty: LinkPreview = { image: null, title: null, siteName: hostname };
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 7000);
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; EduShareBot/1.0)" },
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return empty;
+
+    const reader = res.body?.getReader();
+    let html = "";
+    if (reader) {
+      const decoder = new TextDecoder();
+      let received = 0;
+      const MAX = 512 * 1024;
+      while (received < MAX) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        received += value.byteLength;
+        html += decoder.decode(value, { stream: true });
+        if (html.includes("</head>")) break;
+      }
+      try {
+        await reader.cancel();
+      } catch {
+        /* ignore */
+      }
+    } else {
+      html = await res.text();
+    }
+
+    const rawImage = extractMetaContent(html, [
+      "og:image:secure_url",
+      "og:image",
+      "twitter:image",
+      "twitter:image:src",
+    ]);
+    let image: string | null = null;
+    if (rawImage) {
+      try {
+        const resolved = new URL(rawImage, url).href;
+        if (/^https?:\/\//i.test(resolved)) image = resolved;
+      } catch {
+        /* ignore */
+      }
+    }
+
+    let title =
+      extractMetaContent(html, ["og:title", "twitter:title"]) ?? null;
+    if (!title) {
+      const m = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+      if (m && m[1]) title = m[1].trim();
+    }
+
+    const siteName =
+      extractMetaContent(html, ["og:site_name"]) ?? hostname ?? null;
+
+    return { image, title: title || null, siteName };
+  } catch (e) {
+    console.error("resolveOgMeta failed:", e);
+    return empty;
+  }
+}
+
+export const fetchLinkPreview = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z.object({ url: z.string().trim().url().max(500) }).parse(input),
+  )
+  .handler(async ({ data }): Promise<LinkPreview> => {
+    return resolveOgMeta(data.url);
+  });
+
 // Backfills the cached OG image for an existing post whose og_image_url is
 // empty. Resolves once, stores it, and returns the image so the board can show
 // it immediately and never re-fetch the external site again.
