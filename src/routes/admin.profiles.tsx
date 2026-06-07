@@ -464,7 +464,19 @@ function ProfilesAdmin() {
   };
 
   return (
-    <div className="space-y-6">
+    <Tabs defaultValue="list" className="space-y-6">
+      <TabsList className="grid w-full max-w-md grid-cols-2 rounded-xl">
+        <TabsTrigger value="list" className="gap-1.5 rounded-lg">
+          <Users className="h-4 w-4" />
+          사용자 목록
+        </TabsTrigger>
+        <TabsTrigger value="settings" className="gap-1.5 rounded-lg">
+          <Settings2 className="h-4 w-4" />
+          관리 설정
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="settings" className="space-y-6">
       <div className="rounded-2xl bg-card p-6 shadow-sm">
         <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-foreground">
           <UserCog className="h-5 w-5 text-primary" />
