@@ -64,7 +64,7 @@ async function ensureNicknameOwnership(
     }
     const incoming = await hashSecret(nicknamePassword);
     if (incoming !== row.nickname_password) {
-      throw new Error("이미 사용 중인 닉네임입니다. 닉네임 비밀번호가 일치하지 않습니다.");
+      throw new Error("닉네임 비밀번호가 맞지 않습니다.");
     }
     return;
   }
