@@ -16,6 +16,9 @@ import {
   Shuffle,
   Lock,
   Unlock,
+  UserCheck,
+  ClipboardList,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,6 +26,8 @@ import {
   categoriesQueryOptions,
   criteriaQueryOptions,
   postsQueryOptions,
+  reviewAllowlistQueryOptions,
+  categoryReviewsQueryOptions,
 } from "@/lib/platform.queries";
 import {
   createCriterion,
@@ -30,6 +35,10 @@ import {
   deleteCriterion,
   shuffleEvaluation,
   closeEvaluation,
+  addReviewAllowlistName,
+  removeReviewAllowlistName,
+  setReviewAllowlistOnly,
+  deleteReview,
 } from "@/lib/platform.functions";
 import type { CategoryDTO } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
