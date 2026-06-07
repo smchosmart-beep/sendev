@@ -83,7 +83,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AutoTextarea } from "@/components/ui/auto-textarea";
 import { PostEditor } from "@/components/PostEditor";
-import { useNicknameIdentity } from "@/hooks/useNicknameIdentity";
+import { useNicknameIdentity, useStoredIdentity } from "@/hooks/useNicknameIdentity";
 
 const NUMERIC_RE = /^\d+$/;
 
@@ -1084,9 +1084,18 @@ function EvaluationSection({
   );
   const { data: reviews = [] } = useQuery(reviewsQueryOptions(postId));
   const create = useServerFn(createReview);
+  const { identity, save: saveIdentity } = useStoredIdentity();
 
   const [scores, setScores] = useState<Record<string, number>>({});
   const [reviewerName, setReviewerName] = useState("");
+  const [nicknamePassword, setNicknamePassword] = useState("");
+
+  // 저장된 닉네임 비밀번호를 자동으로 채워, 한 번 등록하면 평가에서도 재입력하지 않게 한다.
+  useEffect(() => {
+    if (identity?.nicknamePassword) {
+      setNicknamePassword((prev) => (prev ? prev : identity.nicknamePassword));
+    }
+  }, [identity]);
 
   // 이 기기가 이 카테고리에서 이미 고정한 닉네임 (localStorage 기반)
   const storageKey = `sendev:nickname:${slug}`;
@@ -1132,7 +1141,14 @@ function EvaluationSection({
 
   const mutation = useMutation({
     mutationFn: () =>
-      create({ data: { postId, reviewerName: reviewerName.trim(), scores } }),
+      create({
+        data: {
+          postId,
+          reviewerName: reviewerName.trim(),
+          nicknamePassword: nicknamePassword.trim(),
+          scores,
+        },
+      }),
     onSuccess: (res: { ok: boolean; updated?: boolean }) => {
       queryClient.invalidateQueries({ queryKey: ["reviews", postId] });
       queryClient.invalidateQueries({ queryKey: ["my-review", postId] });
@@ -1143,6 +1159,8 @@ function EvaluationSection({
         window.localStorage.setItem(storageKey, name);
       }
       setLockedName(name || null);
+      // 닉네임+비밀번호를 식별자 저장소에 저장해 다음 평가/글/댓글에서 자동 채움.
+      if (name) saveIdentity(name, nicknamePassword.trim());
       toast.success(
         res?.updated ? "평가가 갱신되었어요!" : "평가를 제출했어요!",
       );
@@ -1150,7 +1168,10 @@ function EvaluationSection({
       // 이후 my-review 재조회로 저장된 점수가 다시 채워진다.
       touchedRef.current = false;
     },
-    onError: () => toast.error("제출 중 문제가 발생했어요."),
+    onError: (err: unknown) =>
+      toast.error(
+        err instanceof Error ? err.message : "제출 중 문제가 발생했어요.",
+      ),
   });
 
 
@@ -1251,6 +1272,10 @@ function EvaluationSection({
                 toast.error("닉네임을 입력해주세요.");
                 return;
               }
+              if (!nicknamePassword.trim()) {
+                toast.error("닉네임 비밀번호를 입력해주세요.");
+                return;
+              }
               for (const c of criteria) {
                 if (!scores[c.id] || scores[c.id] <= 0) {
                   toast.error("모든 항목에 별점을 매겨주세요.");
@@ -1297,6 +1322,20 @@ function EvaluationSection({
                   </p>
                 </>
               )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reviewer-pw">닉네임 비밀번호</Label>
+              <Input
+                id="reviewer-pw"
+                type="password"
+                value={nicknamePassword}
+                onChange={(e) => setNicknamePassword(e.target.value)}
+                placeholder="닉네임 비밀번호"
+                maxLength={100}
+              />
+              <p className="text-xs text-muted-foreground">
+                닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 본인 확인을 해요. 글·댓글과 같은 비밀번호를 사용합니다.
+              </p>
             </div>
             {criteria.map((c) => (
               <div key={c.id} className="space-y-2">
