@@ -1549,7 +1549,6 @@ function CommentsSection({ postId }: { postId: string }) {
       author: string;
       content: string;
       imageUrls: string[];
-      editPassword: string;
       nicknamePassword: string;
     }) => create({ data: { postId, ...vars } }),
     onSuccess: (_res, vars) => {
