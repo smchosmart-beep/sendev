@@ -65,7 +65,6 @@ function NewQuestionPage() {
           nicknamePassword,
           githubUrl: "",
           deployUrl: "",
-          editPassword,
         },
       }),
     onSuccess: (res) => {
