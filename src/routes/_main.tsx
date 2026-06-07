@@ -243,6 +243,12 @@ function MainLayout() {
                   <MenuSearchBox onSubmitted={() => setMenuOpen(false)} />
                 </div>
 
+                <div className="mt-2">
+                  <NicknameSetup variant="menu" onOpened={() => setMenuOpen(false)} />
+                </div>
+
+
+
                 <Link
                   to="/admin/categories"
                   onClick={() => setMenuOpen(false)}
