@@ -148,9 +148,9 @@ export interface CategoryDTO {
   sortOrder: number;
   hasPassword: boolean;
   githubRequired: boolean;
-  enableNotice: boolean;
-  enableQuestion: boolean;
-  enableGeneral: boolean;
+  parentId: string | null;
+  isGroup: boolean;
+  enablePost: boolean;
   enableProject: boolean;
   enableLink: boolean;
   generalName: string;
