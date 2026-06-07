@@ -60,7 +60,7 @@ function NewQuestionPage() {
       create({
         data: {
           categoryId: category!.id,
-          type: "question",
+          type: "post",
           title,
           content,
           author,
