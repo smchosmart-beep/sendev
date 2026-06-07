@@ -278,7 +278,7 @@ function GuidePage() {
       <Section id="posting" icon={LayoutGrid} title="글쓰기와 공지">
         <p>
           공지·질문·일반글은 하나의 <strong>글</strong> 형태로 통합되었습니다. 게시판에서 <strong>글 등록</strong> 버튼으로
-          누구나 글을 쓸 수 있고, 글 작성 폼에서 <strong>상단 고정(공지)</strong> 체크박스를 켜면 그 글이 목록 최상단에 고정되어 공지처럼 표시됩니다.
+          누구나 글을 쓸 수 있고, 글 작성 폼에서 <strong>상단 고정(공지)</strong> 체크박스를 켜면 그 글이 목록 최상단에 고정되어 공지처럼 표시됩니다. 이미 작성한 글도 <strong>글 수정</strong> 화면에서 같은 체크박스로 상단 고정을 켜거나 끌 수 있습니다.
         </p>
         <ul className="ml-5 list-disc space-y-2">
           <li>일반 사용자도 공지(상단 고정 글)를 작성할 수 있습니다.</li>

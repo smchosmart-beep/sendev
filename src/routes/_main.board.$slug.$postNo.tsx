@@ -83,6 +83,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/PasswordInput";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { AutoTextarea } from "@/components/ui/auto-textarea";
 import { PostEditor } from "@/components/PostEditor";
 import { useNicknameIdentity, useStoredIdentity, useNicknameClaimed } from "@/hooks/useNicknameIdentity";
@@ -509,6 +510,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
   const [title, setTitle] = useState(post.title);
   const [content, setContent] = useState(post.content);
   const [author, setAuthor] = useState(post.author);
+  const [pinned, setPinned] = useState(post.pinned);
   const [githubUrl, setGithubUrl] = useState(post.githubUrl);
   const [deployUrl, setDeployUrl] = useState(post.deployUrl);
   const [editPw, setEditPw] = useState("");
@@ -531,6 +533,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
       setTitle(post.title);
       setContent(post.content);
       setAuthor(post.author);
+      setPinned(post.pinned);
       setGithubUrl(post.githubUrl);
       setDeployUrl(post.deployUrl);
       setEditPw(editGatePw);
@@ -549,7 +552,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
     mutationFn: () =>
       update({
         data: isBoardPost
-          ? { id: postId, password: editPw, title, content, author }
+          ? { id: postId, password: editPw, title, content, author, pinned }
           : { id: postId, password: editPw, title, author, githubUrl, deployUrl },
       }),
     onSuccess: (res) => {
@@ -934,6 +937,21 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
                       onChange={(e) => setAuthor(e.target.value)}
                       className="rounded-xl"
                     />
+                  </div>
+                )}
+                {post.type === "post" && (
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="e-pinned"
+                      checked={pinned}
+                      onCheckedChange={(v) => setPinned(v === true)}
+                    />
+                    <Label
+                      htmlFor="e-pinned"
+                      className="cursor-pointer text-sm font-normal text-muted-foreground"
+                    >
+                      상단 고정(공지)
+                    </Label>
                   </div>
                 )}
               </>
