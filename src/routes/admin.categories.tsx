@@ -184,6 +184,9 @@ function CategoriesPage() {
           projectName: editProjectName.trim(),
           linkName: editLinkName.trim(),
           tabGroup: editTabGroup,
+          isGroup: editIsGroup,
+          parentId: editParentId || null,
+
         },
       }),
     onSuccess: () => {
