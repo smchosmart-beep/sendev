@@ -120,8 +120,11 @@ export type Database = {
           date: string
           description: string
           id: string
+          latitude: number | null
           links: Json
           location: string
+          longitude: number | null
+          place_address: string
           target: string
           time: string
           title: string
@@ -132,8 +135,11 @@ export type Database = {
           date: string
           description?: string
           id?: string
+          latitude?: number | null
           links?: Json
           location?: string
+          longitude?: number | null
+          place_address?: string
           target?: string
           time?: string
           title: string
@@ -144,8 +150,11 @@ export type Database = {
           date?: string
           description?: string
           id?: string
+          latitude?: number | null
           links?: Json
           location?: string
+          longitude?: number | null
+          place_address?: string
           target?: string
           time?: string
           title?: string
