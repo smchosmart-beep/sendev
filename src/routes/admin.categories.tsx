@@ -575,15 +575,15 @@ function CategoriesPage() {
                   </div>
                   </div>
                 </div>
-                <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
                   {siblings.length > 1 && (
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-row gap-1">
                         <Button
                           variant="secondary"
                           size="icon"
                           disabled={idx <= 0 || swapMutation.isPending}
                           onClick={() => moveCategory(c, "up")}
-                          className="h-6 w-7 rounded-lg active:scale-95"
+                          className="h-8 w-8 rounded-lg active:scale-95"
                           aria-label="위로 이동"
                         >
                           <ChevronUp className="h-4 w-4" />
@@ -593,7 +593,7 @@ function CategoriesPage() {
                           size="icon"
                           disabled={idx >= siblings.length - 1 || swapMutation.isPending}
                           onClick={() => moveCategory(c, "down")}
-                          className="h-6 w-7 rounded-lg active:scale-95"
+                          className="h-8 w-8 rounded-lg active:scale-95"
                           aria-label="아래로 이동"
                         >
                           <ChevronDown className="h-4 w-4" />
