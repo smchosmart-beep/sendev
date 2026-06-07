@@ -1522,6 +1522,7 @@ function CommentsSection({ postId }: { postId: string }) {
             content: content.trim(),
             imageUrls,
             editPassword: password.trim(),
+            nicknamePassword: nicknamePassword.trim(),
           });
         }}
         className="mt-6 space-y-3 border-t border-border pt-6"
