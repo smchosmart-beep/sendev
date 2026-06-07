@@ -651,6 +651,15 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
   );
 
 
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success("게시글 링크가 복사되었어요!");
+    } catch {
+      toast.error("링크 복사에 실패했어요.");
+    }
+  };
+
   return (
     <div className="flex shrink-0 gap-2">
       <Button
@@ -688,6 +697,16 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
           이동
         </Button>
       )}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={handleShare}
+        className="rounded-xl active:scale-95"
+      >
+        <Share2 className="h-4 w-4" />
+        공유
+      </Button>
 
       {/* Move password gate dialog */}
       <Dialog open={moveGateOpen} onOpenChange={setMoveGateOpen}>
