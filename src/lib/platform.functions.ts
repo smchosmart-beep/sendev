@@ -140,6 +140,7 @@ export interface CategoryDTO {
   tabGroup: TabGroup;
   evalOpen: boolean;
   evalSeed: number;
+  reviewAllowlistOnly: boolean;
 }
 
 // Board slug: lowercase letters, digits and hyphens. Used in short URLs.
