@@ -43,16 +43,22 @@ function formatDate(value: string) {
 }
 
 function MyPage() {
-  const { identity } = useStoredIdentity();
+  const { identity, save, clear } = useStoredIdentity();
   const [username, setUsername] = useState(identity?.author ?? "");
   const [password, setPassword] = useState(identity?.nicknamePassword ?? "");
+  const [remember, setRemember] = useState(true);
   const [data, setData] = useState<DashboardDTO | null>(null);
   const fetchDashboard = useServerFn(getMyDashboard);
 
   const mutation = useMutation({
     mutationFn: (input: { username: string; password: string }) =>
       fetchDashboard({ data: input }),
-    onSuccess: (res) => setData(res),
+    onSuccess: (res, vars) => {
+      setData(res);
+      if (remember) {
+        save(vars.username, vars.password);
+      }
+    },
     onError: (err) =>
       toast.error(err instanceof Error ? err.message : "로그인에 실패했어요."),
   });
@@ -71,6 +77,11 @@ function MyPage() {
     return (
       <Dashboard
         data={data}
+        stored={!!identity?.author}
+        onClearStored={() => {
+          clear();
+          toast.success("이 기기에 저장된 닉네임을 지웠어요.");
+        }}
         onLogout={() => {
           setData(null);
           setPassword("");
@@ -114,23 +125,40 @@ function MyPage() {
               autoComplete="current-password"
             />
           </div>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="h-4 w-4 rounded border-border accent-primary"
+            />
+            이 기기에 저장 (글·댓글 작성 시 자동 입력)
+          </label>
           <Button type="submit" className="w-full" disabled={mutation.isPending}>
             {mutation.isPending && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
             로그인
           </Button>
+          <p className="text-xs text-muted-foreground">
+            닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 인증합니다.
+          </p>
         </form>
       </Card>
     </div>
   );
 }
 
+
 function Dashboard({
   data,
+  stored,
+  onClearStored,
   onLogout,
 }: {
   data: DashboardDTO;
+  stored: boolean;
+  onClearStored: () => void;
   onLogout: () => void;
 }) {
   return (
@@ -140,11 +168,19 @@ function Dashboard({
           <p className="text-sm text-muted-foreground">내 페이지</p>
           <h1 className="text-2xl font-bold text-foreground">{data.username}</h1>
         </div>
-        <Button variant="outline" size="sm" onClick={onLogout}>
-          <LogOut className="mr-1.5 h-4 w-4" />
-          로그아웃
-        </Button>
+        <div className="flex items-center gap-2">
+          {stored && (
+            <Button variant="ghost" size="sm" onClick={onClearStored}>
+              기기 저장 해제
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={onLogout}>
+            <LogOut className="mr-1.5 h-4 w-4" />
+            로그아웃
+          </Button>
+        </div>
       </div>
+
 
       <div className="grid grid-cols-3 gap-3">
         <StatCard icon={FileText} label="작성한 글" value={data.myPosts.length} />

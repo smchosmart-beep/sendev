@@ -11,7 +11,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import type { TabGroup } from "@/lib/platform.functions";
-import { NicknameSetup } from "@/components/NicknameSetup";
+
 
 type SearchMode = "title" | "title_content" | "author";
 
@@ -157,8 +157,6 @@ function MainLayout() {
             })}
           </nav>
 
-          <NicknameSetup variant="icon" />
-
           <Link
             to="/search"
             search={{ q: "", mode: "title" }}
@@ -167,6 +165,7 @@ function MainLayout() {
           >
             <Search className="h-5 w-5" />
           </Link>
+
 
           <Link
             to="/mypage"
@@ -250,10 +249,6 @@ function MainLayout() {
 
                 <div className="mt-2">
                   <MenuSearchBox onSubmitted={() => setMenuOpen(false)} />
-                </div>
-
-                <div className="mt-2">
-                  <NicknameSetup variant="menu" onOpened={() => setMenuOpen(false)} />
                 </div>
 
                 <Link
