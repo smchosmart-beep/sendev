@@ -2006,6 +2006,8 @@ function CommentForm({
   const [content, setContent] = useState("");
   const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const { claimed } = useNicknameClaimed(author);
+  const needsConfirm = !claimed;
 
   return (
     <form
