@@ -608,10 +608,12 @@ export const uploadEventFile = createServerFn({ method: "POST" })
         name: z.string().trim().min(1).max(255),
         contentType: z.string().trim().max(200).default("application/octet-stream"),
         dataBase64: z.string().min(1).max(15_000_000),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }): Promise<EventAttachment> => {
+    requireAdmin(data.adminPassword);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const bytes = Buffer.from(data.dataBase64, "base64");
     // Storage object keys must be ASCII-safe. Korean/spaces/special chars in the
@@ -632,8 +634,9 @@ export const uploadEventFile = createServerFn({ method: "POST" })
   });
 
 export const deleteEvent = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input) => z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input))
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db.from("events").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
