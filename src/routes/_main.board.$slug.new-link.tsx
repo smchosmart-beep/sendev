@@ -39,6 +39,7 @@ function NewLinkPage() {
 
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
+  const [nicknamePassword, setNicknamePassword] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
   const [series, setSeries] = useState("");
   const [editPassword, setEditPassword] = useState("");
