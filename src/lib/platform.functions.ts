@@ -2179,6 +2179,9 @@ export interface DashLikeDTO {
 
 export interface DashboardDTO {
   username: string;
+  level: number | null;
+  points: number;
+  award: string;
   myPosts: DashPostDTO[];
   myComments: DashCommentDTO[];
   repliesToMe: DashCommentDTO[];
