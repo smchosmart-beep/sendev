@@ -134,10 +134,13 @@ function BoardInner({
                     {n.commentCount}
                   </span>
                 )}
-                <span className="flex items-center gap-1 whitespace-nowrap">
-                  <User className="h-3.5 w-3.5" />
-                  {n.author}
-                  <AuthorBadge author={n.author} profileMap={profileMap} />
+                <span className="flex flex-col items-end gap-0.5 sm:flex-row sm:items-center sm:gap-1">
+                  <span className="flex items-center gap-1 whitespace-nowrap">
+                    <User className="h-3.5 w-3.5" />
+                    {n.author}
+                    <AuthorBadge author={n.author} profileMap={profileMap} only="level" />
+                  </span>
+                  <AuthorBadge author={n.author} profileMap={profileMap} only="awards" />
                 </span>
               </span>
             </Link>
