@@ -77,6 +77,35 @@ const FontSize = Extension.create({
   },
 });
 
+// tiptap-markdown has no built-in serializer for the textStyle mark, so color
+// and font-size were silently dropped on save (text rendered black). Extend
+// TextStyle to emit an inline <span style="..."> for those attributes.
+const buildStyle = (attrs: Record<string, any>) => {
+  const styles: string[] = [];
+  if (attrs.color) styles.push(`color: ${attrs.color}`);
+  if (attrs.fontSize) styles.push(`font-size: ${attrs.fontSize}`);
+  return styles.join("; ");
+};
+
+const TextStyleWithMarkdown = TextStyle.extend({
+  addStorage() {
+    return {
+      markdown: {
+        serialize: {
+          open(_state: any, mark: any) {
+            const style = buildStyle(mark.attrs ?? {});
+            return style ? `<span style="${style}">` : "";
+          },
+          close(_state: any, mark: any) {
+            const style = buildStyle(mark.attrs ?? {});
+            return style ? "</span>" : "";
+          },
+        },
+      },
+    };
+  },
+});
+
 const TEXT_COLORS = [
   { label: "기본", value: null },
   { label: "검정", value: "#1a1a1a" },
@@ -226,7 +255,7 @@ export function PostEditor({
   const editor = useEditor({
     extensions: [
       StarterKit,
-      TextStyle,
+      TextStyleWithMarkdown,
       Color,
       FontSize,
       Image.configure({ inline: false }),
