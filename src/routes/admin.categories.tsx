@@ -598,7 +598,7 @@ function CategoriesPage() {
                   </div>
                   </div>
                 </div>
-                <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                <div className="flex w-28 shrink-0 flex-col items-stretch gap-2">
                   {siblings.length > 1 && (
                       <div className="flex flex-row gap-1">
                         <Button
