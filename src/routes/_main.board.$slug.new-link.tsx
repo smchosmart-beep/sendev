@@ -229,14 +229,27 @@ function NewLinkPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="l-pw">수정·삭제 비밀번호</Label>
-            <Input
+            <PasswordInput
               id="l-pw"
-              type="password"
               value={editPassword}
               onChange={(e) => setEditPassword(e.target.value)}
               placeholder="나중에 수정·삭제할 때 사용해요"
               className="rounded-xl"
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="l-pw-confirm">수정·삭제 비밀번호 확인</Label>
+            <PasswordInput
+              id="l-pw-confirm"
+              value={editPasswordConfirm}
+              onChange={(e) => setEditPasswordConfirm(e.target.value)}
+              placeholder="비밀번호를 한 번 더 입력"
+              className="rounded-xl"
+            />
+            {editPasswordConfirm.length > 0 &&
+              editPassword.trim() !== editPasswordConfirm.trim() && (
+                <p className="text-xs text-destructive">비밀번호가 일치하지 않아요.</p>
+              )}
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button asChild type="button" variant="secondary" className="rounded-xl active:scale-95">
