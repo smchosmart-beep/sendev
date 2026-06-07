@@ -50,7 +50,7 @@ function NewLinkPage() {
   } = useNicknameIdentity();
   const [linkUrl, setLinkUrl] = useState("");
   const [series, setSeries] = useState("");
-  const [editPassword, setEditPassword] = useState("");
+  
   const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
   
 
@@ -78,7 +78,6 @@ function NewLinkPage() {
           nicknamePassword,
           deployUrl: linkUrl,
           series: series.trim(),
-          editPassword,
         },
       }),
     onSuccess: (res) => {
@@ -127,10 +126,6 @@ function NewLinkPage() {
             const url = linkUrl.trim();
             if (!url || !/^https?:\/\/.+/i.test(url)) {
               toast.error("링크 형식이 올바르지 않아요. (예: https://...)");
-              return;
-            }
-            if (!editPassword.trim()) {
-              toast.error("수정·삭제용 비밀번호를 입력해주세요.");
               return;
             }
             if (!hasStored && nicknamePassword.trim() !== nicknamePasswordConfirm.trim()) {
@@ -222,16 +217,6 @@ function NewLinkPage() {
             <p className="text-xs text-muted-foreground">
               같은 시리즈명을 입력하면 카테고리에서 하나의 카드로 묶여 표시돼요. 비워두면 단독 영상으로 등록돼요.
             </p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="l-pw">수정·삭제 비밀번호</Label>
-            <PasswordInput
-              id="l-pw"
-              value={editPassword}
-              onChange={(e) => setEditPassword(e.target.value)}
-              placeholder="나중에 수정·삭제할 때 사용해요"
-              className="rounded-xl"
-            />
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button asChild type="button" variant="secondary" className="rounded-xl active:scale-95">

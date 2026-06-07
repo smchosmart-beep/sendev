@@ -50,7 +50,6 @@ function NewGeneralPage() {
     hasStored,
     persistIdentity,
   } = useNicknameIdentity();
-  const [editPassword, setEditPassword] = useState("");
   const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
 
   const mutation = useMutation({
@@ -65,7 +64,6 @@ function NewGeneralPage() {
           nicknamePassword,
           githubUrl: "",
           deployUrl: "",
-          editPassword,
         },
       }),
     onSuccess: (res) => {
@@ -109,10 +107,6 @@ function NewGeneralPage() {
             e.preventDefault();
             if (!title.trim() || !author.trim()) {
               toast.error("제목과 작성자를 입력해주세요.");
-              return;
-            }
-            if (!editPassword.trim()) {
-              toast.error("수정·삭제용 비밀번호를 입력해주세요.");
               return;
             }
             if (!hasStored && nicknamePassword.trim() !== nicknamePasswordConfirm.trim()) {
@@ -182,16 +176,6 @@ function NewGeneralPage() {
                 )}
             </div>
           )}
-          <div className="space-y-2">
-            <Label htmlFor="g-pw">수정·삭제 비밀번호</Label>
-            <PasswordInput
-              id="g-pw"
-              value={editPassword}
-              onChange={(e) => setEditPassword(e.target.value)}
-              placeholder="나중에 수정·삭제할 때 사용해요"
-              className="rounded-xl"
-            />
-          </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button asChild type="button" variant="secondary" className="rounded-xl active:scale-95">
               <Link to="/board/$slug" params={{ slug }}>취소</Link>
