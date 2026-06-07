@@ -18,6 +18,7 @@ import {
   listHeroSlides,
   listUserProfiles,
   getProfileMap,
+  getAwardIcon,
 } from "./platform.functions";
 
 export const searchPostsQueryOptions = (
