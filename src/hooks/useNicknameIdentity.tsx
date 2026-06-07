@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+
+import { nicknameStatusQueryOptions } from "@/lib/platform.queries";
 
 // Lightweight, anonymous "profile" stored only in this browser.
 // Keeps the existing nickname + nickname-password flow, but remembers the
