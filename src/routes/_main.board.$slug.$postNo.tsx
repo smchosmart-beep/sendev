@@ -2040,7 +2040,7 @@ function CommentForm({
       }}
       className={`space-y-3 rounded-xl border border-border p-4 ${compact ? "ml-4" : ""}`}
     >
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className={`grid gap-3 ${needsConfirm ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
         <Input
           value={author}
           onChange={(e) => setAuthor(e.target.value)}
@@ -2055,9 +2055,7 @@ function CommentForm({
           maxLength={100}
           className="rounded-xl"
         />
-      </div>
-      {needsConfirm && (
-        <>
+        {needsConfirm && (
           <PasswordInput
             value={nicknamePasswordConfirm}
             onChange={(e) => setNicknamePasswordConfirm(e.target.value)}
@@ -2065,14 +2063,14 @@ function CommentForm({
             maxLength={100}
             className="rounded-xl"
           />
-          {nicknamePasswordConfirm.length > 0 &&
-            nicknamePassword.trim() !== nicknamePasswordConfirm.trim() && (
-              <p className="text-xs text-destructive">
-                닉네임 비밀번호가 일치하지 않아요.
-              </p>
-            )}
-        </>
-      )}
+        )}
+      </div>
+      {needsConfirm &&
+        nicknamePasswordConfirm.length > 0 &&
+        nicknamePassword.trim() !== nicknamePasswordConfirm.trim() && (
+          <p className="text-xs text-destructive">닉네임 비밀번호가 일치하지 않아요.</p>
+        )}
+
       {claimed ? (
         <p className="text-xs text-muted-foreground">
           이미 등록된 닉네임이에요. 등록한 비밀번호를 입력해 주세요.
