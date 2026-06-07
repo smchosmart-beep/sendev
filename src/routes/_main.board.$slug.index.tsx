@@ -5,6 +5,7 @@ import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle
 
 import {
   postsQueryOptions,
+  getBoardPassword,
   categoriesQueryOptions,
   ogImageBackfillQueryOptions,
   myReviewedPostIdsQueryOptions,
