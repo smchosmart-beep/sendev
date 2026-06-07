@@ -483,10 +483,9 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
 
   const postId = post.id;
   const categoryId = post.categoryId;
-  const isBoardPost =
-    post.type === "notice" || post.type === "question" || post.type === "general";
+  const isBoardPost = post.type === "post";
   const noun = isBoardPost
-    ? post.type === "notice"
+    ? post.pinned
       ? "공지"
       : "글"
     : post.type === "link"
