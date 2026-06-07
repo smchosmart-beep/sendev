@@ -22,7 +22,9 @@ export const Route = createFileRoute("/admin/profiles")({
 
 function ProfilesAdmin() {
   const queryClient = useQueryClient();
-  const { data: profiles = [] } = useQuery(userProfilesQueryOptions());
+  const { data: profiles = [] as UserProfileDTO[] } = useQuery(
+    userProfilesQueryOptions(),
+  );
   const upsert = useServerFn(upsertUserProfile);
   const remove = useServerFn(deleteUserProfile);
 

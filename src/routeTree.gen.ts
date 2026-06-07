@@ -14,6 +14,7 @@ import { Route as MainRouteImport } from './routes/_main'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminProfilesRouteImport } from './routes/admin.profiles'
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
 import { Route as AdminHomeRouteImport } from './routes/admin.home'
 import { Route as AdminCriteriaRouteImport } from './routes/admin.criteria'
@@ -54,6 +55,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminProfilesRoute = AdminProfilesRouteImport.update({
+  id: '/profiles',
+  path: '/profiles',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminNoticesRoute = AdminNoticesRouteImport.update({
@@ -155,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/admin/criteria': typeof AdminCriteriaRoute
   '/admin/home': typeof AdminHomeRoute
   '/admin/notices': typeof AdminNoticesRoute
+  '/admin/profiles': typeof AdminProfilesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
   '/board/$slug': typeof MainBoardSlugRouteWithChildren
@@ -177,6 +184,7 @@ export interface FileRoutesByTo {
   '/admin/criteria': typeof AdminCriteriaRoute
   '/admin/home': typeof AdminHomeRoute
   '/admin/notices': typeof AdminNoticesRoute
+  '/admin/profiles': typeof AdminProfilesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin': typeof AdminIndexRoute
   '/board': typeof MainBoardIndexRoute
@@ -201,6 +209,7 @@ export interface FileRoutesById {
   '/admin/criteria': typeof AdminCriteriaRoute
   '/admin/home': typeof AdminHomeRoute
   '/admin/notices': typeof AdminNoticesRoute
+  '/admin/profiles': typeof AdminProfilesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
   '/_main/board/$slug': typeof MainBoardSlugRouteWithChildren
@@ -226,6 +235,7 @@ export interface FileRouteTypes {
     | '/admin/criteria'
     | '/admin/home'
     | '/admin/notices'
+    | '/admin/profiles'
     | '/admin/settings'
     | '/admin/'
     | '/board/$slug'
@@ -248,6 +258,7 @@ export interface FileRouteTypes {
     | '/admin/criteria'
     | '/admin/home'
     | '/admin/notices'
+    | '/admin/profiles'
     | '/admin/settings'
     | '/admin'
     | '/board'
@@ -271,6 +282,7 @@ export interface FileRouteTypes {
     | '/admin/criteria'
     | '/admin/home'
     | '/admin/notices'
+    | '/admin/profiles'
     | '/admin/settings'
     | '/admin/'
     | '/_main/board/$slug'
@@ -325,6 +337,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/admin/settings'
       preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/profiles': {
+      id: '/admin/profiles'
+      path: '/profiles'
+      fullPath: '/admin/profiles'
+      preLoaderRoute: typeof AdminProfilesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/notices': {
@@ -497,6 +516,7 @@ interface AdminRouteChildren {
   AdminCriteriaRoute: typeof AdminCriteriaRoute
   AdminHomeRoute: typeof AdminHomeRoute
   AdminNoticesRoute: typeof AdminNoticesRoute
+  AdminProfilesRoute: typeof AdminProfilesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -507,6 +527,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCriteriaRoute: AdminCriteriaRoute,
   AdminHomeRoute: AdminHomeRoute,
   AdminNoticesRoute: AdminNoticesRoute,
+  AdminProfilesRoute: AdminProfilesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
