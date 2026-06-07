@@ -51,6 +51,8 @@ function NewLinkPage() {
   const [linkUrl, setLinkUrl] = useState("");
   const [series, setSeries] = useState("");
   const [editPassword, setEditPassword] = useState("");
+  const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
+  const [editPasswordConfirm, setEditPasswordConfirm] = useState("");
 
   // Suggest existing series names in this board for consistent grouping.
   const { data: posts } = useQuery({
