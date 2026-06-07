@@ -11,6 +11,7 @@ import {
   updateCategory,
   deleteCategory,
   getCategoryPassword,
+  swapCategoryOrder,
 } from "@/lib/platform.functions";
 import type { CategoryDTO, TabGroup } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
