@@ -52,7 +52,7 @@ function NewProjectPage() {
   const [deployUrl, setDeployUrl] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
-  const [editPasswordConfirm, setEditPasswordConfirm] = useState("");
+  
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -117,10 +117,6 @@ function NewProjectPage() {
             }
             if (!hasStored && nicknamePassword.trim() !== nicknamePasswordConfirm.trim()) {
               toast.error("닉네임 비밀번호가 일치하지 않아요.");
-              return;
-            }
-            if (editPassword.trim() !== editPasswordConfirm.trim()) {
-              toast.error("수정·삭제 비밀번호가 일치하지 않아요.");
               return;
             }
             const url = githubUrl.trim();
@@ -230,20 +226,6 @@ function NewProjectPage() {
               placeholder="나중에 수정·삭제할 때 사용해요"
               className="rounded-xl"
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="p-pw-confirm">수정·삭제 비밀번호 확인</Label>
-            <PasswordInput
-              id="p-pw-confirm"
-              value={editPasswordConfirm}
-              onChange={(e) => setEditPasswordConfirm(e.target.value)}
-              placeholder="비밀번호를 한 번 더 입력"
-              className="rounded-xl"
-            />
-            {editPasswordConfirm.length > 0 &&
-              editPassword.trim() !== editPasswordConfirm.trim() && (
-                <p className="text-xs text-destructive">비밀번호가 일치하지 않아요.</p>
-              )}
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button asChild type="button" variant="secondary" className="rounded-xl active:scale-95">
