@@ -683,7 +683,10 @@ function ProfilesAdmin() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => startEdit(p)}
+                      onClick={() => {
+                        setAddingFor((prev) => (prev === p.id ? null : p.id));
+                        setAddingValue("");
+                      }}
                       aria-label="이 사용자에 배지 추가"
                       title="이 사용자에 배지 추가"
                       className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-sm active:scale-95"
