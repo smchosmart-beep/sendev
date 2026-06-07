@@ -1702,7 +1702,7 @@ function CommentsSection({ postId }: { postId: string }) {
             className="rounded-xl"
           />
         </div>
-        {!hasStored && (
+        {needsConfirm && (
           <>
             <PasswordInput
               value={nicknamePasswordConfirm}
