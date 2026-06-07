@@ -758,16 +758,31 @@ export const getPost = createServerFn({ method: "GET" })
 // Resolves a post by its board slug + per-board number for short URLs.
 export const getPostByNo = createServerFn({ method: "GET" })
   .inputValidator((input) =>
-    z.object({ slug: z.string().min(1).max(31), postNo: z.number().int().positive() }).parse(input),
+    z
+      .object({
+        slug: z.string().min(1).max(31),
+        postNo: z.number().int().positive(),
+        boardPassword: z.string().max(100).optional(),
+        adminPassword: z.string().max(200).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data }): Promise<PostDTO | null> => {
     const db = await getAdmin();
     const { data: cat } = await db
       .from("categories")
-      .select("id")
+      .select("id, password")
       .eq("slug", data.slug)
       .maybeSingle();
     if (!cat) return null;
+    // Withhold content when the board is protected and unverified.
+    if (
+      !isAdminPassword(data.adminPassword) &&
+      cat.password &&
+      (data.boardPassword ?? "") !== cat.password
+    ) {
+      return null;
+    }
     const { data: row, error } = await db
       .from("posts")
       .select(POST_COLUMNS)
