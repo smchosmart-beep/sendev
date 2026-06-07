@@ -661,12 +661,47 @@ export const deleteEvent = createServerFn({ method: "POST" })
 const POST_COLUMNS =
   "id, category_id, post_no, type, title, content, author, github_url, deploy_url, og_image_url, series, created_at";
 
+// Returns true when the caller may read a protected board's content. Open
+// boards (no password) always pass. Protected boards pass only when the
+// supplied board password matches, or when a valid admin password is given.
+// SSR-safe: callers withhold content (empty/null) on failure, never throw.
+function isAdminPassword(pw: string | undefined): boolean {
+  const secret = process.env.ADMIN_PASSWORD;
+  return !!secret && !!pw && pw === secret;
+}
+
+async function boardAccessOk(
+  db: { from: (t: string) => any },
+  categoryId: string,
+  boardPassword: string | undefined,
+  adminPassword: string | undefined,
+): Promise<boolean> {
+  if (isAdminPassword(adminPassword)) return true;
+  const { data: cat } = await db
+    .from("categories")
+    .select("password")
+    .eq("id", categoryId)
+    .maybeSingle();
+  if (!cat || !cat.password) return true;
+  return (boardPassword ?? "") === cat.password;
+}
+
 export const listPosts = createServerFn({ method: "GET" })
   .inputValidator((input) =>
-    z.object({ categoryId: z.string().uuid() }).parse(input),
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        boardPassword: z.string().max(100).optional(),
+        adminPassword: z.string().max(200).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data }): Promise<PostDTO[]> => {
     const db = await getAdmin();
+    // Protected boards withhold their listing unless the password is supplied.
+    if (!(await boardAccessOk(db, data.categoryId, data.boardPassword, data.adminPassword))) {
+      return [];
+    }
     const { data: rows, error } = await db
       .from("posts")
       .select(POST_COLUMNS)
