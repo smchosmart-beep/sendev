@@ -139,6 +139,9 @@ function CategoriesPage() {
           projectName: projectName.trim(),
           linkName: linkName.trim(),
           tabGroup,
+          isGroup,
+          parentId: parentId || null,
+
         },
       }),
     onSuccess: () => {
