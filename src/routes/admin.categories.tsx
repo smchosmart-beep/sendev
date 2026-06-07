@@ -201,6 +201,26 @@ function CategoriesPage() {
     onError: () => toast.error("삭제 중 문제가 발생했어요."),
   });
 
+  const swapMutation = useMutation({
+    mutationFn: (vars: { id: string; otherId: string }) =>
+      swapOrderFn({ data: vars }),
+    onSuccess: () => invalidate(),
+    onError: () => toast.error("순서 변경 중 문제가 발생했어요."),
+  });
+
+  // Same-tab neighbors sorted by sort_order, used to compute up/down swaps.
+  const moveCategory = (c: CategoryDTO, dir: "up" | "down") => {
+    const group = categories
+      .filter((x) => (x.tabGroup ?? "hackathon") === (c.tabGroup ?? "hackathon"))
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    const idx = group.findIndex((x) => x.id === c.id);
+    const other = dir === "up" ? group[idx - 1] : group[idx + 1];
+    if (!other) return;
+    swapMutation.mutate({ id: c.id, otherId: other.id });
+  };
+
+
+
   const openEdit = (c: CategoryDTO) => {
     setEditing(c);
     setEditName(c.name);
