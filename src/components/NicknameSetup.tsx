@@ -31,12 +31,17 @@ export function NicknameSetup({ variant = "icon", onOpened }: NicknameSetupProps
   const [open, setOpen] = useState(false);
   const [author, setAuthor] = useState("");
   const [nicknamePassword, setNicknamePassword] = useState("");
+  const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
+
+  // Confirm field only matters when registering a new nickname (none stored).
+  const isNewRegistration = !identity?.author;
 
   // Sync form fields whenever the dialog opens with the latest stored values.
   useEffect(() => {
     if (open) {
       setAuthor(identity?.author ?? "");
       setNicknamePassword(identity?.nicknamePassword ?? "");
+      setNicknamePasswordConfirm("");
     }
   }, [open, identity]);
 
