@@ -360,9 +360,9 @@ function LinkEmbedSection({
           <ExternalLink className="h-10 w-10" />
         </div>
       )}
-      {deployUrl && (
+      {safeExternalHref(deployUrl) && (
         <Button asChild className="mt-4 w-full rounded-xl active:scale-95">
-          <a href={deployUrl} target="_blank" rel="noreferrer">
+          <a href={safeExternalHref(deployUrl)!} target="_blank" rel="noreferrer">
             <ExternalLink className="h-4 w-4" />
             링크 바로가기
           </a>
