@@ -237,8 +237,31 @@ function CategoriesPage() {
   const swapMutation = useMutation({
     mutationFn: (vars: { id: string; otherId: string }) =>
       swapOrderFn({ data: { ...vars, adminPassword: getAdminPassword() } }),
-    onSuccess: () => invalidate(),
-    onError: () => toast.error("순서 변경 중 문제가 발생했어요."),
+    onMutate: async (vars) => {
+      await queryClient.cancelQueries({ queryKey: ["categories"] });
+      const previous = queryClient.getQueryData<CategoryDTO[]>(["categories"]);
+      queryClient.setQueryData<CategoryDTO[]>(["categories"], (old) => {
+        if (!old) return old;
+        const a = old.find((c) => c.id === vars.id);
+        const b = old.find((c) => c.id === vars.otherId);
+        if (!a || !b) return old;
+        return old.map((c) =>
+          c.id === a.id
+            ? { ...c, sortOrder: b.sortOrder }
+            : c.id === b.id
+            ? { ...c, sortOrder: a.sortOrder }
+            : c,
+        );
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["categories"], context.previous);
+      }
+      toast.error("순서 변경 중 문제가 발생했어요.");
+    },
+    onSettled: () => invalidate(),
   });
 
   // Siblings within the same tab AND the same parent folder, sorted by
