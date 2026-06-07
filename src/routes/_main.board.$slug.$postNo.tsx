@@ -1716,6 +1716,7 @@ function CommentItem({
   onDelete: () => void;
   onImageClick: (url: string) => void;
 }) {
+  const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
   return (
     <div className="rounded-xl bg-muted/50 px-4 py-3">
       <div className="flex items-center justify-between gap-3">
@@ -1725,6 +1726,7 @@ function CommentItem({
           )}
           <User className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="font-medium text-foreground">{comment.author}</span>
+          <AuthorBadge author={comment.author} profileMap={profileMap} />
           <span className="text-xs text-muted-foreground">
             {new Date(comment.createdAt).toLocaleDateString("ko-KR")}
           </span>
