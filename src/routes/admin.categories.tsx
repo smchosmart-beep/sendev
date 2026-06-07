@@ -3,7 +3,7 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { FolderPlus, Pencil, Trash2, LayoutGrid, Lock, Github, ChevronUp, ChevronDown } from "lucide-react";
+import { FolderPlus, Folder, Pencil, Trash2, LayoutGrid, Lock, Github, ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 
 import { categoriesQueryOptions } from "@/lib/platform.queries";
@@ -95,6 +95,8 @@ function CategoriesPage() {
   const [projectName, setProjectName] = useState("산출물");
   const [linkName, setLinkName] = useState("링크");
   const [tabGroup, setTabGroup] = useState<TabGroup>("hackathon");
+  const [isGroup, setIsGroup] = useState(false);
+  const [parentId, setParentId] = useState<string>("");
 
   const [editing, setEditing] = useState<CategoryDTO | null>(null);
   const [editName, setEditName] = useState("");
@@ -109,6 +111,8 @@ function CategoriesPage() {
   const [editProjectName, setEditProjectName] = useState("산출물");
   const [editLinkName, setEditLinkName] = useState("링크");
   const [editTabGroup, setEditTabGroup] = useState<TabGroup>("hackathon");
+  const [editIsGroup, setEditIsGroup] = useState(false);
+  const [editParentId, setEditParentId] = useState<string>("");
 
   const [deleting, setDeleting] = useState<CategoryDTO | null>(null);
 
@@ -135,6 +139,9 @@ function CategoriesPage() {
           projectName: projectName.trim(),
           linkName: linkName.trim(),
           tabGroup,
+          isGroup,
+          parentId: parentId || null,
+
         },
       }),
     onSuccess: () => {
@@ -151,6 +158,9 @@ function CategoriesPage() {
       setProjectName("산출물");
       setLinkName("링크");
       setTabGroup("hackathon");
+      setIsGroup(false);
+      setParentId("");
+
       toast.success("새 카테고리이 추가되었어요.");
     },
     onError: () => toast.error("추가 중 문제가 발생했어요."),
@@ -174,6 +184,9 @@ function CategoriesPage() {
           projectName: editProjectName.trim(),
           linkName: editLinkName.trim(),
           tabGroup: editTabGroup,
+          isGroup: editIsGroup,
+          parentId: editParentId || null,
+
         },
       }),
     onSuccess: () => {
@@ -228,6 +241,8 @@ function CategoriesPage() {
     setEditProjectName(c.projectName);
     setEditLinkName(c.linkName);
     setEditTabGroup(c.tabGroup ?? "hackathon");
+    setEditIsGroup(c.isGroup);
+    setEditParentId(c.parentId ?? "");
     if (c.hasPassword) {
       getPasswordFn({ data: { id: c.id, adminPassword: getAdminPassword() } })
         .then((res) => setEditPassword(res.password))
@@ -274,6 +289,40 @@ function CategoriesPage() {
               이 카테고리이 상단 어느 탭에 표시될지 선택하세요.
             </p>
           </div>
+          <div className="space-y-3 rounded-xl bg-muted/40 p-4 sm:col-span-2">
+            <SectionToggle
+              id="add-is-group"
+              label="그룹(폴더)으로 만들기"
+              checked={isGroup}
+              onChange={setIsGroup}
+            />
+            <p className="text-xs text-muted-foreground">
+              폴더는 하위 게시판을 담는 묶음이에요. 폴더 안에는 글을 쓰지 않아요.
+            </p>
+            <div className="space-y-2 pt-1">
+              <Label htmlFor="add-parent">상위 폴더 (선택)</Label>
+              <Select
+                value={parentId || "none"}
+                onValueChange={(v) => setParentId(v === "none" ? "" : v)}
+              >
+                <SelectTrigger id="add-parent" className="rounded-xl bg-background">
+                  <SelectValue placeholder="최상위" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">최상위 (폴더 없음)</SelectItem>
+                  {categories
+                    .filter(
+                      (c) => c.isGroup && (c.tabGroup ?? "hackathon") === tabGroup,
+                    )
+                    .map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="name">카테고리 이름</Label>
             <Input
@@ -317,7 +366,7 @@ function CategoriesPage() {
               className="rounded-xl"
             />
           </div>
-          <div className="space-y-3 rounded-xl bg-muted/40 p-4 sm:col-span-2">
+          <div className={`space-y-3 rounded-xl bg-muted/40 p-4 sm:col-span-2 ${isGroup ? "hidden" : ""}`}>
             <p className="text-sm font-medium text-foreground">사용할 게시판 종류</p>
             <p className="text-xs text-muted-foreground">
               이 카테고리에 표시할 섹션만 켜주세요.
@@ -432,6 +481,7 @@ function CategoriesPage() {
               >
                 <div className="min-w-0">
                   <h3 className="flex items-center gap-2 truncate text-base font-semibold text-foreground">
+                    {c.isGroup && <Folder className="h-4 w-4 shrink-0 text-primary" />}
                     {c.name}
                     {c.hasPassword && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
                   </h3>
@@ -448,9 +498,21 @@ function CategoriesPage() {
                     <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                       {TAB_LABEL[c.tabGroup ?? "hackathon"]}
                     </span>
-                    {c.enablePost && <SectionBadge label={c.generalName || "글 게시판"} />}
-                    {c.enableProject && <SectionBadge label={c.projectName || "산출물"} />}
-                    {c.enableLink && <SectionBadge label={c.linkName || "링크"} />}
+                    {c.isGroup && <SectionBadge label="폴더" />}
+                    {c.parentId && (
+                      <SectionBadge
+                        label={`📁 ${categories.find((p) => p.id === c.parentId)?.name ?? "상위"}`}
+                      />
+                    )}
+                    {!c.isGroup && c.enablePost && (
+                      <SectionBadge label={c.generalName || "글 게시판"} />
+                    )}
+                    {!c.isGroup && c.enableProject && (
+                      <SectionBadge label={c.projectName || "산출물"} />
+                    )}
+                    {!c.isGroup && c.enableLink && (
+                      <SectionBadge label={c.linkName || "링크"} />
+                    )}
                   </div>
                 </div>
                 <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
@@ -540,6 +602,40 @@ function CategoriesPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-3 rounded-xl bg-muted/40 p-4">
+              <SectionToggle
+                id="edit-is-group"
+                label="그룹(폴더)으로 만들기"
+                checked={editIsGroup}
+                onChange={setEditIsGroup}
+              />
+              <div className="space-y-2 pt-1">
+                <Label htmlFor="edit-parent">상위 폴더 (선택)</Label>
+                <Select
+                  value={editParentId || "none"}
+                  onValueChange={(v) => setEditParentId(v === "none" ? "" : v)}
+                >
+                  <SelectTrigger id="edit-parent" className="rounded-xl bg-background">
+                    <SelectValue placeholder="최상위" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">최상위 (폴더 없음)</SelectItem>
+                    {categories
+                      .filter(
+                        (c) =>
+                          c.isGroup &&
+                          c.id !== editing?.id &&
+                          (c.tabGroup ?? "hackathon") === editTabGroup,
+                      )
+                      .map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="edit-name">카테고리 이름</Label>
               <Input
@@ -594,7 +690,7 @@ function CategoriesPage() {
                 onCheckedChange={setEditGithubRequired}
               />
             </div>
-            <div className="space-y-3 rounded-xl bg-muted/40 p-4">
+            <div className={`space-y-3 rounded-xl bg-muted/40 p-4 ${editIsGroup ? "hidden" : ""}`}>
               <p className="text-sm font-medium text-foreground">사용할 게시판 종류</p>
               <div className="grid gap-2 sm:grid-cols-2">
                 <SectionToggle id="edit-sec-post" label="글 게시판" checked={editEnablePost} onChange={setEditEnablePost} />
