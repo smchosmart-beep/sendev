@@ -325,6 +325,8 @@ function ProfilesAdmin() {
   const { data: profiles = [] as UserProfileDTO[] } = useQuery(
     userProfilesQueryOptions(),
   );
+  const { data: awardIcon } = useQuery(awardIconQueryOptions());
+  const { data: awardRules = [] } = useQuery(awardIconRulesQueryOptions());
   const upsert = useServerFn(upsertUserProfile);
   const remove = useServerFn(deleteUserProfile);
   const resetPw = useServerFn(resetNicknamePassword);
