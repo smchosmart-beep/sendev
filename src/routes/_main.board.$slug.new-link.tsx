@@ -78,7 +78,6 @@ function NewLinkPage() {
           nicknamePassword,
           deployUrl: linkUrl,
           series: series.trim(),
-          editPassword,
         },
       }),
     onSuccess: (res) => {
