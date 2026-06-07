@@ -46,7 +46,7 @@ export function AuthorBadge({
 
   return (
     <span className={cn("inline-flex flex-wrap items-center gap-1 align-middle", className)}>
-      {hasLevel && (
+      {hasLevel && author !== "운영진" && (
         <span
           className={cn(
             "inline-flex items-center rounded-full bg-primary font-bold leading-none text-primary-foreground shadow-sm",
