@@ -89,6 +89,7 @@ const boardTabs: { group: TabGroup; label: string; icon: typeof Trophy }[] = [
 function MainLayout() {
   const location = useRouterState({ select: (s) => s.location });
   const pathname = location.pathname;
+  const isGuide = pathname.startsWith("/guide");
   const isHome = pathname.startsWith("/home");
   const isCalendar = pathname.startsWith("/calendar");
 
