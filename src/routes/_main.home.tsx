@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, MapPin, Clock, ArrowRight, Sparkles, StickyNote } from "lucide-react";
+import { CalendarDays, MapPin, Clock, ArrowRight, Sparkles, StickyNote, Users } from "lucide-react";
 
 import {
   heroSlidesQueryOptions,
