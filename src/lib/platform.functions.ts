@@ -1005,6 +1005,7 @@ export const updatePost = createServerFn({ method: "POST" })
         title: z.string().trim().min(1).max(200),
         content: z.string().max(20000).optional(),
         author: z.string().trim().max(100).optional(),
+        pinned: z.boolean().optional(),
         githubUrl: z.string().trim().max(300).default(""),
         deployUrl: z.string().trim().max(300).default(""),
         series: z.string().trim().max(100).optional(),
@@ -1037,11 +1038,10 @@ export const updatePost = createServerFn({ method: "POST" })
     };
     if (data.series !== undefined) patch.series = data.series;
     if (data.content !== undefined) patch.content = data.content;
-    // Notices stay authored by the operations team; others can update author.
-    if (existing?.type === "notice") {
-      patch.author = "운영진";
-    } else if (data.author !== undefined) {
-      patch.author = data.author;
+    if (data.author !== undefined) patch.author = data.author;
+    // Only "post" type entries can be pinned (notice).
+    if (data.pinned !== undefined && existing?.type === "post") {
+      patch.pinned = data.pinned;
     }
     const { error } = await db.from("posts").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
