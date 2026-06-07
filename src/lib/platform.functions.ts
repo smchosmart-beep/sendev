@@ -258,6 +258,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       tabGroup: (c.tab_group ?? "hackathon") as TabGroup,
       evalOpen: !!c.eval_open,
       evalSeed: Number(c.eval_seed ?? 0),
+      reviewAllowlistOnly: !!c.review_allowlist_only,
     }));
   },
 );
