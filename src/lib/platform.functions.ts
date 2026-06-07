@@ -15,8 +15,41 @@ async function getAdmin() {
   // Types regenerate asynchronously; cast to keep handlers ergonomic.
   return supabaseAdmin as unknown as {
     from: (table: string) => any;
+    storage: any;
   };
 }
+
+// ----------------------------- Admin authorization --------------------------
+// Admin-only server functions verify the dashboard password server-side. The
+// secret value lives only in ADMIN_PASSWORD (server env) and is never returned
+// to clients. Empty input and a missing secret are always rejected. A generic
+// error keeps the response opaque to anonymous callers.
+function requireAdmin(password: string | undefined): void {
+  const secret = process.env.ADMIN_PASSWORD;
+  if (!secret || !password || password !== secret) {
+    throw new Error("권한이 없습니다.");
+  }
+}
+
+// Profile-tab operations are gated by the dedicated PROFILE_ADMIN_PASSWORD
+// (second-level admin password), matching the existing profile gate.
+function requireProfileAdmin(password: string | undefined): void {
+  const secret = process.env.PROFILE_ADMIN_PASSWORD;
+  if (!secret || !password || password !== secret) {
+    throw new Error("권한이 없습니다.");
+  }
+}
+
+// Verifies the dashboard admin password for the admin gate.
+export const verifyAdmin = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z.object({ password: z.string().max(200) }).parse(input),
+  )
+  .handler(async ({ data }): Promise<{ ok: boolean }> => {
+    const secret = process.env.ADMIN_PASSWORD;
+    if (!secret || data.password.length === 0) return { ok: false };
+    return { ok: data.password === secret };
+  });
 
 // ----------------------------- Nickname ownership ----------------------------
 // Anonymous community: authors are free-text. To stop nickname spoofing, a
