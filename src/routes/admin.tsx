@@ -116,6 +116,7 @@ const tabs = [
   { to: "/admin/calendar", label: "캘린더 관리", icon: CalendarDays },
   { to: "/admin/notices", label: "공지사항 관리", icon: Megaphone },
   { to: "/admin/criteria", label: "평가 관리", icon: SlidersHorizontal },
+  { to: "/admin/profiles", label: "사용자 프로필", icon: UserCog },
 ] as const;
 
 
