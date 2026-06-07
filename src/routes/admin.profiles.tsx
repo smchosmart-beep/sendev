@@ -29,13 +29,11 @@ function ProfilesAdmin() {
   const remove = useServerFn(deleteUserProfile);
 
   const [username, setUsername] = useState("");
-  const [level, setLevel] = useState("");
   const [award, setAward] = useState("");
   const [editing, setEditing] = useState<UserProfileDTO | null>(null);
 
   const reset = () => {
     setUsername("");
-    setLevel("");
     setAward("");
     setEditing(null);
   };
@@ -45,7 +43,6 @@ function ProfilesAdmin() {
       upsert({
         data: {
           username: username.trim(),
-          level: level.trim() ? Number(level) : null,
           award: award.trim(),
         },
       }),
@@ -71,7 +68,6 @@ function ProfilesAdmin() {
   const startEdit = (p: UserProfileDTO) => {
     setEditing(p);
     setUsername(p.username);
-    setLevel(p.level != null ? String(p.level) : "");
     setAward(p.award);
   };
 
@@ -79,10 +75,6 @@ function ProfilesAdmin() {
     e.preventDefault();
     if (!username.trim()) {
       toast.error("사용자명을 입력해 주세요.");
-      return;
-    }
-    if (level.trim() && (Number.isNaN(Number(level)) || Number(level) < 1 || Number(level) > 99)) {
-      toast.error("레벨은 1~99 사이의 숫자로 입력해 주세요.");
       return;
     }
     saveMutation.mutate();
@@ -96,12 +88,13 @@ function ProfilesAdmin() {
           사용자 프로필 관리
         </h2>
         <p className="text-sm text-muted-foreground">
-          작성자 이름과 레벨·해커톤 수상 정보를 연결해 주세요. 글·댓글에서{" "}
+          작성자 이름과 해커톤 수상 정보를 연결해 주세요. 레벨은{" "}
+          <b>활동 점수(게시글×5 + 댓글×1)</b>로 자동 산정됩니다. 글·댓글에서{" "}
           <b>이름이 정확히 일치</b>하면 자동으로 뱃지가 표시됩니다.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-5 grid gap-4 sm:grid-cols-12">
-          <div className="space-y-2 sm:col-span-4">
+          <div className="space-y-2 sm:col-span-5">
             <Label htmlFor="p-name">사용자명</Label>
             <Input
               id="p-name"
@@ -111,20 +104,7 @@ function ProfilesAdmin() {
               className="rounded-xl"
             />
           </div>
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="p-level">레벨 (1~99)</Label>
-            <Input
-              id="p-level"
-              type="number"
-              min={1}
-              max={99}
-              value={level}
-              onChange={(e) => setLevel(e.target.value)}
-              placeholder="예: 3"
-              className="rounded-xl"
-            />
-          </div>
-          <div className="space-y-2 sm:col-span-6">
+          <div className="space-y-2 sm:col-span-7">
             <Label htmlFor="p-award">해커톤 수상</Label>
             <Input
               id="p-award"
@@ -173,10 +153,12 @@ function ProfilesAdmin() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium text-foreground">{p.username}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
-                    {p.level != null && (
+                    {p.level != null ? (
                       <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
                         Lv.{p.level}
                       </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">활동 없음</span>
                     )}
                     {p.award.trim() && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
@@ -184,9 +166,9 @@ function ProfilesAdmin() {
                         {p.award}
                       </span>
                     )}
-                    {p.level == null && !p.award.trim() && (
-                      <span className="text-xs text-muted-foreground">정보 없음</span>
-                    )}
+                    <span className="text-xs text-muted-foreground">
+                      게시글 {p.postCount} · 댓글 {p.commentCount} · {p.points}점
+                    </span>
                   </div>
                 </div>
                 <button
