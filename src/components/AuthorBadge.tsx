@@ -36,6 +36,7 @@ export function AuthorBadge({
   profileMap,
   size = "sm",
   className,
+  only = "all",
 }: AuthorBadgeProps) {
   const [open, setOpen] = useState(false);
   const { data: awardIcon } = useQuery(awardIconQueryOptions());
@@ -43,8 +44,13 @@ export function AuthorBadge({
   const profile = profileMap[normalizeUsername(author ?? "")];
   if (!profile) return null;
 
-  const hasLevel = typeof profile.level === "number";
-  const awards = (profile.awards ?? []).filter((a) => a.trim().length > 0);
+  const showLevel = only === "level" || only === "all";
+  const showAwards = only === "awards" || only === "all";
+  const hasLevel =
+    showLevel && typeof profile.level === "number" && author !== "운영진";
+  const awards = showAwards
+    ? (profile.awards ?? []).filter((a) => a.trim().length > 0)
+    : [];
   const hasAward = awards.length > 0;
   if (!hasLevel && !hasAward) return null;
 
