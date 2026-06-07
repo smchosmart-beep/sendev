@@ -182,6 +182,7 @@ function Dashboard({
   password,
   stored,
   onClearStored,
+  onRenamed,
   onLogout,
 }: {
   data: DashboardDTO;
@@ -189,6 +190,7 @@ function Dashboard({
   password: string;
   stored: boolean;
   onClearStored: () => void;
+  onRenamed: (newName: string) => void;
   onLogout: () => void;
 }) {
   return (
@@ -215,8 +217,17 @@ function Dashboard({
       <LevelCard level={data.level} points={data.points} awards={data.awards} />
 
       {password && (
+        <ChangeNicknameCard
+          username={username}
+          password={password}
+          onRenamed={onRenamed}
+        />
+      )}
+
+      {password && (
         <RecoveryQuestionCard username={username} password={password} />
       )}
+
 
 
 
