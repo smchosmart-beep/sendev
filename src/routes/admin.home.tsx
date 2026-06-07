@@ -106,6 +106,7 @@ function AdminHomePage() {
         const { dataBase64, contentType } = await resizeImage(file);
         const { url } = await uploadFn({
           data: {
+            adminPassword: getAdminPassword(),
             name: file.name.replace(/\.[^.]+$/, "") + ".jpg",
             contentType,
             dataBase64,
@@ -113,6 +114,7 @@ function AdminHomePage() {
         });
         await createFn({
           data: {
+            adminPassword: getAdminPassword(),
             imageUrl: url,
             caption: caption.trim(),
             linkUrl: linkUrl.trim(),

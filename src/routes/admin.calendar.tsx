@@ -206,6 +206,7 @@ function AdminCalendarPage() {
         const dataBase64 = await fileToBase64(file);
         const att = await uploadFileFn({
           data: {
+            adminPassword: getAdminPassword(),
             name: file.name,
             contentType: file.type || "application/octet-stream",
             dataBase64,

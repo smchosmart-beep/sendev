@@ -91,6 +91,7 @@ function NoticeForm({ categoryId }: { categoryId: string }) {
     mutationFn: () =>
       create({
         data: {
+          adminPassword: getAdminPassword(),
           categoryId,
           type: "notice",
           title,

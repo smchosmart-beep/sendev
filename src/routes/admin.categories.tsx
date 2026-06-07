@@ -126,6 +126,7 @@ function CategoriesPage() {
     mutationFn: () =>
       createFn({
         data: {
+          adminPassword: getAdminPassword(),
           name: name.trim(),
           slug: slug.trim(),
           description: description.trim(),
@@ -167,6 +168,7 @@ function CategoriesPage() {
     mutationFn: () =>
       updateFn({
         data: {
+          adminPassword: getAdminPassword(),
           id: editing!.id,
           name: editName.trim(),
           slug: editSlug.trim(),
