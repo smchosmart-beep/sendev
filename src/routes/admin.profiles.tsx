@@ -86,6 +86,7 @@ function ProfilesGate() {
     try {
       const res = await verify({ data: { password: value } });
       if (res.ok) {
+        setProfileAdminPassword(value);
         sessionStorage.setItem(PROFILE_SESSION_KEY, "1");
         setGranted(true);
       } else {

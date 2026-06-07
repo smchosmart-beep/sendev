@@ -261,7 +261,7 @@ function AdminCalendarPage() {
         await updateFn({ data: { id: editing.event.id, ...payload, adminPassword: getAdminPassword() } });
         toast.success("일정을 수정했어요.");
       } else {
-        await createFn({ data: payload });
+        await createFn({ data: { ...payload, adminPassword: getAdminPassword() } });
         toast.success("일정을 추가했어요.");
       }
       await invalidate();
