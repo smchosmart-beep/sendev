@@ -1560,7 +1560,6 @@ function CommentsSection({ postId }: { postId: string }) {
         // Keep the nickname/identity fields filled for the next comment.
         persistIdentity();
         setContent("");
-        setPassword("");
         setImageUrls([]);
       }
     },
