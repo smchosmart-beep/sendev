@@ -1903,3 +1903,94 @@ export const setAwardIcon = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ============================================================
+// Award icon rules: keyword -> icon mappings. When an award name contains a
+// rule's keyword (case-insensitive substring), that rule's icon is used.
+// Rules are tried in sort_order; the default award icon is the fallback.
+// ============================================================
+
+export interface AwardIconRule {
+  id: string;
+  keyword: string;
+  icon: AwardIconName;
+  sortOrder: number;
+}
+
+// Resolves which icon to use for a given award name. Returns the first
+// matching rule's icon (by keyword substring), else the default icon.
+export function resolveAwardIcon(
+  award: string,
+  rules: AwardIconRule[],
+  defaultIcon: AwardIconName,
+): AwardIconName {
+  const text = (award ?? "").trim().toLowerCase();
+  if (!text) return defaultIcon;
+  for (const rule of rules) {
+    const kw = rule.keyword.trim().toLowerCase();
+    if (kw && text.includes(kw)) return rule.icon;
+  }
+  return defaultIcon;
+}
+
+// Public: returns all keyword->icon rules ordered by priority.
+export const listAwardIconRules = createServerFn({ method: "GET" }).handler(
+  async (): Promise<AwardIconRule[]> => {
+    const db = await getAdmin();
+    const { data, error } = await db
+      .from("award_icon_rules")
+      .select("id, keyword, icon, sort_order")
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((r: any): AwardIconRule => ({
+      id: r.id,
+      keyword: r.keyword ?? "",
+      icon: (AWARD_ICON_NAMES as readonly string[]).includes(r.icon)
+        ? (r.icon as AwardIconName)
+        : DEFAULT_AWARD_ICON,
+      sortOrder: r.sort_order ?? 0,
+    }));
+  },
+);
+
+// Admin: adds a new keyword->icon rule.
+export const addAwardIconRule = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        keyword: z.string().trim().min(1).max(100),
+        icon: z.enum(AWARD_ICON_NAMES),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { data: rows, error: selErr } = await db
+      .from("award_icon_rules")
+      .select("sort_order")
+      .order("sort_order", { ascending: false })
+      .limit(1);
+    if (selErr) throw new Error(selErr.message);
+    const nextOrder = ((rows?.[0]?.sort_order as number | undefined) ?? -1) + 1;
+    const { error } = await db
+      .from("award_icon_rules")
+      .insert({ keyword: data.keyword, icon: data.icon, sort_order: nextOrder });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// Admin: deletes a rule by id.
+export const deleteAwardIconRule = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z.object({ id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { error } = await db
+      .from("award_icon_rules")
+      .delete()
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
