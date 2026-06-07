@@ -123,6 +123,17 @@ export const ogImageQueryOptions = (url: string) =>
     retry: false,
   });
 
+// OG metadata (image + title + site name) for an arbitrary link placed in a
+// post body. Resolved on render and cached client-side.
+export const linkPreviewQueryOptions = (url: string) =>
+  queryOptions({
+    queryKey: ["link-preview", url],
+    queryFn: () => fetchLinkPreview({ data: { url } }),
+    enabled: !!url,
+    staleTime: 60 * 60 * 1000,
+    retry: false,
+  });
+
 // Backfills the cached OG image for an existing post (one external request,
 // then stored in the DB). Keyed by postId so it runs at most once per post.
 export const ogImageBackfillQueryOptions = (
