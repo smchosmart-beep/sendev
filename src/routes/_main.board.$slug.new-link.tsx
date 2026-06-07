@@ -52,6 +52,8 @@ function NewLinkPage() {
   const [series, setSeries] = useState("");
   
   const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
+  const { claimed } = useNicknameClaimed(author);
+  const needsConfirm = !claimed;
   
 
   // Suggest existing series names in this board for consistent grouping.
