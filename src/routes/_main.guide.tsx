@@ -42,6 +42,7 @@ const sections = [
   { id: "badge", label: "배지 제도" },
   { id: "security", label: "보안 안전성" },
   { id: "menus", label: "메뉴 안내" },
+  { id: "links", label: "본문 링크 미리보기" },
   { id: "search", label: "검색 기능" },
   { id: "mypage", label: "내 페이지" },
   { id: "admin", label: "관리자 대시보드" },
