@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { UserCog, Trophy, Pencil, Trash2, Lock, AlertCircle } from "lucide-react";
+import { UserCog, Trophy, Pencil, Trash2, Lock, AlertCircle, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
@@ -10,6 +10,7 @@ import { userProfilesQueryOptions } from "@/lib/platform.queries";
 import {
   upsertUserProfile,
   deleteUserProfile,
+  resetNicknamePassword,
   verifyProfileAdmin,
   type UserProfileDTO,
 } from "@/lib/platform.functions";
@@ -127,6 +128,8 @@ function ProfilesAdmin() {
   );
   const upsert = useServerFn(upsertUserProfile);
   const remove = useServerFn(deleteUserProfile);
+  const resetPw = useServerFn(resetNicknamePassword);
+
 
   const [username, setUsername] = useState("");
   const [award, setAward] = useState("");
@@ -163,6 +166,15 @@ function ProfilesAdmin() {
       toast.success("프로필을 삭제했어요.");
     },
     onError: () => toast.error("삭제 중 문제가 발생했어요."),
+  });
+
+  const resetPwMutation = useMutation({
+    mutationFn: (id: string) => resetPw({ data: { id } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-profiles"] });
+      toast.success("닉네임 비밀번호를 초기화했어요. 다음 작성자가 다시 등록합니다.");
+    },
+    onError: () => toast.error("초기화 중 문제가 발생했어요."),
   });
 
   const startEdit = (p: UserProfileDTO) => {
@@ -278,6 +290,19 @@ function ProfilesAdmin() {
                   className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-sm active:scale-95"
                 >
                   <Pencil className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm(`'${p.username}'의 닉네임 비밀번호를 초기화할까요? 분실 시에만 사용하세요.`)) {
+                      resetPwMutation.mutate(p.id);
+                    }
+                  }}
+                  aria-label="닉네임 비밀번호 초기화"
+                  title="닉네임 비밀번호 초기화"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-sm active:scale-95"
+                >
+                  <KeyRound className="h-4 w-4" />
                 </button>
                 <button
                   type="button"

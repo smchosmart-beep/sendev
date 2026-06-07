@@ -1382,6 +1382,7 @@ function CommentsSection({ postId }: { postId: string }) {
   const [author, setAuthor] = useState("");
   const [content, setContent] = useState("");
   const [password, setPassword] = useState("");
+  const [nicknamePassword, setNicknamePassword] = useState("");
   const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   // Reply form is open for at most one comment at a time.
@@ -1401,6 +1402,7 @@ function CommentsSection({ postId }: { postId: string }) {
       content: string;
       imageUrls: string[];
       editPassword: string;
+      nicknamePassword: string;
     }) => create({ data: { postId, ...vars } }),
     onSuccess: (_res, vars) => {
       invalidate();
@@ -1411,6 +1413,7 @@ function CommentsSection({ postId }: { postId: string }) {
         setAuthor("");
         setContent("");
         setPassword("");
+        setNicknamePassword("");
         setImageUrls([]);
       }
     },
@@ -1519,6 +1522,7 @@ function CommentsSection({ postId }: { postId: string }) {
             content: content.trim(),
             imageUrls,
             editPassword: password.trim(),
+            nicknamePassword: nicknamePassword.trim(),
           });
         }}
         className="mt-6 space-y-3 border-t border-border pt-6"
@@ -1540,6 +1544,17 @@ function CommentsSection({ postId }: { postId: string }) {
             className="rounded-xl"
           />
         </div>
+        <Input
+          type="password"
+          value={nicknamePassword}
+          onChange={(e) => setNicknamePassword(e.target.value)}
+          placeholder="닉네임 비밀번호 (닉네임 입력 시 필수)"
+          maxLength={100}
+          className="rounded-xl"
+        />
+        <p className="text-xs text-muted-foreground">
+          닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 인증합니다. 익명은 입력하지 않아도 돼요.
+        </p>
         <AutoTextarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -1795,12 +1810,14 @@ function CommentForm({
     content: string;
     imageUrls: string[];
     editPassword: string;
+    nicknamePassword: string;
   }) => void;
   onCancel?: () => void;
 }) {
   const [author, setAuthor] = useState("");
   const [content, setContent] = useState("");
   const [password, setPassword] = useState("");
+  const [nicknamePassword, setNicknamePassword] = useState("");
   const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   return (
@@ -1820,6 +1837,7 @@ function CommentForm({
           content: content.trim(),
           imageUrls,
           editPassword: password.trim(),
+          nicknamePassword: nicknamePassword.trim(),
         });
       }}
       className={`space-y-3 rounded-xl border border-border p-4 ${compact ? "ml-4" : ""}`}
@@ -1841,6 +1859,14 @@ function CommentForm({
           className="rounded-xl"
         />
       </div>
+      <Input
+        type="password"
+        value={nicknamePassword}
+        onChange={(e) => setNicknamePassword(e.target.value)}
+        placeholder="닉네임 비밀번호 (닉네임 입력 시 필수)"
+        maxLength={100}
+        className="rounded-xl"
+      />
       <AutoTextarea
         value={content}
         onChange={(e) => setContent(e.target.value)}

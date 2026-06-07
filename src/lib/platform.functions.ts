@@ -18,6 +18,74 @@ async function getAdmin() {
   };
 }
 
+// ----------------------------- Nickname ownership ----------------------------
+// Anonymous community: authors are free-text. To stop nickname spoofing, a
+// nickname is "claimed" with a password the first time it is used; subsequent
+// posts/comments under the same (normalized) name must supply that password.
+// The password is stored only as a SHA-256 hash and never returned to clients.
+
+function normalizeName(name: string): string {
+  return (name ?? "").trim().toLowerCase();
+}
+
+async function hashSecret(secret: string): Promise<string> {
+  const bytes = new TextEncoder().encode(`sendev-nick:${secret}`);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+// Verifies (or first-time claims) ownership of an author nickname.
+// Skips the check for empty names, "익명", and notice (운영진) posts.
+async function ensureNicknameOwnership(
+  db: { from: (t: string) => any },
+  author: string,
+  nicknamePassword: string,
+  isNotice: boolean,
+): Promise<void> {
+  if (isNotice) return;
+  const name = (author ?? "").trim();
+  const key = normalizeName(name);
+  if (!key || key === "익명") return;
+
+  const { data: row, error } = await db
+    .from("user_profiles")
+    .select("id, nickname_password")
+    .eq("username_key", key)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+
+  const hasClaim = !!row && !!row.nickname_password;
+
+  if (hasClaim) {
+    if (!nicknamePassword) {
+      throw new Error("이미 사용 중인 닉네임입니다. 닉네임 비밀번호를 입력해주세요.");
+    }
+    const incoming = await hashSecret(nicknamePassword);
+    if (incoming !== row.nickname_password) {
+      throw new Error("이미 사용 중인 닉네임입니다. 닉네임 비밀번호가 일치하지 않습니다.");
+    }
+    return;
+  }
+
+  // First-time claim: require a password to lock the nickname.
+  if (!nicknamePassword || nicknamePassword.trim().length < 4) {
+    throw new Error("닉네임 비밀번호를 4자 이상 입력해 닉네임을 등록해주세요.");
+  }
+  const hashed = await hashSecret(nicknamePassword.trim());
+  const { error: upErr } = await db.from("user_profiles").upsert(
+    {
+      username: name,
+      username_key: key,
+      nickname_password: hashed,
+      claimed_at: new Date().toISOString(),
+    },
+    { onConflict: "username_key" },
+  );
+  if (upErr) throw new Error(upErr.message);
+}
+
 export type TabGroup = "hackathon" | "resources" | "devground" | "helloworld";
 
 export interface CategoryDTO {
@@ -684,6 +752,7 @@ export const createPost = createServerFn({ method: "POST" })
         deployUrl: z.string().trim().max(300).default(""),
         series: z.string().trim().max(100).default(""),
         editPassword: z.string().trim().min(1).max(100),
+        nicknamePassword: z.string().trim().max(100).default(""),
       })
       .parse(input),
   )
@@ -702,6 +771,13 @@ export const createPost = createServerFn({ method: "POST" })
     }
     // Notices are authored by the operations team.
     const author = data.type === "notice" ? "운영진" : data.author;
+    // Verify the author owns this nickname (or claim it on first use).
+    await ensureNicknameOwnership(
+      db,
+      author,
+      data.nicknamePassword,
+      data.type === "notice",
+    );
     // Resolve and cache the deploy site's OG image once at creation time so the
     // board never re-fetches the external site on subsequent loads.
     const ogImageUrl = data.deployUrl
@@ -1184,6 +1260,7 @@ export const createComment = createServerFn({ method: "POST" })
         content: z.string().trim().max(5000).default(""),
         imageUrls: z.array(z.string().url().max(2000)).max(10).default([]),
         editPassword: z.string().trim().min(1).max(100),
+        nicknamePassword: z.string().trim().max(100).default(""),
       })
       .refine((v) => v.content.length > 0 || v.imageUrls.length > 0, {
         message: "내용 또는 이미지를 입력해주세요.",
@@ -1192,6 +1269,8 @@ export const createComment = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }): Promise<{ ok: boolean }> => {
     const db = await getAdmin();
+    // Verify the commenter owns this nickname (or claim it on first use).
+    await ensureNicknameOwnership(db, data.author, data.nicknamePassword, false);
     // A reply must point to an existing top-level comment on the same post.
     let parentId: string | null = null;
     if (data.parentId) {
@@ -1730,6 +1809,22 @@ export const deleteUserProfile = createServerFn({ method: "POST" })
     const { error } = await db
       .from("user_profiles")
       .delete()
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// Admin: reset a nickname's password so it can be re-claimed (lost-password
+// recovery). Clears the stored hash; next writer under that name re-claims it.
+export const resetNicknamePassword = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z.object({ id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { error } = await db
+      .from("user_profiles")
+      .update({ nickname_password: "", claimed_at: null })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

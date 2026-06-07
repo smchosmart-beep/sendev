@@ -41,6 +41,7 @@ function NewGeneralPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [author, setAuthor] = useState("");
+  const [nicknamePassword, setNicknamePassword] = useState("");
   const [editPassword, setEditPassword] = useState("");
 
   const mutation = useMutation({
@@ -52,6 +53,7 @@ function NewGeneralPage() {
           title,
           content,
           author,
+          nicknamePassword,
           githubUrl: "",
           deployUrl: "",
           editPassword,
@@ -132,6 +134,20 @@ function NewGeneralPage() {
               onChange={(e) => setAuthor(e.target.value)}
               className="rounded-xl"
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="g-nickpw">닉네임 비밀번호</Label>
+            <Input
+              id="g-nickpw"
+              type="password"
+              value={nicknamePassword}
+              onChange={(e) => setNicknamePassword(e.target.value)}
+              placeholder="이 닉네임을 보호할 비밀번호"
+              className="rounded-xl"
+            />
+            <p className="text-xs text-muted-foreground">
+              이 닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 인증합니다.
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="g-pw">수정·삭제 비밀번호</Label>
