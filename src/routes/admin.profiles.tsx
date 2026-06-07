@@ -29,6 +29,7 @@ import {
   type AwardIconName,
 } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
+import { useConfirm } from "@/hooks/useConfirm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
