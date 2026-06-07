@@ -132,9 +132,8 @@ export function NicknameSetup({ variant = "icon", onOpened }: NicknameSetupProps
             </div>
             <div className="space-y-2">
               <Label htmlFor="nick-pw">닉네임 비밀번호</Label>
-              <Input
+              <PasswordInput
                 id="nick-pw"
-                type="password"
                 value={nicknamePassword}
                 onChange={(e) => setNicknamePassword(e.target.value)}
                 placeholder="이 닉네임을 보호할 비밀번호 (4자 이상)"
@@ -145,6 +144,23 @@ export function NicknameSetup({ variant = "icon", onOpened }: NicknameSetupProps
                 이 닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 인증합니다.
               </p>
             </div>
+            {isNewRegistration && (
+              <div className="space-y-2">
+                <Label htmlFor="nick-pw-confirm">닉네임 비밀번호 확인</Label>
+                <PasswordInput
+                  id="nick-pw-confirm"
+                  value={nicknamePasswordConfirm}
+                  onChange={(e) => setNicknamePasswordConfirm(e.target.value)}
+                  placeholder="비밀번호를 한 번 더 입력"
+                  maxLength={100}
+                  className="rounded-xl"
+                />
+                {nicknamePasswordConfirm.length > 0 &&
+                  nicknamePassword.trim() !== nicknamePasswordConfirm.trim() && (
+                    <p className="text-xs text-destructive">비밀번호가 일치하지 않아요.</p>
+                  )}
+              </div>
+            )}
           </div>
 
           <DialogFooter className="gap-2 sm:justify-between">
