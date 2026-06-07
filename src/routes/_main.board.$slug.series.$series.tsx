@@ -6,6 +6,7 @@ import {
   postsQueryOptions,
   categoriesQueryOptions,
   ogImageBackfillQueryOptions,
+  getBoardPassword,
 } from "@/lib/platform.queries";
 import { type PostDTO } from "@/lib/platform.functions";
 import { sortSeriesPosts } from "@/lib/series";
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/_main/board/$slug/series/$series")({
     );
     const category = categories.find((c) => c.slug === params.slug);
     if (category) {
-      await context.queryClient.ensureQueryData(postsQueryOptions(category.id));
+      await context.queryClient.ensureQueryData(postsQueryOptions(category.id, getBoardPassword(params.slug)));
     }
   },
   errorComponent: ({ error }) => (
@@ -55,7 +56,7 @@ function SeriesInner({
   series: string;
   categoryId: string;
 }) {
-  const { data: posts } = useSuspenseQuery(postsQueryOptions(categoryId));
+  const { data: posts } = useSuspenseQuery(postsQueryOptions(categoryId, getBoardPassword(slug)));
   const episodes = sortSeriesPosts(
     posts.filter((p) => p.type === "link" && p.series.trim() === series),
   );

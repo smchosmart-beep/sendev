@@ -661,12 +661,47 @@ export const deleteEvent = createServerFn({ method: "POST" })
 const POST_COLUMNS =
   "id, category_id, post_no, type, title, content, author, github_url, deploy_url, og_image_url, series, created_at";
 
+// Returns true when the caller may read a protected board's content. Open
+// boards (no password) always pass. Protected boards pass only when the
+// supplied board password matches, or when a valid admin password is given.
+// SSR-safe: callers withhold content (empty/null) on failure, never throw.
+function isAdminPassword(pw: string | undefined): boolean {
+  const secret = process.env.ADMIN_PASSWORD;
+  return !!secret && !!pw && pw === secret;
+}
+
+async function boardAccessOk(
+  db: { from: (t: string) => any },
+  categoryId: string,
+  boardPassword: string | undefined,
+  adminPassword: string | undefined,
+): Promise<boolean> {
+  if (isAdminPassword(adminPassword)) return true;
+  const { data: cat } = await db
+    .from("categories")
+    .select("password")
+    .eq("id", categoryId)
+    .maybeSingle();
+  if (!cat || !cat.password) return true;
+  return (boardPassword ?? "") === cat.password;
+}
+
 export const listPosts = createServerFn({ method: "GET" })
   .inputValidator((input) =>
-    z.object({ categoryId: z.string().uuid() }).parse(input),
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        boardPassword: z.string().max(100).optional(),
+        adminPassword: z.string().max(200).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data }): Promise<PostDTO[]> => {
     const db = await getAdmin();
+    // Protected boards withhold their listing unless the password is supplied.
+    if (!(await boardAccessOk(db, data.categoryId, data.boardPassword, data.adminPassword))) {
+      return [];
+    }
     const { data: rows, error } = await db
       .from("posts")
       .select(POST_COLUMNS)
@@ -695,7 +730,15 @@ export const listPosts = createServerFn({ method: "GET" })
   });
 
 export const getPost = createServerFn({ method: "GET" })
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        boardPassword: z.string().max(100).optional(),
+        adminPassword: z.string().max(200).optional(),
+      })
+      .parse(input),
+  )
   .handler(async ({ data }): Promise<PostDTO | null> => {
     const db = await getAdmin();
     const { data: row, error } = await db
@@ -704,22 +747,42 @@ export const getPost = createServerFn({ method: "GET" })
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return row ? mapPost(row) : null;
+    if (!row) return null;
+    // Withhold the post when its board is protected and unverified.
+    if (!(await boardAccessOk(db, row.category_id, data.boardPassword, data.adminPassword))) {
+      return null;
+    }
+    return mapPost(row);
   });
 
 // Resolves a post by its board slug + per-board number for short URLs.
 export const getPostByNo = createServerFn({ method: "GET" })
   .inputValidator((input) =>
-    z.object({ slug: z.string().min(1).max(31), postNo: z.number().int().positive() }).parse(input),
+    z
+      .object({
+        slug: z.string().min(1).max(31),
+        postNo: z.number().int().positive(),
+        boardPassword: z.string().max(100).optional(),
+        adminPassword: z.string().max(200).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data }): Promise<PostDTO | null> => {
     const db = await getAdmin();
     const { data: cat } = await db
       .from("categories")
-      .select("id")
+      .select("id, password")
       .eq("slug", data.slug)
       .maybeSingle();
     if (!cat) return null;
+    // Withhold content when the board is protected and unverified.
+    if (
+      !isAdminPassword(data.adminPassword) &&
+      cat.password &&
+      (data.boardPassword ?? "") !== cat.password
+    ) {
+      return null;
+    }
     const { data: row, error } = await db
       .from("posts")
       .select(POST_COLUMNS)

@@ -5,6 +5,7 @@ import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle
 
 import {
   postsQueryOptions,
+  getBoardPassword,
   categoriesQueryOptions,
   ogImageBackfillQueryOptions,
   myReviewedPostIdsQueryOptions,
@@ -38,7 +39,7 @@ export const Route = createFileRoute("/_main/board/$slug/")({
     context.queryClient.ensureQueryData(profileMapQueryOptions());
     if (category) {
       await context.queryClient.ensureQueryData(
-        postsQueryOptions(category.id),
+        postsQueryOptions(category.id, getBoardPassword(params.slug)),
       );
     }
   },
@@ -66,7 +67,7 @@ function BoardInner({
   slug: string;
   category: import("@/lib/platform.functions").CategoryDTO;
 }) {
-  const { data: posts } = useSuspenseQuery(postsQueryOptions(category.id));
+  const { data: posts } = useSuspenseQuery(postsQueryOptions(category.id, getBoardPassword(slug)));
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
   const { qpage, gpage } = Route.useSearch();
   const navigate = useNavigate({ from: "/board/$slug" });

@@ -41,6 +41,7 @@ import { LikeButton } from "@/components/LikeButton";
 import {
   postQueryOptions,
   postByNoQueryOptions,
+  getBoardPassword,
   categoriesQueryOptions,
   readmeQueryOptions,
   criteriaQueryOptions,
@@ -123,7 +124,7 @@ export const Route = createFileRoute("/_main/board/$slug/$postNo")({
     context.queryClient.ensureQueryData(profileMapQueryOptions());
     if (NUMERIC_RE.test(params.postNo)) {
       return context.queryClient.ensureQueryData(
-        postByNoQueryOptions(params.slug, Number(params.postNo)),
+        postByNoQueryOptions(params.slug, Number(params.postNo), getBoardPassword(params.slug)),
       );
     }
     return null;
@@ -147,7 +148,7 @@ function PostDetailRoute() {
 
 // Resolves an old UUID-based post link to its canonical short URL.
 function LegacyPostRedirect({ slug, postId }: { slug: string; postId: string }) {
-  const { data: post, isLoading } = useQuery(postQueryOptions(postId));
+  const { data: post, isLoading } = useQuery(postQueryOptions(postId, getBoardPassword(slug)));
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
 
   if (isLoading) {
@@ -185,7 +186,7 @@ function LegacyPostRedirect({ slug, postId }: { slug: string; postId: string }) 
 }
 
 function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
-  const { data: post } = useSuspenseQuery(postByNoQueryOptions(slug, postNo));
+  const { data: post } = useSuspenseQuery(postByNoQueryOptions(slug, postNo, getBoardPassword(slug)));
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
 
   if (!post) {
@@ -1163,7 +1164,7 @@ function EvaluationSection({
   });
 
   // 연속 평가용: 기기별 고정 랜덤 순서로 다음 평가할 산출물을 계산한다.
-  const { data: allPosts = [] } = useQuery(postsQueryOptions(categoryId));
+  const { data: allPosts = [] } = useQuery(postsQueryOptions(categoryId, getBoardPassword(slug)));
   const { data: categories = [] } = useQuery(categoriesQueryOptions());
   const category = categories.find((c) => c.id === categoryId);
   const evalOpen = category?.evalOpen ?? false;
