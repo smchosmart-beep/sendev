@@ -52,6 +52,8 @@ function NewProjectPage() {
   const [deployUrl, setDeployUrl] = useState("");
   
   const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
+  const { claimed } = useNicknameClaimed(author);
+  const needsConfirm = !claimed;
   
 
   const mutation = useMutation({
