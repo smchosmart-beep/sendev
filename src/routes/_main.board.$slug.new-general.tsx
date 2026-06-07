@@ -157,16 +157,6 @@ function NewGeneralPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="g-nickpw">닉네임 비밀번호</Label>
-            <Input
-              id="g-nickpw"
-              type="password"
-              value={nicknamePassword}
-              onChange={(e) => setNicknamePassword(e.target.value)}
-              placeholder="이 닉네임을 보호할 비밀번호"
-              className="rounded-xl"
-            />
-          <div className="space-y-2">
-            <Label htmlFor="g-nickpw">닉네임 비밀번호</Label>
             <PasswordInput
               id="g-nickpw"
               value={nicknamePassword}
