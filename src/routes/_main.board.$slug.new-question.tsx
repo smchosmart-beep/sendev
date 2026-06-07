@@ -42,6 +42,7 @@ function NewQuestionPage() {
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [pinned, setPinned] = useState(false);
   const {
     author,
     setAuthor,
@@ -62,6 +63,7 @@ function NewQuestionPage() {
         data: {
           categoryId: category!.id,
           type: "post",
+          pinned,
           title,
           content,
           author,
