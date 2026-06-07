@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { PostEditor } from "@/components/PostEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/PasswordInput";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
