@@ -1377,8 +1377,11 @@ export const listCategoryReviews = createServerFn({ method: "GET" })
     if (postsErr) throw new Error(postsErr.message);
     const postList = posts ?? [];
     if (postList.length === 0) return [];
-    const postMap = new Map(
-      postList.map((p: any) => [p.id, { title: p.title, postNo: p.post_no }]),
+    const postMap = new Map<string, { title: string; postNo: number | null }>(
+      postList.map((p: any) => [
+        p.id as string,
+        { title: p.title as string, postNo: (p.post_no ?? null) as number | null },
+      ]),
     );
     const { data: rows, error } = await db
       .from("reviews")
