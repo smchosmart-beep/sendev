@@ -112,6 +112,19 @@ function MainLayout() {
 
           <nav className="mx-auto hidden flex-wrap justify-center gap-2 sm:flex sm:gap-7">
             <Link
+              to={guideTab.to}
+              className={cn(
+                "flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95",
+                isGuide
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "text-muted-foreground hover:-translate-y-0.5 hover:text-foreground",
+              )}
+            >
+              <guideTab.icon className="h-4 w-4" />
+              {guideTab.label}
+            </Link>
+
+            <Link
               to={homeTab.to}
               className={cn(
                 "flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95",
