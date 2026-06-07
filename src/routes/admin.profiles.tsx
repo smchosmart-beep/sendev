@@ -286,8 +286,14 @@ function AwardIconRules() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (confirm(`'${rule.keyword}' 규칙을 삭제할까요?`)) {
+                  onClick={async () => {
+                    if (
+                      await confirm({
+                        description: `'${rule.keyword}' 규칙을 삭제할까요?`,
+                        destructive: true,
+                        confirmText: "삭제",
+                      })
+                    ) {
                       deleteMutation.mutate(rule.id);
                     }
                   }}
