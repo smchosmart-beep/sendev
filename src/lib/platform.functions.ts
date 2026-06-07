@@ -683,7 +683,7 @@ export const deleteEvent = createServerFn({ method: "POST" })
 /* -------------------------------- Posts ------------------------------- */
 
 const POST_COLUMNS =
-  "id, category_id, post_no, type, title, content, author, github_url, deploy_url, og_image_url, series, created_at";
+  "id, category_id, post_no, type, pinned, title, content, author, github_url, deploy_url, og_image_url, series, created_at";
 
 // Returns true when the caller may read a protected board's content. Open
 // boards (no password) always pass. Protected boards pass only when the
