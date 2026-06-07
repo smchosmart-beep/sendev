@@ -71,21 +71,14 @@ function BoardInner({
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
   const { qpage, gpage } = Route.useSearch();
   const navigate = useNavigate({ from: "/board/$slug" });
-  const notices = posts.filter((p) => p.type === "notice");
-  const questions = posts.filter((p) => p.type === "question");
-  const generals = posts.filter((p) => p.type === "general");
+  const notices = posts.filter((p) => p.type === "post" && p.pinned);
+  const generals = posts.filter((p) => p.type === "post" && !p.pinned);
   const projects = posts.filter((p) => p.type === "project");
   const links = posts.filter((p) => p.type === "link");
   const linkItems = groupLinksBySeries(links);
 
-  const questionPageCount = Math.max(1, Math.ceil(questions.length / PAGE_SIZE));
   const generalPageCount = Math.max(1, Math.ceil(generals.length / PAGE_SIZE));
-  const currentQPage = Math.min(qpage, questionPageCount);
   const currentGPage = Math.min(gpage, generalPageCount);
-  const pagedQuestions = questions.slice(
-    (currentQPage - 1) * PAGE_SIZE,
-    currentQPage * PAGE_SIZE,
-  );
   const pagedGenerals = generals.slice(
     (currentGPage - 1) * PAGE_SIZE,
     currentGPage * PAGE_SIZE,
