@@ -52,6 +52,7 @@ function NewProjectPage() {
           type: "project",
           title,
           author,
+          nicknamePassword,
           githubUrl,
           deployUrl,
           editPassword,
