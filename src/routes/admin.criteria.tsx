@@ -439,6 +439,26 @@ function ReviewAllowlistCard({ board }: { board: CategoryDTO }) {
     onError: () => toast.error("추가 중 문제가 발생했어요."),
   });
 
+  const addBulkMutation = useMutation({
+    mutationFn: () =>
+      addBulkFn({
+        data: {
+          categoryId: board.id,
+          reviewerNames: parsedBulkNames,
+          adminPassword,
+        },
+      }),
+    onSuccess: (res) => {
+      invalidateList();
+      setBulkText("");
+      setBulkOpen(false);
+      toast.success(`${res?.added ?? 0}명을 명단에 추가했어요.`);
+    },
+    onError: () => toast.error("일괄 추가 중 문제가 발생했어요."),
+  });
+
+
+
   const removeMutation = useMutation({
     mutationFn: (id: string) => removeFn({ data: { id, adminPassword } }),
     onSuccess: () => {
