@@ -147,8 +147,7 @@ function PasswordGate({
         }}
         className="space-y-4"
       >
-        <Input
-          type="password"
+        <PasswordInput
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="비밀번호 입력"
