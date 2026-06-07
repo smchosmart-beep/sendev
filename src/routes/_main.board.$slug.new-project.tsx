@@ -50,7 +50,7 @@ function NewProjectPage() {
   } = useNicknameIdentity();
   const [githubUrl, setGithubUrl] = useState("");
   const [deployUrl, setDeployUrl] = useState("");
-  const [editPassword, setEditPassword] = useState("");
+  
   const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
   
 
