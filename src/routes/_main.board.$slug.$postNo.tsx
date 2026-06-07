@@ -1721,7 +1721,11 @@ function CommentsSection({ postId }: { postId: string }) {
         )}
         <p className="text-xs text-muted-foreground">
           닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 본인 확인합니다. 이 비밀번호로 댓글 삭제도 진행해요.
-          {hasStored && " 저장된 닉네임을 불러왔어요."}
+          {claimed
+            ? " 이미 등록된 닉네임이에요. 등록한 비밀번호를 입력해 주세요."
+            : hasStored
+              ? " 저장된 닉네임을 불러왔어요."
+              : ""}
         </p>
         <AutoTextarea
           value={content}
