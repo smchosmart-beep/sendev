@@ -730,7 +730,15 @@ export const listPosts = createServerFn({ method: "GET" })
   });
 
 export const getPost = createServerFn({ method: "GET" })
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        boardPassword: z.string().max(100).optional(),
+        adminPassword: z.string().max(200).optional(),
+      })
+      .parse(input),
+  )
   .handler(async ({ data }): Promise<PostDTO | null> => {
     const db = await getAdmin();
     const { data: row, error } = await db
@@ -739,7 +747,12 @@ export const getPost = createServerFn({ method: "GET" })
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return row ? mapPost(row) : null;
+    if (!row) return null;
+    // Withhold the post when its board is protected and unverified.
+    if (!(await boardAccessOk(db, row.category_id, data.boardPassword, data.adminPassword))) {
+      return null;
+    }
+    return mapPost(row);
   });
 
 // Resolves a post by its board slug + per-board number for short URLs.
