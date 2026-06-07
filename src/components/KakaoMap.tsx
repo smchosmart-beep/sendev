@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { MapPin } from "lucide-react";
 
 const KAKAO_JS_KEY = "7a8e2e91477f8b284dfd90224fd2740d";
 
