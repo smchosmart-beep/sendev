@@ -28,6 +28,7 @@ export function AuthorBadge({
   className,
 }: AuthorBadgeProps) {
   const { data: awardIcon } = useQuery(awardIconQueryOptions());
+  const { data: awardRules } = useQuery(awardIconRulesQueryOptions());
   const profile = profileMap[normalizeUsername(author ?? "")];
   if (!profile) return null;
 
@@ -37,10 +38,11 @@ export function AuthorBadge({
 
   const padding = size === "md" ? "px-2 py-0.5 text-xs" : "px-1.5 py-0.5 text-[11px]";
 
-  // Resolve the admin-configured icon by name, falling back to Trophy.
+  // Resolve the icon by award-name keyword rules, falling back to the default.
+  const defaultIcon = awardIcon ?? "Trophy";
+  const iconName = resolveAwardIcon(profile.award, awardRules ?? [], defaultIcon);
   const AwardIcon =
-    (awardIcon && (lucideIcons as Record<string, typeof Trophy>)[awardIcon]) ||
-    Trophy;
+    (lucideIcons as Record<string, typeof Trophy>)[iconName] || Trophy;
 
   return (
     <span className={cn("inline-flex flex-wrap items-center gap-1 align-middle", className)}>
