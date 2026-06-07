@@ -19,6 +19,7 @@ import {
   listUserProfiles,
   getProfileMap,
   getAwardIcon,
+  listAwardIconRules,
 } from "./platform.functions";
 
 export const searchPostsQueryOptions = (
