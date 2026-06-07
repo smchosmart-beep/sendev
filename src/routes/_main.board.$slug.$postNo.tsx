@@ -1299,34 +1299,23 @@ function EvaluationSection({
                 onChange={(e) => setReviewerName(e.target.value)}
                 placeholder="닉네임을 입력하세요"
                 maxLength={100}
-                disabled={lockedName !== null}
-                readOnly={lockedName !== null}
               />
-              {lockedName !== null ? (
-                <p className="text-xs font-medium text-primary">
-                  🔒 이 기기는 이 카테고리에서 '{lockedName}' 닉네임으로 고정되어
-                  있어요. 점수만 새로 매겨 다시 제출하면 평가가 갱신됩니다.
-                </p>
-              ) : (
-                <>
-                  {debouncedName ? (
-                    alreadyReviewed ? (
-                      <p className="text-xs font-medium text-primary">
-                        ✅ 이미 평가하셨어요
-                        {myReviewDate ? ` · ${myReviewDate} 제출` : ""} (점수를 새로
-                        매겨 다시 제출하면 갱신돼요)
-                      </p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">
-                        아직 평가하지 않으셨어요.
-                      </p>
-                    )
-                  ) : null}
-                  <p className="text-xs text-muted-foreground">
-                    닉네임은 중복 평가 방지용이므로 흔하지 않은 것으로 정해주세요. 한 기기에서는 이 카테고리의 첫 닉네임으로 고정됩니다.
+              {debouncedName ? (
+                alreadyReviewed ? (
+                  <p className="text-xs font-medium text-primary">
+                    ✅ 이미 평가하셨어요
+                    {myReviewDate ? ` · ${myReviewDate} 제출` : ""} (점수를 새로
+                    매겨 다시 제출하면 갱신돼요)
                   </p>
-                </>
-              )}
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    아직 평가하지 않으셨어요.
+                  </p>
+                )
+              ) : null}
+              <p className="text-xs text-muted-foreground">
+                닉네임은 중복 평가 방지용이므로 흔하지 않은 것으로 정해주세요. 같은 닉네임으로 다시 제출하면 비밀번호 확인 후 평가가 갱신됩니다.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="reviewer-pw">닉네임 비밀번호</Label>
