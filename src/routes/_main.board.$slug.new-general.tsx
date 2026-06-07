@@ -165,6 +165,15 @@ function NewGeneralPage() {
               placeholder="이 닉네임을 보호할 비밀번호"
               className="rounded-xl"
             />
+          <div className="space-y-2">
+            <Label htmlFor="g-nickpw">닉네임 비밀번호</Label>
+            <PasswordInput
+              id="g-nickpw"
+              value={nicknamePassword}
+              onChange={(e) => setNicknamePassword(e.target.value)}
+              placeholder="이 닉네임을 보호할 비밀번호"
+              className="rounded-xl"
+            />
             <p className="text-xs text-muted-foreground">
               이 닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 인증합니다.
               {hasStored
@@ -172,16 +181,45 @@ function NewGeneralPage() {
                 : " 등록하면 이 기기에서 다음부터 자동으로 채워져요."}
             </p>
           </div>
+          {!hasStored && (
+            <div className="space-y-2">
+              <Label htmlFor="g-nickpw-confirm">닉네임 비밀번호 확인</Label>
+              <PasswordInput
+                id="g-nickpw-confirm"
+                value={nicknamePasswordConfirm}
+                onChange={(e) => setNicknamePasswordConfirm(e.target.value)}
+                placeholder="비밀번호를 한 번 더 입력"
+                className="rounded-xl"
+              />
+              {nicknamePasswordConfirm.length > 0 &&
+                nicknamePassword.trim() !== nicknamePasswordConfirm.trim() && (
+                  <p className="text-xs text-destructive">비밀번호가 일치하지 않아요.</p>
+                )}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="g-pw">수정·삭제 비밀번호</Label>
-            <Input
+            <PasswordInput
               id="g-pw"
-              type="password"
               value={editPassword}
               onChange={(e) => setEditPassword(e.target.value)}
               placeholder="나중에 수정·삭제할 때 사용해요"
               className="rounded-xl"
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="g-pw-confirm">수정·삭제 비밀번호 확인</Label>
+            <PasswordInput
+              id="g-pw-confirm"
+              value={editPasswordConfirm}
+              onChange={(e) => setEditPasswordConfirm(e.target.value)}
+              placeholder="비밀번호를 한 번 더 입력"
+              className="rounded-xl"
+            />
+            {editPasswordConfirm.length > 0 &&
+              editPassword.trim() !== editPasswordConfirm.trim() && (
+                <p className="text-xs text-destructive">비밀번호가 일치하지 않아요.</p>
+              )}
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button asChild type="button" variant="secondary" className="rounded-xl active:scale-95">
