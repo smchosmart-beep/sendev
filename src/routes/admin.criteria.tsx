@@ -536,7 +536,59 @@ function ReviewAllowlistCard({ board }: { board: CategoryDTO }) {
           <Plus className="h-4 w-4" />
           추가
         </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setBulkOpen(true)}
+          className="shrink-0 rounded-xl active:scale-95"
+        >
+          <Plus className="h-4 w-4" />
+          일괄 추가
+        </Button>
       </form>
+
+      <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>평가자 닉네임 일괄 추가</DialogTitle>
+            <DialogDescription>
+              구글 시트나 엑셀에서 닉네임을 복사한 뒤 아래 칸에 붙여넣으세요(Ctrl+V).
+              줄바꿈·쉼표·탭으로 구분된 값을 한 번에 등록할 수 있어요.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={bulkText}
+            onChange={(e) => setBulkText(e.target.value)}
+            placeholder={"홍길동\n김철수\n이영희"}
+            rows={8}
+            className="rounded-xl font-mono text-sm"
+          />
+          <p className="text-sm text-muted-foreground">
+            추가될 닉네임 {uniqueBulkCount}개
+            {parsedBulkNames.length !== uniqueBulkCount &&
+              ` (중복 ${parsedBulkNames.length - uniqueBulkCount}개 제외)`}
+          </p>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setBulkOpen(false)}
+              className="rounded-xl"
+            >
+              취소
+            </Button>
+            <Button
+              type="button"
+              disabled={uniqueBulkCount === 0 || addBulkMutation.isPending}
+              onClick={() => addBulkMutation.mutate()}
+              className="rounded-xl active:scale-95"
+            >
+              {addBulkMutation.isPending ? "등록 중..." : "등록"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {entries.length > 0 && (
         <ul className="mt-4 flex flex-wrap gap-2">
