@@ -184,9 +184,8 @@ export function ThumbnailUploadButton({
             </div>
             <div className="space-y-2">
               <Label htmlFor="thumb-pw">수정·삭제 비밀번호</Label>
-              <Input
+              <PasswordInput
                 id="thumb-pw"
-                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="글 등록 때 정한 비밀번호"
