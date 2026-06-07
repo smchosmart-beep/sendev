@@ -70,10 +70,20 @@ export interface EventDTO {
   date: string;
   time: string;
   location: string;
+  placeAddress: string;
+  latitude: number | null;
+  longitude: number | null;
   target: string;
   description: string;
   attachments: EventAttachment[];
   links: EventLink[];
+}
+
+export interface PlaceResult {
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
 }
 
 
