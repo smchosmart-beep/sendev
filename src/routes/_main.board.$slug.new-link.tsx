@@ -144,6 +144,20 @@ function NewLinkPage() {
             />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="l-nickpw">닉네임 비밀번호</Label>
+            <Input
+              id="l-nickpw"
+              type="password"
+              value={nicknamePassword}
+              onChange={(e) => setNicknamePassword(e.target.value)}
+              placeholder="이 닉네임을 보호할 비밀번호"
+              className="rounded-xl"
+            />
+            <p className="text-xs text-muted-foreground">
+              이 닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 인증합니다.
+            </p>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="l-url">링크 URL</Label>
             <Input
               id="l-url"
