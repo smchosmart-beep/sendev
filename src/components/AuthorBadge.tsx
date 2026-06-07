@@ -86,21 +86,21 @@ export function AuthorBadge({
                 e.stopPropagation();
                 setOpen((v) => !v);
               }}
-              className="inline-flex items-center gap-1 align-middle"
+              className="group inline-flex cursor-pointer items-center gap-1 align-middle"
               aria-label={`배지 ${awards.length}개 전체 보기`}
             >
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full bg-secondary font-medium leading-none text-secondary-foreground shadow-sm transition hover:bg-secondary/80",
+                  "inline-flex items-center gap-1 rounded-full bg-secondary font-medium leading-none text-secondary-foreground shadow-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:bg-secondary/80 group-hover:shadow-md group-hover:ring-1 group-hover:ring-primary/30",
                   padding,
                 )}
               >
-                <PrimaryIcon className="h-3 w-3 shrink-0" />
+                <PrimaryIcon className="h-3 w-3 shrink-0 transition-transform duration-200 group-hover:scale-110" />
                 {primary}
               </span>
               <span
                 className={cn(
-                  "inline-flex items-center rounded-full bg-secondary font-bold leading-none text-secondary-foreground shadow-sm transition hover:bg-secondary/80",
+                  "inline-flex items-center rounded-full bg-secondary font-bold leading-none text-secondary-foreground shadow-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-md",
                   padding,
                 )}
               >
