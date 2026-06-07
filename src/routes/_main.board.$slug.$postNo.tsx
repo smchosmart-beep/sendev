@@ -475,7 +475,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
   const remove = useServerFn(deletePost);
   const move = useServerFn(movePost);
   const verify = useServerFn(verifyPostPassword);
-  const canMove = post.type === "general" || post.type === "question";
+  const canMove = post.type === "post";
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
   const category = categories.find((c) => c.id === post.categoryId);
   const projectName = category?.projectName || "산출물";
