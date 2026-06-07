@@ -598,7 +598,7 @@ function CategoriesPage() {
                   </div>
                   </div>
                 </div>
-                <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                <div className="flex w-28 shrink-0 flex-col items-stretch gap-2">
                   {siblings.length > 1 && (
                       <div className="flex flex-row gap-1">
                         <Button
@@ -606,7 +606,7 @@ function CategoriesPage() {
                           size="icon"
                           disabled={idx <= 0 || swapMutation.isPending}
                           onClick={() => moveCategory(c, "up")}
-                          className="h-8 w-8 rounded-lg active:scale-95"
+                          className="h-8 flex-1 rounded-lg active:scale-95"
                           aria-label="위로 이동"
                         >
                           <ChevronUp className="h-4 w-4" />
@@ -616,7 +616,7 @@ function CategoriesPage() {
                           size="icon"
                           disabled={idx >= siblings.length - 1 || swapMutation.isPending}
                           onClick={() => moveCategory(c, "down")}
-                          className="h-8 w-8 rounded-lg active:scale-95"
+                          className="h-8 flex-1 rounded-lg active:scale-95"
                           aria-label="아래로 이동"
                         >
                           <ChevronDown className="h-4 w-4" />
@@ -627,7 +627,7 @@ function CategoriesPage() {
                     variant="secondary"
                     size="sm"
                     onClick={() => openEdit(c)}
-                    className="rounded-xl transition-all duration-200 active:scale-95"
+                    className="w-full justify-center rounded-xl transition-all duration-200 active:scale-95"
                   >
                     <Pencil className="h-4 w-4" />
                     수정
@@ -636,7 +636,7 @@ function CategoriesPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setDeleting(c)}
-                    className="rounded-xl text-destructive transition-all duration-200 hover:bg-destructive/10 active:scale-95"
+                    className="w-full justify-center rounded-xl text-destructive transition-all duration-200 hover:bg-destructive/10 active:scale-95"
                   >
                     <Trash2 className="h-4 w-4" />
                     삭제
