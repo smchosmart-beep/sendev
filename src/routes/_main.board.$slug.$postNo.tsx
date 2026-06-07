@@ -840,9 +840,8 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
           >
             <div className="space-y-2">
               <Label htmlFor="eg-pw">비밀번호</Label>
-              <Input
+              <PasswordInput
                 id="eg-pw"
-                type="password"
                 value={editGatePw}
                 onChange={(e) => setEditGatePw(e.target.value)}
                 className="rounded-xl"
