@@ -2197,9 +2197,10 @@ export const getAwardIcon = createServerFn({ method: "GET" }).handler(
 // Admin: sets the global award badge icon (validated against the whitelist).
 export const setAwardIcon = createServerFn({ method: "POST" })
   .inputValidator((input) =>
-    z.object({ icon: z.enum(AWARD_ICON_NAMES) }).parse(input),
+    z.object({ icon: z.enum(AWARD_ICON_NAMES), adminPassword: z.string().max(200).default("") }).parse(input),
   )
   .handler(async ({ data }) => {
+    requireProfileAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db
       .from("site_settings")
@@ -2268,10 +2269,12 @@ export const addAwardIconRule = createServerFn({ method: "POST" })
       .object({
         keyword: z.string().trim().min(1).max(100),
         icon: z.enum(AWARD_ICON_NAMES),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireProfileAdmin(data.adminPassword);
     const db = await getAdmin();
     const { data: rows, error: selErr } = await db
       .from("award_icon_rules")
@@ -2290,9 +2293,12 @@ export const addAwardIconRule = createServerFn({ method: "POST" })
 // Admin: deletes a rule by id.
 export const deleteAwardIconRule = createServerFn({ method: "POST" })
   .inputValidator((input) =>
-    z.object({ id: z.string().uuid() }).parse(input),
+    z
+      .object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") })
+      .parse(input),
   )
   .handler(async ({ data }) => {
+    requireProfileAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db
       .from("award_icon_rules")
