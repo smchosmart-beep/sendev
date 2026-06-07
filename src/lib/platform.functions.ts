@@ -410,8 +410,9 @@ export const updateCategory = createServerFn({ method: "POST" })
 
 
 export const deleteCategory = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input) => z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input))
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db.from("categories").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -421,8 +422,9 @@ export const deleteCategory = createServerFn({ method: "POST" })
 // Admin-only: opens evaluation for a board and shuffles the order by setting a
 // new random eval_seed. Pressing it again re-shuffles everyone's order.
 export const shuffleEvaluation = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input) => z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input))
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const seed = Math.floor(Math.random() * 0x7fffffff);
     const { error } = await db
@@ -435,8 +437,9 @@ export const shuffleEvaluation = createServerFn({ method: "POST" })
 
 // Admin-only: closes evaluation for a board (locks submission again).
 export const closeEvaluation = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input) => z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input))
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db
       .from("categories")
