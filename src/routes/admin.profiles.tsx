@@ -685,8 +685,14 @@ function ProfilesAdmin() {
                               {a.name}
                               <button
                                 type="button"
-                                onClick={() => {
-                                  if (confirm(`'${a.name}' 배지를 삭제할까요?`)) {
+                                onClick={async () => {
+                                  if (
+                                    await confirm({
+                                      description: `'${a.name}' 배지를 삭제할까요?`,
+                                      destructive: true,
+                                      confirmText: "삭제",
+                                    })
+                                  ) {
                                     removeAwardMutation.mutate(a.id);
                                   }
                                 }}
@@ -718,8 +724,13 @@ function ProfilesAdmin() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        if (confirm(`'${p.username}'의 닉네임 비밀번호를 초기화할까요? 분실 시에만 사용하세요.`)) {
+                      onClick={async () => {
+                        if (
+                          await confirm({
+                            description: `'${p.username}'의 닉네임 비밀번호를 초기화할까요? 분실 시에만 사용하세요.`,
+                            confirmText: "초기화",
+                          })
+                        ) {
                           resetPwMutation.mutate(p.id);
                         }
                       }}
@@ -731,8 +742,14 @@ function ProfilesAdmin() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        if (confirm(`'${p.username}' 프로필을 삭제할까요?`)) {
+                      onClick={async () => {
+                        if (
+                          await confirm({
+                            description: `'${p.username}' 프로필을 삭제할까요?`,
+                            destructive: true,
+                            confirmText: "삭제",
+                          })
+                        ) {
                           deleteMutation.mutate(p.id);
                         }
                       }}
