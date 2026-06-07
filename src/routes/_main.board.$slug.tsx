@@ -47,7 +47,8 @@ function BoardLayout() {
 
   useEffect(() => {
     if (category) {
-      setUnlocked(sessionStorage.getItem(unlockKey(category.id)) === "1");
+      const stored = sessionStorage.getItem(unlockKey(category.slug));
+      setUnlocked(!!stored && stored.length > 0);
     }
     setMounted(true);
   }, [category]);
