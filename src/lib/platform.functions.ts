@@ -1137,6 +1137,7 @@ function mapPost(p: any, commentCount = 0): PostDTO {
     categoryId: p.category_id,
     postNo: p.post_no ?? 0,
     type: p.type,
+    pinned: !!p.pinned,
     title: p.title,
     content: p.content ?? "",
     author: p.author,
