@@ -212,7 +212,8 @@ export interface PostDTO {
   id: string;
   categoryId: string;
   postNo: number;
-  type: "notice" | "project" | "question" | "general" | "link";
+  type: "post" | "project" | "link";
+  pinned: boolean;
   title: string;
   content: string;
   author: string;
