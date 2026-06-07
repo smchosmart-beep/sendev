@@ -2,8 +2,15 @@ import { Trophy, icons as lucideIcons } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import { cn } from "@/lib/utils";
-import { normalizeUsername, type ProfileMap } from "@/lib/platform.functions";
-import { awardIconQueryOptions } from "@/lib/platform.queries";
+import {
+  normalizeUsername,
+  resolveAwardIcon,
+  type ProfileMap,
+} from "@/lib/platform.functions";
+import {
+  awardIconQueryOptions,
+  awardIconRulesQueryOptions,
+} from "@/lib/platform.queries";
 
 interface AuthorBadgeProps {
   author: string;
