@@ -1808,7 +1808,11 @@ function CommentItem({
           ))}
         </div>
       )}
+      <div className="mt-2">
+        <LikeButton targetType="comment" targetId={comment.id} size="sm" />
+      </div>
     </div>
+
   );
 }
 
