@@ -155,9 +155,13 @@ function MyPage() {
             )}
             로그인
           </Button>
-          <p className="text-xs text-muted-foreground">
-            닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 인증합니다.
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              처음 쓰면 비밀번호가 등록돼요.
+            </p>
+            <ForgotPasswordDialog />
+          </div>
+
         </form>
       </Card>
     </div>
