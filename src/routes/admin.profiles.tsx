@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { UserCog, Trophy, Trash2, Lock, AlertCircle, KeyRound, Plus, X, icons as lucideIcons } from "lucide-react";
+import { UserCog, Trophy, Trash2, Lock, AlertCircle, KeyRound, Plus, X, Search, Users, Settings2, icons as lucideIcons } from "lucide-react";
+
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
@@ -30,6 +31,22 @@ import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 
 // 한글 자모/완성형 음절 제거 (영문 비밀번호 강제)
@@ -339,6 +356,44 @@ function ProfilesAdmin() {
   const [username, setUsername] = useState("");
   const [award, setAward] = useState("");
 
+  // 사용자 목록 검색/필터/정렬/페이지네이션
+  const PAGE_SIZE = 20;
+  const [search, setSearch] = useState("");
+  const [badgeFilter, setBadgeFilter] = useState<"all" | "with" | "without">("all");
+  const [activityFilter, setActivityFilter] = useState<"all" | "active" | "inactive">("all");
+  const [sort, setSort] = useState<"name" | "points-desc" | "points-asc">("name");
+  const [page, setPage] = useState(1);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const list = (profiles as UserProfileDTO[]).filter((p) => {
+      if (q && !p.username.toLowerCase().includes(q)) return false;
+      if (badgeFilter === "with" && p.awards.length === 0) return false;
+      if (badgeFilter === "without" && p.awards.length > 0) return false;
+      if (activityFilter === "active" && p.level == null) return false;
+      if (activityFilter === "inactive" && p.level != null) return false;
+      return true;
+    });
+    list.sort((a, b) => {
+      if (sort === "points-desc") return b.points - a.points;
+      if (sort === "points-asc") return a.points - b.points;
+      return a.username.localeCompare(b.username, "ko");
+    });
+    return list;
+  }, [profiles, search, badgeFilter, activityFilter, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paged = filtered.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, badgeFilter, activityFilter, sort]);
+
+
   const reset = () => {
     setUsername("");
     setAward("");
@@ -409,7 +464,19 @@ function ProfilesAdmin() {
   };
 
   return (
-    <div className="space-y-6">
+    <Tabs defaultValue="list" className="space-y-6">
+      <TabsList className="grid w-full max-w-md grid-cols-2 rounded-xl">
+        <TabsTrigger value="list" className="gap-1.5 rounded-lg">
+          <Users className="h-4 w-4" />
+          사용자 목록
+        </TabsTrigger>
+        <TabsTrigger value="settings" className="gap-1.5 rounded-lg">
+          <Settings2 className="h-4 w-4" />
+          관리 설정
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="settings" className="space-y-6">
       <div className="rounded-2xl bg-card p-6 shadow-sm">
         <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-foreground">
           <UserCog className="h-5 w-5 text-primary" />
@@ -472,110 +539,204 @@ function ProfilesAdmin() {
       <AwardIconPicker />
 
       <AwardIconRules />
+      </TabsContent>
 
-
-
-
-      {profiles.length === 0 ? (
-        <EmptyState
-          icon={UserCog}
-          title="등록된 프로필이 없어요."
-          description="위 양식에서 사용자명을 추가해 보세요."
-        />
-      ) : (
-        <div className="overflow-hidden rounded-2xl bg-card shadow-sm">
-          <ul className="divide-y divide-border">
-            {profiles.map((p: UserProfileDTO) => (
-              <li
-                key={p.id}
-                className="flex items-center gap-3 px-5 py-4"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-foreground">{p.username}</p>
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
-                    {p.level != null ? (
-                      <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
-                        Lv.{p.level}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">활동 없음</span>
-                    )}
-                    {p.awards.map((a) => {
-                      const iconName = resolveAwardIcon(
-                        a.name,
-                        awardRules,
-                        awardIcon ?? "Trophy",
-                      );
-                      const AwardIcon =
-                        (lucideIcons as Record<string, typeof Trophy>)[iconName] ||
-                        Trophy;
-                      return (
-                        <span
-                          key={a.id}
-                          className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
-                        >
-                          <AwardIcon className="h-3 w-3" />
-                          {a.name}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (confirm(`'${a.name}' 배지를 삭제할까요?`)) {
-                                removeAwardMutation.mutate(a.id);
-                              }
-                            }}
-                            aria-label="배지 삭제"
-                            className="ml-0.5 rounded-full p-0.5 text-muted-foreground transition hover:bg-destructive hover:text-destructive-foreground"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </span>
-                      );
-                    })}
-                    <span className="text-xs text-muted-foreground">
-                      게시글 {p.postCount} · 댓글 {p.commentCount} · {p.points}점
-                    </span>
-                  </div>
-
-                </div>
-                <button
-                  type="button"
-                  onClick={() => startEdit(p)}
-                  aria-label="이 사용자에 배지 추가"
-                  title="이 사용자에 배지 추가"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-sm active:scale-95"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (confirm(`'${p.username}'의 닉네임 비밀번호를 초기화할까요? 분실 시에만 사용하세요.`)) {
-                      resetPwMutation.mutate(p.id);
-                    }
-                  }}
-                  aria-label="닉네임 비밀번호 초기화"
-                  title="닉네임 비밀번호 초기화"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-sm active:scale-95"
-                >
-                  <KeyRound className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (confirm(`'${p.username}' 프로필을 삭제할까요?`)) {
-                      deleteMutation.mutate(p.id);
-                    }
-                  }}
-                  aria-label="삭제"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-destructive text-destructive-foreground shadow-sm active:scale-95"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </li>
-            ))}
-          </ul>
+      <TabsContent value="list" className="space-y-4">
+        <div className="rounded-2xl bg-card p-4 shadow-sm sm:p-5">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="사용자명으로 검색"
+              className="rounded-xl pl-9"
+            />
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            <Select value={badgeFilter} onValueChange={(v) => setBadgeFilter(v as typeof badgeFilter)}>
+              <SelectTrigger className="rounded-xl">
+                <SelectValue placeholder="배지" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">배지 전체</SelectItem>
+                <SelectItem value="with">배지 있음</SelectItem>
+                <SelectItem value="without">배지 없음</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={activityFilter} onValueChange={(v) => setActivityFilter(v as typeof activityFilter)}>
+              <SelectTrigger className="rounded-xl">
+                <SelectValue placeholder="활동" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">활동 전체</SelectItem>
+                <SelectItem value="active">활동 있음</SelectItem>
+                <SelectItem value="inactive">활동 없음</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sort} onValueChange={(v) => setSort(v as typeof sort)}>
+              <SelectTrigger className="rounded-xl">
+                <SelectValue placeholder="정렬" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">이름순</SelectItem>
+                <SelectItem value="points-desc">점수 높은순</SelectItem>
+                <SelectItem value="points-asc">점수 낮은순</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            전체 {profiles.length}명 중 검색 결과 {filtered.length}명
+          </p>
         </div>
-      )}
-    </div>
+
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon={UserCog}
+            title={profiles.length === 0 ? "등록된 프로필이 없어요." : "조건에 맞는 사용자가 없어요."}
+            description={
+              profiles.length === 0
+                ? "관리 설정 탭에서 사용자명을 추가해 보세요."
+                : "검색어나 필터를 변경해 보세요."
+            }
+          />
+        ) : (
+          <>
+            <div className="overflow-hidden rounded-2xl bg-card shadow-sm">
+              <ul className="divide-y divide-border">
+                {paged.map((p: UserProfileDTO) => (
+                  <li
+                    key={p.id}
+                    className="flex items-center gap-3 px-5 py-4"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-foreground">{p.username}</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        {p.level != null ? (
+                          <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
+                            Lv.{p.level}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">활동 없음</span>
+                        )}
+                        {p.awards.map((a) => {
+                          const iconName = resolveAwardIcon(
+                            a.name,
+                            awardRules,
+                            awardIcon ?? "Trophy",
+                          );
+                          const AwardIcon =
+                            (lucideIcons as Record<string, typeof Trophy>)[iconName] ||
+                            Trophy;
+                          return (
+                            <span
+                              key={a.id}
+                              className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
+                            >
+                              <AwardIcon className="h-3 w-3" />
+                              {a.name}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm(`'${a.name}' 배지를 삭제할까요?`)) {
+                                    removeAwardMutation.mutate(a.id);
+                                  }
+                                }}
+                                aria-label="배지 삭제"
+                                className="ml-0.5 rounded-full p-0.5 text-muted-foreground transition hover:bg-destructive hover:text-destructive-foreground"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </span>
+                          );
+                        })}
+                        <span className="text-xs text-muted-foreground">
+                          게시글 {p.postCount} · 댓글 {p.commentCount} · {p.points}점
+                        </span>
+                      </div>
+
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => startEdit(p)}
+                      aria-label="이 사용자에 배지 추가"
+                      title="이 사용자에 배지 추가"
+                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-sm active:scale-95"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm(`'${p.username}'의 닉네임 비밀번호를 초기화할까요? 분실 시에만 사용하세요.`)) {
+                          resetPwMutation.mutate(p.id);
+                        }
+                      }}
+                      aria-label="닉네임 비밀번호 초기화"
+                      title="닉네임 비밀번호 초기화"
+                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-sm active:scale-95"
+                    >
+                      <KeyRound className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm(`'${p.username}' 프로필을 삭제할까요?`)) {
+                          deleteMutation.mutate(p.id);
+                        }
+                      }}
+                      aria-label="삭제"
+                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-destructive text-destructive-foreground shadow-sm active:scale-95"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {totalPages > 1 && (
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setPage((prev) => Math.max(1, prev - 1));
+                      }}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+                    <PaginationItem key={n}>
+                      <PaginationLink
+                        href="#"
+                        isActive={n === currentPage}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setPage(n);
+                        }}
+                      >
+                        {n}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setPage((prev) => Math.min(totalPages, prev + 1));
+                      }}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
+          </>
+        )}
+      </TabsContent>
+    </Tabs>
   );
 }
