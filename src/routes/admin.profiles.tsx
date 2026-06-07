@@ -19,6 +19,7 @@ import {
   setAwardIcon,
   addAwardIconRule,
   deleteAwardIconRule,
+  resolveAwardIcon,
   AWARD_ICON_NAMES,
   type UserProfileDTO,
   type AwardIconName,
