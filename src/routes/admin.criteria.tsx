@@ -526,7 +526,7 @@ function ReviewAllowlistCard({ board }: { board: CategoryDTO }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="평가자 닉네임"
-          className="rounded-xl"
+          className="rounded-xl text-xs placeholder:text-xs sm:text-sm sm:placeholder:text-sm"
         />
         <Button
           type="submit"
