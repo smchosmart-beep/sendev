@@ -500,9 +500,9 @@ function ProfilesAdmin() {
                     ) : (
                       <span className="text-xs text-muted-foreground">활동 없음</span>
                     )}
-                    {p.award.trim() && (() => {
+                    {p.awards.map((a) => {
                       const iconName = resolveAwardIcon(
-                        p.award,
+                        a.name,
                         awardRules,
                         awardIcon ?? "Trophy",
                       );
@@ -510,16 +510,32 @@ function ProfilesAdmin() {
                         (lucideIcons as Record<string, typeof Trophy>)[iconName] ||
                         Trophy;
                       return (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                        <span
+                          key={a.id}
+                          className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
+                        >
                           <AwardIcon className="h-3 w-3" />
-                          {p.award}
+                          {a.name}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (confirm(`'${a.name}' 배지를 삭제할까요?`)) {
+                                removeAwardMutation.mutate(a.id);
+                              }
+                            }}
+                            aria-label="배지 삭제"
+                            className="ml-0.5 rounded-full p-0.5 text-muted-foreground transition hover:bg-destructive hover:text-destructive-foreground"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
                         </span>
                       );
-                    })()}
+                    })}
                     <span className="text-xs text-muted-foreground">
                       게시글 {p.postCount} · 댓글 {p.commentCount} · {p.points}점
                     </span>
                   </div>
+
                 </div>
                 <button
                   type="button"
