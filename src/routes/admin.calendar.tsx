@@ -241,11 +241,15 @@ function AdminCalendarPage() {
     }
     setSaving(true);
     try {
+      const useMap = !manualPlace && latitude != null && longitude != null;
       const payload = {
         title: title.trim(),
         date,
         time: time.trim(),
         location: location.trim(),
+        placeAddress: useMap ? placeAddress.trim() : "",
+        latitude: useMap ? latitude : null,
+        longitude: useMap ? longitude : null,
         target: target.trim(),
         description: description.trim(),
         attachments,
