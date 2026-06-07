@@ -925,7 +925,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
                   <Label>내용</Label>
                   <PostEditor value={content} onChange={setContent} rows={8} />
                 </div>
-                {(post.type === "question" || post.type === "general") && (
+                {post.type === "post" && (
                   <div className="space-y-2">
                     <Label htmlFor="e-author">작성자</Label>
                     <Input
