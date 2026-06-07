@@ -1308,6 +1308,49 @@ export const addReviewAllowlistName = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const addReviewAllowlistNames = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        reviewerNames: z
+          .array(z.string().trim().min(1).max(100))
+          .min(1)
+          .max(500),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
+    const db = await getAdmin();
+    const seen = new Set<string>();
+    const rows: {
+      category_id: string;
+      reviewer_name: string;
+      reviewer_key: string;
+    }[] = [];
+    for (const name of data.reviewerNames) {
+      const key = normalizeName(name);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      rows.push({
+        category_id: data.categoryId,
+        reviewer_name: name.trim(),
+        reviewer_key: key,
+      });
+    }
+    if (rows.length === 0) return { ok: true, added: 0 };
+    const { error } = await db
+      .from("review_allowlist")
+      .upsert(rows, {
+        onConflict: "category_id,reviewer_key",
+        ignoreDuplicates: true,
+      });
+    if (error) throw new Error(error.message);
+    return { ok: true, added: rows.length };
+  });
+
 export const removeReviewAllowlistName = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
