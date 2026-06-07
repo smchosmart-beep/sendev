@@ -99,7 +99,7 @@ export function AuthorBadge({
             >
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full bg-secondary font-medium leading-none text-secondary-foreground shadow-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:bg-secondary/80 group-hover:shadow-md group-hover:ring-1 group-hover:ring-primary/30",
+                  "inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-secondary font-medium leading-none text-secondary-foreground shadow-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:bg-secondary/80 group-hover:shadow-md group-hover:ring-1 group-hover:ring-primary/30",
                   padding,
                 )}
               >
