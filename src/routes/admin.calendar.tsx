@@ -256,7 +256,7 @@ function AdminCalendarPage() {
         links,
       };
       if (editing.mode === "edit") {
-        await updateFn({ data: { id: editing.event.id, ...payload } });
+        await updateFn({ data: { id: editing.event.id, ...payload, adminPassword: getAdminPassword() } });
         toast.success("일정을 수정했어요.");
       } else {
         await createFn({ data: payload });
@@ -274,7 +274,7 @@ function AdminCalendarPage() {
   const confirmDelete = async () => {
     if (!pendingDelete) return;
     try {
-      await deleteFn({ data: { id: pendingDelete.id } });
+      await deleteFn({ data: { id: pendingDelete.id, adminPassword: getAdminPassword() } });
       await invalidate();
       toast.success("일정을 삭제했어요.");
     } catch (err) {

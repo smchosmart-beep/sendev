@@ -136,7 +136,7 @@ function AdminHomePage() {
   };
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteFn({ data: { id } }),
+    mutationFn: (id: string) => deleteFn({ data: { id, adminPassword: getAdminPassword() } }),
     onSuccess: async () => {
       toast.success("슬라이드를 삭제했어요.");
       await invalidate();

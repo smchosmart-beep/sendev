@@ -192,7 +192,7 @@ function CategoriesPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => deleteFn({ data: { id: deleting!.id } }),
+    mutationFn: () => deleteFn({ data: { id: deleting!.id, adminPassword: getAdminPassword() } }),
     onSuccess: () => {
       invalidate();
       setDeleting(null);
@@ -238,7 +238,7 @@ function CategoriesPage() {
     setEditLinkName(c.linkName);
     setEditTabGroup(c.tabGroup ?? "hackathon");
     if (c.hasPassword) {
-      getPasswordFn({ data: { id: c.id } })
+      getPasswordFn({ data: { id: c.id, adminPassword: getAdminPassword() } })
         .then((res) => setEditPassword(res.password))
         .catch(() => toast.error("비밀번호를 불러오지 못했어요."));
     }
