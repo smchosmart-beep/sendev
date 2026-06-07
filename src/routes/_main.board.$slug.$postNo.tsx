@@ -86,6 +86,30 @@ import { useNicknameIdentity } from "@/hooks/useNicknameIdentity";
 
 const NUMERIC_RE = /^\d+$/;
 
+// Sanitization schema for post body HTML. Extends the safe defaults to keep the
+// rich-text editor's inline formatting (color / font-size on <span>) while
+// stripping event handlers (onerror/onclick/…), <script>, and other vectors.
+const POST_HTML_SCHEMA = {
+  ...defaultSchema,
+  attributes: {
+    ...defaultSchema.attributes,
+    span: [...(defaultSchema.attributes?.span ?? []), "style"],
+    img: ["src", "alt", "title"],
+  },
+};
+
+// Allows only safe link protocols; blocks javascript:, data:, etc.
+function safeExternalHref(url: string): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url, "https://example.com");
+    return u.protocol === "http:" || u.protocol === "https:" ? url : null;
+  } catch {
+    return null;
+  }
+}
+
+
 const TAB_LABELS: Record<TabGroup, string> = {
   hackathon: "해커톤",
   resources: "자료집",
