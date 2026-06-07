@@ -8,11 +8,13 @@ import {
   categoriesQueryOptions,
   ogImageBackfillQueryOptions,
   myReviewedPostIdsQueryOptions,
+  profileMapQueryOptions,
 } from "@/lib/platform.queries";
 import { type PostDTO } from "@/lib/platform.functions";
 import { groupLinksBySeries, seededShuffle, getOrderSeed } from "@/lib/series";
 import { getEmbedUrl, getThumbnailUrl, getCanvaPreviewUrl } from "@/lib/embed";
 import { EmptyState } from "@/components/EmptyState";
+import { AuthorBadge } from "@/components/AuthorBadge";
 import { Button } from "@/components/ui/button";
 import { ThumbnailUploadButton } from "@/components/ThumbnailUploadButton";
 
