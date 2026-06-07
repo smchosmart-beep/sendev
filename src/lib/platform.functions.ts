@@ -1568,3 +1568,110 @@ export const swapCategoryOrder = createServerFn({ method: "POST" })
     await db.from("categories").update({ sort_order: a.sort_order }).eq("id", b.id);
     return { ok: true };
   });
+
+
+// ============================================================
+// User profiles: admin-managed mapping of author name -> level/award.
+// No auth in this app, so badges are matched by exact (normalized) name.
+// ============================================================
+
+export interface UserProfileDTO {
+  id: string;
+  username: string;
+  level: number | null;
+  award: string;
+}
+
+// Public display map keyed by normalized username.
+export interface ProfileBadge {
+  level: number | null;
+  award: string;
+}
+export type ProfileMap = Record<string, ProfileBadge>;
+
+// Normalizes a username for exact matching (trim + lowercase).
+export function normalizeUsername(name: string): string {
+  return name.trim().toLowerCase();
+}
+
+function mapUserProfile(r: any): UserProfileDTO {
+  return {
+    id: r.id,
+    username: r.username,
+    level: r.level ?? null,
+    award: r.award ?? "",
+  };
+}
+
+// Admin: full list of profile mappings.
+export const listUserProfiles = createServerFn({ method: "GET" }).handler(
+  async () => {
+    const db = await getAdmin();
+    const { data, error } = await db
+      .from("user_profiles")
+      .select("id, username, level, award")
+      .order("username", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(mapUserProfile);
+  },
+);
+
+// Public: lightweight map for rendering badges next to author names.
+export const getProfileMap = createServerFn({ method: "GET" }).handler(
+  async () => {
+    const db = await getAdmin();
+    const { data, error } = await db
+      .from("user_profiles")
+      .select("username_key, level, award");
+    if (error) throw new Error(error.message);
+    const map: ProfileMap = {};
+    for (const r of data ?? []) {
+      map[r.username_key] = { level: r.level ?? null, award: r.award ?? "" };
+    }
+    return map;
+  },
+);
+
+// Admin: create or update a mapping (keyed by normalized username).
+export const upsertUserProfile = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        username: z.string().trim().min(1).max(100),
+        level: z.number().int().min(1).max(99).nullable().default(null),
+        award: z.string().trim().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const usernameKey = normalizeUsername(data.username);
+    const { error } = await db
+      .from("user_profiles")
+      .upsert(
+        {
+          username: data.username.trim(),
+          username_key: usernameKey,
+          level: data.level,
+          award: data.award,
+        },
+        { onConflict: "username_key" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// Admin: delete a mapping.
+export const deleteUserProfile = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z.object({ id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { error } = await db
+      .from("user_profiles")
+      .delete()
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
