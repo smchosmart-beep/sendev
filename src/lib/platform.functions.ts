@@ -1994,3 +1994,442 @@ export const deleteAwardIconRule = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ============================================================
+// Likes (post_likes) — anonymous, keyed by normalized nickname.
+// ============================================================
+
+type LikeTarget = "post" | "comment";
+
+// Escapes PostgREST ilike wildcards so a nickname matches case-insensitively
+// without behaving like a pattern.
+function escapeIlike(value: string): string {
+  return value.replace(/[%_,\\]/g, (m) => `\\${m}`);
+}
+
+// Toggle a like on a post or comment. The liker is identified by their
+// (browser-stored) nickname; no password is required to like.
+export const toggleLike = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        targetType: z.enum(["post", "comment"]),
+        targetId: z.string().uuid(),
+        likerName: z.string().trim().max(100),
+      })
+      .parse(input),
+  )
+  .handler(
+    async ({ data }): Promise<{ liked: boolean; count: number }> => {
+      const db = await getAdmin();
+      const name = data.likerName.trim();
+      const key = normalizeName(name);
+      if (!key || key === "익명") {
+        throw new Error("닉네임을 먼저 설정해주세요.");
+      }
+
+      const { data: existing, error: selErr } = await db
+        .from("post_likes")
+        .select("id")
+        .eq("target_type", data.targetType)
+        .eq("target_id", data.targetId)
+        .eq("liker_key", key)
+        .maybeSingle();
+      if (selErr) throw new Error(selErr.message);
+
+      let liked: boolean;
+      if (existing) {
+        const { error } = await db
+          .from("post_likes")
+          .delete()
+          .eq("id", existing.id);
+        if (error) throw new Error(error.message);
+        liked = false;
+      } else {
+        const { error } = await db.from("post_likes").insert({
+          target_type: data.targetType,
+          target_id: data.targetId,
+          liker_key: key,
+          liker_name: name,
+        });
+        if (error) throw new Error(error.message);
+        liked = true;
+      }
+
+      const { count, error: cErr } = await db
+        .from("post_likes")
+        .select("id", { count: "exact", head: true })
+        .eq("target_type", data.targetType)
+        .eq("target_id", data.targetId);
+      if (cErr) throw new Error(cErr.message);
+
+      return { liked, count: count ?? 0 };
+    },
+  );
+
+export type LikeStateMap = Record<string, { count: number; liked: boolean }>;
+
+// Returns like counts + whether the given nickname has liked each target.
+export const getLikeState = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z
+      .object({
+        targetType: z.enum(["post", "comment"]),
+        targetIds: z.array(z.string().uuid()).max(200).default([]),
+        likerName: z.string().trim().max(100).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<LikeStateMap> => {
+    const db = await getAdmin();
+    const map: LikeStateMap = {};
+    for (const id of data.targetIds) map[id] = { count: 0, liked: false };
+    if (data.targetIds.length === 0) return map;
+
+    const key = normalizeName(data.likerName);
+    const { data: rows, error } = await db
+      .from("post_likes")
+      .select("target_id, liker_key")
+      .eq("target_type", data.targetType)
+      .in("target_id", data.targetIds);
+    if (error) throw new Error(error.message);
+
+    for (const r of rows ?? []) {
+      const id = String(r.target_id);
+      const entry = map[id] ?? { count: 0, liked: false };
+      entry.count += 1;
+      if (key && r.liker_key === key) entry.liked = true;
+      map[id] = entry;
+    }
+    return map;
+  });
+
+// ============================================================
+// Personal dashboard ("내 페이지").
+// ============================================================
+
+// Verifies a nickname + password against the claimed profile. Used by the
+// dashboard login. Never returns the stored hash.
+export const verifyNicknameLogin = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        username: z.string().trim().min(1).max(100),
+        password: z.string().min(1).max(200),
+      })
+      .parse(input),
+  )
+  .handler(
+    async ({ data }): Promise<{ ok: boolean; username: string }> => {
+      const db = await getAdmin();
+      const key = normalizeName(data.username);
+      const { data: row, error } = await db
+        .from("user_profiles")
+        .select("username, nickname_password")
+        .eq("username_key", key)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!row || !row.nickname_password) {
+        throw new Error(
+          "등록되지 않은 닉네임이거나 비밀번호가 설정되지 않았습니다. 글이나 댓글을 작성하면 닉네임이 등록됩니다.",
+        );
+      }
+      const incoming = await hashSecret(data.password);
+      if (incoming !== row.nickname_password) {
+        throw new Error("비밀번호가 일치하지 않습니다.");
+      }
+      return { ok: true, username: row.username ?? data.username.trim() };
+    },
+  );
+
+export interface DashPostDTO {
+  id: string;
+  postNo: number;
+  title: string;
+  type: string;
+  createdAt: string;
+  commentCount: number;
+  categorySlug: string;
+  categoryName: string;
+}
+
+export interface DashCommentDTO {
+  id: string;
+  content: string;
+  author: string;
+  createdAt: string;
+  postId: string;
+  postNo: number;
+  postTitle: string;
+  categorySlug: string;
+  categoryName: string;
+}
+
+export interface DashLikeDTO {
+  id: string;
+  targetType: LikeTarget;
+  createdAt: string;
+  postNo: number;
+  postTitle: string;
+  categorySlug: string;
+  categoryName: string;
+  commentExcerpt: string;
+  likerName: string;
+}
+
+export interface DashboardDTO {
+  username: string;
+  myPosts: DashPostDTO[];
+  myComments: DashCommentDTO[];
+  repliesToMe: DashCommentDTO[];
+  likesGiven: DashLikeDTO[];
+  likesReceived: { total: number; items: DashLikeDTO[] };
+}
+
+// Resolves posts to link metadata (post_no, title, category slug/name).
+async function buildPostLookup(
+  db: { from: (t: string) => any },
+  postIds: string[],
+): Promise<
+  Map<
+    string,
+    {
+      postNo: number;
+      title: string;
+      categorySlug: string;
+      categoryName: string;
+    }
+  >
+> {
+  const lookup = new Map<
+    string,
+    { postNo: number; title: string; categorySlug: string; categoryName: string }
+  >();
+  const ids = Array.from(new Set(postIds.filter(Boolean)));
+  if (ids.length === 0) return lookup;
+  const { data: rows, error } = await db
+    .from("posts")
+    .select("id, post_no, title, categories!inner(slug, name)")
+    .in("id", ids);
+  if (error) throw new Error(error.message);
+  for (const r of rows ?? []) {
+    lookup.set(String(r.id), {
+      postNo: r.post_no ?? 0,
+      title: r.title ?? "",
+      categorySlug: r.categories?.slug ?? "",
+      categoryName: r.categories?.name ?? "",
+    });
+  }
+  return lookup;
+}
+
+// Aggregates a single nickname's posts, comments, comment-reactions, and likes.
+// Re-verifies the password on every call (no server session).
+export const getMyDashboard = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        username: z.string().trim().min(1).max(100),
+        password: z.string().min(1).max(200),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<DashboardDTO> => {
+    const db = await getAdmin();
+    const name = data.username.trim();
+    const key = normalizeName(name);
+
+    // Re-authenticate.
+    const { data: prof, error: pErr } = await db
+      .from("user_profiles")
+      .select("username, nickname_password")
+      .eq("username_key", key)
+      .maybeSingle();
+    if (pErr) throw new Error(pErr.message);
+    if (!prof || !prof.nickname_password) {
+      throw new Error("등록되지 않은 닉네임이거나 비밀번호가 설정되지 않았습니다.");
+    }
+    if ((await hashSecret(data.password)) !== prof.nickname_password) {
+      throw new Error("비밀번호가 일치하지 않습니다.");
+    }
+
+    const pat = escapeIlike(name);
+
+    // --- My posts ---
+    const { data: postRows, error: postErr } = await db
+      .from("posts")
+      .select("id, post_no, title, type, created_at, categories!inner(slug, name)")
+      .ilike("author", pat)
+      .order("created_at", { ascending: false });
+    if (postErr) throw new Error(postErr.message);
+    const myPostRows = postRows ?? [];
+    const myPostIds = myPostRows.map((p: any) => String(p.id));
+
+    // Comment counts for my posts.
+    const commentCounts: Record<string, number> = {};
+    if (myPostIds.length > 0) {
+      const { data: ccRows, error: ccErr } = await db
+        .from("comments")
+        .select("post_id")
+        .in("post_id", myPostIds);
+      if (ccErr) throw new Error(ccErr.message);
+      for (const c of ccRows ?? []) {
+        const pid = String(c.post_id);
+        commentCounts[pid] = (commentCounts[pid] ?? 0) + 1;
+      }
+    }
+
+    const myPosts: DashPostDTO[] = myPostRows.map((p: any) => ({
+      id: String(p.id),
+      postNo: p.post_no ?? 0,
+      title: p.title ?? "",
+      type: p.type,
+      createdAt: p.created_at,
+      commentCount: commentCounts[String(p.id)] ?? 0,
+      categorySlug: p.categories?.slug ?? "",
+      categoryName: p.categories?.name ?? "",
+    }));
+
+    // --- My comments ---
+    const { data: myCommentRows, error: mcErr } = await db
+      .from("comments")
+      .select("id, post_id, author, content, created_at")
+      .ilike("author", pat)
+      .order("created_at", { ascending: false });
+    if (mcErr) throw new Error(mcErr.message);
+    const myComments0 = myCommentRows ?? [];
+
+    // --- Replies to me (comments on my posts, by other people) ---
+    let repliesRows: any[] = [];
+    if (myPostIds.length > 0) {
+      const { data: rRows, error: rErr } = await db
+        .from("comments")
+        .select("id, post_id, author, content, created_at")
+        .in("post_id", myPostIds)
+        .order("created_at", { ascending: false });
+      if (rErr) throw new Error(rErr.message);
+      repliesRows = (rRows ?? []).filter(
+        (c: any) => normalizeName(c.author ?? "") !== key,
+      );
+    }
+
+    // --- Likes given ---
+    const { data: givenRows, error: gErr } = await db
+      .from("post_likes")
+      .select("id, target_type, target_id, liker_name, created_at")
+      .eq("liker_key", key)
+      .order("created_at", { ascending: false });
+    if (gErr) throw new Error(gErr.message);
+    const givenLikes = givenRows ?? [];
+
+    // --- Likes received (on my posts + my comments) ---
+    const myCommentIds = myComments0.map((c: any) => String(c.id));
+    const receivedLikes: any[] = [];
+    if (myPostIds.length > 0) {
+      const { data: rl, error } = await db
+        .from("post_likes")
+        .select("id, target_type, target_id, liker_name, created_at")
+        .eq("target_type", "post")
+        .in("target_id", myPostIds);
+      if (error) throw new Error(error.message);
+      receivedLikes.push(...(rl ?? []));
+    }
+    if (myCommentIds.length > 0) {
+      const { data: rl, error } = await db
+        .from("post_likes")
+        .select("id, target_type, target_id, liker_name, created_at")
+        .eq("target_type", "comment")
+        .in("target_id", myCommentIds);
+      if (error) throw new Error(error.message);
+      receivedLikes.push(...(rl ?? []));
+    }
+    receivedLikes.sort((a, b) =>
+      String(b.created_at).localeCompare(String(a.created_at)),
+    );
+
+    // --- Resolve comments referenced by likes to their parent posts ---
+    const likeCommentIds = [...givenLikes, ...receivedLikes]
+      .filter((l) => l.target_type === "comment")
+      .map((l) => String(l.target_id));
+    const commentLookup = new Map<string, { content: string; postId: string }>();
+    const uniqueLikeCommentIds = Array.from(new Set(likeCommentIds));
+    if (uniqueLikeCommentIds.length > 0) {
+      const { data: cRows, error } = await db
+        .from("comments")
+        .select("id, post_id, content")
+        .in("id", uniqueLikeCommentIds);
+      if (error) throw new Error(error.message);
+      for (const c of cRows ?? []) {
+        commentLookup.set(String(c.id), {
+          content: c.content ?? "",
+          postId: String(c.post_id),
+        });
+      }
+    }
+
+    // Collect every post id we must resolve to a link.
+    const postIdsToResolve = new Set<string>(myPostIds);
+    for (const c of myComments0) postIdsToResolve.add(String(c.post_id));
+    for (const c of repliesRows) postIdsToResolve.add(String(c.post_id));
+    for (const l of [...givenLikes, ...receivedLikes]) {
+      if (l.target_type === "post") postIdsToResolve.add(String(l.target_id));
+      else {
+        const cm = commentLookup.get(String(l.target_id));
+        if (cm) postIdsToResolve.add(cm.postId);
+      }
+    }
+    const postLookup = await buildPostLookup(db, Array.from(postIdsToResolve));
+
+    const mapDashComment = (c: any): DashCommentDTO => {
+      const post = postLookup.get(String(c.post_id));
+      return {
+        id: String(c.id),
+        content: c.content ?? "",
+        author: c.author ?? "익명",
+        createdAt: c.created_at,
+        postId: String(c.post_id),
+        postNo: post?.postNo ?? 0,
+        postTitle: post?.title ?? "(삭제된 글)",
+        categorySlug: post?.categorySlug ?? "",
+        categoryName: post?.categoryName ?? "",
+      };
+    };
+
+    const mapDashLike = (l: any): DashLikeDTO => {
+      let postId = "";
+      let excerpt = "";
+      if (l.target_type === "post") {
+        postId = String(l.target_id);
+      } else {
+        const cm = commentLookup.get(String(l.target_id));
+        if (cm) {
+          postId = cm.postId;
+          excerpt = cm.content.slice(0, 80);
+        }
+      }
+      const post = postLookup.get(postId);
+      return {
+        id: String(l.id),
+        targetType: l.target_type as LikeTarget,
+        createdAt: l.created_at,
+        postNo: post?.postNo ?? 0,
+        postTitle: post?.title ?? "(삭제된 글)",
+        categorySlug: post?.categorySlug ?? "",
+        categoryName: post?.categoryName ?? "",
+        commentExcerpt: excerpt,
+        likerName: l.liker_name ?? "",
+      };
+    };
+
+    return {
+      username: prof.username ?? name,
+      myPosts,
+      myComments: myComments0.map(mapDashComment),
+      repliesToMe: repliesRows.map(mapDashComment),
+      likesGiven: givenLikes.map(mapDashLike),
+      likesReceived: {
+        total: receivedLikes.length,
+        items: receivedLikes.map(mapDashLike),
+      },
+    };
+  });
