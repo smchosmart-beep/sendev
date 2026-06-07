@@ -51,6 +51,9 @@ function NewGeneralPage() {
     persistIdentity,
   } = useNicknameIdentity();
   const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
+  const { claimed } = useNicknameClaimed(author);
+  // 등록되지 않은 닉네임(처음 사용)일 때만 비밀번호 확인을 한 번 더 받는다.
+  const needsConfirm = !claimed;
 
   const mutation = useMutation({
     mutationFn: () =>
