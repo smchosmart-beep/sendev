@@ -7,6 +7,7 @@ import {
   eventsQueryOptions,
 } from "@/lib/platform.queries";
 import { HeroStackCarousel } from "@/components/hero-stack-carousel";
+import { KakaoMap } from "@/components/KakaoMap";
 
 export const Route = createFileRoute("/_main/home")({
   head: () => ({
@@ -132,6 +133,15 @@ function HomePage() {
                   <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
                     {e.description}
                   </p>
+                )}
+                {e.latitude != null && e.longitude != null && (
+                  <KakaoMap
+                    lat={e.latitude}
+                    lng={e.longitude}
+                    name={e.location}
+                    asLink={false}
+                    className="mt-3 h-32 w-full rounded-lg"
+                  />
                 )}
               </Link>
             ))}

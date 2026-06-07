@@ -13,6 +13,7 @@ import {
   Trash2,
   X,
   Loader2,
+  Search,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,10 +23,13 @@ import {
   updateEvent,
   deleteEvent,
   uploadEventFile,
+  searchPlaces,
   type EventDTO,
   type EventAttachment,
   type EventLink,
+  type PlaceResult,
 } from "@/lib/platform.functions";
+import { KakaoMap } from "@/components/KakaoMap";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,6 +85,7 @@ function AdminCalendarPage() {
   const updateFn = useServerFn(updateEvent);
   const deleteFn = useServerFn(deleteEvent);
   const uploadFileFn = useServerFn(uploadEventFile);
+  const searchFn = useServerFn(searchPlaces);
 
   const [editing, setEditing] = useState<Editing | null>(null);
   const [pendingDelete, setPendingDelete] = useState<EventDTO | null>(null);
@@ -90,6 +95,13 @@ function AdminCalendarPage() {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [location, setLocation] = useState("");
+  const [placeAddress, setPlaceAddress] = useState("");
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [manualPlace, setManualPlace] = useState(false);
+  const [placeQuery, setPlaceQuery] = useState("");
+  const [placeResults, setPlaceResults] = useState<PlaceResult[]>([]);
+  const [searchingPlace, setSearchingPlace] = useState(false);
   const [target, setTarget] = useState("");
   const [description, setDescription] = useState("");
   const [attachments, setAttachments] = useState<EventAttachment[]>([]);
@@ -107,11 +119,21 @@ function AdminCalendarPage() {
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["events"] });
 
+  const resetPlace = () => {
+    setLocation("");
+    setPlaceAddress("");
+    setLatitude(null);
+    setLongitude(null);
+    setManualPlace(false);
+    setPlaceQuery("");
+    setPlaceResults([]);
+  };
+
   const openCreate = () => {
     setTitle("");
     setDate("");
     setTime("");
-    setLocation("");
+    resetPlace();
     setTarget("");
     setDescription("");
     setAttachments([]);
@@ -126,6 +148,12 @@ function AdminCalendarPage() {
     setDate(event.date);
     setTime(event.time);
     setLocation(event.location);
+    setPlaceAddress(event.placeAddress);
+    setLatitude(event.latitude);
+    setLongitude(event.longitude);
+    setManualPlace(event.latitude == null && !!event.location);
+    setPlaceQuery("");
+    setPlaceResults([]);
     setTarget(event.target);
     setDescription(event.description);
     setAttachments(event.attachments);
@@ -133,6 +161,36 @@ function AdminCalendarPage() {
     setLinkLabel("");
     setLinkUrl("");
     setEditing({ mode: "edit", event });
+  };
+
+  const runPlaceSearch = async () => {
+    if (!placeQuery.trim()) return;
+    setSearchingPlace(true);
+    try {
+      const results = await searchFn({ data: { query: placeQuery.trim() } });
+      setPlaceResults(results);
+      if (results.length === 0) toast.info("검색 결과가 없어요.");
+    } catch (err) {
+      toast.error(`장소 검색 실패: ${(err as Error).message}`);
+    } finally {
+      setSearchingPlace(false);
+    }
+  };
+
+  const selectPlace = (p: PlaceResult) => {
+    setLocation(p.name);
+    setPlaceAddress(p.address);
+    setLatitude(p.lat);
+    setLongitude(p.lng);
+    setPlaceResults([]);
+    setPlaceQuery("");
+  };
+
+  const clearPlace = () => {
+    setLocation("");
+    setPlaceAddress("");
+    setLatitude(null);
+    setLongitude(null);
   };
 
   const handleFiles = async (files: FileList | null) => {
@@ -183,11 +241,15 @@ function AdminCalendarPage() {
     }
     setSaving(true);
     try {
+      const useMap = !manualPlace && latitude != null && longitude != null;
       const payload = {
         title: title.trim(),
         date,
         time: time.trim(),
         location: location.trim(),
+        placeAddress: useMap ? placeAddress.trim() : "",
+        latitude: useMap ? latitude : null,
+        longitude: useMap ? longitude : null,
         target: target.trim(),
         description: description.trim(),
         attachments,
@@ -349,15 +411,6 @@ function AdminCalendarPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="ev-loc">장소</Label>
-                <Input
-                  id="ev-loc"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="예: 온라인 / 서울"
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="ev-target">대상</Label>
                 <Input
                   id="ev-target"
@@ -367,6 +420,111 @@ function AdminCalendarPage() {
                 />
               </div>
             </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>장소</Label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setManualPlace((v) => !v);
+                    clearPlace();
+                  }}
+                  className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                >
+                  {manualPlace ? "지도에서 검색" : "지도 없이 직접 입력"}
+                </button>
+              </div>
+
+              {manualPlace ? (
+                <Input
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="예: 온라인 / 자택 / 원격"
+                />
+              ) : (
+                <>
+                  {latitude != null && longitude != null ? (
+                    <div className="space-y-2 rounded-md border border-border p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="flex items-center gap-1.5 font-medium">
+                            <MapPin className="h-4 w-4 shrink-0 text-primary" />
+                            <span className="truncate">{location}</span>
+                          </p>
+                          {placeAddress && (
+                            <p className="truncate pl-5 text-sm text-muted-foreground">
+                              {placeAddress}
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={clearPlace}
+                        >
+                          변경
+                        </Button>
+                      </div>
+                      <KakaoMap
+                        lat={latitude}
+                        lng={longitude}
+                        name={location}
+                        className="h-40 w-full rounded-md"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex gap-2">
+                        <Input
+                          value={placeQuery}
+                          onChange={(e) => setPlaceQuery(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              runPlaceSearch();
+                            }
+                          }}
+                          placeholder="장소명·주소 검색 (예: 강남역, 코엑스)"
+                        />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={runPlaceSearch}
+                          disabled={searchingPlace}
+                        >
+                          {searchingPlace ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Search className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                      {placeResults.length > 0 && (
+                        <ul className="max-h-52 divide-y divide-border overflow-y-auto rounded-md border border-border">
+                          {placeResults.map((p, i) => (
+                            <li key={`${p.name}-${i}`}>
+                              <button
+                                type="button"
+                                onClick={() => selectPlace(p)}
+                                className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left hover:bg-muted"
+                              >
+                                <span className="font-medium">{p.name}</span>
+                                <span className="text-sm text-muted-foreground">
+                                  {p.address}
+                                </span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+
 
             <div className="space-y-2">
               <Label htmlFor="ev-desc">메모</Label>
