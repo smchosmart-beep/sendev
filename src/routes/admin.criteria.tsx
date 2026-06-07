@@ -111,6 +111,10 @@ function CriteriaPage() {
       <BoardEvalCard key={`eval-${activeId}`} board={activeBoard} />
 
       <CriteriaManager key={activeId} categoryId={activeId} />
+
+      <ReviewAllowlistCard key={`allow-${activeId}`} board={activeBoard} />
+
+      <CategoryReviewsCard key={`reviews-${activeId}`} categoryId={activeId} />
     </div>
   );
 }
