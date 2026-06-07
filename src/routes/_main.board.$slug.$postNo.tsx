@@ -76,7 +76,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { AutoTextarea } from "@/components/ui/auto-textarea";
 import { PostEditor } from "@/components/PostEditor";
 
 const NUMERIC_RE = /^\d+$/;
@@ -1540,7 +1540,7 @@ function CommentsSection({ postId }: { postId: string }) {
             className="rounded-xl"
           />
         </div>
-        <Textarea
+        <AutoTextarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="댓글을 입력하세요"
@@ -1841,7 +1841,7 @@ function CommentForm({
           className="rounded-xl"
         />
       </div>
-      <Textarea
+      <AutoTextarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="답글을 입력하세요"
