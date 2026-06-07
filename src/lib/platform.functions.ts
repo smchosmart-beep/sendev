@@ -930,7 +930,10 @@ export const createPost = createServerFn({ method: "POST" })
   });
 
 
-// Verifies the registrant's edit/delete password for a post.
+// Verifies the right to edit/delete a post.
+// Unified model: the post author's nickname password (hashed) is the single
+// credential. The admin master password always passes. Legacy posts that only
+// have a plaintext edit_password keep working as a fallback.
 async function checkPostPassword(
   db: { from: (t: string) => any },
   id: string,
@@ -938,15 +941,31 @@ async function checkPostPassword(
 ): Promise<boolean> {
   const { data: row, error } = await db
     .from("posts")
-    .select("edit_password")
+    .select("author, edit_password")
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  // Admin master password: bypasses the per-post password. Read server-side
+  // Admin master password: bypasses all per-post checks. Read server-side
   // only (never reaches the client bundle). Empty input never matches.
   const master = process.env.POST_MASTER_PASSWORD;
   if (master && password.length > 0 && password === master) return true;
-  if (!row) return false;
+  if (!row || password.length === 0) return false;
+
+  // Primary: match the author's nickname password.
+  const key = normalizeName((row.author ?? "").trim());
+  if (key && key !== "익명") {
+    const { data: prof } = await db
+      .from("user_profiles")
+      .select("nickname_password")
+      .eq("username_key", key)
+      .maybeSingle();
+    if (prof?.nickname_password) {
+      const incoming = await hashSecret(password);
+      if (incoming === prof.nickname_password) return true;
+    }
+  }
+
+  // Fallback: legacy plaintext per-post password.
   return !!row.edit_password && row.edit_password === password;
 }
 
