@@ -490,8 +490,9 @@ function CalendarPage() {
 
 
               {selected.description && (
-                <p className="whitespace-pre-wrap rounded-xl bg-muted p-4 text-muted-foreground">
-                  {selected.description}
+                <p className="flex items-start gap-2 whitespace-pre-wrap rounded-xl bg-muted p-4 text-muted-foreground">
+                  <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <span>{selected.description}</span>
                 </p>
               )}
               {selected.attachments.length > 0 && (
