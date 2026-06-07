@@ -513,6 +513,7 @@ function ProfilesAdmin() {
 
   return (
     <Tabs defaultValue="list" className="space-y-6">
+      {confirmDialog}
       <TabsList className="grid w-full max-w-md grid-cols-2 rounded-xl">
         <TabsTrigger value="list" className="gap-1.5 rounded-lg">
           <Users className="h-4 w-4" />
