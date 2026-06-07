@@ -1841,3 +1841,65 @@ export const verifyProfileAdmin = createServerFn({ method: "POST" })
     if (!secret || data.password.length === 0) return { ok: false };
     return { ok: data.password === secret };
   });
+
+// ============================================================
+// Award badge icon: a single global lucide icon name chosen by the admin.
+// Stored in site_settings under the 'award_icon' key.
+// ============================================================
+
+// Whitelist of allowed lucide icon names for the award badge. Used both for
+// the admin picker and for server-side validation.
+export const AWARD_ICON_NAMES = [
+  "Trophy",
+  "Award",
+  "Medal",
+  "Star",
+  "Crown",
+  "Flame",
+  "Heart",
+  "Zap",
+  "Shield",
+  "Gem",
+  "ThumbsUp",
+  "Rocket",
+  "Ribbon",
+  "Sparkles",
+] as const;
+
+export type AwardIconName = (typeof AWARD_ICON_NAMES)[number];
+
+const DEFAULT_AWARD_ICON: AwardIconName = "Trophy";
+
+// Public: returns the globally configured award badge icon name.
+export const getAwardIcon = createServerFn({ method: "GET" }).handler(
+  async (): Promise<AwardIconName> => {
+    const db = await getAdmin();
+    const { data, error } = await db
+      .from("site_settings")
+      .select("value")
+      .eq("key", "award_icon")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    const value = data?.value as string | undefined;
+    return (AWARD_ICON_NAMES as readonly string[]).includes(value ?? "")
+      ? (value as AwardIconName)
+      : DEFAULT_AWARD_ICON;
+  },
+);
+
+// Admin: sets the global award badge icon (validated against the whitelist).
+export const setAwardIcon = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z.object({ icon: z.enum(AWARD_ICON_NAMES) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { error } = await db
+      .from("site_settings")
+      .upsert(
+        { key: "award_icon", value: data.icon },
+        { onConflict: "key" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

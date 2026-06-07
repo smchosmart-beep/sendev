@@ -1,7 +1,9 @@
-import { Trophy } from "lucide-react";
+import { Trophy, icons as lucideIcons } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 import { cn } from "@/lib/utils";
 import { normalizeUsername, type ProfileMap } from "@/lib/platform.functions";
+import { awardIconQueryOptions } from "@/lib/platform.queries";
 
 interface AuthorBadgeProps {
   author: string;
@@ -18,6 +20,7 @@ export function AuthorBadge({
   size = "sm",
   className,
 }: AuthorBadgeProps) {
+  const { data: awardIcon } = useQuery(awardIconQueryOptions());
   const profile = profileMap[normalizeUsername(author ?? "")];
   if (!profile) return null;
 
@@ -26,6 +29,11 @@ export function AuthorBadge({
   if (!hasLevel && !hasAward) return null;
 
   const padding = size === "md" ? "px-2 py-0.5 text-xs" : "px-1.5 py-0.5 text-[11px]";
+
+  // Resolve the admin-configured icon by name, falling back to Trophy.
+  const AwardIcon =
+    (awardIcon && (lucideIcons as Record<string, typeof Trophy>)[awardIcon]) ||
+    Trophy;
 
   return (
     <span className={cn("inline-flex flex-wrap items-center gap-1 align-middle", className)}>
@@ -46,7 +54,7 @@ export function AuthorBadge({
             padding,
           )}
         >
-          <Trophy className="h-3 w-3 shrink-0" />
+          <AwardIcon className="h-3 w-3 shrink-0" />
           {profile.award}
         </span>
       )}

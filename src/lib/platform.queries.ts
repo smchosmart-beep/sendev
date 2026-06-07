@@ -18,6 +18,7 @@ import {
   listHeroSlides,
   listUserProfiles,
   getProfileMap,
+  getAwardIcon,
 } from "./platform.functions";
 
 export const searchPostsQueryOptions = (
@@ -145,5 +146,12 @@ export const profileMapQueryOptions = () =>
   queryOptions({
     queryKey: ["profile-map"],
     queryFn: () => getProfileMap(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+export const awardIconQueryOptions = () =>
+  queryOptions({
+    queryKey: ["award-icon"],
+    queryFn: () => getAwardIcon(),
     staleTime: 5 * 60 * 1000,
   });
