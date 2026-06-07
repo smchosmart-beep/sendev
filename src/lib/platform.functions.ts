@@ -18,6 +18,74 @@ async function getAdmin() {
   };
 }
 
+// ----------------------------- Nickname ownership ----------------------------
+// Anonymous community: authors are free-text. To stop nickname spoofing, a
+// nickname is "claimed" with a password the first time it is used; subsequent
+// posts/comments under the same (normalized) name must supply that password.
+// The password is stored only as a SHA-256 hash and never returned to clients.
+
+function normalizeName(name: string): string {
+  return (name ?? "").trim().toLowerCase();
+}
+
+async function hashSecret(secret: string): Promise<string> {
+  const bytes = new TextEncoder().encode(`sendev-nick:${secret}`);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+// Verifies (or first-time claims) ownership of an author nickname.
+// Skips the check for empty names, "익명", and notice (운영진) posts.
+async function ensureNicknameOwnership(
+  db: { from: (t: string) => any },
+  author: string,
+  nicknamePassword: string,
+  isNotice: boolean,
+): Promise<void> {
+  if (isNotice) return;
+  const name = (author ?? "").trim();
+  const key = normalizeName(name);
+  if (!key || key === "익명") return;
+
+  const { data: row, error } = await db
+    .from("user_profiles")
+    .select("id, nickname_password")
+    .eq("username_key", key)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+
+  const hasClaim = !!row && !!row.nickname_password;
+
+  if (hasClaim) {
+    if (!nicknamePassword) {
+      throw new Error("이미 사용 중인 닉네임입니다. 닉네임 비밀번호를 입력해주세요.");
+    }
+    const incoming = await hashSecret(nicknamePassword);
+    if (incoming !== row.nickname_password) {
+      throw new Error("이미 사용 중인 닉네임입니다. 닉네임 비밀번호가 일치하지 않습니다.");
+    }
+    return;
+  }
+
+  // First-time claim: require a password to lock the nickname.
+  if (!nicknamePassword || nicknamePassword.trim().length < 4) {
+    throw new Error("닉네임 비밀번호를 4자 이상 입력해 닉네임을 등록해주세요.");
+  }
+  const hashed = await hashSecret(nicknamePassword.trim());
+  const { error: upErr } = await db.from("user_profiles").upsert(
+    {
+      username: name,
+      username_key: key,
+      nickname_password: hashed,
+      claimed_at: new Date().toISOString(),
+    },
+    { onConflict: "username_key" },
+  );
+  if (upErr) throw new Error(upErr.message);
+}
+
 export type TabGroup = "hackathon" | "resources" | "devground" | "helloworld";
 
 export interface CategoryDTO {
