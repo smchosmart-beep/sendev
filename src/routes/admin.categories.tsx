@@ -209,7 +209,7 @@ function CategoriesPage() {
 
   const swapMutation = useMutation({
     mutationFn: (vars: { id: string; otherId: string }) =>
-      swapOrderFn({ data: vars }),
+      swapOrderFn({ data: { ...vars, adminPassword: getAdminPassword() } }),
     onSuccess: () => invalidate(),
     onError: () => toast.error("순서 변경 중 문제가 발생했어요."),
   });
