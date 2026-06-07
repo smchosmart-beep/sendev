@@ -9,6 +9,8 @@ import {
   searchPosts,
   listCriteria,
   listReviews,
+  listReviewAllowlist,
+  listCategoryReviews,
   getMyReview,
   listMyReviewedPostIds,
   listComments,
