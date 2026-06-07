@@ -182,16 +182,6 @@ function NewQuestionPage() {
                 )}
             </div>
           )}
-          <div className="space-y-2">
-            <Label htmlFor="q-pw">수정·삭제 비밀번호</Label>
-            <PasswordInput
-              id="q-pw"
-              value={editPassword}
-              onChange={(e) => setEditPassword(e.target.value)}
-              placeholder="나중에 수정·삭제할 때 사용해요"
-              className="rounded-xl"
-            />
-          </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button asChild type="button" variant="secondary" className="rounded-xl active:scale-95">
               <Link to="/board/$slug" params={{ slug }}>취소</Link>
