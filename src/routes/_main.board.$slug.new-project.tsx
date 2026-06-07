@@ -65,7 +65,6 @@ function NewProjectPage() {
           nicknamePassword,
           githubUrl,
           deployUrl,
-          editPassword,
         },
       }),
     onSuccess: (res) => {
