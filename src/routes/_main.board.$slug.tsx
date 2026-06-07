@@ -32,9 +32,10 @@ export const Route = createFileRoute("/_main/board/$slug")({
   component: BoardLayout,
 });
 
-function unlockKey(id: string) {
-  return `board-unlock-${id}`;
+function unlockKey(slug: string) {
+  return `board-pw-${slug}`;
 }
+
 
 function BoardLayout() {
   const { slug } = useParams({ from: "/_main/board/$slug" });
