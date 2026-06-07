@@ -264,7 +264,29 @@ function GuidePage() {
           <li><strong>Dev Ground</strong>: 프로젝트·아이디어 등 개발 활동을 자유롭게 공유하는 공간입니다.</li>
           <li><strong>Hello, World</strong>: 자기소개, 인사, 가벼운 이야기 등을 나누는 게시판입니다.</li>
         </ul>
+        <p className="mt-3">
+          각 탭 안의 게시판은 <strong>폴더(그룹) 구조로 정리</strong>됩니다. 폴더를 펼치면 그 안에 속한
+          하위 게시판들이 보이고, 게시판을 누르면 글 목록으로 들어갑니다. 폴더 안에 또 다른 폴더를 넣어
+          여러 단계로 분류할 수도 있습니다.
+        </p>
+        <ul className="ml-5 list-disc space-y-2">
+          <li><strong>폴더(그룹)</strong>: 게시판들을 묶어두는 상자입니다. 폴더에는 글을 쓰지 않습니다.</li>
+          <li><strong>게시판</strong>: 실제로 글을 쓰고 읽는 공간입니다.</li>
+        </ul>
       </Section>
+
+      <Section id="posting" icon={LayoutGrid} title="글쓰기와 공지">
+        <p>
+          공지·질문·일반글은 하나의 <strong>글</strong> 형태로 통합되었습니다. 게시판에서 <strong>글 등록</strong> 버튼으로
+          누구나 글을 쓸 수 있고, 글을 작성할 때 <strong>상단 고정(공지)</strong> 옵션을 켜면 그 글이 공지사항 영역에 고정되어 표시됩니다.
+        </p>
+        <ul className="ml-5 list-disc space-y-2">
+          <li>일반 사용자도 공지(상단 고정 글)를 작성할 수 있습니다.</li>
+          <li>고정되지 않은 글은 최신순으로 목록에 표시되며 페이지로 넘겨 볼 수 있습니다.</li>
+          <li>산출물·링크 게시판은 기존과 동일하게 별도로 운영됩니다.</li>
+        </ul>
+      </Section>
+
 
       <Section id="links" icon={LinkIcon} title="본문 링크 미리보기">
         <p>
