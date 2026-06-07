@@ -153,7 +153,7 @@ function AwardIconPicker() {
         수상 배지 아이콘
       </h2>
       <p className="text-sm text-muted-foreground">
-        수상 배지에 표시될 아이콘을 선택해 주세요. 모든 사용자에게 공통으로 적용됩니다.
+        어떤 키워드 규칙에도 맞지 않을 때 사용할 <b>기본 아이콘</b>입니다.
       </p>
       <div className="mt-5 grid grid-cols-5 gap-2 sm:grid-cols-7">
         {AWARD_ICON_NAMES.map((name) => {
