@@ -289,6 +289,40 @@ function CategoriesPage() {
               이 카테고리이 상단 어느 탭에 표시될지 선택하세요.
             </p>
           </div>
+          <div className="space-y-3 rounded-xl bg-muted/40 p-4 sm:col-span-2">
+            <SectionToggle
+              id="add-is-group"
+              label="그룹(폴더)으로 만들기"
+              checked={isGroup}
+              onChange={setIsGroup}
+            />
+            <p className="text-xs text-muted-foreground">
+              폴더는 하위 게시판을 담는 묶음이에요. 폴더 안에는 글을 쓰지 않아요.
+            </p>
+            <div className="space-y-2 pt-1">
+              <Label htmlFor="add-parent">상위 폴더 (선택)</Label>
+              <Select
+                value={parentId || "none"}
+                onValueChange={(v) => setParentId(v === "none" ? "" : v)}
+              >
+                <SelectTrigger id="add-parent" className="rounded-xl bg-background">
+                  <SelectValue placeholder="최상위" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">최상위 (폴더 없음)</SelectItem>
+                  {categories
+                    .filter(
+                      (c) => c.isGroup && (c.tabGroup ?? "hackathon") === tabGroup,
+                    )
+                    .map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="name">카테고리 이름</Label>
             <Input
