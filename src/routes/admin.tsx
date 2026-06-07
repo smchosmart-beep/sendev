@@ -35,7 +35,12 @@ function AdminGate() {
   const [showPw, setShowPw] = useState(false);
 
   useEffect(() => {
-    setGranted(sessionStorage.getItem(ADMIN_SESSION_KEY) === "1");
+    // Only treat the session as granted if the password is also still stored;
+    // otherwise admin server calls would send an empty password and be rejected.
+    setGranted(
+      sessionStorage.getItem(ADMIN_SESSION_KEY) === "1" &&
+        getAdminPassword().length > 0,
+    );
     setMounted(true);
   }, []);
 
