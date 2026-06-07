@@ -1848,6 +1848,14 @@ function CommentForm({
           className="rounded-xl"
         />
       </div>
+      <Input
+        type="password"
+        value={nicknamePassword}
+        onChange={(e) => setNicknamePassword(e.target.value)}
+        placeholder="닉네임 비밀번호 (닉네임 입력 시 필수)"
+        maxLength={100}
+        className="rounded-xl"
+      />
       <AutoTextarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
