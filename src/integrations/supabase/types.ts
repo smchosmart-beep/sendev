@@ -427,6 +427,8 @@ export type Database = {
           id: string
           level: number | null
           nickname_password: string
+          recovery_answer: string
+          recovery_question: string
           updated_at: string
           username: string
           username_key: string
@@ -438,6 +440,8 @@ export type Database = {
           id?: string
           level?: number | null
           nickname_password?: string
+          recovery_answer?: string
+          recovery_question?: string
           updated_at?: string
           username: string
           username_key: string
@@ -449,6 +453,8 @@ export type Database = {
           id?: string
           level?: number | null
           nickname_password?: string
+          recovery_answer?: string
+          recovery_question?: string
           updated_at?: string
           username?: string
           username_key?: string
