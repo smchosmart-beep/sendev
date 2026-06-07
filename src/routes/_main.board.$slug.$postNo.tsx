@@ -16,6 +16,7 @@ import { useServerFn } from "@tanstack/react-start";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import {
   ArrowLeft,
   ArrowRight,
@@ -84,6 +85,30 @@ import { PostEditor } from "@/components/PostEditor";
 import { useNicknameIdentity } from "@/hooks/useNicknameIdentity";
 
 const NUMERIC_RE = /^\d+$/;
+
+// Sanitization schema for post body HTML. Extends the safe defaults to keep the
+// rich-text editor's inline formatting (color / font-size on <span>) while
+// stripping event handlers (onerror/onclick/…), <script>, and other vectors.
+const POST_HTML_SCHEMA = {
+  ...defaultSchema,
+  attributes: {
+    ...defaultSchema.attributes,
+    span: [...(defaultSchema.attributes?.span ?? []), "style"],
+    img: ["src", "alt", "title"],
+  },
+};
+
+// Allows only safe link protocols; blocks javascript:, data:, etc.
+function safeExternalHref(url: string): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url, "https://example.com");
+    return u.protocol === "http:" || u.protocol === "https:" ? url : null;
+  } catch {
+    return null;
+  }
+}
+
 
 const TAB_LABELS: Record<TabGroup, string> = {
   hackathon: "해커톤",
@@ -206,9 +231,9 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
               hour12: true,
             })}
           </span>
-          {!isLink && post.githubUrl && (
+          {!isLink && safeExternalHref(post.githubUrl) && (
             <a
-              href={post.githubUrl}
+              href={safeExternalHref(post.githubUrl)!}
               target="_blank"
               rel="noreferrer"
               className="flex items-center gap-1 text-primary hover:underline"
@@ -217,9 +242,9 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
               GitHub 저장소
             </a>
           )}
-          {post.deployUrl && (
+          {safeExternalHref(post.deployUrl) && (
             <a
-              href={post.deployUrl}
+              href={safeExternalHref(post.deployUrl)!}
               target="_blank"
               rel="noreferrer"
               className="flex items-center gap-1 text-primary hover:underline"
@@ -235,7 +260,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
             {post.content.trim() ? (
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw]}
+                rehypePlugins={[rehypeRaw, [rehypeSanitize, POST_HTML_SCHEMA]]}
                 components={{
                   a: ({ node, className, ...props }) => (
                     <a
@@ -335,9 +360,9 @@ function LinkEmbedSection({
           <ExternalLink className="h-10 w-10" />
         </div>
       )}
-      {deployUrl && (
+      {safeExternalHref(deployUrl) && (
         <Button asChild className="mt-4 w-full rounded-xl active:scale-95">
-          <a href={deployUrl} target="_blank" rel="noreferrer">
+          <a href={safeExternalHref(deployUrl)!} target="_blank" rel="noreferrer">
             <ExternalLink className="h-4 w-4" />
             링크 바로가기
           </a>
