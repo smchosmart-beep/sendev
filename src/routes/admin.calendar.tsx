@@ -13,6 +13,7 @@ import {
   Trash2,
   X,
   Loader2,
+  Search,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,10 +23,13 @@ import {
   updateEvent,
   deleteEvent,
   uploadEventFile,
+  searchPlaces,
   type EventDTO,
   type EventAttachment,
   type EventLink,
+  type PlaceResult,
 } from "@/lib/platform.functions";
+import { KakaoMap } from "@/components/KakaoMap";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
