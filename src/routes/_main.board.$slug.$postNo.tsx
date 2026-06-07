@@ -1903,15 +1903,15 @@ function CommentItem({
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
   return (
     <div className="rounded-xl bg-muted/50 px-4 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-sm">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm">
           {isReply && (
-            <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground" />
+            <CornerDownRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           )}
-          <User className="h-3.5 w-3.5 text-muted-foreground" />
+          <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           <span className="font-medium text-foreground">{comment.author}</span>
           <AuthorBadge author={comment.author} profileMap={profileMap} />
-          <span className="text-xs text-muted-foreground">
+          <span className="w-full text-xs text-muted-foreground sm:w-auto">
             {new Date(comment.createdAt).toLocaleString("ko-KR", {
               year: "numeric",
               month: "long",
