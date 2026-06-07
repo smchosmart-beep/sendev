@@ -88,12 +88,13 @@ function ProfilesAdmin() {
           사용자 프로필 관리
         </h2>
         <p className="text-sm text-muted-foreground">
-          작성자 이름과 레벨·해커톤 수상 정보를 연결해 주세요. 글·댓글에서{" "}
+          작성자 이름과 해커톤 수상 정보를 연결해 주세요. 레벨은{" "}
+          <b>활동 점수(게시글×5 + 댓글×1)</b>로 자동 산정됩니다. 글·댓글에서{" "}
           <b>이름이 정확히 일치</b>하면 자동으로 뱃지가 표시됩니다.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-5 grid gap-4 sm:grid-cols-12">
-          <div className="space-y-2 sm:col-span-4">
+          <div className="space-y-2 sm:col-span-5">
             <Label htmlFor="p-name">사용자명</Label>
             <Input
               id="p-name"
@@ -103,20 +104,7 @@ function ProfilesAdmin() {
               className="rounded-xl"
             />
           </div>
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="p-level">레벨 (1~99)</Label>
-            <Input
-              id="p-level"
-              type="number"
-              min={1}
-              max={99}
-              value={level}
-              onChange={(e) => setLevel(e.target.value)}
-              placeholder="예: 3"
-              className="rounded-xl"
-            />
-          </div>
-          <div className="space-y-2 sm:col-span-6">
+          <div className="space-y-2 sm:col-span-7">
             <Label htmlFor="p-award">해커톤 수상</Label>
             <Input
               id="p-award"
