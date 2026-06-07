@@ -1087,6 +1087,9 @@ function EvaluationSection({
   const [scores, setScores] = useState<Record<string, number>>({});
   const [reviewerName, setReviewerName] = useState("");
   const [nicknamePassword, setNicknamePassword] = useState("");
+  const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
+  // 저장된 비밀번호가 없으면(이 기기에서 최초 등록) 확인 입력을 한 번 더 받는다.
+  const reviewPwIsNew = !identity?.nicknamePassword;
 
   // 저장된 닉네임 비밀번호를 자동으로 채워, 한 번 등록하면 평가에서도 재입력하지 않게 한다.
   useEffect(() => {
@@ -1274,6 +1277,13 @@ function EvaluationSection({
                 toast.error("닉네임 비밀번호를 입력해주세요.");
                 return;
               }
+              if (
+                reviewPwIsNew &&
+                nicknamePassword.trim() !== nicknamePasswordConfirm.trim()
+              ) {
+                toast.error("닉네임 비밀번호가 일치하지 않아요.");
+                return;
+              }
               for (const c of criteria) {
                 if (!scores[c.id] || scores[c.id] <= 0) {
                   toast.error("모든 항목에 별점을 매겨주세요.");
@@ -1334,6 +1344,24 @@ function EvaluationSection({
                 닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 본인 확인을 해요. 글·댓글과 같은 비밀번호를 사용합니다.
               </p>
             </div>
+            {reviewPwIsNew && (
+              <div className="space-y-2">
+                <Label htmlFor="reviewer-pw-confirm">닉네임 비밀번호 확인</Label>
+                <PasswordInput
+                  id="reviewer-pw-confirm"
+                  value={nicknamePasswordConfirm}
+                  onChange={(e) => setNicknamePasswordConfirm(e.target.value)}
+                  placeholder="비밀번호를 한 번 더 입력"
+                  maxLength={100}
+                />
+                {nicknamePasswordConfirm.length > 0 &&
+                  nicknamePassword.trim() !== nicknamePasswordConfirm.trim() && (
+                    <p className="text-xs text-destructive">
+                      비밀번호가 일치하지 않아요.
+                    </p>
+                  )}
+              </div>
+            )}
             {criteria.map((c) => (
               <div key={c.id} className="space-y-2">
                 <Label className="flex items-center gap-2">
@@ -1516,6 +1544,7 @@ function CommentsSection({ postId }: { postId: string }) {
   } = useNicknameIdentity();
   const [content, setContent] = useState("");
   const [password, setPassword] = useState("");
+  const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
   const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   // Reply form is open for at most one comment at a time.
@@ -1650,6 +1679,14 @@ function CommentsSection({ postId }: { postId: string }) {
             toast.error("삭제용 비밀번호를 입력해주세요.");
             return;
           }
+          if (
+            !hasStored &&
+            nicknamePassword.trim() &&
+            nicknamePassword.trim() !== nicknamePasswordConfirm.trim()
+          ) {
+            toast.error("닉네임 비밀번호가 일치하지 않아요.");
+            return;
+          }
           createMutation.mutate({
             parentId: null,
             author: author.trim(),
@@ -1684,6 +1721,23 @@ function CommentsSection({ postId }: { postId: string }) {
           maxLength={100}
           className="rounded-xl"
         />
+        {!hasStored && (
+          <>
+            <PasswordInput
+              value={nicknamePasswordConfirm}
+              onChange={(e) => setNicknamePasswordConfirm(e.target.value)}
+              placeholder="닉네임 비밀번호 확인 (닉네임 입력 시)"
+              maxLength={100}
+              className="rounded-xl"
+            />
+            {nicknamePasswordConfirm.length > 0 &&
+              nicknamePassword.trim() !== nicknamePasswordConfirm.trim() && (
+                <p className="text-xs text-destructive">
+                  닉네임 비밀번호가 일치하지 않아요.
+                </p>
+              )}
+          </>
+        )}
         <p className="text-xs text-muted-foreground">
           닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 인증합니다. 익명은 입력하지 않아도 돼요.
           {hasStored && " 저장된 닉네임을 불러왔어요."}
@@ -1967,6 +2021,7 @@ function CommentForm({
   } = useNicknameIdentity();
   const [content, setContent] = useState("");
   const [password, setPassword] = useState("");
+  const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
   const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   return (
@@ -1979,6 +2034,14 @@ function CommentForm({
         }
         if (!password.trim()) {
           toast.error("삭제용 비밀번호를 입력해주세요.");
+          return;
+        }
+        if (
+          !hasStored &&
+          nicknamePassword.trim() &&
+          nicknamePassword.trim() !== nicknamePasswordConfirm.trim()
+        ) {
+          toast.error("닉네임 비밀번호가 일치하지 않아요.");
           return;
         }
         persistIdentity();
@@ -2015,6 +2078,23 @@ function CommentForm({
         maxLength={100}
         className="rounded-xl"
       />
+      {!hasStored && (
+        <>
+          <PasswordInput
+            value={nicknamePasswordConfirm}
+            onChange={(e) => setNicknamePasswordConfirm(e.target.value)}
+            placeholder="닉네임 비밀번호 확인 (닉네임 입력 시)"
+            maxLength={100}
+            className="rounded-xl"
+          />
+          {nicknamePasswordConfirm.length > 0 &&
+            nicknamePassword.trim() !== nicknamePasswordConfirm.trim() && (
+              <p className="text-xs text-destructive">
+                닉네임 비밀번호가 일치하지 않아요.
+              </p>
+            )}
+        </>
+      )}
       {hasStored && (
         <p className="text-xs text-muted-foreground">
           저장된 닉네임을 불러왔어요.

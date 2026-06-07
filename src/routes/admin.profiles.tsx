@@ -29,6 +29,7 @@ import {
   type AwardIconName,
 } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
+import { useConfirm } from "@/hooks/useConfirm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -227,6 +228,8 @@ function AwardIconRules() {
 
   const [keyword, setKeyword] = useState("");
   const [icon, setIcon] = useState<AwardIconName>("Trophy");
+  const { confirm, confirmDialog } = useConfirm();
+
 
   const addMutation = useMutation({
     mutationFn: () => add({ data: { keyword: keyword.trim(), icon, adminPassword: getProfileAdminPassword() } }),
@@ -259,6 +262,7 @@ function AwardIconRules() {
 
   return (
     <div className="rounded-2xl bg-card p-6 shadow-sm">
+      {confirmDialog}
       <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-foreground">
         <Trophy className="h-5 w-5 text-primary" />
         배지 키워드 규칙
@@ -283,8 +287,14 @@ function AwardIconRules() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (confirm(`'${rule.keyword}' 규칙을 삭제할까요?`)) {
+                  onClick={async () => {
+                    if (
+                      await confirm({
+                        description: `'${rule.keyword}' 규칙을 삭제할까요?`,
+                        destructive: true,
+                        confirmText: "삭제",
+                      })
+                    ) {
                       deleteMutation.mutate(rule.id);
                     }
                   }}
@@ -365,6 +375,7 @@ function ProfilesAdmin() {
   const removeAward = useServerFn(deleteUserAward);
   const remove = useServerFn(deleteUserProfile);
   const resetPw = useServerFn(resetNicknamePassword);
+  const { confirm, confirmDialog } = useConfirm();
 
 
   const [username, setUsername] = useState("");
@@ -502,6 +513,7 @@ function ProfilesAdmin() {
 
   return (
     <Tabs defaultValue="list" className="space-y-6">
+      {confirmDialog}
       <TabsList className="grid w-full max-w-md grid-cols-2 rounded-xl">
         <TabsTrigger value="list" className="gap-1.5 rounded-lg">
           <Users className="h-4 w-4" />
@@ -674,8 +686,14 @@ function ProfilesAdmin() {
                               {a.name}
                               <button
                                 type="button"
-                                onClick={() => {
-                                  if (confirm(`'${a.name}' 배지를 삭제할까요?`)) {
+                                onClick={async () => {
+                                  if (
+                                    await confirm({
+                                      description: `'${a.name}' 배지를 삭제할까요?`,
+                                      destructive: true,
+                                      confirmText: "삭제",
+                                    })
+                                  ) {
                                     removeAwardMutation.mutate(a.id);
                                   }
                                 }}
@@ -707,8 +725,13 @@ function ProfilesAdmin() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        if (confirm(`'${p.username}'의 닉네임 비밀번호를 초기화할까요? 분실 시에만 사용하세요.`)) {
+                      onClick={async () => {
+                        if (
+                          await confirm({
+                            description: `'${p.username}'의 닉네임 비밀번호를 초기화할까요? 분실 시에만 사용하세요.`,
+                            confirmText: "초기화",
+                          })
+                        ) {
                           resetPwMutation.mutate(p.id);
                         }
                       }}
@@ -720,8 +743,14 @@ function ProfilesAdmin() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        if (confirm(`'${p.username}' 프로필을 삭제할까요?`)) {
+                      onClick={async () => {
+                        if (
+                          await confirm({
+                            description: `'${p.username}' 프로필을 삭제할까요?`,
+                            destructive: true,
+                            confirmText: "삭제",
+                          })
+                        ) {
                           deleteMutation.mutate(p.id);
                         }
                       }}
