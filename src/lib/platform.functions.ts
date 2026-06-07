@@ -1927,10 +1927,12 @@ export const upsertUserProfile = createServerFn({ method: "POST" })
     z
       .object({
         username: z.string().trim().min(1).max(100),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireProfileAdmin(data.adminPassword);
     const db = await getAdmin();
     const usernameKey = normalizeUsername(data.username);
     const { error } = await db
@@ -1953,10 +1955,12 @@ export const addUserAward = createServerFn({ method: "POST" })
       .object({
         username: z.string().trim().min(1).max(100),
         name: z.string().trim().min(1).max(200),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireProfileAdmin(data.adminPassword);
     const db = await getAdmin();
     const usernameKey = normalizeUsername(data.username);
     // Ensure a profile row exists so the name can be managed.
@@ -1984,9 +1988,10 @@ export const addUserAward = createServerFn({ method: "POST" })
 // Admin: delete a single badge.
 export const deleteUserAward = createServerFn({ method: "POST" })
   .inputValidator((input) =>
-    z.object({ id: z.string().uuid() }).parse(input),
+    z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input),
   )
   .handler(async ({ data }) => {
+    requireProfileAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db
       .from("user_awards")
@@ -1999,9 +2004,10 @@ export const deleteUserAward = createServerFn({ method: "POST" })
 // Admin: delete a mapping.
 export const deleteUserProfile = createServerFn({ method: "POST" })
   .inputValidator((input) =>
-    z.object({ id: z.string().uuid() }).parse(input),
+    z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input),
   )
   .handler(async ({ data }) => {
+    requireProfileAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db
       .from("user_profiles")
@@ -2015,9 +2021,10 @@ export const deleteUserProfile = createServerFn({ method: "POST" })
 // recovery). Clears the stored hash; next writer under that name re-claims it.
 export const resetNicknamePassword = createServerFn({ method: "POST" })
   .inputValidator((input) =>
-    z.object({ id: z.string().uuid() }).parse(input),
+    z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input),
   )
   .handler(async ({ data }) => {
+    requireProfileAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db
       .from("user_profiles")
