@@ -311,6 +311,12 @@ function GuidePage() {
           관리자는 카테고리·공지·일정 관리, 사용자 프로필/배지 관리, 평가 기준 설정 등 사이트 운영 전반을 담당합니다.
           모든 관리자 작업은 실행 시점에 서버에서 관리자 비밀번호를 다시 검증하므로, 비밀번호를 모르면 어떤 우회 방법으로도 관리자 기능을 사용할 수 없습니다.
         </p>
+        <p>
+          평가자 명단은 닉네임을 하나씩 추가하는 <strong>추가</strong> 버튼과, 구글 시트·엑셀에서 복사한 닉네임을
+          한 번에 붙여넣어 등록하는 <strong>일괄 추가</strong> 버튼을 제공합니다. 일괄 추가 창에서는 줄바꿈·쉼표·탭으로
+          구분된 닉네임을 모두 인식하며, 이미 명단에 있는 닉네임은 자동으로 제외됩니다.
+        </p>
+
       </Section>
 
       <p className="flex items-center justify-center gap-2 pt-2 text-center text-xs text-muted-foreground">
