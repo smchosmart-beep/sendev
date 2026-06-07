@@ -302,7 +302,11 @@ function ProfilesAdmin() {
                 취소
               </Button>
             )}
-          </div>
+      </div>
+
+      <AwardIconPicker />
+
+
         </form>
       </div>
 
