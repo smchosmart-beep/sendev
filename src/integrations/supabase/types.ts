@@ -317,27 +317,33 @@ export type Database = {
       user_profiles: {
         Row: {
           award: string
+          claimed_at: string | null
           created_at: string
           id: string
           level: number | null
+          nickname_password: string
           updated_at: string
           username: string
           username_key: string
         }
         Insert: {
           award?: string
+          claimed_at?: string | null
           created_at?: string
           id?: string
           level?: number | null
+          nickname_password?: string
           updated_at?: string
           username: string
           username_key: string
         }
         Update: {
           award?: string
+          claimed_at?: string | null
           created_at?: string
           id?: string
           level?: number | null
+          nickname_password?: string
           updated_at?: string
           username?: string
           username_key?: string
