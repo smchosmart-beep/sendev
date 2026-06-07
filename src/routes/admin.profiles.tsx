@@ -375,6 +375,7 @@ function ProfilesAdmin() {
   const removeAward = useServerFn(deleteUserAward);
   const remove = useServerFn(deleteUserProfile);
   const resetPw = useServerFn(resetNicknamePassword);
+  const { confirm, confirmDialog } = useConfirm();
 
 
   const [username, setUsername] = useState("");
