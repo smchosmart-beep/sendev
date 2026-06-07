@@ -168,6 +168,15 @@ function ProfilesAdmin() {
     onError: () => toast.error("삭제 중 문제가 발생했어요."),
   });
 
+  const resetPwMutation = useMutation({
+    mutationFn: (id: string) => resetPw({ data: { id } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-profiles"] });
+      toast.success("닉네임 비밀번호를 초기화했어요. 다음 작성자가 다시 등록합니다.");
+    },
+    onError: () => toast.error("초기화 중 문제가 발생했어요."),
+  });
+
   const startEdit = (p: UserProfileDTO) => {
     setEditing(p);
     setUsername(p.username);
