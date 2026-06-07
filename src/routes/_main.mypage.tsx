@@ -98,6 +98,11 @@ function MyPage() {
           clear();
           toast.success("이 기기에 저장된 닉네임을 지웠어요.");
         }}
+        onRenamed={(newName) => {
+          setUsername(newName);
+          if (remember) save(newName, password);
+          mutation.mutate({ username: newName, password });
+        }}
         onLogout={() => {
           setData(null);
           setPassword("");
