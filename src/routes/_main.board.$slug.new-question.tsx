@@ -40,6 +40,7 @@ function NewQuestionPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [author, setAuthor] = useState("");
+  const [nicknamePassword, setNicknamePassword] = useState("");
   const [editPassword, setEditPassword] = useState("");
 
   const mutation = useMutation({
