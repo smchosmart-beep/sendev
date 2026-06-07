@@ -1984,7 +1984,6 @@ function CommentForm({
     author: string;
     content: string;
     imageUrls: string[];
-    editPassword: string;
     nicknamePassword: string;
   }) => void;
   onCancel?: () => void;
