@@ -1659,13 +1659,16 @@ function CommentsSection({ postId }: { postId: string }) {
             toast.error("댓글 내용 또는 이미지를 입력해주세요.");
             return;
           }
-          if (!password.trim()) {
-            toast.error("삭제용 비밀번호를 입력해주세요.");
+          if (!author.trim()) {
+            toast.error("닉네임을 입력해주세요.");
+            return;
+          }
+          if (!nicknamePassword.trim()) {
+            toast.error("닉네임 비밀번호를 입력해주세요.");
             return;
           }
           if (
             !hasStored &&
-            nicknamePassword.trim() &&
             nicknamePassword.trim() !== nicknamePasswordConfirm.trim()
           ) {
             toast.error("닉네임 비밀번호가 일치하지 않아요.");
@@ -1676,7 +1679,6 @@ function CommentsSection({ postId }: { postId: string }) {
             author: author.trim(),
             content: content.trim(),
             imageUrls,
-            editPassword: password.trim(),
             nicknamePassword: nicknamePassword.trim(),
           });
         }}
@@ -1686,31 +1688,24 @@ function CommentsSection({ postId }: { postId: string }) {
           <Input
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
-            placeholder="작성자 (선택, 기본 익명)"
+            placeholder="닉네임"
             maxLength={100}
             className="rounded-xl"
           />
           <PasswordInput
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="삭제용 비밀번호"
+            value={nicknamePassword}
+            onChange={(e) => setNicknamePassword(e.target.value)}
+            placeholder="닉네임 비밀번호"
             maxLength={100}
             className="rounded-xl"
           />
         </div>
-        <PasswordInput
-          value={nicknamePassword}
-          onChange={(e) => setNicknamePassword(e.target.value)}
-          placeholder="닉네임 비밀번호 (닉네임 입력 시 필수)"
-          maxLength={100}
-          className="rounded-xl"
-        />
         {!hasStored && (
           <>
             <PasswordInput
               value={nicknamePasswordConfirm}
               onChange={(e) => setNicknamePasswordConfirm(e.target.value)}
-              placeholder="닉네임 비밀번호 확인 (닉네임 입력 시)"
+              placeholder="닉네임 비밀번호 확인"
               maxLength={100}
               className="rounded-xl"
             />
@@ -1723,7 +1718,7 @@ function CommentsSection({ postId }: { postId: string }) {
           </>
         )}
         <p className="text-xs text-muted-foreground">
-          닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 인증합니다. 익명은 입력하지 않아도 돼요.
+          닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 본인 확인합니다. 이 비밀번호로 댓글 삭제도 진행해요.
           {hasStored && " 저장된 닉네임을 불러왔어요."}
         </p>
         <AutoTextarea
