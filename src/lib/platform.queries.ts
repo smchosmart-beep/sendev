@@ -108,6 +108,25 @@ export const reviewsQueryOptions = (postId: string) =>
     queryFn: () => listReviews({ data: { postId } }),
   });
 
+export const reviewAllowlistQueryOptions = (
+  categoryId: string,
+  adminPassword: string,
+) =>
+  queryOptions({
+    queryKey: ["review-allowlist", categoryId],
+    queryFn: () => listReviewAllowlist({ data: { categoryId, adminPassword } }),
+  });
+
+export const categoryReviewsQueryOptions = (
+  categoryId: string,
+  adminPassword: string,
+) =>
+  queryOptions({
+    queryKey: ["category-reviews", categoryId],
+    queryFn: () => listCategoryReviews({ data: { categoryId, adminPassword } }),
+  });
+
+
 export const myReviewQueryOptions = (postId: string, reviewerName: string) =>
   queryOptions({
     queryKey: ["my-review", postId, reviewerName],
