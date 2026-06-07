@@ -1344,6 +1344,24 @@ function EvaluationSection({
                 닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 본인 확인을 해요. 글·댓글과 같은 비밀번호를 사용합니다.
               </p>
             </div>
+            {reviewPwIsNew && (
+              <div className="space-y-2">
+                <Label htmlFor="reviewer-pw-confirm">닉네임 비밀번호 확인</Label>
+                <PasswordInput
+                  id="reviewer-pw-confirm"
+                  value={nicknamePasswordConfirm}
+                  onChange={(e) => setNicknamePasswordConfirm(e.target.value)}
+                  placeholder="비밀번호를 한 번 더 입력"
+                  maxLength={100}
+                />
+                {nicknamePasswordConfirm.length > 0 &&
+                  nicknamePassword.trim() !== nicknamePasswordConfirm.trim() && (
+                    <p className="text-xs text-destructive">
+                      비밀번호가 일치하지 않아요.
+                    </p>
+                  )}
+              </div>
+            )}
             {criteria.map((c) => (
               <div key={c.id} className="space-y-2">
                 <Label className="flex items-center gap-2">
