@@ -996,9 +996,8 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
           >
             <div className="space-y-2">
               <Label htmlFor="d-pw">비밀번호</Label>
-              <Input
+              <PasswordInput
                 id="d-pw"
-                type="password"
                 value={deletePw}
                 onChange={(e) => setDeletePw(e.target.value)}
                 className="rounded-xl"
