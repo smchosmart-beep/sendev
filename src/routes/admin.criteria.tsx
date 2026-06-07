@@ -1,3 +1,4 @@
+import { getAdminPassword } from "@/lib/admin-auth";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
@@ -119,7 +120,7 @@ function BoardEvalCard({ board }: { board: CategoryDTO }) {
   };
 
   const shuffleMutation = useMutation({
-    mutationFn: () => shuffle({ data: { id: board.id } }),
+    mutationFn: () => shuffle({ data: { id: board.id, adminPassword: getAdminPassword() } }),
     onSuccess: () => {
       invalidate();
       setConfirmOpen(false);
@@ -131,7 +132,7 @@ function BoardEvalCard({ board }: { board: CategoryDTO }) {
   });
 
   const closeMutation = useMutation({
-    mutationFn: () => close({ data: { id: board.id } }),
+    mutationFn: () => close({ data: { id: board.id, adminPassword: getAdminPassword() } }),
     onSuccess: () => {
       invalidate();
       toast.success("평가를 마감했어요.");
@@ -247,7 +248,7 @@ function CriteriaManager({ categoryId }: { categoryId: string }) {
   const addMutation = useMutation({
     mutationFn: () =>
       createFn({
-        data: { categoryId, criterionName: name.trim(), maxScore },
+        data: { categoryId, criterionName: name.trim(), maxScore, adminPassword: getAdminPassword() },
       }),
     onSuccess: () => {
       invalidate();
@@ -260,13 +261,13 @@ function CriteriaManager({ categoryId }: { categoryId: string }) {
 
   const toggleMutation = useMutation({
     mutationFn: (v: { id: string; isActive: boolean }) =>
-      updateFn({ data: { id: v.id, isActive: v.isActive } }),
+      updateFn({ data: { id: v.id, isActive: v.isActive, adminPassword: getAdminPassword() } }),
     onSuccess: invalidate,
     onError: () => toast.error("변경 중 문제가 발생했어요."),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteFn({ data: { id } }),
+    mutationFn: (id: string) => deleteFn({ data: { id, adminPassword: getAdminPassword() } }),
     onSuccess: () => {
       invalidate();
       toast.success("평가 기준이 삭제되었어요.");

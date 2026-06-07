@@ -1,3 +1,4 @@
+import { getAdminPassword } from "@/lib/admin-auth";
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
@@ -205,6 +206,7 @@ function AdminCalendarPage() {
         const dataBase64 = await fileToBase64(file);
         const att = await uploadFileFn({
           data: {
+            adminPassword: getAdminPassword(),
             name: file.name,
             contentType: file.type || "application/octet-stream",
             dataBase64,
@@ -256,10 +258,10 @@ function AdminCalendarPage() {
         links,
       };
       if (editing.mode === "edit") {
-        await updateFn({ data: { id: editing.event.id, ...payload } });
+        await updateFn({ data: { id: editing.event.id, ...payload, adminPassword: getAdminPassword() } });
         toast.success("일정을 수정했어요.");
       } else {
-        await createFn({ data: payload });
+        await createFn({ data: { ...payload, adminPassword: getAdminPassword() } });
         toast.success("일정을 추가했어요.");
       }
       await invalidate();
@@ -274,7 +276,7 @@ function AdminCalendarPage() {
   const confirmDelete = async () => {
     if (!pendingDelete) return;
     try {
-      await deleteFn({ data: { id: pendingDelete.id } });
+      await deleteFn({ data: { id: pendingDelete.id, adminPassword: getAdminPassword() } });
       await invalidate();
       toast.success("일정을 삭제했어요.");
     } catch (err) {

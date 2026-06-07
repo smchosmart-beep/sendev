@@ -1,13 +1,15 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { LayoutGrid, SlidersHorizontal, ShieldCheck, Lock, AlertCircle, Megaphone, CalendarDays, Home, UserCog } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 
 // 한글 자모/완성형 음절 제거 (영문 비밀번호 강제)
 const stripKorean = (s: string) => s.replace(/[\u1100-\u11FF\u3130-\u318F\uAC00-\uD7A3]/g, "");
 
 import { cn } from "@/lib/utils";
+import { verifyAdmin } from "@/lib/platform.functions";
+import { setAdminPassword } from "@/lib/admin-auth";
 
-const ADMIN_PASSWORD = "sendev33";
 const ADMIN_SESSION_KEY = "admin-access-granted";
 
 export const Route = createFileRoute("/admin")({
@@ -24,10 +26,12 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminGate() {
+  const verify = useServerFn(verifyAdmin);
   const [mounted, setMounted] = useState(false);
   const [granted, setGranted] = useState(false);
   const [value, setValue] = useState("");
   const [error, setError] = useState(false);
+  const [checking, setChecking] = useState(false);
 
   useEffect(() => {
     setGranted(sessionStorage.getItem(ADMIN_SESSION_KEY) === "1");
@@ -42,15 +46,27 @@ function AdminGate() {
     return <AdminLayout />;
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (value === ADMIN_PASSWORD) {
-      sessionStorage.setItem(ADMIN_SESSION_KEY, "1");
-      setGranted(true);
-    } else {
+    if (checking) return;
+    setChecking(true);
+    setError(false);
+    try {
+      const res = await verify({ data: { password: value } });
+      if (res.ok) {
+        setAdminPassword(value);
+        sessionStorage.setItem(ADMIN_SESSION_KEY, "1");
+        setGranted(true);
+      } else {
+        setError(true);
+      }
+    } catch {
       setError(true);
+    } finally {
+      setChecking(false);
     }
   };
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-6">

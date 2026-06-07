@@ -1,3 +1,4 @@
+import { getAdminPassword } from "@/lib/admin-auth";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -125,6 +126,7 @@ function CategoriesPage() {
     mutationFn: () =>
       createFn({
         data: {
+          adminPassword: getAdminPassword(),
           name: name.trim(),
           slug: slug.trim(),
           description: description.trim(),
@@ -166,6 +168,7 @@ function CategoriesPage() {
     mutationFn: () =>
       updateFn({
         data: {
+          adminPassword: getAdminPassword(),
           id: editing!.id,
           name: editName.trim(),
           slug: editSlug.trim(),
@@ -192,7 +195,7 @@ function CategoriesPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => deleteFn({ data: { id: deleting!.id } }),
+    mutationFn: () => deleteFn({ data: { id: deleting!.id, adminPassword: getAdminPassword() } }),
     onSuccess: () => {
       invalidate();
       setDeleting(null);
@@ -238,7 +241,7 @@ function CategoriesPage() {
     setEditLinkName(c.linkName);
     setEditTabGroup(c.tabGroup ?? "hackathon");
     if (c.hasPassword) {
-      getPasswordFn({ data: { id: c.id } })
+      getPasswordFn({ data: { id: c.id, adminPassword: getAdminPassword() } })
         .then((res) => setEditPassword(res.password))
         .catch(() => toast.error("비밀번호를 불러오지 못했어요."));
     }

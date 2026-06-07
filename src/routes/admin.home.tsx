@@ -1,3 +1,4 @@
+import { getAdminPassword } from "@/lib/admin-auth";
 import { useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -105,6 +106,7 @@ function AdminHomePage() {
         const { dataBase64, contentType } = await resizeImage(file);
         const { url } = await uploadFn({
           data: {
+            adminPassword: getAdminPassword(),
             name: file.name.replace(/\.[^.]+$/, "") + ".jpg",
             contentType,
             dataBase64,
@@ -112,6 +114,7 @@ function AdminHomePage() {
         });
         await createFn({
           data: {
+            adminPassword: getAdminPassword(),
             imageUrl: url,
             caption: caption.trim(),
             linkUrl: linkUrl.trim(),
@@ -136,7 +139,7 @@ function AdminHomePage() {
   };
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteFn({ data: { id } }),
+    mutationFn: (id: string) => deleteFn({ data: { id, adminPassword: getAdminPassword() } }),
     onSuccess: async () => {
       toast.success("슬라이드를 삭제했어요.");
       await invalidate();

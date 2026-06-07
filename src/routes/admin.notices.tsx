@@ -1,3 +1,4 @@
+import { getAdminPassword } from "@/lib/admin-auth";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -90,6 +91,7 @@ function NoticeForm({ categoryId }: { categoryId: string }) {
     mutationFn: () =>
       create({
         data: {
+          adminPassword: getAdminPassword(),
           categoryId,
           type: "notice",
           title,

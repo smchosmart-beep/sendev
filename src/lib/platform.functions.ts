@@ -15,8 +15,41 @@ async function getAdmin() {
   // Types regenerate asynchronously; cast to keep handlers ergonomic.
   return supabaseAdmin as unknown as {
     from: (table: string) => any;
+    storage: any;
   };
 }
+
+// ----------------------------- Admin authorization --------------------------
+// Admin-only server functions verify the dashboard password server-side. The
+// secret value lives only in ADMIN_PASSWORD (server env) and is never returned
+// to clients. Empty input and a missing secret are always rejected. A generic
+// error keeps the response opaque to anonymous callers.
+function requireAdmin(password: string | undefined): void {
+  const secret = process.env.ADMIN_PASSWORD;
+  if (!secret || !password || password !== secret) {
+    throw new Error("권한이 없습니다.");
+  }
+}
+
+// Profile-tab operations are gated by the dedicated PROFILE_ADMIN_PASSWORD
+// (second-level admin password), matching the existing profile gate.
+function requireProfileAdmin(password: string | undefined): void {
+  const secret = process.env.PROFILE_ADMIN_PASSWORD;
+  if (!secret || !password || password !== secret) {
+    throw new Error("권한이 없습니다.");
+  }
+}
+
+// Verifies the dashboard admin password for the admin gate.
+export const verifyAdmin = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z.object({ password: z.string().max(200) }).parse(input),
+  )
+  .handler(async ({ data }): Promise<{ ok: boolean }> => {
+    const secret = process.env.ADMIN_PASSWORD;
+    if (!secret || data.password.length === 0) return { ok: false };
+    return { ok: data.password === secret };
+  });
 
 // ----------------------------- Nickname ownership ----------------------------
 // Anonymous community: authors are free-text. To stop nickname spoofing, a
@@ -233,9 +266,10 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
 // out of the public board list.
 export const getCategoryPassword = createServerFn({ method: "POST" })
   .inputValidator((input) =>
-    z.object({ id: z.string().uuid() }).parse(input),
+    z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input),
   )
   .handler(async ({ data }): Promise<{ password: string }> => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { data: row, error } = await db
       .from("categories")
@@ -284,10 +318,12 @@ export const createCategory = createServerFn({ method: "POST" })
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .default("hackathon"),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { data: maxRow } = await db
       .from("categories")
@@ -340,10 +376,12 @@ export const updateCategory = createServerFn({ method: "POST" })
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .optional(),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const patch: Record<string, unknown> = {
       name: data.name,
@@ -377,8 +415,9 @@ export const updateCategory = createServerFn({ method: "POST" })
 
 
 export const deleteCategory = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input) => z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input))
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db.from("categories").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -388,8 +427,9 @@ export const deleteCategory = createServerFn({ method: "POST" })
 // Admin-only: opens evaluation for a board and shuffles the order by setting a
 // new random eval_seed. Pressing it again re-shuffles everyone's order.
 export const shuffleEvaluation = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input) => z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input))
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const seed = Math.floor(Math.random() * 0x7fffffff);
     const { error } = await db
@@ -402,8 +442,9 @@ export const shuffleEvaluation = createServerFn({ method: "POST" })
 
 // Admin-only: closes evaluation for a board (locks submission again).
 export const closeEvaluation = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input) => z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input))
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db
       .from("categories")
@@ -496,11 +537,13 @@ export const createEvent = createServerFn({ method: "POST" })
         ...placeFields,
         attachments: z.array(attachmentSchema).max(10).default([]),
         links: z.array(linkSchema).max(10).default([]),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { placeAddress, latitude, longitude, ...rest } = data;
+    requireAdmin(data.adminPassword);
+    const { adminPassword: _ap, placeAddress, latitude, longitude, ...rest } = data;
     const db = await getAdmin();
     const { error } = await db.from("events").insert({
       ...rest,
@@ -526,11 +569,13 @@ export const updateEvent = createServerFn({ method: "POST" })
         ...placeFields,
         attachments: z.array(attachmentSchema).max(10).default([]),
         links: z.array(linkSchema).max(10).default([]),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { id, placeAddress, latitude, longitude, ...rest } = data;
+    requireAdmin(data.adminPassword);
+    const { id, adminPassword: _ap, placeAddress, latitude, longitude, ...rest } = data;
     const db = await getAdmin();
     const { error } = await db
       .from("events")
@@ -575,10 +620,12 @@ export const uploadEventFile = createServerFn({ method: "POST" })
         name: z.string().trim().min(1).max(255),
         contentType: z.string().trim().max(200).default("application/octet-stream"),
         dataBase64: z.string().min(1).max(15_000_000),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }): Promise<EventAttachment> => {
+    requireAdmin(data.adminPassword);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const bytes = Buffer.from(data.dataBase64, "base64");
     // Storage object keys must be ASCII-safe. Korean/spaces/special chars in the
@@ -599,8 +646,9 @@ export const uploadEventFile = createServerFn({ method: "POST" })
   });
 
 export const deleteEvent = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input) => z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input))
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db.from("events").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -753,10 +801,13 @@ export const createPost = createServerFn({ method: "POST" })
         series: z.string().trim().max(100).default(""),
         editPassword: z.string().trim().min(1).max(100),
         nicknamePassword: z.string().trim().max(100).default(""),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    // Notices may only be created by an authenticated admin.
+    if (data.type === "notice") requireAdmin(data.adminPassword);
     const db = await getAdmin();
     // Enforce per-board GitHub link requirement.
     const { data: cat } = await db
@@ -1038,10 +1089,12 @@ export const createCriterion = createServerFn({ method: "POST" })
         categoryId: z.string().uuid(),
         criterionName: z.string().trim().min(1).max(200),
         maxScore: z.number().int().min(1).max(100).default(5),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { data: maxRow } = await db
       .from("review_criteria")
@@ -1069,10 +1122,12 @@ export const updateCriterion = createServerFn({ method: "POST" })
         criterionName: z.string().trim().min(1).max(200).optional(),
         maxScore: z.number().int().min(1).max(100).optional(),
         isActive: z.boolean().optional(),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const patch: Record<string, unknown> = {};
     if (data.criterionName !== undefined) patch.criterion_name = data.criterionName;
@@ -1087,8 +1142,9 @@ export const updateCriterion = createServerFn({ method: "POST" })
   });
 
 export const deleteCriterion = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input) => z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input))
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db.from("review_criteria").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -1632,10 +1688,12 @@ export const uploadHeroImage = createServerFn({ method: "POST" })
         name: z.string().trim().min(1).max(255),
         contentType: z.string().trim().max(200).default("image/jpeg"),
         dataBase64: z.string().min(1).max(15_000_000),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }): Promise<{ url: string }> => {
+    requireAdmin(data.adminPassword);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const bytes = Buffer.from(data.dataBase64, "base64");
     const extMatch = data.name.match(/\.([a-zA-Z0-9]{1,10})$/);
@@ -1659,10 +1717,12 @@ export const createHeroSlide = createServerFn({ method: "POST" })
         imageUrl: z.string().trim().url().max(2000),
         caption: z.string().trim().max(200).default(""),
         linkUrl: z.string().trim().max(2000).default(""),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { data: rows } = await db
       .from("hero_slides")
@@ -1681,8 +1741,9 @@ export const createHeroSlide = createServerFn({ method: "POST" })
   });
 
 export const deleteHeroSlide = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input) => z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input))
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db.from("hero_slides").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -1696,10 +1757,12 @@ export const swapHeroSlideOrder = createServerFn({ method: "POST" })
       .object({
         id: z.string().uuid(),
         otherId: z.string().uuid(),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { data: rows, error } = await db
       .from("hero_slides")
@@ -1721,10 +1784,12 @@ export const swapCategoryOrder = createServerFn({ method: "POST" })
       .object({
         id: z.string().uuid(),
         otherId: z.string().uuid(),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { data: rows, error } = await db
       .from("categories")
@@ -1894,10 +1959,12 @@ export const upsertUserProfile = createServerFn({ method: "POST" })
     z
       .object({
         username: z.string().trim().min(1).max(100),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireProfileAdmin(data.adminPassword);
     const db = await getAdmin();
     const usernameKey = normalizeUsername(data.username);
     const { error } = await db
@@ -1920,10 +1987,12 @@ export const addUserAward = createServerFn({ method: "POST" })
       .object({
         username: z.string().trim().min(1).max(100),
         name: z.string().trim().min(1).max(200),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireProfileAdmin(data.adminPassword);
     const db = await getAdmin();
     const usernameKey = normalizeUsername(data.username);
     // Ensure a profile row exists so the name can be managed.
@@ -1951,9 +2020,10 @@ export const addUserAward = createServerFn({ method: "POST" })
 // Admin: delete a single badge.
 export const deleteUserAward = createServerFn({ method: "POST" })
   .inputValidator((input) =>
-    z.object({ id: z.string().uuid() }).parse(input),
+    z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input),
   )
   .handler(async ({ data }) => {
+    requireProfileAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db
       .from("user_awards")
@@ -1966,9 +2036,10 @@ export const deleteUserAward = createServerFn({ method: "POST" })
 // Admin: delete a mapping.
 export const deleteUserProfile = createServerFn({ method: "POST" })
   .inputValidator((input) =>
-    z.object({ id: z.string().uuid() }).parse(input),
+    z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input),
   )
   .handler(async ({ data }) => {
+    requireProfileAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db
       .from("user_profiles")
@@ -1982,9 +2053,10 @@ export const deleteUserProfile = createServerFn({ method: "POST" })
 // recovery). Clears the stored hash; next writer under that name re-claims it.
 export const resetNicknamePassword = createServerFn({ method: "POST" })
   .inputValidator((input) =>
-    z.object({ id: z.string().uuid() }).parse(input),
+    z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input),
   )
   .handler(async ({ data }) => {
+    requireProfileAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db
       .from("user_profiles")
@@ -2164,9 +2236,10 @@ export const getAwardIcon = createServerFn({ method: "GET" }).handler(
 // Admin: sets the global award badge icon (validated against the whitelist).
 export const setAwardIcon = createServerFn({ method: "POST" })
   .inputValidator((input) =>
-    z.object({ icon: z.enum(AWARD_ICON_NAMES) }).parse(input),
+    z.object({ icon: z.enum(AWARD_ICON_NAMES), adminPassword: z.string().max(200).default("") }).parse(input),
   )
   .handler(async ({ data }) => {
+    requireProfileAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db
       .from("site_settings")
@@ -2235,10 +2308,12 @@ export const addAwardIconRule = createServerFn({ method: "POST" })
       .object({
         keyword: z.string().trim().min(1).max(100),
         icon: z.enum(AWARD_ICON_NAMES),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireProfileAdmin(data.adminPassword);
     const db = await getAdmin();
     const { data: rows, error: selErr } = await db
       .from("award_icon_rules")
@@ -2257,9 +2332,12 @@ export const addAwardIconRule = createServerFn({ method: "POST" })
 // Admin: deletes a rule by id.
 export const deleteAwardIconRule = createServerFn({ method: "POST" })
   .inputValidator((input) =>
-    z.object({ id: z.string().uuid() }).parse(input),
+    z
+      .object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") })
+      .parse(input),
   )
   .handler(async ({ data }) => {
+    requireProfileAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db
       .from("award_icon_rules")
