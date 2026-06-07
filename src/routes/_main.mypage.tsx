@@ -89,6 +89,8 @@ function MyPage() {
     return (
       <Dashboard
         data={data}
+        username={username.trim()}
+        password={password}
         stored={!!identity?.author}
         onClearStored={() => {
           clear();
@@ -104,6 +106,7 @@ function MyPage() {
 
   return (
     <div className="mx-auto max-w-md py-8">
+
       <div className="mb-6 text-center">
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
           <UserRound className="h-6 w-6" />
