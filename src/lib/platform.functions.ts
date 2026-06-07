@@ -1248,6 +1248,173 @@ export const listReviews = createServerFn({ method: "GET" })
     }));
   });
 
+/* ----------------------- Review allowlist (admin) ---------------------- */
+
+export interface ReviewAllowlistEntryDTO {
+  id: string;
+  reviewerName: string;
+  createdAt: string;
+}
+
+export const listReviewAllowlist = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<ReviewAllowlistEntryDTO[]> => {
+    requireAdmin(data.adminPassword);
+    const db = await getAdmin();
+    const { data: rows, error } = await db
+      .from("review_allowlist")
+      .select("id, reviewer_name, created_at")
+      .eq("category_id", data.categoryId)
+      .order("reviewer_name", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map((r: any) => ({
+      id: r.id,
+      reviewerName: r.reviewer_name,
+      createdAt: r.created_at,
+    }));
+  });
+
+export const addReviewAllowlistName = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        reviewerName: z.string().trim().min(1).max(100),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
+    const db = await getAdmin();
+    const key = normalizeName(data.reviewerName);
+    if (!key) throw new Error("닉네임을 입력해 주세요.");
+    const { error } = await db.from("review_allowlist").upsert(
+      {
+        category_id: data.categoryId,
+        reviewer_name: data.reviewerName,
+        reviewer_key: key,
+      },
+      { onConflict: "category_id,reviewer_key", ignoreDuplicates: true },
+    );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const removeReviewAllowlistName = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
+    const db = await getAdmin();
+    const { error } = await db.from("review_allowlist").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const setReviewAllowlistOnly = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        enabled: z.boolean(),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
+    const db = await getAdmin();
+    const { error } = await db
+      .from("categories")
+      .update({ review_allowlist_only: data.enabled })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/* --------------------- Category reviews (admin) ----------------------- */
+
+export interface CategoryReviewDTO {
+  id: string;
+  postId: string;
+  postTitle: string;
+  postNo: number | null;
+  reviewerName: string;
+  createdAt: string;
+}
+
+export const listCategoryReviews = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<CategoryReviewDTO[]> => {
+    requireAdmin(data.adminPassword);
+    const db = await getAdmin();
+    const { data: posts, error: postsErr } = await db
+      .from("posts")
+      .select("id, title, post_no")
+      .eq("category_id", data.categoryId)
+      .eq("type", "project");
+    if (postsErr) throw new Error(postsErr.message);
+    const postList = posts ?? [];
+    if (postList.length === 0) return [];
+    const postMap = new Map(
+      postList.map((p: any) => [p.id, { title: p.title, postNo: p.post_no }]),
+    );
+    const { data: rows, error } = await db
+      .from("reviews")
+      .select("id, post_id, reviewer_name, created_at")
+      .in("post_id", postList.map((p: any) => p.id))
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map((r: any) => ({
+      id: r.id,
+      postId: r.post_id,
+      postTitle: postMap.get(r.post_id)?.title ?? "(삭제된 산출물)",
+      postNo: postMap.get(r.post_id)?.postNo ?? null,
+      reviewerName: r.reviewer_name,
+      createdAt: r.created_at,
+    }));
+  });
+
+export const deleteReview = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
+    const db = await getAdmin();
+    const { error } = await db.from("reviews").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
+
 export const createReview = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
