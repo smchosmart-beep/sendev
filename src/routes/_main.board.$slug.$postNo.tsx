@@ -840,7 +840,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
           <DialogHeader>
             <DialogTitle>{noun} 수정</DialogTitle>
             <DialogDescription>
-              {post.type === "notice"
+              {post.pinned
                 ? "관리자 비밀번호를 입력해야 수정할 수 있어요."
                 : "작성자의 닉네임 비밀번호를 입력해야 수정할 수 있어요."}
             </DialogDescription>
