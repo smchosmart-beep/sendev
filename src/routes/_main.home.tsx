@@ -7,6 +7,7 @@ import {
   eventsQueryOptions,
 } from "@/lib/platform.queries";
 import { HeroStackCarousel } from "@/components/hero-stack-carousel";
+import { KakaoMap } from "@/components/KakaoMap";
 
 export const Route = createFileRoute("/_main/home")({
   head: () => ({
