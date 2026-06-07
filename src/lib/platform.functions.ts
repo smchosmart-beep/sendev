@@ -1690,17 +1690,38 @@ export const deleteComment = createServerFn({ method: "POST" })
     const db = await getAdmin();
     const { data: row, error: selErr } = await db
       .from("comments")
-      .select("edit_password")
+      .select("author, edit_password")
       .eq("id", data.id)
       .maybeSingle();
     if (selErr) throw new Error(selErr.message);
     if (!row) return { ok: false };
-    // Admin master password bypasses the per-comment password.
+
+    // Admin master password bypasses all per-comment checks.
     const master = process.env.POST_MASTER_PASSWORD;
-    const isMaster = !!master && data.password.length > 0 && data.password === master;
-    if (!isMaster && !(row.edit_password && row.edit_password === data.password)) {
-      return { ok: false };
+    const isMaster =
+      !!master && data.password.length > 0 && data.password === master;
+
+    let allowed = isMaster;
+    if (!allowed && data.password.length > 0) {
+      // Primary: match the comment author's nickname password.
+      const key = normalizeName((row.author ?? "").trim());
+      if (key && key !== "익명") {
+        const { data: prof } = await db
+          .from("user_profiles")
+          .select("nickname_password")
+          .eq("username_key", key)
+          .maybeSingle();
+        if (prof?.nickname_password) {
+          const incoming = await hashSecret(data.password);
+          if (incoming === prof.nickname_password) allowed = true;
+        }
+      }
+      // Fallback: legacy plaintext per-comment password.
+      if (!allowed && row.edit_password && row.edit_password === data.password) {
+        allowed = true;
+      }
     }
+    if (!allowed) return { ok: false };
     // Remove replies first, then the comment itself.
     await db.from("comments").delete().eq("parent_id", data.id);
     const { error } = await db.from("comments").delete().eq("id", data.id);
