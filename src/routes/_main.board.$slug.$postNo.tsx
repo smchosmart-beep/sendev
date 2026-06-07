@@ -2026,7 +2026,7 @@ function CommentForm({
           return;
         }
         if (
-          !hasStored &&
+          needsConfirm &&
           nicknamePassword.trim() !== nicknamePasswordConfirm.trim()
         ) {
           toast.error("닉네임 비밀번호가 일치하지 않아요.");
