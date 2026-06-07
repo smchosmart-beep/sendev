@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { UserCog, Trophy, Pencil, Trash2 } from "lucide-react";
+import { UserCog, Trophy, Pencil, Trash2, Lock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
+import { cn } from "@/lib/utils";
 import { userProfilesQueryOptions } from "@/lib/platform.queries";
 import {
   upsertUserProfile,
   deleteUserProfile,
+  verifyProfileAdmin,
   type UserProfileDTO,
 } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
@@ -16,9 +18,107 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+// 한글 자모/완성형 음절 제거 (영문 비밀번호 강제)
+const stripKorean = (s: string) =>
+  s.replace(/[\u1100-\u11FF\u3130-\u318F\uAC00-\uD7A3]/g, "");
+
+const PROFILE_SESSION_KEY = "profile-admin-granted";
+
 export const Route = createFileRoute("/admin/profiles")({
-  component: ProfilesAdmin,
+  component: ProfilesGate,
 });
+
+// Second-level password gate: the password lives only in the server secret
+// PROFILE_ADMIN_PASSWORD and is verified server-side.
+function ProfilesGate() {
+  const verify = useServerFn(verifyProfileAdmin);
+  const [mounted, setMounted] = useState(false);
+  const [granted, setGranted] = useState(false);
+  const [value, setValue] = useState("");
+  const [error, setError] = useState(false);
+  const [checking, setChecking] = useState(false);
+
+  useEffect(() => {
+    setGranted(sessionStorage.getItem(PROFILE_SESSION_KEY) === "1");
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+  if (granted) return <ProfilesAdmin />;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (checking) return;
+    setChecking(true);
+    setError(false);
+    try {
+      const res = await verify({ data: { password: value } });
+      if (res.ok) {
+        sessionStorage.setItem(PROFILE_SESSION_KEY, "1");
+        setGranted(true);
+      } else {
+        setError(true);
+      }
+    } catch {
+      setError(true);
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  return (
+    <div className="mx-auto max-w-sm rounded-3xl bg-card p-8 shadow-md">
+      <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md">
+        <Lock className="h-7 w-7" />
+      </div>
+      <h1 className="text-center text-xl font-bold text-foreground">
+        시스템 관리자 인증
+      </h1>
+      <p className="mt-1 text-center text-sm text-muted-foreground">
+        사용자 프로필 관리는 별도의 시스템 관리자 비밀번호가 필요합니다.
+      </p>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="password"
+          autoFocus
+          lang="en"
+          inputMode="text"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          value={value}
+          onChange={(e) => {
+            setValue(stripKorean(e.target.value));
+            setError(false);
+          }}
+          onCompositionEnd={(e) => {
+            setValue(stripKorean((e.target as HTMLInputElement).value));
+          }}
+          placeholder="영문 비밀번호를 입력해 주세요"
+          className={cn(
+            "mt-6 w-full rounded-xl border bg-background px-4 py-3 text-sm text-foreground outline-none transition-colors",
+            error
+              ? "border-destructive focus:border-destructive"
+              : "border-border focus:border-primary",
+          )}
+        />
+        {error && (
+          <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-destructive">
+            <AlertCircle className="h-4 w-4" />
+            비밀번호가 올바르지 않습니다. 다시 입력해 주세요.
+          </p>
+        )}
+        <button
+          type="submit"
+          disabled={checking}
+          className="mt-4 w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 active:scale-95 disabled:opacity-60"
+        >
+          {checking ? "확인 중..." : "입장하기"}
+        </button>
+      </form>
+    </div>
+  );
+}
 
 function ProfilesAdmin() {
   const queryClient = useQueryClient();
