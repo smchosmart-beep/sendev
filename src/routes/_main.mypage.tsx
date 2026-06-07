@@ -138,9 +138,8 @@ function MyPage() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="mp-password">닉네임 비밀번호</Label>
-            <Input
+            <PasswordInput
               id="mp-password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="비밀번호"
