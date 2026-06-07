@@ -481,6 +481,7 @@ function CategoriesPage() {
               >
                 <div className="min-w-0">
                   <h3 className="flex items-center gap-2 truncate text-base font-semibold text-foreground">
+                    {c.isGroup && <Folder className="h-4 w-4 shrink-0 text-primary" />}
                     {c.name}
                     {c.hasPassword && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
                   </h3>
@@ -497,9 +498,21 @@ function CategoriesPage() {
                     <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                       {TAB_LABEL[c.tabGroup ?? "hackathon"]}
                     </span>
-                    {c.enablePost && <SectionBadge label={c.generalName || "글 게시판"} />}
-                    {c.enableProject && <SectionBadge label={c.projectName || "산출물"} />}
-                    {c.enableLink && <SectionBadge label={c.linkName || "링크"} />}
+                    {c.isGroup && <SectionBadge label="폴더" />}
+                    {c.parentId && (
+                      <SectionBadge
+                        label={`📁 ${categories.find((p) => p.id === c.parentId)?.name ?? "상위"}`}
+                      />
+                    )}
+                    {!c.isGroup && c.enablePost && (
+                      <SectionBadge label={c.generalName || "글 게시판"} />
+                    )}
+                    {!c.isGroup && c.enableProject && (
+                      <SectionBadge label={c.projectName || "산출물"} />
+                    )}
+                    {!c.isGroup && c.enableLink && (
+                      <SectionBadge label={c.linkName || "링크"} />
+                    )}
                   </div>
                 </div>
                 <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
