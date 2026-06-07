@@ -677,7 +677,7 @@ function CategoriesPage() {
                 onCheckedChange={setEditGithubRequired}
               />
             </div>
-            <div className="space-y-3 rounded-xl bg-muted/40 p-4">
+            <div className={`space-y-3 rounded-xl bg-muted/40 p-4 ${editIsGroup ? "hidden" : ""}`}>
               <p className="text-sm font-medium text-foreground">사용할 게시판 종류</p>
               <div className="grid gap-2 sm:grid-cols-2">
                 <SectionToggle id="edit-sec-post" label="글 게시판" checked={editEnablePost} onChange={setEditEnablePost} />
