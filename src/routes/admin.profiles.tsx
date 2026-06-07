@@ -262,6 +262,7 @@ function AwardIconRules() {
 
   return (
     <div className="rounded-2xl bg-card p-6 shadow-sm">
+      {confirmDialog}
       <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-foreground">
         <Trophy className="h-5 w-5 text-primary" />
         배지 키워드 규칙
