@@ -255,7 +255,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const { data, error } = await db
       .from("categories")
       .select(
-        "id, slug, name, description, sort_order, password, github_required, enable_notice, enable_question, enable_general, enable_project, enable_link, general_name, project_name, link_name, tab_group, eval_open, eval_seed, review_allowlist_only",
+        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, general_name, project_name, link_name, tab_group, eval_open, eval_seed, review_allowlist_only",
       )
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
@@ -267,9 +267,9 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       sortOrder: c.sort_order,
       hasPassword: !!c.password,
       githubRequired: !!c.github_required,
-      enableNotice: c.enable_notice ?? true,
-      enableQuestion: c.enable_question ?? true,
-      enableGeneral: c.enable_general ?? true,
+      parentId: c.parent_id ?? null,
+      isGroup: !!c.is_group,
+      enablePost: c.enable_post ?? true,
       enableProject: c.enable_project ?? true,
       enableLink: c.enable_link ?? false,
       generalName: c.general_name ?? "일반게시판",
