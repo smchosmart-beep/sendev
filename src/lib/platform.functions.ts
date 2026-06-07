@@ -1252,12 +1252,16 @@ export const createReview = createServerFn({ method: "POST" })
       .object({
         postId: z.string().uuid(),
         reviewerName: z.string().trim().min(1).max(100),
+        nicknamePassword: z.string().trim().max(100).default(""),
         scores: z.record(z.string().uuid(), z.number().min(0).max(100)),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
     const db = await getAdmin();
+    // Verify the reviewer owns this nickname (or claim it on first use),
+    // matching the post/comment flow so reviews can't be spoofed.
+    await ensureNicknameOwnership(db, data.reviewerName, data.nicknamePassword, false);
     const { data: existing } = await db
       .from("reviews")
       .select("id")
