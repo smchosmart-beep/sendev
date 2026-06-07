@@ -88,6 +88,10 @@ export function KakaoMap({ lat, lng, name, className, level = 3, asLink = true }
     return <div ref={ref} className={className} />;
   }
 
+  const kakaoUrl = `https://map.kakao.com/link/map/${encodeURIComponent(
+    name || "장소",
+  )},${lat},${lng}`;
+
   return (
     <a href={kakaoUrl} target="_blank" rel="noreferrer" className="block">
       <div ref={ref} className={className} />
