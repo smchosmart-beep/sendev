@@ -8,11 +8,13 @@ import {
   categoriesQueryOptions,
   ogImageBackfillQueryOptions,
   myReviewedPostIdsQueryOptions,
+  profileMapQueryOptions,
 } from "@/lib/platform.queries";
 import { type PostDTO } from "@/lib/platform.functions";
 import { groupLinksBySeries, seededShuffle, getOrderSeed } from "@/lib/series";
 import { getEmbedUrl, getThumbnailUrl, getCanvaPreviewUrl } from "@/lib/embed";
 import { EmptyState } from "@/components/EmptyState";
+import { AuthorBadge } from "@/components/AuthorBadge";
 import { Button } from "@/components/ui/button";
 import { ThumbnailUploadButton } from "@/components/ThumbnailUploadButton";
 
@@ -33,6 +35,7 @@ export const Route = createFileRoute("/_main/board/$slug/")({
       categoriesQueryOptions(),
     );
     const category = categories.find((c) => c.slug === params.slug);
+    context.queryClient.ensureQueryData(profileMapQueryOptions());
     if (category) {
       await context.queryClient.ensureQueryData(
         postsQueryOptions(category.id),
@@ -64,6 +67,7 @@ function BoardInner({
   category: import("@/lib/platform.functions").CategoryDTO;
 }) {
   const { data: posts } = useSuspenseQuery(postsQueryOptions(category.id));
+  const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
   const { qpage, gpage } = Route.useSearch();
   const navigate = useNavigate({ from: "/board/$slug" });
   const notices = posts.filter((p) => p.type === "notice");
@@ -132,6 +136,7 @@ function BoardInner({
                 <span className="flex items-center gap-1 whitespace-nowrap">
                   <User className="h-3.5 w-3.5" />
                   {n.author}
+                  <AuthorBadge author={n.author} profileMap={profileMap} />
                 </span>
               </span>
             </Link>
@@ -180,6 +185,7 @@ function BoardInner({
                     <span className="flex items-center gap-1 whitespace-nowrap">
                       <User className="h-3.5 w-3.5" />
                       {q.author}
+                      <AuthorBadge author={q.author} profileMap={profileMap} />
                     </span>
                   </span>
                 </Link>
@@ -237,6 +243,7 @@ function BoardInner({
                     <span className="flex items-center gap-1 whitespace-nowrap">
                       <User className="h-3.5 w-3.5" />
                       {g.author}
+                      <AuthorBadge author={g.author} profileMap={profileMap} />
                     </span>
                   </span>
                 </Link>
@@ -461,6 +468,7 @@ function SeriesCard({
 
 
 function LinkCard({ post, slug }: { post: PostDTO; slug: string }) {
+  const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
   const needsBackfill = !post.ogImageUrl && !!post.deployUrl;
   const { data: backfill } = useQuery(
     ogImageBackfillQueryOptions(needsBackfill ? post.id : "", post.deployUrl ?? ""),
@@ -515,6 +523,7 @@ function LinkCard({ post, slug }: { post: PostDTO; slug: string }) {
         <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
           <User className="h-3.5 w-3.5" />
           {post.author}
+          <AuthorBadge author={post.author} profileMap={profileMap} />
         </p>
       </div>
     </Link>
@@ -530,6 +539,7 @@ function ProjectCard({
   slug: string;
   reviewed?: boolean;
 }) {
+  const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
   // Prefer the cached OG image stored on the post. Only existing posts without a
   // cached value (and with a deploy URL) trigger a one-time backfill request,
   // which stores the result so future loads never hit the external site again.
@@ -574,6 +584,7 @@ function ProjectCard({
         <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
           <User className="h-3.5 w-3.5" />
           {post.author}
+          <AuthorBadge author={post.author} profileMap={profileMap} />
         </p>
       </div>
     </Link>

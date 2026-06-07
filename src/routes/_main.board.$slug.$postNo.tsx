@@ -46,6 +46,7 @@ import {
   myReviewedPostIdsQueryOptions,
   postsQueryOptions,
   commentsQueryOptions,
+  profileMapQueryOptions,
 } from "@/lib/platform.queries";
 import { stableEvalOrder, getOrderSeed } from "@/lib/series";
 import {
@@ -61,6 +62,7 @@ import {
   type TabGroup,
 } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
+import { AuthorBadge } from "@/components/AuthorBadge";
 import { CommentImagePicker } from "@/components/CommentImagePicker";
 import { getEmbedUrl } from "@/lib/embed";
 import { Button } from "@/components/ui/button";
@@ -89,6 +91,7 @@ const TAB_ORDER: TabGroup[] = ["hackathon", "resources", "devground", "helloworl
 
 export const Route = createFileRoute("/_main/board/$slug/$postNo")({
   loader: ({ context, params }) => {
+    context.queryClient.ensureQueryData(profileMapQueryOptions());
     if (NUMERIC_RE.test(params.postNo)) {
       return context.queryClient.ensureQueryData(
         postByNoQueryOptions(params.slug, Number(params.postNo)),
@@ -154,6 +157,7 @@ function LegacyPostRedirect({ slug, postId }: { slug: string; postId: string }) 
 
 function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
   const { data: post } = useSuspenseQuery(postByNoQueryOptions(slug, postNo));
+  const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
 
   if (!post) {
     return (
@@ -183,9 +187,10 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
           <ManagePost post={post} slug={slug} />
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1.5">
             <User className="h-4 w-4" />
             {post.author}
+            <AuthorBadge author={post.author} profileMap={profileMap} size="md" />
           </span>
           <span>{new Date(post.createdAt).toLocaleDateString("ko-KR")}</span>
           {!isLink && post.githubUrl && (
@@ -1711,6 +1716,7 @@ function CommentItem({
   onDelete: () => void;
   onImageClick: (url: string) => void;
 }) {
+  const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
   return (
     <div className="rounded-xl bg-muted/50 px-4 py-3">
       <div className="flex items-center justify-between gap-3">
@@ -1720,6 +1726,7 @@ function CommentItem({
           )}
           <User className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="font-medium text-foreground">{comment.author}</span>
+          <AuthorBadge author={comment.author} profileMap={profileMap} />
           <span className="text-xs text-muted-foreground">
             {new Date(comment.createdAt).toLocaleDateString("ko-KR")}
           </span>

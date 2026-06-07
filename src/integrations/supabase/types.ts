@@ -314,6 +314,36 @@ export type Database = {
           },
         ]
       }
+      user_profiles: {
+        Row: {
+          award: string
+          created_at: string
+          id: string
+          level: number | null
+          updated_at: string
+          username: string
+          username_key: string
+        }
+        Insert: {
+          award?: string
+          created_at?: string
+          id?: string
+          level?: number | null
+          updated_at?: string
+          username: string
+          username_key: string
+        }
+        Update: {
+          award?: string
+          created_at?: string
+          id?: string
+          level?: number | null
+          updated_at?: string
+          username?: string
+          username_key?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

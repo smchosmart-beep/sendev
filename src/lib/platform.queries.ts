@@ -16,6 +16,8 @@ import {
   fetchOgImage,
   refreshOgImage,
   listHeroSlides,
+  listUserProfiles,
+  getProfileMap,
 } from "./platform.functions";
 
 export const searchPostsQueryOptions = (
@@ -130,4 +132,18 @@ export const ogImageBackfillQueryOptions = (
     enabled: !!postId && !!deployUrl,
     staleTime: Infinity,
     retry: false,
+  });
+
+
+export const userProfilesQueryOptions = () =>
+  queryOptions({
+    queryKey: ["user-profiles"],
+    queryFn: () => listUserProfiles(),
+  });
+
+export const profileMapQueryOptions = () =>
+  queryOptions({
+    queryKey: ["profile-map"],
+    queryFn: () => getProfileMap(),
+    staleTime: 5 * 60 * 1000,
   });
