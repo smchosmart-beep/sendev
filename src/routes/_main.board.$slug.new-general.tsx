@@ -64,7 +64,6 @@ function NewGeneralPage() {
           nicknamePassword,
           githubUrl: "",
           deployUrl: "",
-          editPassword,
         },
       }),
     onSuccess: (res) => {
