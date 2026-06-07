@@ -255,7 +255,7 @@ export function PostEditor({
   const editor = useEditor({
     extensions: [
       StarterKit,
-      TextStyle,
+      TextStyleWithMarkdown,
       Color,
       FontSize,
       Image.configure({ inline: false }),
