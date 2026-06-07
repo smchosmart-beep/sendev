@@ -214,11 +214,19 @@ function CategoriesPage() {
     onError: () => toast.error("순서 변경 중 문제가 발생했어요."),
   });
 
-  // Same-tab neighbors sorted by sort_order, used to compute up/down swaps.
-  const moveCategory = (c: CategoryDTO, dir: "up" | "down") => {
-    const group = categories
-      .filter((x) => (x.tabGroup ?? "hackathon") === (c.tabGroup ?? "hackathon"))
+  // Siblings within the same tab AND the same parent folder, sorted by
+  // sort_order. Used to compute up/down swaps so movement stays inside a folder.
+  const siblingsOf = (c: CategoryDTO) =>
+    categories
+      .filter(
+        (x) =>
+          (x.tabGroup ?? "hackathon") === (c.tabGroup ?? "hackathon") &&
+          (x.parentId ?? null) === (c.parentId ?? null),
+      )
       .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  const moveCategory = (c: CategoryDTO, dir: "up" | "down") => {
+    const group = siblingsOf(c);
     const idx = group.findIndex((x) => x.id === c.id);
     const other = dir === "up" ? group[idx - 1] : group[idx + 1];
     if (!other) return;
