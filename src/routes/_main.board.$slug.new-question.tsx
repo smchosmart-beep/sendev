@@ -51,6 +51,8 @@ function NewQuestionPage() {
   } = useNicknameIdentity();
   
   const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
+  const { claimed } = useNicknameClaimed(author);
+  const needsConfirm = !claimed;
   
 
   const mutation = useMutation({
