@@ -117,10 +117,37 @@ function CategoriesPage() {
   const [deleting, setDeleting] = useState<CategoryDTO | null>(null);
 
   const [listFilter, setListFilter] = useState<TabGroup | "all">("all");
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const toggleFolder = (id: string) =>
+    setExpandedFolders((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   const visibleCategories =
     listFilter === "all"
       ? categories
       : categories.filter((c) => (c.tabGroup ?? "hackathon") === listFilter);
+
+  // Build a folder-aware ordered list: top-level items by sort_order, with each
+  // expanded folder's children rendered (indented) directly beneath it.
+  const childrenOf = (parentId: string) =>
+    visibleCategories
+      .filter((c) => (c.parentId ?? null) === parentId)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  const orderedRows: { category: CategoryDTO; depth: number }[] = [];
+  visibleCategories
+    .filter((c) => !c.parentId)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .forEach((top) => {
+      orderedRows.push({ category: top, depth: 0 });
+      if (top.isGroup && expandedFolders.has(top.id)) {
+        childrenOf(top.id).forEach((child) =>
+          orderedRows.push({ category: child, depth: 1 }),
+        );
+      }
+    });
 
   const addMutation = useMutation({
     mutationFn: () =>
