@@ -119,11 +119,21 @@ function AdminCalendarPage() {
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["events"] });
 
+  const resetPlace = () => {
+    setLocation("");
+    setPlaceAddress("");
+    setLatitude(null);
+    setLongitude(null);
+    setManualPlace(false);
+    setPlaceQuery("");
+    setPlaceResults([]);
+  };
+
   const openCreate = () => {
     setTitle("");
     setDate("");
     setTime("");
-    setLocation("");
+    resetPlace();
     setTarget("");
     setDescription("");
     setAttachments([]);
@@ -138,6 +148,12 @@ function AdminCalendarPage() {
     setDate(event.date);
     setTime(event.time);
     setLocation(event.location);
+    setPlaceAddress(event.placeAddress);
+    setLatitude(event.latitude);
+    setLongitude(event.longitude);
+    setManualPlace(event.latitude == null && !!event.location);
+    setPlaceQuery("");
+    setPlaceResults([]);
     setTarget(event.target);
     setDescription(event.description);
     setAttachments(event.attachments);
@@ -145,6 +161,36 @@ function AdminCalendarPage() {
     setLinkLabel("");
     setLinkUrl("");
     setEditing({ mode: "edit", event });
+  };
+
+  const runPlaceSearch = async () => {
+    if (!placeQuery.trim()) return;
+    setSearchingPlace(true);
+    try {
+      const results = await searchFn({ data: { query: placeQuery.trim() } });
+      setPlaceResults(results);
+      if (results.length === 0) toast.info("검색 결과가 없어요.");
+    } catch (err) {
+      toast.error(`장소 검색 실패: ${(err as Error).message}`);
+    } finally {
+      setSearchingPlace(false);
+    }
+  };
+
+  const selectPlace = (p: PlaceResult) => {
+    setLocation(p.name);
+    setPlaceAddress(p.address);
+    setLatitude(p.lat);
+    setLongitude(p.lng);
+    setPlaceResults([]);
+    setPlaceQuery("");
+  };
+
+  const clearPlace = () => {
+    setLocation("");
+    setPlaceAddress("");
+    setLatitude(null);
+    setLongitude(null);
   };
 
   const handleFiles = async (files: FileList | null) => {
