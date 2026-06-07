@@ -1822,10 +1822,16 @@ function CommentForm({
   }) => void;
   onCancel?: () => void;
 }) {
-  const [author, setAuthor] = useState("");
+  const {
+    author,
+    setAuthor,
+    nicknamePassword,
+    setNicknamePassword,
+    hasStored,
+    persistIdentity,
+  } = useNicknameIdentity();
   const [content, setContent] = useState("");
   const [password, setPassword] = useState("");
-  const [nicknamePassword, setNicknamePassword] = useState("");
   const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   return (
