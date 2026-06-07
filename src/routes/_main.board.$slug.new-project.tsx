@@ -39,6 +39,7 @@ function NewProjectPage() {
 
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
+  const [nicknamePassword, setNicknamePassword] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
   const [deployUrl, setDeployUrl] = useState("");
   const [editPassword, setEditPassword] = useState("");
