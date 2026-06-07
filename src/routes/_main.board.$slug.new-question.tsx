@@ -66,6 +66,7 @@ function NewQuestionPage() {
         },
       }),
     onSuccess: (res) => {
+      persistIdentity();
       queryClient.invalidateQueries({ queryKey: ["posts", category!.id] });
       toast.success("질문이 등록되었어요!");
       navigate({
