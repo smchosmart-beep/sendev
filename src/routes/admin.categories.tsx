@@ -102,9 +102,7 @@ function CategoriesPage() {
   const [editDescription, setEditDescription] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [editGithubRequired, setEditGithubRequired] = useState(false);
-  const [editEnableNotice, setEditEnableNotice] = useState(true);
-  const [editEnableQuestion, setEditEnableQuestion] = useState(true);
-  const [editEnableGeneral, setEditEnableGeneral] = useState(true);
+  const [editEnablePost, setEditEnablePost] = useState(true);
   const [editEnableProject, setEditEnableProject] = useState(true);
   const [editEnableLink, setEditEnableLink] = useState(false);
   const [editGeneralName, setEditGeneralName] = useState("일반게시판");
