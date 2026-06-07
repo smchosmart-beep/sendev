@@ -1816,7 +1816,14 @@ function CommentItem({
           <span className="font-medium text-foreground">{comment.author}</span>
           <AuthorBadge author={comment.author} profileMap={profileMap} />
           <span className="text-xs text-muted-foreground">
-            {new Date(comment.createdAt).toLocaleDateString("ko-KR")}
+            {new Date(comment.createdAt).toLocaleString("ko-KR", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            })}
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-1">
