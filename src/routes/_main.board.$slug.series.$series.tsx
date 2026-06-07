@@ -56,7 +56,7 @@ function SeriesInner({
   series: string;
   categoryId: string;
 }) {
-  const { data: posts } = useSuspenseQuery(postsQueryOptions(categoryId));
+  const { data: posts } = useSuspenseQuery(postsQueryOptions(categoryId, getBoardPassword(slug)));
   const episodes = sortSeriesPosts(
     posts.filter((p) => p.type === "link" && p.series.trim() === series),
   );
