@@ -1655,11 +1655,16 @@ export const swapCategoryOrder = createServerFn({ method: "POST" })
 // app, so badges are matched by exact (normalized) name.
 // ============================================================
 
+export interface UserAwardDTO {
+  id: string;
+  name: string;
+}
+
 export interface UserProfileDTO {
   id: string;
   username: string;
   level: number | null;
-  award: string;
+  awards: UserAwardDTO[];
   postCount: number;
   commentCount: number;
   points: number;
@@ -1668,7 +1673,7 @@ export interface UserProfileDTO {
 // Public display map keyed by normalized username.
 export interface ProfileBadge {
   level: number | null;
-  award: string;
+  awards: string[];
 }
 export type ProfileMap = Record<string, ProfileBadge>;
 
