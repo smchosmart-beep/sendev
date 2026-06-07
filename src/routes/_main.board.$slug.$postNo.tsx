@@ -196,7 +196,16 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
             {post.author}
             <AuthorBadge author={post.author} profileMap={profileMap} size="md" />
           </span>
-          <span>{new Date(post.createdAt).toLocaleDateString("ko-KR")}</span>
+          <span>
+            {new Date(post.createdAt).toLocaleString("ko-KR", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            })}
+          </span>
           {!isLink && post.githubUrl && (
             <a
               href={post.githubUrl}
