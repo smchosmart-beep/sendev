@@ -435,6 +435,27 @@ function ProfilesAdmin() {
     onError: () => toast.error("삭제 중 문제가 발생했어요."),
   });
 
+  const inlineAddMutation = useMutation({
+    mutationFn: ({ username, name }: { username: string; name: string }) =>
+      addAward({ data: { username, name } }),
+    onSuccess: () => {
+      invalidate();
+      toast.success("배지를 추가했어요.");
+      setAddingFor(null);
+      setAddingValue("");
+    },
+    onError: () => toast.error("배지 추가 중 문제가 발생했어요."),
+  });
+
+  const submitInlineAdd = (p: UserProfileDTO) => {
+    const name = addingValue.trim();
+    if (!name) {
+      toast.error("배지 이름을 입력해 주세요.");
+      return;
+    }
+    inlineAddMutation.mutate({ username: p.username, name });
+  };
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => remove({ data: { id } }),
     onSuccess: () => {
