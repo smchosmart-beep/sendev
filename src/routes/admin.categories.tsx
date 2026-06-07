@@ -448,9 +448,7 @@ function CategoriesPage() {
                     <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                       {TAB_LABEL[c.tabGroup ?? "hackathon"]}
                     </span>
-                    {c.enableNotice && <SectionBadge label="공지사항" />}
-                    {c.enableQuestion && <SectionBadge label="질문 게시판" />}
-                    {c.enableGeneral && <SectionBadge label={c.generalName || "일반게시판"} />}
+                    {c.enablePost && <SectionBadge label={c.generalName || "글 게시판"} />}
                     {c.enableProject && <SectionBadge label={c.projectName || "산출물"} />}
                     {c.enableLink && <SectionBadge label={c.linkName || "링크"} />}
                   </div>
