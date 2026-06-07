@@ -253,6 +253,11 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
         )}
       </div>
 
+      <div className="flex items-center gap-2">
+        <LikeButton targetType="post" targetId={post.id} />
+      </div>
+
+
       {isLink && (
         <LinkEmbedSection
           embedUrl={embedUrl}
