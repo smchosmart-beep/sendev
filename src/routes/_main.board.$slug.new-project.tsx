@@ -39,8 +39,14 @@ function NewProjectPage() {
   const githubRequired = category?.githubRequired ?? false;
 
   const [title, setTitle] = useState("");
-  const [author, setAuthor] = useState("");
-  const [nicknamePassword, setNicknamePassword] = useState("");
+  const {
+    author,
+    setAuthor,
+    nicknamePassword,
+    setNicknamePassword,
+    hasStored,
+    persistIdentity,
+  } = useNicknameIdentity();
   const [githubUrl, setGithubUrl] = useState("");
   const [deployUrl, setDeployUrl] = useState("");
   const [editPassword, setEditPassword] = useState("");
