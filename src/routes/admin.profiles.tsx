@@ -474,10 +474,8 @@ function ProfilesAdmin() {
     onError: () => toast.error("초기화 중 문제가 발생했어요."),
   });
 
-  const startEdit = (p: UserProfileDTO) => {
-    setUsername(p.username);
-    setAward("");
-  };
+
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
