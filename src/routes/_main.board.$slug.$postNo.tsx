@@ -1882,6 +1882,11 @@ function CommentForm({
         maxLength={100}
         className="rounded-xl"
       />
+      {hasStored && (
+        <p className="text-xs text-muted-foreground">
+          저장된 닉네임을 불러왔어요.
+        </p>
+      )}
       <AutoTextarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
