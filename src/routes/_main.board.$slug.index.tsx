@@ -584,6 +584,7 @@ function ProjectCard({
         <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
           <User className="h-3.5 w-3.5" />
           {post.author}
+          <AuthorBadge author={post.author} profileMap={profileMap} />
         </p>
       </div>
     </Link>
