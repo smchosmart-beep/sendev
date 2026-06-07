@@ -1814,7 +1814,23 @@ export const deleteUserProfile = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// Verifies the dedicated profile-admin password. The secret value lives only
+// Admin: reset a nickname's password so it can be re-claimed (lost-password
+// recovery). Clears the stored hash; next writer under that name re-claims it.
+export const resetNicknamePassword = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z.object({ id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { error } = await db
+      .from("user_profiles")
+      .update({ nickname_password: "", claimed_at: null })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 // in PROFILE_ADMIN_PASSWORD (server env) and is never returned to clients.
 export const verifyProfileAdmin = createServerFn({ method: "POST" })
   .inputValidator((input) =>
