@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { setPostThumbnail } from "@/lib/platform.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/PasswordInput";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -184,9 +185,8 @@ export function ThumbnailUploadButton({
             </div>
             <div className="space-y-2">
               <Label htmlFor="thumb-pw">수정·삭제 비밀번호</Label>
-              <Input
+              <PasswordInput
                 id="thumb-pw"
-                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="글 등록 때 정한 비밀번호"

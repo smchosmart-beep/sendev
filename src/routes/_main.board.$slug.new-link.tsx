@@ -16,6 +16,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/PasswordInput";
 import { useNicknameIdentity } from "@/hooks/useNicknameIdentity";
 
 export const Route = createFileRoute("/_main/board/$slug/new-link")({
@@ -50,6 +51,8 @@ function NewLinkPage() {
   const [linkUrl, setLinkUrl] = useState("");
   const [series, setSeries] = useState("");
   const [editPassword, setEditPassword] = useState("");
+  const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
+  const [editPasswordConfirm, setEditPasswordConfirm] = useState("");
 
   // Suggest existing series names in this board for consistent grouping.
   const { data: posts } = useQuery({
@@ -130,6 +133,14 @@ function NewLinkPage() {
               toast.error("수정·삭제용 비밀번호를 입력해주세요.");
               return;
             }
+            if (!hasStored && nicknamePassword.trim() !== nicknamePasswordConfirm.trim()) {
+              toast.error("닉네임 비밀번호가 일치하지 않아요.");
+              return;
+            }
+            if (editPassword.trim() !== editPasswordConfirm.trim()) {
+              toast.error("수정·삭제 비밀번호가 일치하지 않아요.");
+              return;
+            }
             mutation.mutate();
           }}
           className="mt-6 space-y-4"
@@ -154,9 +165,8 @@ function NewLinkPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="l-nickpw">닉네임 비밀번호</Label>
-            <Input
+            <PasswordInput
               id="l-nickpw"
-              type="password"
               value={nicknamePassword}
               onChange={(e) => setNicknamePassword(e.target.value)}
               placeholder="이 닉네임을 보호할 비밀번호"
@@ -169,6 +179,22 @@ function NewLinkPage() {
                 : " 등록하면 이 기기에서 다음부터 자동으로 채워져요."}
             </p>
           </div>
+          {!hasStored && (
+            <div className="space-y-2">
+              <Label htmlFor="l-nickpw-confirm">닉네임 비밀번호 확인</Label>
+              <PasswordInput
+                id="l-nickpw-confirm"
+                value={nicknamePasswordConfirm}
+                onChange={(e) => setNicknamePasswordConfirm(e.target.value)}
+                placeholder="비밀번호를 한 번 더 입력"
+                className="rounded-xl"
+              />
+              {nicknamePasswordConfirm.length > 0 &&
+                nicknamePassword.trim() !== nicknamePasswordConfirm.trim() && (
+                  <p className="text-xs text-destructive">비밀번호가 일치하지 않아요.</p>
+                )}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="l-url">링크 URL</Label>
             <Input
@@ -203,14 +229,27 @@ function NewLinkPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="l-pw">수정·삭제 비밀번호</Label>
-            <Input
+            <PasswordInput
               id="l-pw"
-              type="password"
               value={editPassword}
               onChange={(e) => setEditPassword(e.target.value)}
               placeholder="나중에 수정·삭제할 때 사용해요"
               className="rounded-xl"
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="l-pw-confirm">수정·삭제 비밀번호 확인</Label>
+            <PasswordInput
+              id="l-pw-confirm"
+              value={editPasswordConfirm}
+              onChange={(e) => setEditPasswordConfirm(e.target.value)}
+              placeholder="비밀번호를 한 번 더 입력"
+              className="rounded-xl"
+            />
+            {editPasswordConfirm.length > 0 &&
+              editPassword.trim() !== editPasswordConfirm.trim() && (
+                <p className="text-xs text-destructive">비밀번호가 일치하지 않아요.</p>
+              )}
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button asChild type="button" variant="secondary" className="rounded-xl active:scale-95">

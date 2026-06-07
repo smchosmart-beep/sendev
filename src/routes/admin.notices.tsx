@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { PostEditor } from "@/components/PostEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/PasswordInput";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -148,9 +149,8 @@ function NoticeForm({ categoryId }: { categoryId: string }) {
       </div>
       <div className="space-y-2">
         <Label htmlFor="n-pw">관리자 비밀번호</Label>
-        <Input
+        <PasswordInput
           id="n-pw"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="수정·삭제 시 사용할 관리자 비밀번호"
@@ -275,9 +275,8 @@ function NoticeList({ categoryId }: { categoryId: string }) {
           >
             <div className="space-y-2">
               <Label htmlFor="nd-pw">관리자 비밀번호</Label>
-              <Input
+              <PasswordInput
                 id="nd-pw"
-                type="password"
                 value={deletePw}
                 onChange={(e) => setDeletePw(e.target.value)}
                 className="rounded-xl"

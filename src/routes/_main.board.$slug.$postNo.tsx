@@ -80,6 +80,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/PasswordInput";
 import { Label } from "@/components/ui/label";
 import { AutoTextarea } from "@/components/ui/auto-textarea";
 import { PostEditor } from "@/components/PostEditor";
@@ -709,9 +710,8 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
           >
             <div className="space-y-2">
               <Label htmlFor="mv-pw">관리자 비밀번호</Label>
-              <Input
+              <PasswordInput
                 id="mv-pw"
-                type="password"
                 value={moveGatePw}
                 onChange={(e) => setMoveGatePw(e.target.value)}
                 className="rounded-xl"
@@ -840,9 +840,8 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
           >
             <div className="space-y-2">
               <Label htmlFor="eg-pw">비밀번호</Label>
-              <Input
+              <PasswordInput
                 id="eg-pw"
-                type="password"
                 value={editGatePw}
                 onChange={(e) => setEditGatePw(e.target.value)}
                 className="rounded-xl"
@@ -997,9 +996,8 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
           >
             <div className="space-y-2">
               <Label htmlFor="d-pw">비밀번호</Label>
-              <Input
+              <PasswordInput
                 id="d-pw"
-                type="password"
                 value={deletePw}
                 onChange={(e) => setDeletePw(e.target.value)}
                 className="rounded-xl"
@@ -1325,9 +1323,8 @@ function EvaluationSection({
             </div>
             <div className="space-y-2">
               <Label htmlFor="reviewer-pw">닉네임 비밀번호</Label>
-              <Input
+              <PasswordInput
                 id="reviewer-pw"
-                type="password"
                 value={nicknamePassword}
                 onChange={(e) => setNicknamePassword(e.target.value)}
                 placeholder="닉네임 비밀번호"
@@ -1672,8 +1669,7 @@ function CommentsSection({ postId }: { postId: string }) {
             maxLength={100}
             className="rounded-xl"
           />
-          <Input
-            type="password"
+          <PasswordInput
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="삭제용 비밀번호"
@@ -1681,8 +1677,7 @@ function CommentsSection({ postId }: { postId: string }) {
             className="rounded-xl"
           />
         </div>
-        <Input
-          type="password"
+        <PasswordInput
           value={nicknamePassword}
           onChange={(e) => setNicknamePassword(e.target.value)}
           placeholder="닉네임 비밀번호 (닉네임 입력 시 필수)"
@@ -1745,9 +1740,8 @@ function CommentsSection({ postId }: { postId: string }) {
           >
             <div className="space-y-2">
               <Label htmlFor="c-del-pw">비밀번호</Label>
-              <Input
+              <PasswordInput
                 id="c-del-pw"
-                type="password"
                 value={deletePw}
                 onChange={(e) => setDeletePw(e.target.value)}
                 className="rounded-xl"
@@ -2006,8 +2000,7 @@ function CommentForm({
           maxLength={100}
           className="rounded-xl"
         />
-        <Input
-          type="password"
+        <PasswordInput
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="삭제용 비밀번호"
@@ -2015,8 +2008,7 @@ function CommentForm({
           className="rounded-xl"
         />
       </div>
-      <Input
-        type="password"
+      <PasswordInput
         value={nicknamePassword}
         onChange={(e) => setNicknamePassword(e.target.value)}
         placeholder="닉네임 비밀번호 (닉네임 입력 시 필수)"
