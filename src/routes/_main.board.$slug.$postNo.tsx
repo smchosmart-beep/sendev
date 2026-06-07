@@ -1679,6 +1679,14 @@ function CommentsSection({ postId }: { postId: string }) {
             toast.error("삭제용 비밀번호를 입력해주세요.");
             return;
           }
+          if (
+            !hasStored &&
+            nicknamePassword.trim() &&
+            nicknamePassword.trim() !== nicknamePasswordConfirm.trim()
+          ) {
+            toast.error("닉네임 비밀번호가 일치하지 않아요.");
+            return;
+          }
           createMutation.mutate({
             parentId: null,
             author: author.trim(),
