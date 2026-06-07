@@ -85,6 +85,7 @@ function AdminCalendarPage() {
   const updateFn = useServerFn(updateEvent);
   const deleteFn = useServerFn(deleteEvent);
   const uploadFileFn = useServerFn(uploadEventFile);
+  const searchFn = useServerFn(searchPlaces);
 
   const [editing, setEditing] = useState<Editing | null>(null);
   const [pendingDelete, setPendingDelete] = useState<EventDTO | null>(null);
@@ -94,6 +95,13 @@ function AdminCalendarPage() {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [location, setLocation] = useState("");
+  const [placeAddress, setPlaceAddress] = useState("");
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [manualPlace, setManualPlace] = useState(false);
+  const [placeQuery, setPlaceQuery] = useState("");
+  const [placeResults, setPlaceResults] = useState<PlaceResult[]>([]);
+  const [searchingPlace, setSearchingPlace] = useState(false);
   const [target, setTarget] = useState("");
   const [description, setDescription] = useState("");
   const [attachments, setAttachments] = useState<EventAttachment[]>([]);
