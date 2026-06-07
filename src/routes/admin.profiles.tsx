@@ -356,6 +356,44 @@ function ProfilesAdmin() {
   const [username, setUsername] = useState("");
   const [award, setAward] = useState("");
 
+  // 사용자 목록 검색/필터/정렬/페이지네이션
+  const PAGE_SIZE = 20;
+  const [search, setSearch] = useState("");
+  const [badgeFilter, setBadgeFilter] = useState<"all" | "with" | "without">("all");
+  const [activityFilter, setActivityFilter] = useState<"all" | "active" | "inactive">("all");
+  const [sort, setSort] = useState<"name" | "points-desc" | "points-asc">("name");
+  const [page, setPage] = useState(1);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const list = (profiles as UserProfileDTO[]).filter((p) => {
+      if (q && !p.username.toLowerCase().includes(q)) return false;
+      if (badgeFilter === "with" && p.awards.length === 0) return false;
+      if (badgeFilter === "without" && p.awards.length > 0) return false;
+      if (activityFilter === "active" && p.level == null) return false;
+      if (activityFilter === "inactive" && p.level != null) return false;
+      return true;
+    });
+    list.sort((a, b) => {
+      if (sort === "points-desc") return b.points - a.points;
+      if (sort === "points-asc") return a.points - b.points;
+      return a.username.localeCompare(b.username, "ko");
+    });
+    return list;
+  }, [profiles, search, badgeFilter, activityFilter, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paged = filtered.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, badgeFilter, activityFilter, sort]);
+
+
   const reset = () => {
     setUsername("");
     setAward("");
