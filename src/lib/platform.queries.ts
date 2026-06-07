@@ -53,23 +53,39 @@ export const eventsQueryOptions = () =>
     queryFn: () => listEvents(),
   });
 
-export const postsQueryOptions = (categoryId: string) =>
+// Reads the board password the visitor entered at the gate (kept only for the
+// browser session). Returns "" on the server or for open boards, so protected
+// content is withheld during SSR and only fetched after a successful unlock.
+export function getBoardPassword(categoryId: string): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return sessionStorage.getItem(`board-pw-${categoryId}`) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+export const postsQueryOptions = (categoryId: string, boardPassword = "") =>
   queryOptions({
-    queryKey: ["posts", categoryId],
-    queryFn: () => listPosts({ data: { categoryId } }),
+    queryKey: ["posts", categoryId, boardPassword],
+    queryFn: () => listPosts({ data: { categoryId, boardPassword } }),
   });
 
-export const postQueryOptions = (id: string) =>
+export const postQueryOptions = (id: string, boardPassword = "") =>
   queryOptions({
-    queryKey: ["post", id],
-    queryFn: () => getPost({ data: { id } }),
+    queryKey: ["post", id, boardPassword],
+    queryFn: () => getPost({ data: { id, boardPassword } }),
   });
 
 // Resolves a post by board slug + per-board number for short URLs.
-export const postByNoQueryOptions = (slug: string, postNo: number) =>
+export const postByNoQueryOptions = (
+  slug: string,
+  postNo: number,
+  boardPassword = "",
+) =>
   queryOptions({
-    queryKey: ["post-by-no", slug, postNo],
-    queryFn: () => getPostByNo({ data: { slug, postNo } }),
+    queryKey: ["post-by-no", slug, postNo, boardPassword],
+    queryFn: () => getPostByNo({ data: { slug, postNo, boardPassword } }),
   });
 
 export const criteriaQueryOptions = (categoryId: string, activeOnly = false) =>
