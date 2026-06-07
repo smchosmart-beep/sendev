@@ -266,9 +266,10 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
 // out of the public board list.
 export const getCategoryPassword = createServerFn({ method: "POST" })
   .inputValidator((input) =>
-    z.object({ id: z.string().uuid() }).parse(input),
+    z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input),
   )
   .handler(async ({ data }): Promise<{ password: string }> => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { data: row, error } = await db
       .from("categories")
@@ -317,10 +318,12 @@ export const createCategory = createServerFn({ method: "POST" })
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .default("hackathon"),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { data: maxRow } = await db
       .from("categories")
