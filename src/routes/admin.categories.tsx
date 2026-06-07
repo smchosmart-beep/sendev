@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { FolderPlus, Pencil, Trash2, LayoutGrid, Lock, Github } from "lucide-react";
+import { FolderPlus, Pencil, Trash2, LayoutGrid, Lock, Github, ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 
 import { categoriesQueryOptions } from "@/lib/platform.queries";
@@ -11,6 +11,7 @@ import {
   updateCategory,
   deleteCategory,
   getCategoryPassword,
+  swapCategoryOrder,
 } from "@/lib/platform.functions";
 import type { CategoryDTO, TabGroup } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
@@ -76,6 +77,7 @@ function CategoriesPage() {
   const updateFn = useServerFn(updateCategory);
   const deleteFn = useServerFn(deleteCategory);
   const getPasswordFn = useServerFn(getCategoryPassword);
+  const swapOrderFn = useServerFn(swapCategoryOrder);
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["categories"] });
@@ -198,6 +200,26 @@ function CategoriesPage() {
     },
     onError: () => toast.error("삭제 중 문제가 발생했어요."),
   });
+
+  const swapMutation = useMutation({
+    mutationFn: (vars: { id: string; otherId: string }) =>
+      swapOrderFn({ data: vars }),
+    onSuccess: () => invalidate(),
+    onError: () => toast.error("순서 변경 중 문제가 발생했어요."),
+  });
+
+  // Same-tab neighbors sorted by sort_order, used to compute up/down swaps.
+  const moveCategory = (c: CategoryDTO, dir: "up" | "down") => {
+    const group = categories
+      .filter((x) => (x.tabGroup ?? "hackathon") === (c.tabGroup ?? "hackathon"))
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    const idx = group.findIndex((x) => x.id === c.id);
+    const other = dir === "up" ? group[idx - 1] : group[idx + 1];
+    if (!other) return;
+    swapMutation.mutate({ id: c.id, otherId: other.id });
+  };
+
+
 
   const openEdit = (c: CategoryDTO) => {
     setEditing(c);
@@ -445,6 +467,39 @@ function CategoriesPage() {
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
+                  {listFilter !== "all" && (() => {
+                    const group = categories
+                      .filter(
+                        (x) =>
+                          (x.tabGroup ?? "hackathon") === (c.tabGroup ?? "hackathon"),
+                      )
+                      .sort((a, b) => a.sortOrder - b.sortOrder);
+                    const idx = group.findIndex((x) => x.id === c.id);
+                    return (
+                      <div className="flex flex-col gap-1">
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          disabled={idx <= 0 || swapMutation.isPending}
+                          onClick={() => moveCategory(c, "up")}
+                          className="h-6 w-7 rounded-lg active:scale-95"
+                          aria-label="위로 이동"
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          disabled={idx >= group.length - 1 || swapMutation.isPending}
+                          onClick={() => moveCategory(c, "down")}
+                          className="h-6 w-7 rounded-lg active:scale-95"
+                          aria-label="아래로 이동"
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    );
+                  })()}
                   <Button
                     variant="secondary"
                     size="sm"
