@@ -2254,7 +2254,7 @@ export interface DashboardDTO {
   username: string;
   level: number | null;
   points: number;
-  award: string;
+  awards: string[];
   myPosts: DashPostDTO[];
   myComments: DashCommentDTO[];
   repliesToMe: DashCommentDTO[];
