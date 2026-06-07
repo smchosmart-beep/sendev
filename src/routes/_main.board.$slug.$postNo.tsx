@@ -1541,7 +1541,7 @@ function CommentsSection({ postId }: { postId: string }) {
             className="rounded-xl"
           />
         </div>
-        <Textarea
+        <AutoTextarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="댓글을 입력하세요"
