@@ -14,6 +14,7 @@ import {
   listComments,
   fetchReadme,
   fetchOgImage,
+  fetchLinkPreview,
   refreshOgImage,
   listHeroSlides,
   listUserProfiles,
@@ -119,6 +120,17 @@ export const ogImageQueryOptions = (url: string) =>
     queryFn: () => fetchOgImage({ data: { url } }),
     enabled: !!url,
     staleTime: 30 * 60 * 1000,
+    retry: false,
+  });
+
+// OG metadata (image + title + site name) for an arbitrary link placed in a
+// post body. Resolved on render and cached client-side.
+export const linkPreviewQueryOptions = (url: string) =>
+  queryOptions({
+    queryKey: ["link-preview", url],
+    queryFn: () => fetchLinkPreview({ data: { url } }),
+    enabled: !!url,
+    staleTime: 60 * 60 * 1000,
     retry: false,
   });
 

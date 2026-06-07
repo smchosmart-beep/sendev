@@ -49,6 +49,7 @@ import {
   postsQueryOptions,
   commentsQueryOptions,
   profileMapQueryOptions,
+  linkPreviewQueryOptions,
 } from "@/lib/platform.queries";
 import { stableEvalOrder, getOrderSeed } from "@/lib/series";
 import {
@@ -236,9 +237,13 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
                     />
                   ),
                   p: ({ node, children, ...props }) => {
-                    const embed = soleLinkEmbed(node);
-                    if (embed) {
-                      return <EmbeddedFrame embedUrl={embed.embedUrl} href={embed.href} />;
+                    const href = soleLinkHref(node);
+                    if (href) {
+                      const embedUrl = getEmbedUrl(href);
+                      if (embedUrl) {
+                        return <EmbeddedFrame embedUrl={embedUrl} href={href} />;
+                      }
+                      return <LinkPreviewCard href={href} />;
                     }
                     return <p {...props}>{children}</p>;
                   },
@@ -334,10 +339,8 @@ function LinkEmbedSection({
 }
 
 // Detects a markdown paragraph whose only meaningful child is a single link,
-// and returns its embeddable URL if the link is a Canva/YouTube/Vimeo link.
-function soleLinkEmbed(
-  node: unknown,
-): { embedUrl: string; href: string } | null {
+// and returns its href (regardless of provider).
+function soleLinkHref(node: unknown): string | null {
   const n = node as
     | { children?: Array<{ tagName?: string; properties?: { href?: string }; type?: string; value?: string }> }
     | undefined;
@@ -348,11 +351,56 @@ function soleLinkEmbed(
   const only = children[0];
   if (only.tagName !== "a") return null;
   const href = only.properties?.href;
-  if (!href) return null;
-  const embedUrl = getEmbedUrl(href);
-  if (!embedUrl) return null;
-  return { embedUrl, href };
+  if (!href || !/^https?:\/\//i.test(href)) return null;
+  return href;
 }
+
+// Renders an OG-style preview card for an arbitrary link placed alone in a
+// post body. Falls back to a plain link when no metadata is available.
+function LinkPreviewCard({ href }: { href: string }) {
+  const { data, isLoading } = useQuery(linkPreviewQueryOptions(href));
+  let hostname = href;
+  try {
+    hostname = new URL(href).hostname.replace(/^www\./, "");
+  } catch {
+    /* ignore */
+  }
+  const title = data?.title || hostname;
+  const siteName = data?.siteName || hostname;
+  const image = data?.image || null;
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="my-4 flex flex-col overflow-hidden rounded-2xl border border-border bg-card no-underline shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:flex-row"
+    >
+      <span className="flex aspect-video w-full shrink-0 items-center justify-center overflow-hidden bg-accent text-primary sm:aspect-square sm:w-40">
+        {image ? (
+          <img
+            src={image}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <ExternalLink className="h-8 w-8" />
+        )}
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col justify-center gap-1 p-4">
+        <span className="line-clamp-2 font-semibold text-foreground">
+          {isLoading ? "미리보기 불러오는 중…" : title}
+        </span>
+        <span className="flex items-center gap-1 truncate text-xs text-muted-foreground">
+          <ExternalLink className="h-3 w-3 shrink-0" />
+          {siteName}
+        </span>
+      </span>
+    </a>
+  );
+}
+
 
 // Renders an embedded player (Canva/YouTube/Vimeo) inline within post content,
 // with a small link to open the original below it.
