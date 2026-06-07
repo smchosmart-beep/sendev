@@ -19,6 +19,7 @@ import {
   listUserProfiles,
   getProfileMap,
   getAwardIcon,
+  listAwardIconRules,
 } from "./platform.functions";
 
 export const searchPostsQueryOptions = (
@@ -153,5 +154,12 @@ export const awardIconQueryOptions = () =>
   queryOptions({
     queryKey: ["award-icon"],
     queryFn: () => getAwardIcon(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+export const awardIconRulesQueryOptions = () =>
+  queryOptions({
+    queryKey: ["award-icon-rules"],
+    queryFn: () => listAwardIconRules(),
     staleTime: 5 * 60 * 1000,
   });

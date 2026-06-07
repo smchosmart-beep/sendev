@@ -2,17 +2,23 @@ import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { UserCog, Trophy, Pencil, Trash2, Lock, AlertCircle, KeyRound, icons as lucideIcons } from "lucide-react";
+import { UserCog, Trophy, Pencil, Trash2, Lock, AlertCircle, KeyRound, Plus, icons as lucideIcons } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
-import { userProfilesQueryOptions, awardIconQueryOptions } from "@/lib/platform.queries";
+import {
+  userProfilesQueryOptions,
+  awardIconQueryOptions,
+  awardIconRulesQueryOptions,
+} from "@/lib/platform.queries";
 import {
   upsertUserProfile,
   deleteUserProfile,
   resetNicknamePassword,
   verifyProfileAdmin,
   setAwardIcon,
+  addAwardIconRule,
+  deleteAwardIconRule,
   AWARD_ICON_NAMES,
   type UserProfileDTO,
   type AwardIconName,
@@ -147,7 +153,7 @@ function AwardIconPicker() {
         수상 배지 아이콘
       </h2>
       <p className="text-sm text-muted-foreground">
-        수상 배지에 표시될 아이콘을 선택해 주세요. 모든 사용자에게 공통으로 적용됩니다.
+        어떤 키워드 규칙에도 맞지 않을 때 사용할 <b>기본 아이콘</b>입니다.
       </p>
       <div className="mt-5 grid grid-cols-5 gap-2 sm:grid-cols-7">
         {AWARD_ICON_NAMES.map((name) => {
@@ -177,6 +183,140 @@ function AwardIconPicker() {
     </div>
   );
 }
+
+// Lets the admin manage keyword -> icon rules for award badges.
+function AwardIconRules() {
+  const queryClient = useQueryClient();
+  const { data: rules = [] } = useQuery(awardIconRulesQueryOptions());
+  const add = useServerFn(addAwardIconRule);
+  const remove = useServerFn(deleteAwardIconRule);
+
+  const [keyword, setKeyword] = useState("");
+  const [icon, setIcon] = useState<AwardIconName>("Trophy");
+
+  const addMutation = useMutation({
+    mutationFn: () => add({ data: { keyword: keyword.trim(), icon } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["award-icon-rules"] });
+      toast.success("규칙을 추가했어요.");
+      setKeyword("");
+      setIcon("Trophy");
+    },
+    onError: () => toast.error("규칙 추가 중 문제가 발생했어요."),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => remove({ data: { id } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["award-icon-rules"] });
+      toast.success("규칙을 삭제했어요.");
+    },
+    onError: () => toast.error("규칙 삭제 중 문제가 발생했어요."),
+  });
+
+  const handleAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!keyword.trim()) {
+      toast.error("키워드를 입력해 주세요.");
+      return;
+    }
+    addMutation.mutate();
+  };
+
+  return (
+    <div className="rounded-2xl bg-card p-6 shadow-sm">
+      <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-foreground">
+        <Trophy className="h-5 w-5 text-primary" />
+        수상명 키워드 규칙
+      </h2>
+      <p className="text-sm text-muted-foreground">
+        수상명에 키워드가 포함되면 해당 아이콘을 사용합니다. (예: "대상" → 왕관)
+        위쪽 규칙이 우선 적용됩니다.
+      </p>
+
+      {rules.length > 0 && (
+        <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border">
+          {rules.map((rule) => {
+            const Icon =
+              (lucideIcons as Record<string, typeof Trophy>)[rule.icon] || Trophy;
+            return (
+              <li key={rule.id} className="flex items-center gap-3 px-4 py-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1 truncate font-medium text-foreground">
+                  “{rule.keyword}”
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm(`'${rule.keyword}' 규칙을 삭제할까요?`)) {
+                      deleteMutation.mutate(rule.id);
+                    }
+                  }}
+                  aria-label="규칙 삭제"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-destructive text-destructive-foreground shadow-sm active:scale-95"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <form onSubmit={handleAdd} className="mt-5 space-y-3">
+        <div className="space-y-2">
+          <Label htmlFor="rule-keyword">키워드</Label>
+          <Input
+            id="rule-keyword"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="예: 대상"
+            className="rounded-xl"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>아이콘</Label>
+          <div className="grid grid-cols-5 gap-2 sm:grid-cols-7">
+            {AWARD_ICON_NAMES.map((name) => {
+              const Icon =
+                (lucideIcons as Record<string, typeof Trophy>)[name] || Trophy;
+              const selected = icon === name;
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => setIcon(name)}
+                  aria-label={name}
+                  aria-pressed={selected}
+                  className={cn(
+                    "flex aspect-square items-center justify-center rounded-xl border transition-all active:scale-95",
+                    selected
+                      ? "border-primary bg-primary text-primary-foreground shadow-md"
+                      : "border-border bg-background text-foreground hover:border-primary",
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <Button
+          type="submit"
+          disabled={addMutation.isPending}
+          className="rounded-xl active:scale-95"
+        >
+          <Plus className="mr-1 h-4 w-4" />
+          {addMutation.isPending ? "추가 중..." : "규칙 추가"}
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+
 
 function ProfilesAdmin() {
 
@@ -307,6 +447,8 @@ function ProfilesAdmin() {
       </div>
 
       <AwardIconPicker />
+
+      <AwardIconRules />
 
 
       {profiles.length === 0 ? (

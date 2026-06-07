@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      award_icon_rules: {
+        Row: {
+          created_at: string
+          icon: string
+          id: string
+          keyword: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string
+          id?: string
+          keyword: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string
+          id?: string
+          keyword?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string

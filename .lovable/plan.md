@@ -1,35 +1,37 @@
-# 수상 배지 아이콘 커스터마이징
+# 수상명 키워드 → 아이콘 규칙
 
-관리자가 수상(award) 배지에 표시되는 아이콘을 미리 준비된 목록에서 골라 **전체 공통 1개**로 지정할 수 있게 합니다. 현재는 항상 Trophy(🏆)로 고정되어 있습니다.
+수상 배지 아이콘을 전체 공통 1개가 아니라, **수상명에 포함된 키워드에 따라** 다르게 표시합니다. 예: 수상명에 "대상"이 들어가면 왕관, "최우수"면 별, "인기"면 하트. 매칭되는 규칙이 없으면 기존 기본 아이콘(현재 전역 설정값)을 사용합니다.
 
 ## 동작
-- 프로필 관리 페이지(`/admin/profiles`, 시스템 관리자 인증 뒤)에 아이콘 선택 영역 추가.
-- 약 12개의 lucide 아이콘(트로피, 별, 왕관, 메달, 불꽃, 하트, 번개, 방패, 보석, 엄지, 로켓, 리본 등)을 그리드로 보여주고 클릭해 선택 → 저장.
-- 저장 즉시 게시판 목록·게시글·댓글 등 모든 수상 배지의 아이콘이 바뀜.
-- 기본값은 트로피로, 한 번도 설정하지 않은 경우 기존과 동일하게 표시.
+- 프로필 관리 페이지(`/admin/profiles`)의 "수상 배지 아이콘" 영역에 **키워드 규칙 목록**을 추가.
+- 각 규칙 = 키워드(예: "대상") + 아이콘. 관리자가 키워드 입력 + 아이콘 선택으로 규칙을 추가/삭제.
+- 기존 "기본 아이콘" 선택은 그대로 유지 → 어떤 규칙에도 안 맞을 때 사용.
+- 매칭은 수상명에 키워드가 포함(부분일치, 대소문자 무시)되는지로 판단. 여러 규칙이 맞으면 위(우선순위)에 있는 규칙 적용.
+- 저장 즉시 게시판 목록·게시글·댓글의 수상 배지 아이콘이 수상명에 맞게 바뀜.
 
 ## 구현 (기술 상세)
 
-### 1. 전역 설정 저장소 (DB 마이그레이션)
-- `site_settings` 테이블 신설: `key`(PK, text), `value`(text), 표준 타임스탬프.
-- 적절한 GRANT + RLS(공개 읽기 정도) 추가. 쓰기는 서버 함수(service role)로만 수행.
-- 기본 행 `award_icon = 'Trophy'` 삽입.
+### 1. DB 마이그레이션
+- `award_icon_rules` 테이블 신설: `keyword`(text), `icon`(text), `sort_order`(int, 우선순위), 표준 타임스탬프.
+- GRANT + RLS(공개 읽기). 쓰기는 서버 함수(service role)로만.
+- 기존 `site_settings`의 `award_icon`(기본 아이콘)은 폴백으로 그대로 유지.
 
 ### 2. 서버 함수 (`src/lib/platform.functions.ts`)
-- 허용 아이콘 이름 화이트리스트 상수(`AWARD_ICON_NAMES`) 정의 — 선택지/검증 공용.
-- `getAwardIcon` (GET): 저장된 아이콘 이름 반환, 없으면 `'Trophy'`.
-- `setAwardIcon` (POST): 입력을 화이트리스트로 검증 후 `site_settings` upsert.
+- `listAwardIconRules` (GET): 규칙을 `sort_order` 순으로 반환.
+- `addAwardIconRule` (POST): 키워드(1~100자) + 아이콘(화이트리스트 검증) 추가.
+- `deleteAwardIconRule` (POST): id로 삭제.
+- 아이콘 해석 헬퍼(`resolveAwardIcon(award, rules, defaultIcon)`) export — 첫 매칭 규칙의 아이콘, 없으면 기본 아이콘.
 
 ### 3. 쿼리 옵션 (`src/lib/platform.queries.ts`)
-- `awardIconQueryOptions()` 추가.
+- `awardIconRulesQueryOptions()` 추가. (기존 `awardIconQueryOptions` 유지)
 
 ### 4. 배지 렌더링 (`src/components/AuthorBadge.tsx`)
-- lucide `icons` 맵에서 이름으로 컴포넌트를 동적 조회(없으면 Trophy 폴백).
-- 컴포넌트 내부에서 `awardIconQueryOptions`를 구독해 아이콘 적용 — 기존 호출부(여러 게시판/게시글/댓글) 변경 불필요.
+- 규칙 목록 + 기본 아이콘을 구독 → 수상명으로 `resolveAwardIcon` 호출해 아이콘 결정.
+- lucide `icons` 맵에서 이름으로 동적 조회, 폴백 Trophy. 기존 호출부 변경 불필요.
 
 ### 5. 관리자 UI (`src/routes/admin.profiles.tsx`)
-- 프로필 카드 상단/하단에 "수상 배지 아이콘" 선택 그리드 추가.
-- 선택 시 `setAwardIcon` 호출, 성공 토스트 + `award-icon`·`profile-map` 쿼리 무효화.
-- 현재 선택된 아이콘 강조 표시.
+- 기존 기본 아이콘 그리드 아래에 "수상명 키워드 규칙" 섹션 추가.
+- 규칙 목록(키워드 + 아이콘 미리보기 + 삭제 버튼), 새 규칙 추가 폼(키워드 입력 + 아이콘 선택 그리드).
+- 저장/삭제 시 `award-icon-rules` 쿼리 무효화 + 토스트.
 
-기존 데이터/동작과 완전히 호환되며, 디자인 토큰을 사용해 스타일링합니다.
+디자인 토큰을 사용하며 기존 동작과 호환됩니다.
