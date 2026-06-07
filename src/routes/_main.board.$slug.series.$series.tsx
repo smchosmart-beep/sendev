@@ -6,6 +6,7 @@ import {
   postsQueryOptions,
   categoriesQueryOptions,
   ogImageBackfillQueryOptions,
+  getBoardPassword,
 } from "@/lib/platform.queries";
 import { type PostDTO } from "@/lib/platform.functions";
 import { sortSeriesPosts } from "@/lib/series";
