@@ -1141,7 +1141,14 @@ function EvaluationSection({
 
   const mutation = useMutation({
     mutationFn: () =>
-      create({ data: { postId, reviewerName: reviewerName.trim(), scores } }),
+      create({
+        data: {
+          postId,
+          reviewerName: reviewerName.trim(),
+          nicknamePassword: nicknamePassword.trim(),
+          scores,
+        },
+      }),
     onSuccess: (res: { ok: boolean; updated?: boolean }) => {
       queryClient.invalidateQueries({ queryKey: ["reviews", postId] });
       queryClient.invalidateQueries({ queryKey: ["my-review", postId] });
@@ -1152,6 +1159,8 @@ function EvaluationSection({
         window.localStorage.setItem(storageKey, name);
       }
       setLockedName(name || null);
+      // 닉네임+비밀번호를 식별자 저장소에 저장해 다음 평가/글/댓글에서 자동 채움.
+      if (name) saveIdentity(name, nicknamePassword.trim());
       toast.success(
         res?.updated ? "평가가 갱신되었어요!" : "평가를 제출했어요!",
       );
@@ -1159,7 +1168,10 @@ function EvaluationSection({
       // 이후 my-review 재조회로 저장된 점수가 다시 채워진다.
       touchedRef.current = false;
     },
-    onError: () => toast.error("제출 중 문제가 발생했어요."),
+    onError: (err: unknown) =>
+      toast.error(
+        err instanceof Error ? err.message : "제출 중 문제가 발생했어요.",
+      ),
   });
 
 
