@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   UserRound,
@@ -9,6 +9,9 @@ import {
   Heart,
   LogOut,
   Loader2,
+  Trophy,
+  Star,
+  icons as lucideIcons,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,10 +22,15 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   getMyDashboard,
+  resolveAwardIcon,
   type DashboardDTO,
   type DashCommentDTO,
   type DashLikeDTO,
 } from "@/lib/platform.functions";
+import {
+  awardIconQueryOptions,
+  awardIconRulesQueryOptions,
+} from "@/lib/platform.queries";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 
 export const Route = createFileRoute("/_main/mypage")({
