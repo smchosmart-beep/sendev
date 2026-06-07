@@ -35,6 +35,7 @@ export const Route = createFileRoute("/_main/board/$slug/")({
       categoriesQueryOptions(),
     );
     const category = categories.find((c) => c.slug === params.slug);
+    context.queryClient.ensureQueryData(profileMapQueryOptions());
     if (category) {
       await context.queryClient.ensureQueryData(
         postsQueryOptions(category.id),
