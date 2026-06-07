@@ -1323,9 +1323,8 @@ function EvaluationSection({
             </div>
             <div className="space-y-2">
               <Label htmlFor="reviewer-pw">닉네임 비밀번호</Label>
-              <Input
+              <PasswordInput
                 id="reviewer-pw"
-                type="password"
                 value={nicknamePassword}
                 onChange={(e) => setNicknamePassword(e.target.value)}
                 placeholder="닉네임 비밀번호"
