@@ -879,7 +879,8 @@ export const createPost = createServerFn({ method: "POST" })
     z
       .object({
         categoryId: z.string().uuid(),
-        type: z.enum(["notice", "project", "question", "general", "link"]),
+        type: z.enum(["post", "project", "link"]).default("post"),
+        pinned: z.boolean().default(false),
         title: z.string().trim().min(1).max(200),
         content: z.string().max(20000).default(""),
         author: z.string().trim().max(100).default(""),
@@ -892,8 +893,6 @@ export const createPost = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    // Notices may only be created by an authenticated admin.
-    if (data.type === "notice") requireAdmin(data.adminPassword);
     const db = await getAdmin();
     // Enforce per-board GitHub link requirement.
     const { data: cat } = await db
@@ -906,15 +905,9 @@ export const createPost = createServerFn({ method: "POST" })
         throw new Error("이 카테고리은 GitHub 링크가 필수입니다.");
       }
     }
-    // Notices are authored by the operations team.
-    const author = data.type === "notice" ? "운영진" : data.author;
+    const author = data.author;
     // Verify the author owns this nickname (or claim it on first use).
-    await ensureNicknameOwnership(
-      db,
-      author,
-      data.nicknamePassword,
-      data.type === "notice",
-    );
+    await ensureNicknameOwnership(db, author, data.nicknamePassword, false);
     // Resolve and cache the deploy site's OG image once at creation time so the
     // board never re-fetches the external site on subsequent loads.
     const ogImageUrl = data.deployUrl
@@ -934,6 +927,7 @@ export const createPost = createServerFn({ method: "POST" })
         category_id: data.categoryId,
         post_no: nextNo,
         type: data.type,
+        pinned: data.type === "post" ? data.pinned : false,
         title: data.title,
         content: data.content,
         author,
