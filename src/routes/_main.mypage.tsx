@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   UserRound,
@@ -9,6 +9,9 @@ import {
   Heart,
   LogOut,
   Loader2,
+  Trophy,
+  Star,
+  icons as lucideIcons,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,10 +22,15 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   getMyDashboard,
+  resolveAwardIcon,
   type DashboardDTO,
   type DashCommentDTO,
   type DashLikeDTO,
 } from "@/lib/platform.functions";
+import {
+  awardIconQueryOptions,
+  awardIconRulesQueryOptions,
+} from "@/lib/platform.queries";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 
 export const Route = createFileRoute("/_main/mypage")({
@@ -181,6 +189,8 @@ function Dashboard({
         </div>
       </div>
 
+      <LevelCard level={data.level} points={data.points} award={data.award} />
+
 
       <div className="grid grid-cols-3 gap-3">
         <StatCard icon={FileText} label="작성한 글" value={data.myPosts.length} />
@@ -296,6 +306,69 @@ function StatCard({
     </Card>
   );
 }
+
+function LevelCard({
+  level,
+  points,
+  award,
+}: {
+  level: number | null;
+  points: number;
+  award: string;
+}) {
+  const { data: awardIcon } = useQuery(awardIconQueryOptions());
+  const { data: awardRules } = useQuery(awardIconRulesQueryOptions());
+
+  const hasAward = award.trim().length > 0;
+  const iconName = resolveAwardIcon(award, awardRules ?? [], awardIcon ?? "Trophy");
+  const AwardIcon =
+    (lucideIcons as Record<string, typeof Trophy>)[iconName] || Trophy;
+
+  // Points needed to reach the next level (level = round(points*99/1000)).
+  const nextLevelPoints =
+    level != null && level < 99
+      ? Math.ceil(((level + 0.5) * 1000) / 99)
+      : null;
+
+  return (
+    <Card className="p-5">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+            <span className="text-lg font-bold leading-none">
+              Lv.{level ?? 1}
+            </span>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">현재 레벨</p>
+            <p className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Star className="h-3.5 w-3.5 text-primary" />
+              활동 점수 {points}점
+              {nextLevelPoints != null && (
+                <span className="text-muted-foreground/80">
+                  · 다음 레벨까지 {Math.max(0, nextLevelPoints - points)}점
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-start gap-1.5">
+          <span className="text-xs font-medium text-muted-foreground">보유 배지</span>
+          {hasAward ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-sm font-medium text-secondary-foreground shadow-sm">
+              <AwardIcon className="h-4 w-4 shrink-0" />
+              {award}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground">아직 받은 배지가 없어요.</span>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 
 function EmptyRow({ text }: { text: string }) {
   return (

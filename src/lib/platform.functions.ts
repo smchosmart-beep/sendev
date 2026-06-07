@@ -2179,6 +2179,9 @@ export interface DashLikeDTO {
 
 export interface DashboardDTO {
   username: string;
+  level: number | null;
+  points: number;
+  award: string;
   myPosts: DashPostDTO[];
   myComments: DashCommentDTO[];
   repliesToMe: DashCommentDTO[];
@@ -2242,7 +2245,7 @@ export const getMyDashboard = createServerFn({ method: "POST" })
     // Re-authenticate.
     const { data: prof, error: pErr } = await db
       .from("user_profiles")
-      .select("username, nickname_password")
+      .select("username, nickname_password, award")
       .eq("username_key", key)
       .maybeSingle();
     if (pErr) throw new Error(pErr.message);
@@ -2421,8 +2424,13 @@ export const getMyDashboard = createServerFn({ method: "POST" })
       };
     };
 
+    const points = myPosts.length * 5 + myComments0.length * 1;
+
     return {
       username: prof.username ?? name,
+      level: levelFromActivity(myPosts.length, myComments0.length),
+      points,
+      award: prof.award ?? "",
       myPosts,
       myComments: myComments0.map(mapDashComment),
       repliesToMe: repliesRows.map(mapDashComment),
