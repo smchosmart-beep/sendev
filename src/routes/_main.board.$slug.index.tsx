@@ -110,7 +110,7 @@ function BoardInner({
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
             <Megaphone className="h-5 w-5 text-primary" />
-            공지사항
+            고정 게시글
           </h2>
           {notices.map((n) => (
             <Link
