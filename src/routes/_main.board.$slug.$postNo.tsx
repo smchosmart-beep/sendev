@@ -1755,7 +1755,7 @@ function CommentsSection({ postId }: { postId: string }) {
           <DialogHeader>
             <DialogTitle>댓글 삭제</DialogTitle>
             <DialogDescription>
-              작성 시 설정한 비밀번호 또는 관리자 비밀번호를 입력해야 삭제할 수
+              작성자의 닉네임 비밀번호 또는 관리자 비밀번호를 입력해야 삭제할 수
               있어요.
             </DialogDescription>
           </DialogHeader>
