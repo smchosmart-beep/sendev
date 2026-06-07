@@ -74,6 +74,7 @@ export const Route = createFileRoute("/_main")({
 });
 
 
+const guideTab = { to: "/guide", label: "사용자 가이드", icon: HelpCircle } as const;
 const homeTab = { to: "/home", label: "홈", icon: Home } as const;
 const calendarTab = { to: "/calendar", label: "캘린더", icon: Calendar } as const;
 
