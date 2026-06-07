@@ -65,10 +65,14 @@ export function getBoardPassword(categoryId: string): string {
   }
 }
 
-export const postsQueryOptions = (categoryId: string, boardPassword = "") =>
+export const postsQueryOptions = (
+  categoryId: string,
+  boardPassword = "",
+  adminPassword = "",
+) =>
   queryOptions({
-    queryKey: ["posts", categoryId, boardPassword],
-    queryFn: () => listPosts({ data: { categoryId, boardPassword } }),
+    queryKey: ["posts", categoryId, boardPassword, adminPassword],
+    queryFn: () => listPosts({ data: { categoryId, boardPassword, adminPassword } }),
   });
 
 export const postQueryOptions = (id: string, boardPassword = "") =>
