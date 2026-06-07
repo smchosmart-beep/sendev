@@ -1686,7 +1686,7 @@ function CommentsSection({ postId }: { postId: string }) {
         }}
         className="mt-6 space-y-3 border-t border-border pt-6"
       >
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className={`grid gap-3 ${needsConfirm ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
           <Input
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
@@ -1701,9 +1701,7 @@ function CommentsSection({ postId }: { postId: string }) {
             maxLength={100}
             className="rounded-xl"
           />
-        </div>
-        {needsConfirm && (
-          <>
+          {needsConfirm && (
             <PasswordInput
               value={nicknamePasswordConfirm}
               onChange={(e) => setNicknamePasswordConfirm(e.target.value)}
@@ -1711,14 +1709,14 @@ function CommentsSection({ postId }: { postId: string }) {
               maxLength={100}
               className="rounded-xl"
             />
-            {nicknamePasswordConfirm.length > 0 &&
-              nicknamePassword.trim() !== nicknamePasswordConfirm.trim() && (
-                <p className="text-xs text-destructive">
-                  닉네임 비밀번호가 일치하지 않아요.
-                </p>
-              )}
-          </>
-        )}
+          )}
+        </div>
+        {needsConfirm &&
+          nicknamePasswordConfirm.length > 0 &&
+          nicknamePassword.trim() !== nicknamePasswordConfirm.trim() && (
+            <p className="text-xs text-destructive">닉네임 비밀번호가 일치하지 않아요.</p>
+          )}
+
         <p className="text-xs text-muted-foreground">
           닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 본인 확인합니다. 이 비밀번호로 댓글 삭제도 진행해요.
           {claimed
@@ -2042,7 +2040,7 @@ function CommentForm({
       }}
       className={`space-y-3 rounded-xl border border-border p-4 ${compact ? "ml-4" : ""}`}
     >
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className={`grid gap-3 ${needsConfirm ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
         <Input
           value={author}
           onChange={(e) => setAuthor(e.target.value)}
@@ -2057,9 +2055,7 @@ function CommentForm({
           maxLength={100}
           className="rounded-xl"
         />
-      </div>
-      {needsConfirm && (
-        <>
+        {needsConfirm && (
           <PasswordInput
             value={nicknamePasswordConfirm}
             onChange={(e) => setNicknamePasswordConfirm(e.target.value)}
@@ -2067,14 +2063,14 @@ function CommentForm({
             maxLength={100}
             className="rounded-xl"
           />
-          {nicknamePasswordConfirm.length > 0 &&
-            nicknamePassword.trim() !== nicknamePasswordConfirm.trim() && (
-              <p className="text-xs text-destructive">
-                닉네임 비밀번호가 일치하지 않아요.
-              </p>
-            )}
-        </>
-      )}
+        )}
+      </div>
+      {needsConfirm &&
+        nicknamePasswordConfirm.length > 0 &&
+        nicknamePassword.trim() !== nicknamePasswordConfirm.trim() && (
+          <p className="text-xs text-destructive">닉네임 비밀번호가 일치하지 않아요.</p>
+        )}
+
       {claimed ? (
         <p className="text-xs text-muted-foreground">
           이미 등록된 닉네임이에요. 등록한 비밀번호를 입력해 주세요.
