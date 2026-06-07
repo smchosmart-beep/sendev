@@ -73,7 +73,12 @@ function ProfilesGate() {
   const [showPw, setShowPw] = useState(false);
 
   useEffect(() => {
-    setGranted(sessionStorage.getItem(PROFILE_SESSION_KEY) === "1");
+    // Only treat the session as granted if the password is also still stored;
+    // otherwise admin calls would send an empty password and be rejected.
+    const ok =
+      sessionStorage.getItem(PROFILE_SESSION_KEY) === "1" &&
+      getProfileAdminPassword().length > 0;
+    setGranted(ok);
     setMounted(true);
   }, []);
 
