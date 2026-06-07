@@ -41,9 +41,11 @@ interface KakaoMapProps {
   className?: string;
   /** Map zoom level (kakao scale: smaller = closer). Default 3 */
   level?: number;
+  /** Wrap the map in a link to Kakao Map. Disable when nested inside another link. */
+  asLink?: boolean;
 }
 
-export function KakaoMap({ lat, lng, name, className, level = 3 }: KakaoMapProps) {
+export function KakaoMap({ lat, lng, name, className, level = 3, asLink = true }: KakaoMapProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
 
