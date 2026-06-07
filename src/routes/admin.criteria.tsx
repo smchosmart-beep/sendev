@@ -37,6 +37,7 @@ import {
   shuffleEvaluation,
   closeEvaluation,
   addReviewAllowlistName,
+  addReviewAllowlistNames,
   removeReviewAllowlistName,
   setReviewAllowlistOnly,
   deleteReview,
