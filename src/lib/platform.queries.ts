@@ -21,6 +21,7 @@ import {
   listHeroSlides,
   listUserProfiles,
   getProfileMap,
+  getNicknameStatus,
   getAwardIcon,
   listAwardIconRules,
 } from "./platform.functions";
