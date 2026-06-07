@@ -408,9 +408,20 @@ function ReviewAllowlistCard({ board }: { board: CategoryDTO }) {
     reviewAllowlistQueryOptions(board.id, adminPassword),
   );
   const addFn = useServerFn(addReviewAllowlistName);
+  const addBulkFn = useServerFn(addReviewAllowlistNames);
   const removeFn = useServerFn(removeReviewAllowlistName);
   const toggleFn = useServerFn(setReviewAllowlistOnly);
   const [name, setName] = useState("");
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkText, setBulkText] = useState("");
+
+  const parsedBulkNames = bulkText
+    .split(/[\n,\t]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const uniqueBulkCount = new Set(
+    parsedBulkNames.map((s) => s.toLowerCase()),
+  ).size;
 
   const invalidateList = () =>
     queryClient.invalidateQueries({ queryKey: ["review-allowlist", board.id] });
