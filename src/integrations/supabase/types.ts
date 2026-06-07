@@ -59,6 +59,7 @@ export type Database = {
           name: string
           password: string
           project_name: string
+          review_allowlist_only: boolean
           slug: string
           sort_order: number
           tab_group: string
@@ -80,6 +81,7 @@ export type Database = {
           name: string
           password?: string
           project_name?: string
+          review_allowlist_only?: boolean
           slug: string
           sort_order?: number
           tab_group?: string
@@ -101,6 +103,7 @@ export type Database = {
           name?: string
           password?: string
           project_name?: string
+          review_allowlist_only?: boolean
           slug?: string
           sort_order?: number
           tab_group?: string
@@ -297,6 +300,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      review_allowlist: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          reviewer_key: string
+          reviewer_name: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          reviewer_key: string
+          reviewer_name: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          reviewer_key?: string
+          reviewer_name?: string
+        }
+        Relationships: []
       }
       review_criteria: {
         Row: {
