@@ -171,17 +171,22 @@ function MyPage() {
 
 function Dashboard({
   data,
+  username,
+  password,
   stored,
   onClearStored,
   onLogout,
 }: {
   data: DashboardDTO;
+  username: string;
+  password: string;
   stored: boolean;
   onClearStored: () => void;
   onLogout: () => void;
 }) {
   return (
     <div className="space-y-6 py-4">
+
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-muted-foreground">내 페이지</p>
