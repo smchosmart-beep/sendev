@@ -1799,12 +1799,14 @@ function CommentForm({
     content: string;
     imageUrls: string[];
     editPassword: string;
+    nicknamePassword: string;
   }) => void;
   onCancel?: () => void;
 }) {
   const [author, setAuthor] = useState("");
   const [content, setContent] = useState("");
   const [password, setPassword] = useState("");
+  const [nicknamePassword, setNicknamePassword] = useState("");
   const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   return (
