@@ -125,7 +125,61 @@ function ProfilesGate() {
   );
 }
 
+// Lets the admin pick a single global icon for award badges.
+function AwardIconPicker() {
+  const queryClient = useQueryClient();
+  const { data: current } = useQuery(awardIconQueryOptions());
+  const save = useServerFn(setAwardIcon);
+
+  const mutation = useMutation({
+    mutationFn: (icon: AwardIconName) => save({ data: { icon } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["award-icon"] });
+      toast.success("수상 배지 아이콘을 변경했어요.");
+    },
+    onError: () => toast.error("아이콘 저장 중 문제가 발생했어요."),
+  });
+
+  return (
+    <div className="rounded-2xl bg-card p-6 shadow-sm">
+      <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-foreground">
+        <Trophy className="h-5 w-5 text-primary" />
+        수상 배지 아이콘
+      </h2>
+      <p className="text-sm text-muted-foreground">
+        수상 배지에 표시될 아이콘을 선택해 주세요. 모든 사용자에게 공통으로 적용됩니다.
+      </p>
+      <div className="mt-5 grid grid-cols-5 gap-2 sm:grid-cols-7">
+        {AWARD_ICON_NAMES.map((name) => {
+          const Icon =
+            (lucideIcons as Record<string, typeof Trophy>)[name] || Trophy;
+          const selected = current === name;
+          return (
+            <button
+              key={name}
+              type="button"
+              disabled={mutation.isPending}
+              onClick={() => mutation.mutate(name)}
+              aria-label={name}
+              aria-pressed={selected}
+              className={cn(
+                "flex aspect-square items-center justify-center rounded-xl border transition-all active:scale-95 disabled:opacity-60",
+                selected
+                  ? "border-primary bg-primary text-primary-foreground shadow-md"
+                  : "border-border bg-background text-foreground hover:border-primary",
+              )}
+            >
+              <Icon className="h-5 w-5" />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ProfilesAdmin() {
+
   const queryClient = useQueryClient();
   const { data: profiles = [] as UserProfileDTO[] } = useQuery(
     userProfilesQueryOptions(),
