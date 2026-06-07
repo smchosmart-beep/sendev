@@ -207,6 +207,12 @@ function Dashboard({
 
       <LevelCard level={data.level} points={data.points} awards={data.awards} />
 
+      {password && (
+        <RecoveryQuestionCard username={username} password={password} />
+      )}
+
+
+
 
       <div className="grid grid-cols-3 gap-3">
         <StatCard icon={FileText} label="작성한 글" value={data.myPosts.length} />
