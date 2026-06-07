@@ -2075,11 +2075,15 @@ function CommentForm({
             )}
         </>
       )}
-      {hasStored && (
+      {claimed ? (
+        <p className="text-xs text-muted-foreground">
+          이미 등록된 닉네임이에요. 등록한 비밀번호를 입력해 주세요.
+        </p>
+      ) : hasStored ? (
         <p className="text-xs text-muted-foreground">
           저장된 닉네임을 불러왔어요.
         </p>
-      )}
+      ) : null}
       <AutoTextarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
