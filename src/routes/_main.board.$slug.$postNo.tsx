@@ -204,8 +204,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
     );
   }
 
-  const isBoardPost =
-    post.type === "notice" || post.type === "question" || post.type === "general";
+  const isBoardPost = post.type === "post";
   const isLink = post.type === "link";
   const embedUrl = isLink ? getEmbedUrl(post.deployUrl) : null;
 
