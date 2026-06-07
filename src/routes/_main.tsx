@@ -252,7 +252,6 @@ function MainLayout() {
                 </div>
 
                 <Link
-
                   to="/mypage"
                   onClick={() => setMenuOpen(false)}
                   className="mt-2 flex items-center gap-3 rounded-2xl border border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
