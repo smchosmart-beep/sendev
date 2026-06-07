@@ -128,6 +128,8 @@ function ProfilesAdmin() {
   );
   const upsert = useServerFn(upsertUserProfile);
   const remove = useServerFn(deleteUserProfile);
+  const resetPw = useServerFn(resetNicknamePassword);
+
 
   const [username, setUsername] = useState("");
   const [award, setAward] = useState("");
