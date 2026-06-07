@@ -364,6 +364,10 @@ function ProfilesAdmin() {
   const [sort, setSort] = useState<"name" | "points-desc" | "points-asc">("name");
   const [page, setPage] = useState(1);
 
+  // 목록 행 내 인라인 배지 추가
+  const [addingFor, setAddingFor] = useState<string | null>(null);
+  const [addingValue, setAddingValue] = useState("");
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const list = (profiles as UserProfileDTO[]).filter((p) => {
