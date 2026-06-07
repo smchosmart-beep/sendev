@@ -1071,10 +1071,12 @@ export const createCriterion = createServerFn({ method: "POST" })
         categoryId: z.string().uuid(),
         criterionName: z.string().trim().min(1).max(200),
         maxScore: z.number().int().min(1).max(100).default(5),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { data: maxRow } = await db
       .from("review_criteria")
@@ -1102,10 +1104,12 @@ export const updateCriterion = createServerFn({ method: "POST" })
         criterionName: z.string().trim().min(1).max(200).optional(),
         maxScore: z.number().int().min(1).max(100).optional(),
         isActive: z.boolean().optional(),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const patch: Record<string, unknown> = {};
     if (data.criterionName !== undefined) patch.criterion_name = data.criterionName;
@@ -1120,8 +1124,9 @@ export const updateCriterion = createServerFn({ method: "POST" })
   });
 
 export const deleteCriterion = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input) => z.object({ id: z.string().uuid(), adminPassword: z.string().max(200).default("") }).parse(input))
   .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { error } = await db.from("review_criteria").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
