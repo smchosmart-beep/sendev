@@ -256,6 +256,16 @@ function MainLayout() {
                   <NicknameSetup variant="menu" onOpened={() => setMenuOpen(false)} />
                 </div>
 
+                <Link
+                  to="/mypage"
+                  onClick={() => setMenuOpen(false)}
+                  className="mt-2 flex items-center gap-3 rounded-2xl border border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <UserRound className="h-5 w-5" />
+                  내 페이지
+                </Link>
+
+
 
 
                 <Link
