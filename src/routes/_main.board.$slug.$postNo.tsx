@@ -35,6 +35,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { LikeButton } from "@/components/LikeButton";
+
 import {
   postQueryOptions,
   postByNoQueryOptions,
