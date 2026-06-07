@@ -192,6 +192,13 @@ function GuidePage() {
         <p className="text-xs text-muted-foreground">
           * 레벨 계산 공식: 레벨 = round(누적점수 × 99 ÷ 1,000), 최소 LV 1 / 최대 LV 99. 글과 댓글 점수가 합산됩니다.
         </p>
+        <div className="mt-2 space-y-1">
+          <p className="font-medium text-foreground">레벨은 어디에 표시되나요?</p>
+          <ul className="ml-5 list-disc space-y-1">
+            <li><strong>내 페이지</strong> 상단의 활동 카드에 <code>Lv.N</code> 형태로 크게 표시됩니다.</li>
+            <li>게시글·댓글 목록에서 <strong>작성자 닉네임 옆</strong>에도 <code>Lv.N</code> 뱃지가 함께 표시됩니다.</li>
+          </ul>
+        </div>
       </Section>
 
       <Section id="badge" icon={Award} title="배지 제도">
