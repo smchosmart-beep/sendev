@@ -206,6 +206,27 @@ function GuidePage() {
           배지는 운영진(관리자)이 특정 닉네임에게 부여하는 표식입니다. 우수 활동, 행사 참여 등에 대한 인정으로
           수여되며, 부여된 배지는 <strong>내 페이지</strong>와 글·댓글의 작성자 이름 옆에 표시됩니다.
         </p>
+        <div className="space-y-1">
+          <p className="font-medium text-foreground">배지는 어디에 어떻게 표시되나요?</p>
+          <ul className="ml-5 list-disc space-y-1">
+            <li>
+              <strong>내 페이지</strong>에서는 보유한 <strong>모든 배지</strong>가 각각 아이콘과 배지 이름으로 나열되어
+              표시됩니다.
+            </li>
+            <li>
+              게시글·댓글의 <strong>작성자 이름 옆</strong>에서는 공간 절약을 위해 <strong>대표 배지(첫 번째) 아이콘
+              하나</strong>만 표시됩니다.
+            </li>
+            <li>
+              배지가 여러 개인 경우, 나머지 배지는 <code>+N</code> 칩으로 축약되어 표시됩니다. (예: 배지 3개 →
+              아이콘 1개 + <code>+2</code>)
+            </li>
+            <li>
+              <code>+N</code> 칩을 누르면(클릭·탭) 팝오버가 열리며 <strong>보유한 배지 전체 목록</strong>을 확인할 수
+              있습니다.
+            </li>
+          </ul>
+        </div>
         <p>닉네임을 변경하더라도 보유한 배지는 그대로 유지됩니다.</p>
       </Section>
 
