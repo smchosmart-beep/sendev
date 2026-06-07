@@ -39,7 +39,7 @@ export const Route = createFileRoute("/_main/board/$slug/")({
     context.queryClient.ensureQueryData(profileMapQueryOptions());
     if (category) {
       await context.queryClient.ensureQueryData(
-        postsQueryOptions(category.id),
+        postsQueryOptions(category.id, getBoardPassword(params.slug)),
       );
     }
   },
