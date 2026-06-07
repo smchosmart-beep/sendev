@@ -409,6 +409,12 @@ const linkSchema = z.object({
   url: z.string().trim().url().max(2000),
 });
 
+const placeFields = {
+  placeAddress: z.string().trim().max(300).default(""),
+  latitude: z.number().min(-90).max(90).nullable().default(null),
+  longitude: z.number().min(-180).max(180).nullable().default(null),
+};
+
 export const createEvent = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
@@ -419,15 +425,21 @@ export const createEvent = createServerFn({ method: "POST" })
         location: z.string().trim().max(200).default(""),
         target: z.string().trim().max(200).default(""),
         description: z.string().trim().max(1000).default(""),
-
+        ...placeFields,
         attachments: z.array(attachmentSchema).max(10).default([]),
         links: z.array(linkSchema).max(10).default([]),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    const { placeAddress, latitude, longitude, ...rest } = data;
     const db = await getAdmin();
-    const { error } = await db.from("events").insert(data);
+    const { error } = await db.from("events").insert({
+      ...rest,
+      place_address: placeAddress,
+      latitude,
+      longitude,
+    });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -443,18 +455,47 @@ export const updateEvent = createServerFn({ method: "POST" })
         location: z.string().trim().max(200).default(""),
         target: z.string().trim().max(200).default(""),
         description: z.string().trim().max(1000).default(""),
-
+        ...placeFields,
         attachments: z.array(attachmentSchema).max(10).default([]),
         links: z.array(linkSchema).max(10).default([]),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { id, ...rest } = data;
+    const { id, placeAddress, latitude, longitude, ...rest } = data;
     const db = await getAdmin();
-    const { error } = await db.from("events").update(rest).eq("id", id);
+    const { error } = await db
+      .from("events")
+      .update({ ...rest, place_address: placeAddress, latitude, longitude })
+      .eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const searchPlaces = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z.object({ query: z.string().trim().min(1).max(100) }).parse(input),
+  )
+  .handler(async ({ data }): Promise<PlaceResult[]> => {
+    const key = process.env.KAKAO_REST_API_KEY;
+    if (!key) throw new Error("KAKAO_REST_API_KEY is not configured");
+    const url = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(
+      data.query,
+    )}&size=10`;
+    const res = await fetch(url, {
+      headers: { Authorization: `KakaoAK ${key}` },
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Kakao search failed (${res.status}): ${body}`);
+    }
+    const json: any = await res.json();
+    return (json.documents ?? []).map((d: any) => ({
+      name: d.place_name as string,
+      address: (d.road_address_name || d.address_name || "") as string,
+      lat: Number(d.y),
+      lng: Number(d.x),
+    }));
   });
 
 // Uploads a base64-encoded file to the private event-files bucket and returns a
