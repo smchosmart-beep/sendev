@@ -165,9 +165,8 @@ function NewLinkPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="l-nickpw">닉네임 비밀번호</Label>
-            <Input
+            <PasswordInput
               id="l-nickpw"
-              type="password"
               value={nicknamePassword}
               onChange={(e) => setNicknamePassword(e.target.value)}
               placeholder="이 닉네임을 보호할 비밀번호"
@@ -180,6 +179,22 @@ function NewLinkPage() {
                 : " 등록하면 이 기기에서 다음부터 자동으로 채워져요."}
             </p>
           </div>
+          {!hasStored && (
+            <div className="space-y-2">
+              <Label htmlFor="l-nickpw-confirm">닉네임 비밀번호 확인</Label>
+              <PasswordInput
+                id="l-nickpw-confirm"
+                value={nicknamePasswordConfirm}
+                onChange={(e) => setNicknamePasswordConfirm(e.target.value)}
+                placeholder="비밀번호를 한 번 더 입력"
+                className="rounded-xl"
+              />
+              {nicknamePasswordConfirm.length > 0 &&
+                nicknamePassword.trim() !== nicknamePasswordConfirm.trim() && (
+                  <p className="text-xs text-destructive">비밀번호가 일치하지 않아요.</p>
+                )}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="l-url">링크 URL</Label>
             <Input
