@@ -52,6 +52,7 @@ function NewQuestionPage() {
           title,
           content,
           author,
+          nicknamePassword,
           githubUrl: "",
           deployUrl: "",
           editPassword,
