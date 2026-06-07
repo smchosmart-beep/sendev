@@ -130,7 +130,7 @@ function NewLinkPage() {
               toast.error("링크 형식이 올바르지 않아요. (예: https://...)");
               return;
             }
-            if (!hasStored && nicknamePassword.trim() !== nicknamePasswordConfirm.trim()) {
+            if (needsConfirm && nicknamePassword.trim() !== nicknamePasswordConfirm.trim()) {
               toast.error("닉네임 비밀번호가 일치하지 않아요.");
               return;
             }
