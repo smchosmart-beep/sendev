@@ -540,10 +540,11 @@ function ProfilesAdmin() {
                 <button
                   type="button"
                   onClick={() => startEdit(p)}
-                  aria-label="수정"
+                  aria-label="이 사용자에 배지 추가"
+                  title="이 사용자에 배지 추가"
                   className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-sm active:scale-95"
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                 </button>
                 <button
                   type="button"
