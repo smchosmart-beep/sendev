@@ -69,6 +69,7 @@ function ProfilesGate() {
   const [value, setValue] = useState("");
   const [error, setError] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [showPw, setShowPw] = useState(false);
 
   useEffect(() => {
     setGranted(sessionStorage.getItem(PROFILE_SESSION_KEY) === "1");
