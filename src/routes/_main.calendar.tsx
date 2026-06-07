@@ -468,8 +468,7 @@ function CalendarPage() {
               {selected.latitude != null && selected.longitude != null && (
                 <div className="space-y-1">
                   {selected.placeAddress && (
-                    <p className="flex items-center gap-1.5 pl-6 text-sm text-muted-foreground">
-                      <StickyNote className="h-4 w-4 shrink-0 text-primary" />
+                    <p className="pl-6 text-sm text-muted-foreground">
                       {selected.placeAddress}
                     </p>
                   )}
@@ -491,8 +490,9 @@ function CalendarPage() {
 
 
               {selected.description && (
-                <p className="whitespace-pre-wrap rounded-xl bg-muted p-4 text-muted-foreground">
-                  {selected.description}
+                <p className="flex items-start gap-2 whitespace-pre-wrap rounded-xl bg-muted p-4 text-muted-foreground">
+                  <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <span>{selected.description}</span>
                 </p>
               )}
               {selected.attachments.length > 0 && (

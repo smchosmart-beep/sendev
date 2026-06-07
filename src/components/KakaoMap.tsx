@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { MapPin } from "lucide-react";
 
 const KAKAO_JS_KEY = "7a8e2e91477f8b284dfd90224fd2740d";
 
@@ -73,26 +74,24 @@ export function KakaoMap({ lat, lng, name, className, level = 3, asLink = true }
     };
   }, [lat, lng, name, level]);
 
-  const kakaoUrl = `https://map.kakao.com/link/map/${encodeURIComponent(
-    name || "장소",
-  )},${lat},${lng}`;
-
   if (failed) {
     return (
-      <a
-        href={kakaoUrl}
-        target="_blank"
-        rel="noreferrer"
-        className={className}
+      <div
+        className={`flex flex-col items-center justify-center gap-1 rounded-lg bg-muted text-muted-foreground ${className ?? ""}`}
       >
-        카카오맵에서 위치 보기
-      </a>
+        <MapPin className="h-6 w-6 opacity-50" />
+        <span className="text-xs">지도를 불러올 수 없어요</span>
+      </div>
     );
   }
 
   if (!asLink) {
     return <div ref={ref} className={className} />;
   }
+
+  const kakaoUrl = `https://map.kakao.com/link/map/${encodeURIComponent(
+    name || "장소",
+  )},${lat},${lng}`;
 
   return (
     <a href={kakaoUrl} target="_blank" rel="noreferrer" className="block">
