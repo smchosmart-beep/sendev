@@ -231,9 +231,9 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
               hour12: true,
             })}
           </span>
-          {!isLink && post.githubUrl && (
+          {!isLink && safeExternalHref(post.githubUrl) && (
             <a
-              href={post.githubUrl}
+              href={safeExternalHref(post.githubUrl)!}
               target="_blank"
               rel="noreferrer"
               className="flex items-center gap-1 text-primary hover:underline"
@@ -242,9 +242,9 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
               GitHub 저장소
             </a>
           )}
-          {post.deployUrl && (
+          {safeExternalHref(post.deployUrl) && (
             <a
-              href={post.deployUrl}
+              href={safeExternalHref(post.deployUrl)!}
               target="_blank"
               rel="noreferrer"
               className="flex items-center gap-1 text-primary hover:underline"
