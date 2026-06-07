@@ -251,6 +251,22 @@ function GuidePage() {
         </ul>
       </Section>
 
+      <Section id="links" icon={LinkIcon} title="본문 링크 미리보기">
+        <p>
+          게시글 본문에 링크를 <strong>한 줄에 단독으로</strong> 붙이면, 그 링크가 자동으로 미리보기 형태로 표시됩니다.
+        </p>
+        <ul className="ml-5 list-disc space-y-2">
+          <li><strong>유튜브·비메오·캔바</strong> 링크: 본문에서 바로 재생·임베드되는 화면으로 표시됩니다.</li>
+          <li><strong>그 외 모든 웹사이트</strong>(블로그, 뉴스, 깃허브 등): 썸네일 이미지 + 제목 + 사이트 주소가 담긴 미리보기 카드로 표시됩니다.</li>
+          <li>대상 사이트가 미리보기 정보를 제공하지 않으면 썸네일 없이 제목·주소만, 그래도 안 되면 일반 링크로 표시됩니다.</li>
+        </ul>
+        <p className="text-sm text-muted-foreground">
+          ※ 문장 중간에 들어간 링크는 미리보기 카드 없이 일반 텍스트 링크로 표시됩니다. 미리보기 카드를 원하면 링크만 한 줄에 따로 적어주세요.
+        </p>
+      </Section>
+
+
+
       <Section id="search" icon={Search} title="검색 기능">
         <p>상단의 검색 아이콘으로 게시글을 찾을 수 있으며, 세 가지 검색 방식을 지원합니다.</p>
         <ul className="ml-5 list-disc space-y-1">
