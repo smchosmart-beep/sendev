@@ -23,6 +23,8 @@ interface AuthorBadgeProps {
   profileMap: ProfileMap;
   size?: "sm" | "md";
   className?: string;
+  // Controls which badge parts render: level only, award badges only, or both.
+  only?: "level" | "awards" | "all";
 }
 
 // Renders level / hackathon-award badges next to an author name when the
