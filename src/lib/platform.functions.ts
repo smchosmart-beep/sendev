@@ -752,6 +752,7 @@ export const createPost = createServerFn({ method: "POST" })
         deployUrl: z.string().trim().max(300).default(""),
         series: z.string().trim().max(100).default(""),
         editPassword: z.string().trim().min(1).max(100),
+        nicknamePassword: z.string().trim().max(100).default(""),
       })
       .parse(input),
   )
