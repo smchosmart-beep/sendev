@@ -217,16 +217,6 @@ function NewProjectPage() {
               입력하면 산출물 카드에 배포 사이트 미리보기 이미지가 표시돼요.
             </p>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="p-pw">수정·삭제 비밀번호</Label>
-            <PasswordInput
-              id="p-pw"
-              value={editPassword}
-              onChange={(e) => setEditPassword(e.target.value)}
-              placeholder="나중에 수정·삭제할 때 사용해요"
-              className="rounded-xl"
-            />
-          </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button asChild type="button" variant="secondary" className="rounded-xl active:scale-95">
               <Link to="/board/$slug" params={{ slug }}>취소</Link>
