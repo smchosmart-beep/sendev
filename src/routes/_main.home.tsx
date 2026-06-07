@@ -125,7 +125,9 @@ function HomePage() {
                   {e.location && (
                     <span className="flex items-center gap-1">
                       <MapPin className="h-4 w-4" />
-                      {e.location}
+                      {e.placeAddress
+                        ? `${e.location}(${e.placeAddress})`
+                        : e.location}
                     </span>
                   )}
                   {e.target && (
@@ -135,11 +137,6 @@ function HomePage() {
                     </span>
                   )}
                 </div>
-                {e.placeAddress && (
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {e.placeAddress}
-                  </p>
-                )}
                 <p className="mt-3 flex items-start gap-1.5 text-sm text-muted-foreground">
                   <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                   <span className="line-clamp-2">

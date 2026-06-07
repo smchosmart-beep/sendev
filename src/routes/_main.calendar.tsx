@@ -462,16 +462,13 @@ function CalendarPage() {
               {selected.location && (
                 <div className="flex items-center gap-2 text-foreground">
                   <MapPin className="h-4 w-4 shrink-0 text-primary" />
-                  {selected.location}
+                  {selected.placeAddress
+                    ? `${selected.location}(${selected.placeAddress})`
+                    : selected.location}
                 </div>
               )}
               {selected.latitude != null && selected.longitude != null && (
                 <div className="space-y-1">
-                  {selected.placeAddress && (
-                    <p className="pl-6 text-sm text-muted-foreground">
-                      {selected.placeAddress}
-                    </p>
-                  )}
                   <KakaoMap
                     lat={selected.latitude}
                     lng={selected.longitude}
