@@ -74,7 +74,8 @@ function NewQuestionPage() {
         params: { slug, postNo: String(res.postNo) },
       });
     },
-    onError: () => toast.error("등록 중 문제가 발생했어요."),
+    onError: (err: unknown) =>
+      toast.error(err instanceof Error ? err.message : "등록 중 문제가 발생했어요."),
   });
 
   if (!category) {
