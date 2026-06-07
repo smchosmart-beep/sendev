@@ -2318,7 +2318,7 @@ export const getMyDashboard = createServerFn({ method: "POST" })
     // Re-authenticate.
     const { data: prof, error: pErr } = await db
       .from("user_profiles")
-      .select("username, nickname_password, award")
+      .select("username, nickname_password")
       .eq("username_key", key)
       .maybeSingle();
     if (pErr) throw new Error(pErr.message);
@@ -2499,11 +2499,23 @@ export const getMyDashboard = createServerFn({ method: "POST" })
 
     const points = myPosts.length * 5 + myComments0.length * 1;
 
+    // Badges from the dedicated awards table (ordered).
+    const { data: awardRows, error: awErr } = await db
+      .from("user_awards")
+      .select("name, sort_order, created_at")
+      .eq("username_key", key)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
+    if (awErr) throw new Error(awErr.message);
+    const awards = (awardRows ?? [])
+      .map((a: any) => (a.name ?? "").trim())
+      .filter((n: string) => n.length > 0);
+
     return {
       username: prof.username ?? name,
       level: levelFromActivity(myPosts.length, myComments0.length),
       points,
-      award: prof.award ?? "",
+      awards,
       myPosts,
       myComments: myComments0.map(mapDashComment),
       repliesToMe: repliesRows.map(mapDashComment),
