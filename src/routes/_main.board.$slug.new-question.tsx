@@ -49,7 +49,7 @@ function NewQuestionPage() {
     hasStored,
     persistIdentity,
   } = useNicknameIdentity();
-  const [editPassword, setEditPassword] = useState("");
+  
   const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
   
 
