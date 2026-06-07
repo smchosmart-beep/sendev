@@ -1532,6 +1532,8 @@ function CommentsSection({ postId }: { postId: string }) {
   const [content, setContent] = useState("");
   const [nicknamePasswordConfirm, setNicknamePasswordConfirm] = useState("");
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const { claimed } = useNicknameClaimed(author);
+  const needsConfirm = !claimed;
 
   // Reply form is open for at most one comment at a time.
   const [replyTo, setReplyTo] = useState<string | null>(null);
