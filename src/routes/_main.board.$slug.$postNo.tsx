@@ -644,7 +644,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
       (c) =>
         c.id !== categoryId &&
         c.tabGroup === tab &&
-        (c.enableGeneral || c.enableQuestion),
+        c.enablePost,
     ),
   );
 
