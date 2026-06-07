@@ -115,6 +115,14 @@ function NewProjectPage() {
               toast.error("수정·삭제용 비밀번호를 입력해주세요.");
               return;
             }
+            if (!hasStored && nicknamePassword.trim() !== nicknamePasswordConfirm.trim()) {
+              toast.error("닉네임 비밀번호가 일치하지 않아요.");
+              return;
+            }
+            if (editPassword.trim() !== editPasswordConfirm.trim()) {
+              toast.error("수정·삭제 비밀번호가 일치하지 않아요.");
+              return;
+            }
             const url = githubUrl.trim();
             if (githubRequired && !url) {
               toast.error("이 카테고리은 GitHub 링크가 필수예요.");
