@@ -124,7 +124,7 @@ export const Route = createFileRoute("/_main/board/$slug/$postNo")({
     context.queryClient.ensureQueryData(profileMapQueryOptions());
     if (NUMERIC_RE.test(params.postNo)) {
       return context.queryClient.ensureQueryData(
-        postByNoQueryOptions(params.slug, Number(params.postNo)),
+        postByNoQueryOptions(params.slug, Number(params.postNo), getBoardPassword(params.slug)),
       );
     }
     return null;
