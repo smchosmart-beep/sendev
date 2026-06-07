@@ -1192,7 +1192,7 @@ function EvaluationSection({
   useEffect(() => {
     setOrderSeed(getOrderSeed());
   }, []);
-  const reviewerForList = lockedName ?? debouncedName;
+  const reviewerForList = debouncedName;
   const { data: reviewedIds = [] } = useQuery(
     myReviewedPostIdsQueryOptions(reviewerForList),
   );
