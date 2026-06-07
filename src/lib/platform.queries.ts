@@ -206,6 +206,15 @@ export const profileMapQueryOptions = () =>
     staleTime: 5 * 60 * 1000,
   });
 
+export const nicknameStatusQueryOptions = (name: string) =>
+  queryOptions({
+    queryKey: ["nickname-status", name.trim().toLowerCase()],
+    queryFn: () => getNicknameStatus({ data: { name: name.trim() } }),
+    enabled: name.trim().length > 0,
+    staleTime: 30 * 1000,
+  });
+
+
 export const awardIconQueryOptions = () =>
   queryOptions({
     queryKey: ["award-icon"],
