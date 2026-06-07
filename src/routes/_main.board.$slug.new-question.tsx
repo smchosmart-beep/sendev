@@ -132,6 +132,16 @@ function NewQuestionPage() {
               className="rounded-xl"
             />
           </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="q-pinned"
+              checked={pinned}
+              onCheckedChange={(v) => setPinned(v === true)}
+            />
+            <Label htmlFor="q-pinned" className="cursor-pointer text-sm font-normal text-muted-foreground">
+              상단 고정(공지)
+            </Label>
+          </div>
           <div className="space-y-2">
             <Label>내용</Label>
             <PostEditor
