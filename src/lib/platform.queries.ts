@@ -54,16 +54,18 @@ export const eventsQueryOptions = () =>
   });
 
 // Reads the board password the visitor entered at the gate (kept only for the
-// browser session). Returns "" on the server or for open boards, so protected
-// content is withheld during SSR and only fetched after a successful unlock.
-export function getBoardPassword(categoryId: string): string {
+// browser session, keyed by board slug). Returns "" on the server or for open
+// boards, so protected content is withheld during SSR and only fetched after a
+// successful unlock.
+export function getBoardPassword(slug: string): string {
   if (typeof window === "undefined") return "";
   try {
-    return sessionStorage.getItem(`board-pw-${categoryId}`) ?? "";
+    return sessionStorage.getItem(`board-pw-${slug}`) ?? "";
   } catch {
     return "";
   }
 }
+
 
 export const postsQueryOptions = (
   categoryId: string,
