@@ -469,7 +469,7 @@ function CategoriesPage() {
                     {c.enableLink && <SectionBadge label={c.linkName || "링크"} />}
                   </div>
                 </div>
-                <div className="flex shrink-0 gap-2">
+                <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
                   {listFilter !== "all" && (() => {
                     const group = categories
                       .filter(
