@@ -221,9 +221,7 @@ function CategoriesPage() {
     setEditDescription(c.description);
     setEditPassword("");
     setEditGithubRequired(c.githubRequired);
-    setEditEnableNotice(c.enableNotice);
-    setEditEnableQuestion(c.enableQuestion);
-    setEditEnableGeneral(c.enableGeneral);
+    setEditEnablePost(c.enablePost);
     setEditEnableProject(c.enableProject);
     setEditEnableLink(c.enableLink);
     setEditGeneralName(c.generalName);
