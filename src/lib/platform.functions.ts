@@ -1489,3 +1489,28 @@ export const swapHeroSlideOrder = createServerFn({ method: "POST" })
     await db.from("hero_slides").update({ sort_order: a.sort_order }).eq("id", b.id);
     return { ok: true };
   });
+
+// Swaps the sort_order of two categories to move one up or down within a tab.
+export const swapCategoryOrder = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        otherId: z.string().uuid(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    const { data: rows, error } = await db
+      .from("categories")
+      .select("id, sort_order")
+      .in("id", [data.id, data.otherId]);
+    if (error) throw new Error(error.message);
+    const a = (rows ?? []).find((r: any) => r.id === data.id);
+    const b = (rows ?? []).find((r: any) => r.id === data.otherId);
+    if (!a || !b) throw new Error("category not found");
+    await db.from("categories").update({ sort_order: b.sort_order }).eq("id", a.id);
+    await db.from("categories").update({ sort_order: a.sort_order }).eq("id", b.id);
+    return { ok: true };
+  });
