@@ -158,12 +158,14 @@ function NewQuestionPage() {
             />
             <p className="text-xs text-muted-foreground">
               이 닉네임을 처음 쓰면 비밀번호가 등록되고, 다음부터 같은 비밀번호로 인증합니다.
-              {hasStored
-                ? " 저장된 닉네임을 불러왔어요."
-                : " 등록하면 이 기기에서 다음부터 자동으로 채워져요."}
+              {claimed
+                ? " 이미 등록된 닉네임이에요. 등록한 비밀번호를 입력해 주세요."
+                : hasStored
+                  ? " 저장된 닉네임을 불러왔어요."
+                  : " 등록하면 이 기기에서 다음부터 자동으로 채워져요."}
             </p>
           </div>
-          {!hasStored && (
+          {needsConfirm && (
             <div className="space-y-2">
               <Label htmlFor="q-nickpw-confirm">닉네임 비밀번호 확인</Label>
               <PasswordInput
