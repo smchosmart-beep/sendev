@@ -74,7 +74,7 @@ export function AuthorBadge({
         className,
       )}
     >
-      {hasLevel && author !== "운영진" && (
+      {hasLevel && (
         <span
           className={cn(
             "inline-flex items-center rounded-full bg-primary font-bold leading-none text-primary-foreground shadow-sm",
