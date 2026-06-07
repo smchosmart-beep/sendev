@@ -1,17 +1,53 @@
 ## 목표
-댓글/답글 입력창에 세로 스크롤바를 없애고, 내용이 길어지면 입력창 높이가 자동으로 늘어나도록(반응형) 변경합니다.
+레벨(Lv)을 작성 활동 **점수**에 따라 **1~99레벨**로 자동 산정합니다. 레벨 간격을 일정하게(선형) 두어 게시글 약 200편이면 최고 레벨에 도달합니다. 수상(award) 배지는 기존처럼 관리자가 수동 지정합니다.
 
-## 변경 대상
-`src/routes/_main.board.$slug.$postNo.tsx` 의 두 개 `Textarea` (댓글 입력 1543줄, 답글 입력 1844줄).
+## 점수 & 레벨 산정 규칙 (선형, 간격 균일)
+정규화된 작성자 이름(소문자+공백제거) 기준으로 활동 점수를 계산합니다.
 
-## 구현 방법
-1. 입력값(`content`)이 바뀔 때마다 textarea 높이를 내용에 맞게 조정하는 작은 로직을 추가합니다.
-   - `ref`를 textarea에 연결하고, `onChange` 시 `el.style.height = "auto"` 후 `el.style.height = el.scrollHeight + "px"` 로 설정.
-   - 또는 재사용을 위해 `useAutoResizeTextarea` 훅(또는 `AutoTextarea` 래퍼 컴포넌트)을 만들어 두 곳에서 사용.
-2. 스크롤 제거: `className`에 `resize-none overflow-hidden` 추가, 고정 `rows`는 최소 높이 용도로 유지(`min-h`로 대체 가능).
-3. 초기 렌더 및 값이 외부에서 초기화될 때(등록 후 비워질 때)도 높이가 다시 줄어들도록 `useEffect`로 `content` 변화에 반응.
+```text
+점수(points) = (게시글 수 × 5) + (댓글 수 × 1)
+레벨(level)  = clamp(1, 99,  round( points × 99 / 1000 ))
+단, points = 0 이면 배지 없음
+```
 
-### 기술 메모
-- `maxLength={5000}` 등 기존 속성은 그대로 유지.
-- 디자인 토큰/기존 `rounded-xl` 스타일 유지, 색상 추가 없음.
-- 자동 높이 외 다른 동작(이미지 첨부, 등록 버튼)은 변경하지 않음.
+- 1000점에서 Lv.99 → 게시글 200편(=1000점)이면 최고 레벨.
+- 약 10점(= 게시글 2편, 또는 댓글 10개)마다 1레벨씩 균일하게 상승.
+- 게시글 1편(5점) = 댓글 5개와 동일한 가치.
+
+### 예시
+```text
+댓글 1개   (1점)   → Lv.1
+게시글 1편 (5점)   → Lv.1
+게시글 4편 (20점)  → Lv.2
+게시글 10편(50점)  → Lv.5
+게시글 20편(100점) → Lv.10
+게시글 50편(250점) → Lv.25
+게시글 100편(500점)→ Lv.50
+게시글 200편(1000점)→ Lv.99
+```
+(계수는 헬퍼 함수 상수만 바꾸면 쉽게 조정 가능)
+
+## 변경 사항
+
+### 1. 서버 함수 (`src/lib/platform.functions.ts`)
+- `levelFromActivity(postCount, commentCount)` 헬퍼 추가 — 위 점수/레벨 공식 적용(1~99 클램프, 0점은 null).
+- `getProfileMap` 수정:
+  - `posts.author`, `comments.author`를 모두 조회 → 정규화 이름별 게시글/댓글 수 집계.
+  - 활동 점수로 각 이름의 `level` 자동 계산.
+  - `user_profiles`에서 `award`를 병합.
+  - 결과 맵: `{ [정규화이름]: { level(자동), award(수동) } }`. 글/댓글이 하나라도 있으면 등록 프로필이 없어도 레벨 배지 표시.
+- `listUserProfiles`: 관리자 화면용으로 각 프로필에 `postCount`, `commentCount`, `points`, 계산된 `level`을 함께 반환(수동 `level` 컬럼 미사용).
+- `upsertUserProfile`: `level` 입력 제거(무시), `username` + `award`만 저장.
+
+### 2. 관리자 페이지 (`src/routes/admin.profiles.tsx`)
+- 레벨 입력 필드 제거. 안내 문구를 "레벨은 활동 점수(게시글×5 + 댓글×1)로 자동 산정됩니다"로 변경.
+- 목록에 자동 계산된 `Lv.N`과 `게시글 / 댓글 / 점수`를 표시.
+- 폼은 작성자 이름 + 수상만 입력.
+
+### 3. 표시 컴포넌트 (`src/components/AuthorBadge.tsx`)
+- 변경 불필요(이미 `level`/`award` 유무로 렌더링). `getProfileMap`이 자동 레벨을 채워주면 그대로 동작.
+
+## 기술 메모
+- `user_profiles` 테이블 스키마 변경 없음(`level` 컬럼은 남겨두되 미사용). 마이그레이션 없음.
+- 집계는 게시글·댓글 author 목록을 가져와 메모리에서 그룹핑(현재 규모에 적합, 추후 DB 집계로 전환 가능).
+- 가중치: 게시글 +5, 댓글 +1.
