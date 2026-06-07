@@ -1269,6 +1269,8 @@ export const createComment = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }): Promise<{ ok: boolean }> => {
     const db = await getAdmin();
+    // Verify the commenter owns this nickname (or claim it on first use).
+    await ensureNicknameOwnership(db, data.author, data.nicknamePassword, false);
     // A reply must point to an existing top-level comment on the same post.
     let parentId: string | null = null;
     if (data.parentId) {
