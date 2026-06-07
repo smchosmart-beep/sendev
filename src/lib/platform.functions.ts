@@ -1064,7 +1064,7 @@ export const deletePost = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// Admin-only: moves a general/question post to another board (category).
+// Admin-only: moves a post to another board (category).
 // Only the admin master password is accepted — per-post passwords cannot move.
 export const movePost = createServerFn({ method: "POST" })
   .inputValidator((input) =>
@@ -1092,24 +1092,17 @@ export const movePost = createServerFn({ method: "POST" })
         .maybeSingle();
       if (postErr) throw new Error(postErr.message);
       if (!post) return { ok: false };
-      if (post.type !== "general" && post.type !== "question") {
-        throw new Error("일반/질문 게시글만 이동할 수 있어요.");
+      if (post.type !== "post") {
+        throw new Error("글 게시판 글만 이동할 수 있어요.");
       }
       const { data: target, error: catErr } = await db
         .from("categories")
-        .select("slug, enable_general, enable_question")
+        .select("slug, enable_post")
         .eq("id", data.targetCategoryId)
         .maybeSingle();
       if (catErr) throw new Error(catErr.message);
       if (!target) return { ok: false };
-      // Convert the post type to match the destination board so it shows up
-      // in the right section (general boards -> general, question boards ->
-      // question). Fall back to the existing type otherwise.
-      const newType = target.enable_general
-        ? "general"
-        : target.enable_question
-          ? "question"
-          : post.type;
+      const newType = "post";
       // Assign the next per-board number in the target board, retrying on
       // a unique collision (concurrent insert/move).
       for (let attempt = 0; attempt < 3; attempt++) {
