@@ -134,6 +134,15 @@ function HomePage() {
                     {e.description}
                   </p>
                 )}
+                {e.latitude != null && e.longitude != null && (
+                  <KakaoMap
+                    lat={e.latitude}
+                    lng={e.longitude}
+                    name={e.location}
+                    asLink={false}
+                    className="mt-3 h-32 w-full rounded-lg"
+                  />
+                )}
               </Link>
             ))}
           </div>
