@@ -327,6 +327,107 @@ function Dashboard({
   );
 }
 
+function ChangeNicknameCard({
+  username,
+  password,
+  onRenamed,
+}: {
+  username: string;
+  password: string;
+  onRenamed: (newName: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const rename = useServerFn(renameNickname);
+
+  const mutation = useMutation({
+    mutationFn: (input: {
+      username: string;
+      password: string;
+      newUsername: string;
+    }) => rename({ data: input }),
+    onSuccess: (res) => {
+      toast.success("닉네임을 변경했어요. 레벨·배지·활동은 그대로예요.");
+      setOpen(false);
+      setNewName("");
+      onRenamed(res.username);
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "닉네임 변경에 실패했어요."),
+  });
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const next = newName.trim();
+    if (!next) {
+      toast.error("새 닉네임을 입력해주세요.");
+      return;
+    }
+    if (next === username) {
+      toast.error("현재 닉네임과 동일해요.");
+      return;
+    }
+    mutation.mutate({ username, password, newUsername: next });
+  };
+
+  return (
+    <Card className="p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+            <Pencil className="h-4 w-4 text-primary" />
+            닉네임 변경
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            변경해도 레벨·점수·배지·작성한 글/댓글·좋아요는 그대로 유지돼요.
+          </p>
+        </div>
+        {!open && (
+          <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+            변경하기
+          </Button>
+        )}
+      </div>
+
+      {open && (
+        <form onSubmit={onSubmit} className="mt-4 space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="mp-newname">새 닉네임</Label>
+            <Input
+              id="mp-newname"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="새 닉네임"
+              maxLength={100}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button type="submit" size="sm" disabled={mutation.isPending}>
+              {mutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              저장
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setOpen(false);
+                setNewName("");
+              }}
+            >
+              취소
+            </Button>
+          </div>
+        </form>
+      )}
+    </Card>
+  );
+}
+
+
+
 function StatCard({
   icon: Icon,
   label,
