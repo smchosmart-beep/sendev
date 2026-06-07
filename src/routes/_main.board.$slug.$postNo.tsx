@@ -91,6 +91,7 @@ const TAB_ORDER: TabGroup[] = ["hackathon", "resources", "devground", "helloworl
 
 export const Route = createFileRoute("/_main/board/$slug/$postNo")({
   loader: ({ context, params }) => {
+    context.queryClient.ensureQueryData(profileMapQueryOptions());
     if (NUMERIC_RE.test(params.postNo)) {
       return context.queryClient.ensureQueryData(
         postByNoQueryOptions(params.slug, Number(params.postNo)),
