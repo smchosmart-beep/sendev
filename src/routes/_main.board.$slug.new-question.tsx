@@ -17,6 +17,7 @@ import { PostEditor } from "@/components/PostEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useNicknameIdentity, useNicknameClaimed } from "@/hooks/useNicknameIdentity";
 
@@ -41,6 +42,7 @@ function NewQuestionPage() {
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [pinned, setPinned] = useState(false);
   const {
     author,
     setAuthor,
@@ -61,6 +63,7 @@ function NewQuestionPage() {
         data: {
           categoryId: category!.id,
           type: "post",
+          pinned,
           title,
           content,
           author,
@@ -128,6 +131,16 @@ function NewQuestionPage() {
               onChange={(e) => setTitle(e.target.value)}
               className="rounded-xl"
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="q-pinned"
+              checked={pinned}
+              onCheckedChange={(v) => setPinned(v === true)}
+            />
+            <Label htmlFor="q-pinned" className="cursor-pointer text-sm font-normal text-muted-foreground">
+              상단 고정(공지)
+            </Label>
           </div>
           <div className="space-y-2">
             <Label>내용</Label>
