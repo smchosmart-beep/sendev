@@ -48,6 +48,7 @@ export type Database = {
           enable_general: boolean
           enable_link: boolean
           enable_notice: boolean
+          enable_post: boolean
           enable_project: boolean
           enable_question: boolean
           eval_open: boolean
@@ -55,8 +56,10 @@ export type Database = {
           general_name: string
           github_required: boolean
           id: string
+          is_group: boolean
           link_name: string
           name: string
+          parent_id: string | null
           password: string
           project_name: string
           review_allowlist_only: boolean
@@ -70,6 +73,7 @@ export type Database = {
           enable_general?: boolean
           enable_link?: boolean
           enable_notice?: boolean
+          enable_post?: boolean
           enable_project?: boolean
           enable_question?: boolean
           eval_open?: boolean
@@ -77,8 +81,10 @@ export type Database = {
           general_name?: string
           github_required?: boolean
           id?: string
+          is_group?: boolean
           link_name?: string
           name: string
+          parent_id?: string | null
           password?: string
           project_name?: string
           review_allowlist_only?: boolean
@@ -92,6 +98,7 @@ export type Database = {
           enable_general?: boolean
           enable_link?: boolean
           enable_notice?: boolean
+          enable_post?: boolean
           enable_project?: boolean
           enable_question?: boolean
           eval_open?: boolean
@@ -99,8 +106,10 @@ export type Database = {
           general_name?: string
           github_required?: boolean
           id?: string
+          is_group?: boolean
           link_name?: string
           name?: string
+          parent_id?: string | null
           password?: string
           project_name?: string
           review_allowlist_only?: boolean
@@ -108,7 +117,15 @@ export type Database = {
           sort_order?: number
           tab_group?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       comments: {
         Row: {
@@ -256,6 +273,7 @@ export type Database = {
           github_url: string
           id: string
           og_image_url: string
+          pinned: boolean
           post_no: number | null
           series: string
           title: string
@@ -271,6 +289,7 @@ export type Database = {
           github_url?: string
           id?: string
           og_image_url?: string
+          pinned?: boolean
           post_no?: number | null
           series?: string
           title: string
@@ -286,6 +305,7 @@ export type Database = {
           github_url?: string
           id?: string
           og_image_url?: string
+          pinned?: boolean
           post_no?: number | null
           series?: string
           title?: string
