@@ -253,9 +253,8 @@ export function ForgotPasswordDialog() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="fp-newpw">새 비밀번호</Label>
-              <Input
+              <PasswordInput
                 id="fp-newpw"
-                type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="새 비밀번호 (4자 이상)"
