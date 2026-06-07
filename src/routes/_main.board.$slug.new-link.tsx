@@ -39,8 +39,14 @@ function NewLinkPage() {
   const linkName = category?.linkName || "링크";
 
   const [title, setTitle] = useState("");
-  const [author, setAuthor] = useState("");
-  const [nicknamePassword, setNicknamePassword] = useState("");
+  const {
+    author,
+    setAuthor,
+    nicknamePassword,
+    setNicknamePassword,
+    hasStored,
+    persistIdentity,
+  } = useNicknameIdentity();
   const [linkUrl, setLinkUrl] = useState("");
   const [series, setSeries] = useState("");
   const [editPassword, setEditPassword] = useState("");
