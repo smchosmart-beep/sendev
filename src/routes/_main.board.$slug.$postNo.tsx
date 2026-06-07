@@ -2058,7 +2058,7 @@ function CommentForm({
           className="rounded-xl"
         />
       </div>
-      {!hasStored && (
+      {needsConfirm && (
         <>
           <PasswordInput
             value={nicknamePasswordConfirm}
