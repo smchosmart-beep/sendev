@@ -12,6 +12,7 @@ import {
   Settings,
   RotateCcw,
   ListChecks,
+  LinkIcon,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_main/guide")({
