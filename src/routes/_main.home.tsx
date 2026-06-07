@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, MapPin, Clock, ArrowRight, Sparkles } from "lucide-react";
+import { CalendarDays, MapPin, Clock, ArrowRight, Sparkles, StickyNote } from "lucide-react";
 
 import {
   heroSlidesQueryOptions,
@@ -132,6 +132,12 @@ function HomePage() {
                 {e.description && (
                   <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
                     {e.description}
+                  </p>
+                )}
+                {e.placeAddress && (
+                  <p className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <StickyNote className="h-4 w-4 shrink-0 text-primary" />
+                    {e.placeAddress}
                   </p>
                 )}
                 {e.latitude != null && e.longitude != null && (

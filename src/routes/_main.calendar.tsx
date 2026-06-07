@@ -12,6 +12,7 @@ import {
   Download,
   List,
   LayoutGrid,
+  StickyNote,
 } from "lucide-react";
 
 import { eventsQueryOptions } from "@/lib/platform.queries";
@@ -467,7 +468,8 @@ function CalendarPage() {
               {selected.latitude != null && selected.longitude != null && (
                 <div className="space-y-1">
                   {selected.placeAddress && (
-                    <p className="pl-6 text-sm text-muted-foreground">
+                    <p className="flex items-center gap-1.5 pl-6 text-sm text-muted-foreground">
+                      <StickyNote className="h-4 w-4 shrink-0 text-primary" />
                       {selected.placeAddress}
                     </p>
                   )}
