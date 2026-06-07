@@ -186,7 +186,7 @@ function LegacyPostRedirect({ slug, postId }: { slug: string; postId: string }) 
 }
 
 function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
-  const { data: post } = useSuspenseQuery(postByNoQueryOptions(slug, postNo));
+  const { data: post } = useSuspenseQuery(postByNoQueryOptions(slug, postNo, getBoardPassword(slug)));
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
 
   if (!post) {
