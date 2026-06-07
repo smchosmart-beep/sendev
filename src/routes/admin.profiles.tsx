@@ -330,42 +330,56 @@ function ProfilesAdmin() {
   const { data: awardIcon } = useQuery(awardIconQueryOptions());
   const { data: awardRules = [] } = useQuery(awardIconRulesQueryOptions());
   const upsert = useServerFn(upsertUserProfile);
+  const addAward = useServerFn(addUserAward);
+  const removeAward = useServerFn(deleteUserAward);
   const remove = useServerFn(deleteUserProfile);
   const resetPw = useServerFn(resetNicknamePassword);
 
 
   const [username, setUsername] = useState("");
   const [award, setAward] = useState("");
-  const [editing, setEditing] = useState<UserProfileDTO | null>(null);
 
   const reset = () => {
     setUsername("");
     setAward("");
-    setEditing(null);
+  };
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["user-profiles"] });
+    queryClient.invalidateQueries({ queryKey: ["profile-map"] });
   };
 
   const saveMutation = useMutation({
-    mutationFn: () =>
-      upsert({
-        data: {
-          username: username.trim(),
-          award: award.trim(),
-        },
-      }),
+    mutationFn: async () => {
+      const name = username.trim();
+      const badge = award.trim();
+      if (badge) {
+        await addAward({ data: { username: name, name: badge } });
+      } else {
+        await upsert({ data: { username: name } });
+      }
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["user-profiles"] });
-      queryClient.invalidateQueries({ queryKey: ["profile-map"] });
-      toast.success(editing ? "프로필을 수정했어요." : "프로필을 추가했어요.");
+      invalidate();
+      toast.success(award.trim() ? "배지를 추가했어요." : "사용자를 등록했어요.");
       reset();
     },
     onError: () => toast.error("저장 중 문제가 발생했어요."),
   });
 
+  const removeAwardMutation = useMutation({
+    mutationFn: (id: string) => removeAward({ data: { id } }),
+    onSuccess: () => {
+      invalidate();
+      toast.success("배지를 삭제했어요.");
+    },
+    onError: () => toast.error("삭제 중 문제가 발생했어요."),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => remove({ data: { id } }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["user-profiles"] });
-      queryClient.invalidateQueries({ queryKey: ["profile-map"] });
+      invalidate();
       toast.success("프로필을 삭제했어요.");
     },
     onError: () => toast.error("삭제 중 문제가 발생했어요."),
@@ -381,9 +395,8 @@ function ProfilesAdmin() {
   });
 
   const startEdit = (p: UserProfileDTO) => {
-    setEditing(p);
     setUsername(p.username);
-    setAward(p.award);
+    setAward("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -404,8 +417,9 @@ function ProfilesAdmin() {
         </h2>
         <p className="text-sm text-muted-foreground">
           작성자 이름과 해커톤 수상 정보를 연결해 주세요. 레벨은{" "}
-          <b>활동 점수(게시글×5 + 댓글×1)</b>로 자동 산정됩니다. 글·댓글에서{" "}
-          <b>이름이 정확히 일치</b>하면 자동으로 뱃지가 표시됩니다.
+          <b>활동 점수(게시글×5 + 댓글×1)</b>로 자동 산정됩니다. 한 사용자에게{" "}
+          <b>배지를 여러 개</b> 추가할 수 있고, 글·댓글에서 <b>이름이 정확히 일치</b>하면
+          자동으로 뱃지가 표시됩니다.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-5 grid gap-4 sm:grid-cols-12">
@@ -420,7 +434,7 @@ function ProfilesAdmin() {
             />
           </div>
           <div className="space-y-2 sm:col-span-7">
-            <Label htmlFor="p-award">배지 추가</Label>
+            <Label htmlFor="p-award">배지 추가 (선택)</Label>
             <Input
               id="p-award"
               value={award}
@@ -435,16 +449,20 @@ function ProfilesAdmin() {
               disabled={saveMutation.isPending}
               className="rounded-xl active:scale-95"
             >
-              {saveMutation.isPending ? "저장 중..." : editing ? "수정 저장" : "추가"}
+              {saveMutation.isPending
+                ? "저장 중..."
+                : award.trim()
+                  ? "배지 추가"
+                  : "사용자 등록"}
             </Button>
-            {editing && (
+            {(username || award) && (
               <Button
                 type="button"
                 variant="secondary"
                 onClick={reset}
                 className="rounded-xl active:scale-95"
               >
-                취소
+                초기화
               </Button>
             )}
           </div>
@@ -454,6 +472,8 @@ function ProfilesAdmin() {
       <AwardIconPicker />
 
       <AwardIconRules />
+
+
 
 
       {profiles.length === 0 ? (
