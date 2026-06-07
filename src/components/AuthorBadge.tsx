@@ -144,7 +144,7 @@ export function AuthorBadge({
         hasAward && (
           <span
             className={cn(
-              "inline-flex items-center gap-1 rounded-full bg-secondary font-medium leading-none text-secondary-foreground shadow-sm",
+              "inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-secondary font-medium leading-none text-secondary-foreground shadow-sm",
               padding,
             )}
           >
