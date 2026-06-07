@@ -49,6 +49,7 @@ import {
   postsQueryOptions,
   commentsQueryOptions,
   profileMapQueryOptions,
+  linkPreviewQueryOptions,
 } from "@/lib/platform.queries";
 import { stableEvalOrder, getOrderSeed } from "@/lib/series";
 import {
