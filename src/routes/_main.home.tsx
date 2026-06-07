@@ -147,13 +147,30 @@ function HomePage() {
                   </p>
                 )}
                 {e.latitude != null && e.longitude != null ? (
-                  <KakaoMap
-                    lat={e.latitude}
-                    lng={e.longitude}
-                    name={e.location}
-                    asLink={false}
-                    className="mt-3 h-32 w-full rounded-lg"
-                  />
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    className="mt-3 cursor-pointer"
+                    onClick={(ev) => {
+                      ev.preventDefault();
+                      ev.stopPropagation();
+                      window.open(
+                        `https://map.kakao.com/link/map/${encodeURIComponent(
+                          e.location || "장소",
+                        )},${e.latitude},${e.longitude}`,
+                        "_blank",
+                        "noopener,noreferrer",
+                      );
+                    }}
+                  >
+                    <KakaoMap
+                      lat={e.latitude}
+                      lng={e.longitude}
+                      name={e.location}
+                      asLink={false}
+                      className="h-32 w-full rounded-lg"
+                    />
+                  </div>
                 ) : (
                   <div className="mt-3 flex h-32 w-full flex-col items-center justify-center gap-1 rounded-lg bg-muted text-muted-foreground">
                     <MapPin className="h-6 w-6 opacity-50" />

@@ -1,28 +1,14 @@
-## 목표
-일정 카드/상세에서 메모 아이콘이 엉뚱하게 "주소" 앞에 붙은 문제를 바로잡고, 지도 로딩 실패 시 보이는 어색한 텍스트 링크를 디자인에 맞는 일관된 대체 박스로 교체합니다.
+## 현재 문제
+홈 메뉴의 다가오는 이벤트 일정 카드 전체가 `<Link to="/calendar">`로 감싸져 있어, 지도를 클릭해도 이벤트가 상위 `<Link>`로 전파되어 캘린더 페이지로 이동합니다.
 
-## 배경 (필드 정리)
-- `location` = 장소명 (예: 서울특별시교육청)
-- `placeAddress` = 카카오 검색으로 채워지는 **주소**
-- `description` = 관리자 폼의 **"메모"** 필드
+## 수정 내용
 
-→ 현재 메모 아이콘(StickyNote)이 `placeAddress`(주소)에 붙어 있어 잘못됨. **메모 아이콘은 `description`(메모) 앞에 붙어야 함.**
+### 1. `src/routes/_main.home.tsx` — 지도 영역 이벤트 가로채기
+- 지도 영역(`KakaoMap` 또는 fallback `div`)을 새로운 클릭 가능한 wrapper(`<div>`)로 감쌉니다.
+- wrapper의 `onClick` 핸들러에서 `e.stopPropagation()` + `e.preventDefault()`를 호출하여 상위 `<Link>`의 이벤트 전파를 완전히 차단합니다.
+- 동일한 핸들러에서 `window.open()`으로 카카오맵 링크(`https://map.kakao.com/link/map/{name},{lat},{lng}`)를 새 탭으로 엽니다.
+- 지도 로드 성공 시와 실패(fallback) 시 모두 동일하게 동작하도록 처리합니다.
+- wrapper에 `cursor-pointer` 스타일을 추가해 클릭 가능함을 시각적으로 표현합니다.
 
-## 변경 사항
-
-### 1. 메모 아이콘 위치 교정
-- `src/routes/_main.home.tsx`
-  - `placeAddress`(주소)에서 StickyNote 아이콘 제거 → 주소는 장소 아래 옅은 텍스트로만 표시.
-  - `description`(메모) 텍스트 앞에 StickyNote 아이콘 추가.
-- `src/routes/_main.calendar.tsx`
-  - 동일하게 `placeAddress`의 StickyNote 제거, 메모(`description`) 표시 영역에 StickyNote 아이콘 부착.
-
-### 2. 지도 실패 시 대체 표시 일관화
-- `src/components/KakaoMap.tsx`
-  - 로딩 실패(`failed`) 시 현재의 "카카오맵에서 위치 보기" 텍스트 링크 대신, 홈 카드의 "위치 정보 없음" 플레이스홀더와 동일한 스타일의 박스(지도 핀 아이콘 + 안내 문구, muted 토큰)를 렌더링.
-  - 부모가 이미 `<Link>`인 홈 카드에서 앵커 중첩 문제도 함께 해소.
-  - 운영 도메인(sendev.kr)에서는 SDK가 정상 로드되어 실제 지도가 보이며, 이 대체 박스는 개발/미리보기 등 도메인 미등록 환경에서만 노출됨.
-
-## 참고
-- 데이터/백엔드 변경 없음. 순수 표시(프론트엔드) 수정.
-- 카카오 개발자 콘솔 [플랫폼 > Web]에 미리보기 도메인까지 등록하면 개발 환경에서도 지도가 바로 표시됨.
+## 변경 범위
+- `src/routes/_main.home.tsx` (지도 영역 약 15줄 수정)
