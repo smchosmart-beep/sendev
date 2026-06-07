@@ -247,10 +247,13 @@ function BoardInner({
                         {g.commentCount}
                       </span>
                     )}
-                    <span className="flex items-center gap-1 whitespace-nowrap">
-                      <User className="h-3.5 w-3.5" />
-                      {g.author}
-                      <AuthorBadge author={g.author} profileMap={profileMap} />
+                    <span className="flex flex-col items-end gap-0.5 sm:flex-row sm:items-center sm:gap-1">
+                      <span className="flex items-center gap-1 whitespace-nowrap">
+                        <User className="h-3.5 w-3.5" />
+                        {g.author}
+                        <AuthorBadge author={g.author} profileMap={profileMap} only="level" />
+                      </span>
+                      <AuthorBadge author={g.author} profileMap={profileMap} only="awards" />
                     </span>
                   </span>
                 </Link>
