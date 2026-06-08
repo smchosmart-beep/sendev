@@ -429,6 +429,68 @@ export function PostEditor({
     }
   };
 
+  const handleDocPick = () => {
+    docRef.current?.click();
+  };
+
+  const handleDocChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !editor) return;
+
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error("파일 크기는 3MB 이하만 가능해요.");
+      return;
+    }
+
+    setUploadingFile(true);
+    try {
+      // Keep the original filename for display/download, but store under an
+      // ASCII-safe key (storage keys must not contain Korean/spaces).
+      const extMatch = file.name.match(/\.([a-zA-Z0-9]{1,10})$/);
+      const ext = extMatch ? `.${extMatch[1].toLowerCase()}` : "";
+      const path = `${crypto.randomUUID()}${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("post-files")
+        .upload(path, file, {
+          contentType: file.type || "application/octet-stream",
+          upsert: false,
+        });
+      if (uploadError) throw uploadError;
+
+      const { data, error: signError } = await supabase.storage
+        .from("post-files")
+        .createSignedUrl(path, SIGNED_URL_TTL, { download: file.name });
+      if (signError || !data?.signedUrl) throw signError ?? new Error("URL 생성 실패");
+
+      // Insert as a standalone-line link so the post renderer shows it as a
+      // download card. Falls back to a plain clickable link everywhere else.
+      editor
+        .chain()
+        .focus()
+        .insertContent([
+          {
+            type: "paragraph",
+            content: [
+              {
+                type: "text",
+                text: file.name,
+                marks: [{ type: "link", attrs: { href: data.signedUrl } }],
+              },
+            ],
+          },
+          { type: "paragraph" },
+        ])
+        .run();
+      toast.success("파일을 첨부했어요!");
+    } catch (err) {
+      console.error("file upload failed", err);
+      toast.error("파일 업로드에 실패했어요.");
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
   const currentColor = (editor?.getAttributes("textStyle").color as string) ?? null;
 
   return (
