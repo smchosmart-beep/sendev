@@ -1,41 +1,31 @@
-# 스토리지 업로드 제한 적용
+# 게시글 본문에 일반 파일 첨부 기능 추가
 
 ## 목표
-익명 사용자가 `post-images` 버킷에 형식·용량 제한 없이 파일을 무제한 올릴 수 있는 보안 취약점을 막는다. 세 버킷 모두에 용량·형식 제한을 적용한다.
+글 작성 편집기(`PostEditor`)에 이미지와 별개로 **HWP·PDF·ZIP 등 일반 파일을 첨부하는 버튼**을 추가하고, 본문에 **파일 카드(아이콘 + 파일명 + 용량 + 다운로드)** 형태로 표시한다.
 
-## 현재 상태
-- `post-images`: 익명/로그인 누구나 직접 업로드 가능(RLS INSERT 정책 `anon` 포함), **용량·형식 제한 전혀 없음** → 취약점.
-- `hero-images`, `event-files`: 익명 INSERT 정책 없음 → 관리자 비밀번호로 보호된 서버 함수(service_role)로만 업로드됨. 이미 안전하지만 용량·형식 제한은 미설정.
+## 저장소 (DB 마이그레이션)
+일반 파일 전용 비공개 버킷 `post-files`를 새로 만든다. (`post-images`는 보안상 이미지 전용으로 묶여 있어 사용 불가)
+- `file_size_limit`: 3MB
+- `allowed_mime_types`: PDF, HWP(haansofthwp/x-hwp), MS Office(doc/docx/xls/xlsx/ppt/pptx), txt, zip, 이미지 등 화이트리스트
+- `storage.objects` RLS: `post-files` 버킷에 대해 익명·로그인 사용자 INSERT/SELECT 허용 (게시글 작성이 닉네임 기반·비로그인이므로 `post-images`와 동일한 정책 구조). 용량·형식 제한이 버킷 차원의 방어선 역할.
 
-## 적용할 제한 (사용자 결정)
-| 버킷 | 용량 한도 | 허용 형식 |
-|------|-----------|-----------|
-| post-images | 2MB | 이미지 전용 (jpeg, png, webp, gif) |
-| hero-images | 2MB | 이미지 전용 (jpeg, png, webp, gif) |
-| event-files | 3MB | 일반 파일 (이미지 + pdf, office 문서, zip 등) |
+## 편집기 변경 (`src/components/PostEditor.tsx`)
+- 툴바에 **파일 첨부 버튼**(Paperclip 아이콘) 추가. 기존 이미지 버튼과 별도의 숨겨진 `<input type="file">`(문서 형식 accept) 사용.
+- 선택 시:
+  - 3MB 초과면 토스트로 차단.
+  - `post-files` 버킷에 원본 그대로 업로드(파일명은 ASCII-safe 키로 변환, 원래 이름은 보존), 다운로드용 장기 서명 URL 생성(`createSignedUrl({ download: 파일명 })`).
+  - 본문에 **단독 줄 표준 링크** `[파일명](서명URL)` 형태로 삽입. (마크다운에 남으므로 카드 로직과 무관하게 항상 클릭 가능 — graceful degradation)
+- 업로드 중 로딩 표시.
 
-이미지는 클라이언트에서 이미 리사이즈·압축(약 1MB)되어 2MB 한도 안에 들어온다.
+## 본문 렌더링 (`src/routes/_main.board.$slug.$postNo.tsx`)
+- 단독 링크 렌더링(`p` 컴포넌트)에서 href가 `post-files` 버킷 URL이면 기존 `LinkPreviewCard` 대신 새 **`FileCard`** 컴포넌트로 표시.
+- `FileCard`: 파일 아이콘 + 파일명(링크 텍스트에서 추출) + 확장자 배지 + "다운로드" 버튼. 클릭 시 서명 URL로 다운로드.
+- 링크 텍스트(파일명)도 함께 추출하도록 헬퍼 보강(`soleLinkHref` 옆에 파일명까지 반환하는 로직 추가).
 
-## 작업 내용
-
-### 1. 버킷 설정 변경 (DB 마이그레이션)
-`storage.buckets`의 `file_size_limit`, `allowed_mime_types` 컬럼을 위 표대로 UPDATE.
-(공개/비공개 전환이 아니므로 일반 마이그레이션으로 처리. 만약 해당 경로가 막히면 동일 설정을 다른 허용된 방식으로 적용.)
-
-### 2. post-images INSERT 정책 정비
-기존 "Anyone can upload post images" 정책은 유지하되, 버킷 용량·형식 제한이 1차 방어선이 된다. (RLS 단계에서는 파일 크기를 직접 검사할 수 없어 버킷 설정이 핵심 방어책.)
-
-### 3. 클라이언트 업로드 가드 보강
-- 이미지 압축 목표치를 2MB 한도에 맞게 유지/점검 (`src/lib/image-upload.ts`, `src/components/ThumbnailUploadButton.tsx`, `src/components/PostEditor.tsx`).
-- 일반 파일 첨부(`event-files`) 경로는 3MB 초과 시 업로드 전에 막고 안내 메시지 표시.
-- 한도 초과 시 사용자에게 친절한 토스트 안내.
-
-### 4. 사용자 가이드 갱신
-`/guide` (`src/routes/_main.guide.tsx`)에 이미지/파일 업로드 용량·형식 제한(이미지 2MB·일반 파일 3MB) 안내 문구를 반영.
-
-### 5. 보안 finding 처리
-- 용량·형식 제한 적용 후 finding을 처리하고, 이 앱은 닉네임 기반(로그인 없음)이라 "인증 사용자만 업로드/소유자 검증"은 적용 불가하다는 맥락을 보안 메모에 기록.
+## 가이드 갱신 (`src/routes/_main.guide.tsx`)
+- 글 작성 안내에 "이미지 외에 HWP·PDF·ZIP 등 일반 파일을 첨부 버튼으로 올릴 수 있으며, 파일당 3MB까지 가능하고 본문에 다운로드 카드로 표시된다"는 설명 추가.
 
 ## 기술 참고
-- rate-limiting은 백엔드 표준 기능이 없어 이번 범위에서 제외(별도 과제).
-- 형식 제한은 MIME 타입 화이트리스트로 처리하며, 서버 함수 업로드(`uploadEventFile`, `uploadHeroImage`)의 입력 검증 한도도 버킷 한도에 맞춰 낮춘다.
+- 새 버킷 생성은 `supabase--storage_create_bucket`(private)로, 용량·형식 제한과 RLS는 마이그레이션으로 설정.
+- 파일 카드 판별은 URL 경로에 `/post-files/`가 포함되는지로 구분.
+- rate-limiting은 백엔드 표준 기능 부재로 이번 범위 제외(버킷 용량·형식 제한으로 1차 방어).

@@ -34,6 +34,7 @@ import {
   Maximize,
   Minimize,
   FolderInput,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -309,6 +310,9 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
                   p: ({ node, children, ...props }) => {
                     const href = soleLinkHref(node);
                     if (href) {
+                      if (isPostFileHref(href)) {
+                        return <FileCard href={href} name={soleLinkText(node)} />;
+                      }
                       const embedUrl = getEmbedUrl(href);
                       if (embedUrl) {
                         return <EmbeddedFrame embedUrl={embedUrl} href={href} />;
@@ -423,6 +427,46 @@ function soleLinkHref(node: unknown): string | null {
   const href = only.properties?.href;
   if (!href || !/^https?:\/\//i.test(href)) return null;
   return href;
+}
+
+// Returns the visible text of a sole link paragraph (used as the file name).
+function soleLinkText(node: unknown): string {
+  const n = node as
+    | { children?: Array<{ tagName?: string; children?: Array<{ value?: string }> }> }
+    | undefined;
+  const only = (n?.children ?? []).find((c) => c.tagName === "a");
+  return (only?.children ?? []).map((c) => c.value ?? "").join("").trim();
+}
+
+// A standalone link pointing at the post-files bucket is a downloadable
+// attachment, not an OG-preview link.
+function isPostFileHref(href: string): boolean {
+  return /\/post-files\//.test(href);
+}
+
+// Renders an uploaded attachment as a download card.
+function FileCard({ href, name }: { href: string; name: string }) {
+  const fileName = name || "첨부파일";
+  const ext = (fileName.match(/\.([a-zA-Z0-9]{1,10})$/)?.[1] ?? "FILE").toUpperCase();
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="my-4 flex items-center gap-4 rounded-2xl border border-border bg-card p-4 no-underline shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+    >
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
+        <FileText className="h-6 w-6" />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate font-semibold text-foreground">{fileName}</span>
+        <span className="text-xs text-muted-foreground">{ext} 파일 · 클릭하면 내려받기</span>
+      </span>
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <Download className="h-4 w-4" />
+      </span>
+    </a>
+  );
 }
 
 // Renders an OG-style preview card for an arbitrary link placed alone in a
