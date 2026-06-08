@@ -1,46 +1,24 @@
-# 첨부파일 다운로드 파일명 깨짐 수정
+첨부파일 종류별 아이콘 표시
 
-## 문제
+## 현재 상황
+- 게시글 본문의 다운로드 카드(FileCard)와 캘린더 첨부 파일 목록에서 모든 파일이 `FileText` 아이콘으로 동일하게 표시됨.
+- 사용자 요청: HWP/PDF는 문서 아이콘, XLS/XLSX는 시트 아이콘, ZIP은 압축파일 아이콘으로 구분해서 보여줘야 함.
 
-파일 첨부(업로드)는 정상이지만, 다운로드 시 저장되는 파일명이
-`2026%ED%95%99%EB%85%84...hwp` 처럼 퍼센트 인코딩된 깨진 이름으로 저장됨.
+## 작업 내용
+1. **확장자별 아이콘 매핑 함수 추가** (`src/lib/download.ts` 또는 별도 유틸)
+   - 확장자를 받아 적절한 Lucide 아이콘 컴포넌트를 반환하는 `getFileIcon(ext)` 함수.
+   - 매핑:
+     - hwp, pdf → `FileText`
+     - xls, xlsx → `Table`
+     - zip → `Archive`
+     - 기타 → `FileText`
 
-## 원인
+2. **게시판 다운로드 카드 수정** (`src/routes/_main.board.$slug.$postNo.tsx`)
+   - `FileCard` 컴포넌트에서 파일 확장자에 따라 매핑 함수로 아이콘을 선택하도록 변경.
 
-업로드 시 스토리지 키는 ASCII 안전하게 `UUID.확장자`로 저장하고, 원본 한글
-파일명은 Supabase `createSignedUrl(..., { download: name })` 옵션으로만 보존하고
-있음. 이 옵션은 서명 URL에 `?download=<한글>` 쿼리를 붙이는데, Supabase 스토리지
-서버가 이 값을 그대로(디코딩/RFC5987 처리 없이) `Content-Disposition` 헤더에
-넣어 브라우저가 퍼센트 인코딩된 문자열을 그대로 파일명으로 사용함. 게다가
-링크는 다른 출처(supabase.co)라서 `<a download="이름">` 속성도 무시됨.
-
-## 해결 방법
-
-다운로드를 브라우저 기본 링크 이동이 아니라, 파일을 fetch로 받아 Blob으로
-만들고 같은 출처의 blob URL + 임시 `<a download="원본이름">`로 저장하도록 변경.
-blob URL은 동일 출처라 `download` 속성의 한글 파일명이 정상 적용됨.
-
-### 작업
-
-1. **다운로드 헬퍼 추가** (`src/lib/download.ts`)
-   - `downloadFile(url, fileName)`: `fetch(url)` → `blob()` →
-     `URL.createObjectURL` → 임시 anchor 클릭(`download = fileName`) →
-     `revokeObjectURL`로 정리. 실패 시 새 탭으로 fallback.
-
-2. **캘린더 첨부 링크 수정** (`src/routes/_main.calendar.tsx`, 496~507줄)
-   - `<a href=...>` 대신 `onClick`에서 `downloadFile(a.url, a.name)` 호출
-     (`e.preventDefault()`), 표시 이름은 `a.name` 유지.
-
-3. **게시판 첨부 카드 수정** (`src/routes/_main.board.$slug.$postNo.tsx`,
-   `FileCard` 448~469줄)
-   - 동일하게 클릭 시 `downloadFile(href, fileName)` 사용.
-
-4. **가이드 점검** (`src/routes/_main.guide.tsx`)
-   - 다운로드 동작 관련 설명이 있으면 문구만 확인/보정(있을 경우).
-
-서버/스토리지 스키마 변경은 없음. 기존에 저장된 첨부도 그대로 정상 동작.
+3. **캘린더 첨부 파일 목록 수정** (`src/routes/_main.calendar.tsx`)
+   - 첨부 파일 버튼의 아이콘도 확장자별로 변경.
 
 ## 기술 메모
-
-- `download` 서명 옵션은 그대로 두어도 무방(blob 방식이 파일명을 덮어씀).
-- blob fetch는 서명 URL이라 CORS/인증 추가 설정 없이 동작.
+- `Table`, `Archive`는 모두 `lucide-react` 기본 아이콘으로 사용 가능(버전 확인 완료).
+- 기존 다운로드 동작(`downloadFile`)은 그대로 유지.
