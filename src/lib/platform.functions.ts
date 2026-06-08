@@ -684,7 +684,7 @@ export const deleteEvent = createServerFn({ method: "POST" })
 /* -------------------------------- Posts ------------------------------- */
 
 const POST_COLUMNS =
-  "id, category_id, post_no, type, pinned, title, content, author, github_url, deploy_url, og_image_url, series, created_at";
+  "id, category_id, post_no, type, pinned, title, content, author, github_url, deploy_url, og_image_url, series, created_at, view_count";
 
 // Returns true when the caller may read a protected board's content. Open
 // boards (no password) always pass. Protected boards pass only when the
@@ -1148,6 +1148,7 @@ function mapPost(p: any, commentCount = 0): PostDTO {
     series: p.series ?? "",
     createdAt: p.created_at,
     commentCount,
+    viewCount: p.view_count ?? 0,
   };
 }
 
