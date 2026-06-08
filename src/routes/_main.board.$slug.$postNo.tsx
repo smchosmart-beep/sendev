@@ -647,18 +647,44 @@ function BodyImage({
 
           <div
             ref={wrapperRef}
-            className="flex h-full w-full items-center justify-center bg-black/90"
+            className="flex h-full w-full items-center justify-center overflow-hidden bg-black/90"
           >
-            <img
-              ref={fsImgRef}
-              src={src}
-              alt={alt ?? ""}
-              className={
-                isFullscreen
-                  ? "h-screen w-screen object-contain"
-                  : "max-h-[82vh] max-w-[92vw] w-auto rounded-lg object-contain"
-              }
-            />
+            <TransformWrapper
+              key={open ? "open" : "closed"}
+              doubleClick={{ mode: "toggle", step: 2 }}
+              wheel={{ step: 0.2 }}
+              pinch={{ step: 5 }}
+              minScale={1}
+              maxScale={6}
+              centerOnInit
+            >
+              <TransformComponent
+                wrapperStyle={{
+                  width: "100%",
+                  height: "100%",
+                  touchAction: "none",
+                }}
+                contentStyle={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <img
+                  ref={fsImgRef}
+                  src={src}
+                  alt={alt ?? ""}
+                  draggable={false}
+                  className={
+                    isFullscreen
+                      ? "h-screen w-screen object-contain"
+                      : "max-h-[82vh] max-w-[92vw] w-auto rounded-lg object-contain"
+                  }
+                />
+              </TransformComponent>
+            </TransformWrapper>
           </div>
         </DialogContent>
       </Dialog>
