@@ -199,8 +199,8 @@ function AdminCalendarPage() {
     setUploading(true);
     try {
       for (const file of Array.from(files)) {
-        if (file.size > 10 * 1024 * 1024) {
-          toast.error(`${file.name}: 10MB를 넘는 파일은 업로드할 수 없어요.`);
+        if (file.size > 3 * 1024 * 1024) {
+          toast.error(`${file.name}: 3MB를 넘는 파일은 업로드할 수 없어요.`);
           continue;
         }
         const dataBase64 = await fileToBase64(file);

@@ -1,17 +1,41 @@
+# 스토리지 업로드 제한 적용
+
 ## 목표
-게시글 본문에 들어가는 링크 미리보기 카드의 OG 이미지를 정사각형이 아닌 **16:9 비율**로 표시합니다.
+익명 사용자가 `post-images` 버킷에 형식·용량 제한 없이 파일을 무제한 올릴 수 있는 보안 취약점을 막는다. 세 버킷 모두에 용량·형식 제한을 적용한다.
 
-## 원인
-`src/routes/_main.board.$slug.$postNo.tsx`의 `LinkPreviewCard`(449번째 줄)에서 이미지 영역이 데스크톱(`sm` 이상)에서 `sm:aspect-square sm:w-40`로 정사각형이 됩니다. 모바일은 이미 `aspect-video`(16:9)입니다.
+## 현재 상태
+- `post-images`: 익명/로그인 누구나 직접 업로드 가능(RLS INSERT 정책 `anon` 포함), **용량·형식 제한 전혀 없음** → 취약점.
+- `hero-images`, `event-files`: 익명 INSERT 정책 없음 → 관리자 비밀번호로 보호된 서버 함수(service_role)로만 업로드됨. 이미 안전하지만 용량·형식 제한은 미설정.
 
-## 변경 내용
-### `src/routes/_main.board.$slug.$postNo.tsx`
-- 이미지 컨테이너 클래스를 수정해 데스크톱에서도 16:9를 유지하도록 변경:
-  - 기존: `flex aspect-video w-full ... sm:aspect-square sm:w-40`
-  - 변경: `aspect-square` 제거하고 모든 화면에서 `aspect-video` 유지, 데스크톱에서는 고정 너비(예: `sm:w-64`)로 가로형 카드가 자연스럽게 보이도록 조정.
+## 적용할 제한 (사용자 결정)
+| 버킷 | 용량 한도 | 허용 형식 |
+|------|-----------|-----------|
+| post-images | 2MB | 이미지 전용 (jpeg, png, webp, gif) |
+| hero-images | 2MB | 이미지 전용 (jpeg, png, webp, gif) |
+| event-files | 3MB | 일반 파일 (이미지 + pdf, office 문서, zip 등) |
 
-이미지가 없을 때의 아이콘 표시, 나머지 카드 레이아웃·텍스트는 그대로 둡니다.
+이미지는 클라이언트에서 이미 리사이즈·압축(약 1MB)되어 2MB 한도 안에 들어온다.
 
-## 범위 밖
-- DB·서버·OG 메타 로직 변경 없음(표시 비율만 조정).
-- 가이드 문서는 비율 표현 등 사용법 변화가 없어 수정 불필요.
+## 작업 내용
+
+### 1. 버킷 설정 변경 (DB 마이그레이션)
+`storage.buckets`의 `file_size_limit`, `allowed_mime_types` 컬럼을 위 표대로 UPDATE.
+(공개/비공개 전환이 아니므로 일반 마이그레이션으로 처리. 만약 해당 경로가 막히면 동일 설정을 다른 허용된 방식으로 적용.)
+
+### 2. post-images INSERT 정책 정비
+기존 "Anyone can upload post images" 정책은 유지하되, 버킷 용량·형식 제한이 1차 방어선이 된다. (RLS 단계에서는 파일 크기를 직접 검사할 수 없어 버킷 설정이 핵심 방어책.)
+
+### 3. 클라이언트 업로드 가드 보강
+- 이미지 압축 목표치를 2MB 한도에 맞게 유지/점검 (`src/lib/image-upload.ts`, `src/components/ThumbnailUploadButton.tsx`, `src/components/PostEditor.tsx`).
+- 일반 파일 첨부(`event-files`) 경로는 3MB 초과 시 업로드 전에 막고 안내 메시지 표시.
+- 한도 초과 시 사용자에게 친절한 토스트 안내.
+
+### 4. 사용자 가이드 갱신
+`/guide` (`src/routes/_main.guide.tsx`)에 이미지/파일 업로드 용량·형식 제한(이미지 2MB·일반 파일 3MB) 안내 문구를 반영.
+
+### 5. 보안 finding 처리
+- 용량·형식 제한 적용 후 finding을 처리하고, 이 앱은 닉네임 기반(로그인 없음)이라 "인증 사용자만 업로드/소유자 검증"은 적용 불가하다는 맥락을 보안 메모에 기록.
+
+## 기술 참고
+- rate-limiting은 백엔드 표준 기능이 없어 이번 범위에서 제외(별도 과제).
+- 형식 제한은 MIME 타입 화이트리스트로 처리하며, 서버 함수 업로드(`uploadEventFile`, `uploadHeroImage`)의 입력 검증 한도도 버킷 한도에 맞춰 낮춘다.

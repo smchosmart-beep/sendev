@@ -284,6 +284,7 @@ function GuidePage() {
           <li>고정되지 않은 글은 최신순으로 목록에 표시되며 페이지로 넘겨 볼 수 있습니다.</li>
           <li>산출물·링크 게시판은 기존과 동일하게 별도로 운영됩니다.</li>
           <li>본문 편집기 상단 도구 모음에서 <strong>제목·굵게·기울임·밑줄</strong>, <strong>글자 색상·글자 크기</strong>, 인용·목록·링크·이미지 서식을 적용할 수 있습니다.</li>
+          <li>본문에 넣는 이미지는 <strong>JPG·PNG·WEBP·GIF</strong> 형식만 지원하며, 올릴 때 자동으로 압축되어 <strong>2MB 이내</strong>로 저장됩니다. 행사·공지 첨부파일은 <strong>1개당 3MB</strong>까지 올릴 수 있습니다.</li>
         </ul>
 
       </Section>
