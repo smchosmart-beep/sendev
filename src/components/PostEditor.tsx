@@ -107,6 +107,27 @@ const TextStyleWithMarkdown = TextStyle.extend({
   },
 });
 
+// tiptap-markdown drops empty paragraphs on save, so intentional blank lines
+// (한 줄 띄우기) collapse. Serialize an empty paragraph as a non-breaking space
+// so the blank line survives round-trips and renders with proper height.
+const ParagraphWithMarkdown = Paragraph.extend({
+  addStorage() {
+    return {
+      markdown: {
+        serialize(state: any, node: any) {
+          if (node.childCount === 0) {
+            state.write("\u00A0");
+            state.closeBlock(node);
+            return;
+          }
+          state.renderInline(node);
+          state.closeBlock(node);
+        },
+      },
+    };
+  },
+});
+
 const TEXT_COLORS = [
   { label: "기본", value: null },
   { label: "검정", value: "#1a1a1a" },
