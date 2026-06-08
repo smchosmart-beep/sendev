@@ -524,6 +524,43 @@ function FileCard({ href, name }: { href: string; name: string }) {
   );
 }
 
+// Renders a post-body image that opens a full-screen lightbox on click.
+function LightboxImage({
+  src,
+  alt,
+  ...props
+}: React.ImgHTMLAttributes<HTMLImageElement>) {
+  const [open, setOpen] = useState(false);
+  if (!src) return null;
+  return (
+    <>
+      <img
+        {...props}
+        src={src}
+        alt={alt ?? ""}
+        loading="lazy"
+        onClick={() => setOpen(true)}
+        className="cursor-zoom-in rounded-xl"
+      />
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent
+          className="flex max-h-[95vh] max-w-[95vw] items-center justify-center border-0 bg-transparent p-0 shadow-none sm:max-w-[95vw] [&>button]:text-white"
+        >
+          <DialogTitle className="sr-only">{alt || "이미지 확대"}</DialogTitle>
+          <DialogDescription className="sr-only">
+            전체화면으로 확대된 이미지입니다. 닫으려면 ESC를 누르거나 배경을 클릭하세요.
+          </DialogDescription>
+          <img
+            src={src}
+            alt={alt ?? ""}
+            className="max-h-[92vh] max-w-[92vw] w-auto rounded-lg object-contain"
+          />
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 // Renders an OG-style preview card for an arbitrary link placed alone in a
 // post body. Falls back to a plain link when no metadata is available.
 function LinkPreviewCard({ href }: { href: string }) {
