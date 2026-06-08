@@ -462,7 +462,7 @@ function FileCard({ href, name }: { href: string; name: string }) {
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate font-semibold text-foreground">{fileName}</span>
-        <span className="text-xs text-muted-foreground">{ext} 파일 · 클릭하면 내려받기</span>
+        <span className="text-xs text-muted-foreground">{ext} 파일</span>
       </span>
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
         <Download className="h-4 w-4" />
