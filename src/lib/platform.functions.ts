@@ -16,6 +16,7 @@ async function getAdmin() {
   return supabaseAdmin as unknown as {
     from: (table: string) => any;
     storage: any;
+    rpc: (fn: string, args?: Record<string, unknown>) => Promise<{ data: any; error: any }>;
   };
 }
 
