@@ -113,10 +113,7 @@ function GuidePage() {
           <strong> 닉네임 비밀번호</strong>를 설정합니다. 이 비밀번호로 "이 닉네임은 내 것"임을 증명하고, 다른
           사람이 같은 닉네임으로 내 활동에 손대는 것을 막습니다.
         </p>
-        <p>예시 권장 형식: <code>상명초_김승현</code> 처럼 학교/소속과 이름을 조합하면 구분이 쉽습니다.</p>
-      </Section>
-
-      <Section id="find-password" icon={RotateCcw} title="닉네임 비밀번호 찾기">
+          닉네임을 변경하더라도 보유한 배지는 그대로 유지됩니다.
         <p>
           닉네임 비밀번호를 잊었다면 <strong>복구 질문</strong>으로 직접 재설정할 수 있습니다.
         </p>
