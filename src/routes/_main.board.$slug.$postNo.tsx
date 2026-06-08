@@ -95,6 +95,7 @@ const NUMERIC_RE = /^\d+$/;
 // stripping event handlers (onerror/onclick/…), <script>, and other vectors.
 const POST_HTML_SCHEMA = {
   ...defaultSchema,
+  tagNames: [...(defaultSchema.tagNames ?? []), "u"],
   attributes: {
     ...defaultSchema.attributes,
     span: [...(defaultSchema.attributes?.span ?? []), "style"],
