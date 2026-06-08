@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import {
   LayoutGrid,
   ArrowRight,
@@ -10,7 +10,12 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-import { categoriesQueryOptions } from "@/lib/platform.queries";
+import {
+  categoriesQueryOptions,
+  postStubsQueryOptions,
+  readPostIdsQueryOptions,
+} from "@/lib/platform.queries";
+import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import type { CategoryDTO, TabGroup } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 
