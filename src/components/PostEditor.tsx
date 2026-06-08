@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import { Extension } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
+import { Paragraph } from "@tiptap/extension-paragraph";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import { TextStyle } from "@tiptap/extension-text-style";
