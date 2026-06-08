@@ -446,7 +446,7 @@ function LinkPreviewCard({ href }: { href: string }) {
       rel="noopener noreferrer"
       className="my-4 flex flex-col overflow-hidden rounded-2xl border border-border bg-card no-underline shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:flex-row"
     >
-      <span className="flex aspect-video w-full shrink-0 items-center justify-center overflow-hidden bg-accent text-primary sm:aspect-square sm:w-40">
+      <span className="flex aspect-video w-full shrink-0 items-center justify-center overflow-hidden bg-accent text-primary sm:w-64">
         {image ? (
           <img
             src={image}
