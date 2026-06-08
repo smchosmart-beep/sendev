@@ -530,7 +530,7 @@ function BodyImage({
   src,
   alt,
   ...props
-}: React.ImgHTMLAttributes<HTMLImageElement>) {
+}: ImgHTMLAttributes<HTMLImageElement>) {
   const [open, setOpen] = useState(false);
   if (!src) return null;
   return (
