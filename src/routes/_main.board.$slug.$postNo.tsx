@@ -354,6 +354,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw, [rehypeSanitize, POST_HTML_SCHEMA]]}
                 components={{
+                  img: ({ node, ...props }) => <BodyImage {...props} />,
                   a: ({ node, className, ...props }) => (
                     <a
                       {...props}
