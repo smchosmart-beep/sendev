@@ -320,6 +320,28 @@ function GuidePage() {
         </ul>
       </Section>
 
+      <Section id="views" icon={Eye} title="조회수">
+        <p>
+          모든 게시판 유형(일반·비밀번호·산출물·링크)의 게시글에 <strong>조회수</strong>가 표시됩니다.
+          닉네임 등록 여부와 무관하게 누구에게나 보입니다.
+        </p>
+        <ul className="ml-5 list-disc space-y-2">
+          <li>
+            <strong>집계 방식</strong>: 게시글 상세 페이지에 들어갈 때마다 조회수가 1씩 올라갑니다.
+            <strong>새로고침을 해도 다시 집계</strong>되며, 따로 중복을 제거하지 않습니다.
+          </li>
+          <li>
+            <strong>표시 위치</strong>: 상세 페이지의 작성자·날짜 옆, 그리고 산출물·링크 카드에 표시됩니다.
+            일반·고정(공지) 글 목록에서는 <strong>PC 화면에서만</strong> 조회수가 보이고, 모바일에서는 공간 절약을 위해 숨겨집니다.
+          </li>
+          <li>
+            조회수는 <strong>읽음 표시·좋아요·댓글·평가와는 별개</strong>의 지표입니다.
+            (예: 이미 읽은 글을 다시 열어도 조회수는 계속 올라갑니다.)
+          </li>
+        </ul>
+      </Section>
+
+
 
 
 
