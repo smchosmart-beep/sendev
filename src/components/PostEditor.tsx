@@ -616,6 +616,12 @@ export function PostEditor({
           disabled={uploading}
           onClick={handleImagePick}
         />
+        <ToolButton
+          icon={uploadingFile ? Loader2 : Paperclip}
+          label="파일 첨부 (HWP·PDF·ZIP 등)"
+          disabled={uploadingFile}
+          onClick={handleDocPick}
+        />
       </div>
 
       <EditorContent
@@ -631,6 +637,15 @@ export function PostEditor({
         className="hidden"
         onChange={handleFileChange}
       />
+
+      <input
+        ref={docRef}
+        type="file"
+        accept=".hwp,.hwpx,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,application/pdf,application/zip,application/haansofthwp,application/x-hwp"
+        className="hidden"
+        onChange={handleDocChange}
+      />
+
 
       <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
         <DialogContent className="rounded-2xl">
