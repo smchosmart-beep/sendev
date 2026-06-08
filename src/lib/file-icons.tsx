@@ -1,4 +1,4 @@
-import { Archive, FileText, Table, type LucideIcon } from "lucide-react";
+import { FileArchive, FileText, Table, type LucideIcon } from "lucide-react";
 
 // Maps a file name (or extension) to an appropriate Lucide icon so attachments
 // render with a recognizable type: documents, spreadsheets, archives, etc.
@@ -13,7 +13,7 @@ export function getFileIcon(fileNameOrExt: string): LucideIcon {
     case "zip":
     case "rar":
     case "7z":
-      return Archive;
+      return FileArchive;
     case "hwp":
     case "hwpx":
     case "pdf":
