@@ -90,14 +90,17 @@ function GuidePage() {
       {/* 목차 */}
       <nav className="rounded-3xl border border-border bg-card p-5 shadow-sm">
         <p className="mb-3 text-sm font-semibold text-foreground">목차</p>
-        <div className="flex flex-wrap gap-2">
-          {sections.map((s) => (
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {sections.map((s, i) => (
             <a
               key={s.id}
               href={`#${s.id}`}
-              className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
-              {s.label}
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-muted text-[11px] font-semibold text-muted-foreground">
+                {i + 1}
+              </span>
+              <span className="truncate">{s.label}</span>
             </a>
           ))}
         </div>
