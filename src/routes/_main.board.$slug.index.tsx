@@ -197,6 +197,10 @@ function BoardInner({
                     <span className="min-w-0 line-clamp-2 text-sm font-medium text-foreground">{g.title}</span>
                   </span>
                   <span className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
+                    <span className="hidden sm:flex items-center gap-1">
+                      <Eye className="h-3.5 w-3.5" />
+                      {g.viewCount}
+                    </span>
                     {g.commentCount > 0 && (
                       <span className="flex items-center gap-1 text-primary">
                         <MessageCircle className="h-3.5 w-3.5" />
