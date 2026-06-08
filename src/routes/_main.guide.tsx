@@ -47,6 +47,7 @@ const sections = [
   { id: "menus", label: "메뉴 안내" },
   { id: "posting", label: "글쓰기와 공지" },
   { id: "unread", label: "읽지 않은 글 표시" },
+  { id: "views", label: "조회수" },
   { id: "links", label: "본문 링크 미리보기" },
   { id: "search", label: "검색 기능" },
   { id: "mypage", label: "내 페이지" },
