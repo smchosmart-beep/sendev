@@ -130,6 +130,26 @@ const ParagraphWithMarkdown = Paragraph.extend({
   },
 });
 
+// Markdown's `**`/`*` emphasis delimiters can't sit directly next to raw HTML
+// tags (밑줄 <u>, 색상 <span>) without breaking the closing rule (flanking),
+// which produced corrupted output like `</u**>` and leaked literal `</u>` text.
+// Serialize bold/italic as <strong>/<em> HTML tags instead so all inline marks
+// are consistent raw HTML and never collide.
+const htmlMarkStorage = (open: string, close: string) => ({
+  addStorage() {
+    return {
+      markdown: {
+        serialize: { open, close, mixable: true, expelEnclosingWhitespace: true },
+      },
+    };
+  },
+});
+
+const BoldWithMarkdown = BoldExtension.extend(htmlMarkStorage("<strong>", "</strong>"));
+const ItalicWithMarkdown = ItalicExtension.extend(htmlMarkStorage("<em>", "</em>"));
+
+
+
 const TEXT_COLORS = [
   { label: "기본", value: null },
   { label: "검정", value: "#1a1a1a" },
