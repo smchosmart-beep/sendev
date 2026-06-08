@@ -2047,7 +2047,7 @@ export const uploadHeroImage = createServerFn({ method: "POST" })
       .object({
         name: z.string().trim().min(1).max(255),
         contentType: z.string().trim().max(200).default("image/jpeg"),
-        dataBase64: z.string().min(1).max(15_000_000),
+        dataBase64: z.string().min(1).max(3_000_000),
         adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
