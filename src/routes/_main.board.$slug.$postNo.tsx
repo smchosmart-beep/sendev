@@ -66,6 +66,7 @@ import {
   deleteComment,
   verifyPostPassword,
   markPostRead,
+  incrementPostView,
   type PostDTO,
   type CommentDTO,
   type TabGroup,
