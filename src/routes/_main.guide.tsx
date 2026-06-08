@@ -14,6 +14,7 @@ import {
   ListChecks,
   LinkIcon,
   Bell,
+  Eye,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_main/guide")({
