@@ -19,9 +19,7 @@ import { Extension } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import { Paragraph } from "@tiptap/extension-paragraph";
 import Image from "@tiptap/extension-image";
-import Link from "@tiptap/extension-link";
 import { TextStyle } from "@tiptap/extension-text-style";
-import { Underline } from "@tiptap/extension-underline";
 import { Color } from "@tiptap/extension-color";
 import { Markdown } from "tiptap-markdown";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -278,18 +276,23 @@ export function PostEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ paragraph: false }),
+      // StarterKit (v3) already bundles the `underline` and `link` marks, so we
+      // configure them here instead of registering separate extensions —
+      // duplicate extension names corrupt the markdown serialization (a partial
+      // underline leaked an unclosed <u> and spread to the rest of the post).
+      StarterKit.configure({
+        paragraph: false,
+        link: {
+          openOnClick: false,
+          autolink: true,
+          HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
+        },
+      }),
       ParagraphWithMarkdown,
       TextStyleWithMarkdown,
-      Underline,
       Color,
       FontSize,
       Image.configure({ inline: false }),
-      Link.configure({
-        openOnClick: false,
-        autolink: true,
-        HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
-      }),
       Markdown.configure({ html: true, linkify: true, breaks: true }),
       Placeholder.configure({ placeholder }),
     ],
