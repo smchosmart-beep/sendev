@@ -296,6 +296,30 @@ function GuidePage() {
 
       </Section>
 
+      <Section id="unread" icon={Bell} title="읽지 않은 글 표시">
+        <p>
+          <strong>닉네임을 등록한 경우</strong>, 아직 읽지 않은 글을 한눈에 알 수 있도록 표시해 드립니다.
+          닉네임을 설정하지 않았다면 이 표시는 나타나지 않습니다.
+        </p>
+        <ul className="ml-5 list-disc space-y-2">
+          <li>
+            <strong>카테고리 카드</strong>: 각 게시판 카드 제목 옆에 <strong>읽지 않은 일반 글 개수</strong>가 분홍색 숫자
+            배지로 표시됩니다. (산출물·링크는 세지 않고 일반 글만 셉니다.)
+          </li>
+          <li>
+            <strong>글 목록</strong>: 아직 읽지 않은 글 제목 앞에 <strong>분홍색 점</strong>이 붙습니다. 상단 고정(공지) 글도
+            포함됩니다. 글을 열어 보면 점이 사라집니다.
+          </li>
+          <li>
+            <strong>기기 간 연동</strong>: 읽음 상태는 <strong>닉네임 기준으로 저장</strong>되므로, 같은 닉네임이라면 휴대폰에서
+            읽은 글이 PC에서도 읽음으로 반영됩니다.
+          </li>
+          <li>비밀번호로 들어가는 게시판도 카드의 읽지 않은 글 개수는 표시됩니다.</li>
+        </ul>
+      </Section>
+
+
+
 
       <Section id="links" icon={LinkIcon} title="본문 링크 미리보기">
         <p>
