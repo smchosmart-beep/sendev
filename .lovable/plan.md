@@ -1,47 +1,23 @@
-# 게시글 조회수 기능
+## 게시글 본문 이미지 라이트박스
 
-게시판 유형(일반/비밀번호/카드형)에 관계없이 모든 게시글에 조회수를 표시합니다. 집계는 **상세 페이지 진입 시 매 조회마다 +1**(새로고침 포함)입니다.
+게시글 본문에 삽입된 이미지를 클릭하면 전체화면 모달로 확대해서 볼 수 있게 한다.
 
-## 1. DB (마이그레이션 — 코드보다 먼저 적용)
+### 동작
+- 본문 이미지 클릭 → 어두운 배경의 전체화면 모달(라이트박스)에서 원본 비율로 크게 표시
+- 닫기: X 버튼 / 배경 클릭 / ESC 키
+- 이미지에 커서 hover 시 확대 가능함을 알리는 포인터(cursor-zoom-in)
+- 모바일에서도 화면에 맞게 크게 보이도록 처리
 
-- `posts` 테이블에 `view_count integer not null default 0` 컬럼 추가.
-- 원자적 증가용 함수 `increment_post_view(p_id uuid)` 생성 (`security definer`, `set search_path = public`): `update posts set view_count = view_count + 1 where id = p_id`. 동시 접속에서도 경쟁 상태 없이 정확히 누적.
-- 함수 실행 권한: `grant execute on function public.increment_post_view(uuid) to service_role` (서버 함수의 service-role 클라이언트 전용).
+### 구현 (`src/routes/_main.board.$slug.$postNo.tsx`)
+- 본문 `ReactMarkdown`(351~386줄)의 `components`에 커스텀 `img` 렌더러 추가
+  - 이미지를 클릭 가능하게 만들고, 클릭 시 해당 src를 상태로 저장
+- 라이트박스는 기존 `Dialog`(shadcn) 컴포넌트를 재사용해 전체화면 오버레이로 표시
+  - 배경 어둡게, 이미지 `max-h/max-w`로 화면 안에 맞춤, 닫기 버튼 제공
+- 이미지 src를 담는 로컬 상태(`lightboxSrc`) 추가
 
-> 순서 필수: 마이그레이션이 승인·실행되고 `types.ts`가 재생성된 **다음에** 아래 코드 변경을 적용합니다. 컬럼이 없는 상태에서 `view_count`를 SELECT하면 에러납니다.
+### 가이드 업데이트 (`src/routes/_main.guide.tsx`)
+- 게시글 작성/보기 관련 섹션에 "본문 이미지를 누르면 전체화면으로 확대해 볼 수 있다"는 안내 한 줄 추가
 
-## 2. 서버 (`platform.functions.ts`)
-
-- `PostDTO`에 `viewCount: number` 추가, `mapPost`에서 `p.view_count ?? 0` 매핑.
-- `POST_COLUMNS`(목록/상세 공용 SELECT)에 `view_count` 추가 → **추가 쿼리 없이** 기존 SELECT에 묻어옴.
-- 신규 함수 `incrementPostView({ postId })`:
-  - 입력 검증(zod): `postId`는 `z.string().uuid()`. 검증 실패 시 조용히 무시(조회수는 비핵심 지표).
-  - service-role 클라이언트로 `increment_post_view` RPC 호출, `{ ok: true }` 반환.
-- 쿼리 옵션은 불필요(증가는 mutation, 표시는 기존 post 쿼리에 포함).
-
-## 3. 클라이언트 — 표시 위치
-
-- **상세 페이지 (`_main.board.$slug.$postNo.tsx`)**: 작성자/날짜 메타 영역에 `Eye` 아이콘 + 조회수 표시(모든 화면).
-- **카드형 목록(산출물/링크)**: 카드에 조회수 표시(모든 화면).
-- **게시판 목록(일반/고정 게시글)**: 댓글수 옆에 조회수 표시하되 **모바일에서는 숨김**(`hidden sm:flex`).
-
-## 4. 클라이언트 — 증가 처리 (보완점 반영)
-
-상세 페이지(`_main.board.$slug.$postNo.tsx`)에서:
-
-- **이중 호출 가드**: `markPostRead`와 동일한 `useRef` 패턴. postId 기준으로 `useEffect` 내 1회만 호출 → React StrictMode 개발 모드 이중 렌더만 차단. **새로고침은 컴포넌트 재마운트라 가드가 리셋되므로 의도대로 +1** 됨.
-- **이중 카운트 방지(표시 동기화)**: "낙관적 +1"과 "캐시 invalidate 재조회"를 **동시에 쓰지 않음**. 둘 중 하나만 사용 → 증가 호출 성공 시 해당 글 쿼리(`post-by-no`/`post`)만 invalidate해 서버 값으로 다시 읽어옴(+1 화면 반영). 낙관적 업데이트는 사용하지 않아 +2 표시 버그 차단.
-- **크롤러 영향 없음**: 증가 호출은 클라이언트 `useEffect`에만 둠. OG 메타용 `loader`(SSR)에는 두지 않으므로 카카오/구글 크롤러는 조회수를 올리지 않음.
-
-## 5. 가이드 (`_main.guide.tsx`)
-
-- 조회수는 모든 게시판 유형에서 표시되며, 상세 페이지 진입(새로고침 포함)마다 1씩 증가함을 설명.
-- 모바일에서는 일반/고정 글 목록의 조회수가 숨겨진다는 점 명시.
-- 조회수는 읽음 표시(`post_reads`)·좋아요·댓글·평가와 **독립된 별개 지표**임을 안내.
-
-## 기술 참고 (검토 결론)
-
-- **기능 오작동**: 낮음 — StrictMode 가드 + 단일 동기화 방식 + 원자적 RPC로 정확.
-- **서버비**: 거의 없음 — 목록은 추가 쿼리 0건(같은 SELECT), 상세 진입당 쓰기 1회 + 글 1건 재조회 1회. 소규모 커뮤니티 규모에서 무시 가능.
-- **다른 기능 악영향**: 없음 — `viewCount`는 추가 필드일 뿐 기존 필드 유지(`listPosts`·`getPost`·`getPostByNo`·검색 모두 호환). 정렬은 `created_at` 그대로라 목록 순서 변화 없음. `posts` 행 누적이라 1000행 제한과 무관.
-- **적용 순서**: ① 마이그레이션 → ② 타입 재생성 → ③ 서버·클라이언트 코드.
+### 기술 참고
+- 외부 라이브러리 추가 없음. 기존 Dialog와 상태만으로 구현
+- 본문 이미지에만 적용(링크 미리보기/썸네일 등은 영향 없음)
