@@ -534,6 +534,17 @@ function BodyImage({
 }: ImgHTMLAttributes<HTMLImageElement>) {
   const [open, setOpen] = useState(false);
   if (!src) return null;
+
+  const fileName = (() => {
+    try {
+      const path = new URL(src, window.location.href).pathname;
+      const last = path.split("/").filter(Boolean).pop();
+      return last ? decodeURIComponent(last) : "image";
+    } catch {
+      return "image";
+    }
+  })();
+
   return (
     <>
       <img
@@ -546,16 +557,37 @@ function BodyImage({
       />
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
-          className="flex max-h-[95vh] max-w-[95vw] items-center justify-center border-0 bg-transparent p-0 shadow-none sm:max-w-[95vw] [&>button]:text-white"
+          className="flex h-screen w-screen max-w-none flex-col items-center justify-center border-0 bg-black/90 p-0 shadow-none sm:max-w-none sm:rounded-none [&>button]:hidden"
         >
           <DialogTitle className="sr-only">{alt || "이미지 확대"}</DialogTitle>
           <DialogDescription className="sr-only">
             전체화면으로 확대된 이미지입니다. 닫으려면 ESC를 누르거나 배경을 클릭하세요.
           </DialogDescription>
+
+          {/* 우측 상단 어두운 영역의 버튼들 */}
+          <div className="absolute right-3 top-3 z-10 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => downloadFile(src, fileName)}
+              aria-label="이미지 다운로드"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-white opacity-80 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-white/50"
+            >
+              <Download className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="닫기"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-white opacity-80 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-white/50"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
           <img
             src={src}
             alt={alt ?? ""}
-            className="max-h-[92vh] max-w-[92vw] w-auto rounded-lg object-contain"
+            className="max-h-[82vh] max-w-[92vw] w-auto rounded-lg object-contain"
           />
         </DialogContent>
       </Dialog>
