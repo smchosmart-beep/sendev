@@ -13,6 +13,8 @@ import {
   listCategoryReviews,
   getMyReview,
   listMyReviewedPostIds,
+  listPostStubs,
+  listReadPostIds,
   listComments,
   fetchReadme,
   fetchOgImage,
@@ -143,6 +145,20 @@ export const myReviewedPostIdsQueryOptions = (reviewerName: string) =>
       listMyReviewedPostIds({ data: { reviewerName: reviewerName.trim() } }),
     enabled: reviewerName.trim().length > 0,
   });
+
+export const postStubsQueryOptions = () =>
+  queryOptions({
+    queryKey: ["post-stubs"],
+    queryFn: () => listPostStubs(),
+  });
+
+export const readPostIdsQueryOptions = (author: string) =>
+  queryOptions({
+    queryKey: ["read-post-ids", author.trim().toLowerCase()],
+    queryFn: () => listReadPostIds({ data: { author: author.trim() } }),
+    enabled: author.trim().length > 0,
+  });
+
 
 export const commentsQueryOptions = (postId: string) =>
   queryOptions({

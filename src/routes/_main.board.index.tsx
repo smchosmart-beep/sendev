@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import {
   LayoutGrid,
   ArrowRight,
@@ -10,7 +10,12 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-import { categoriesQueryOptions } from "@/lib/platform.queries";
+import {
+  categoriesQueryOptions,
+  postStubsQueryOptions,
+  readPostIdsQueryOptions,
+} from "@/lib/platform.queries";
+import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import type { CategoryDTO, TabGroup } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 
@@ -56,7 +61,22 @@ export const Route = createFileRoute("/_main/board/")({
   component: BoardListPage,
 });
 
-function BoardCard({ category }: { category: CategoryDTO }) {
+function UnreadBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span className="ml-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-pink-500 px-1.5 text-xs font-bold leading-none text-white">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
+function BoardCard({
+  category,
+  unread = 0,
+}: {
+  category: CategoryDTO;
+  unread?: number;
+}) {
   return (
     <Link
       to="/board/$slug"
@@ -67,6 +87,7 @@ function BoardCard({ category }: { category: CategoryDTO }) {
         <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
           {category.name}
           {category.hasPassword && <Lock className="h-4 w-4 text-muted-foreground" />}
+          <UnreadBadge count={unread} />
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {category.description || "설명이 없습니다."}
@@ -84,10 +105,12 @@ function FolderNode({
   group,
   childrenOf,
   depth,
+  unreadMap,
 }: {
   group: CategoryDTO;
   childrenOf: (parentId: string) => CategoryDTO[];
   depth: number;
+  unreadMap: Record<string, number>;
 }) {
   const [open, setOpen] = useState(true);
   const children = childrenOf(group.id);
@@ -129,9 +152,10 @@ function FolderNode({
                 group={child}
                 childrenOf={childrenOf}
                 depth={depth + 1}
+                unreadMap={unreadMap}
               />
             ) : (
-              <BoardCard key={child.id} category={child} />
+              <BoardCard key={child.id} category={child} unread={unreadMap[child.id] ?? 0} />
             ),
           )}
         </div>
@@ -151,6 +175,28 @@ function BoardListPage() {
   const activeTab = normalizeTab(tab);
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
   const visible = categories.filter((c) => (c.tabGroup ?? "hackathon") === activeTab);
+
+  // 닉네임이 등록된 경우에만 미열람 수를 계산/표시한다.
+  const { identity } = useStoredIdentity();
+  const author = identity?.author ?? "";
+  const { data: stubs = [] } = useQuery({
+    ...postStubsQueryOptions(),
+    enabled: author.trim().length > 0,
+  });
+  const { data: readIds = [] } = useQuery(readPostIdsQueryOptions(author));
+
+  const unreadMap = useMemo(() => {
+    if (author.trim().length === 0) return {} as Record<string, number>;
+    const readSet = new Set(readIds);
+    const map: Record<string, number> = {};
+    for (const s of stubs) {
+      // 일반 글(type === "post")만 카운트.
+      if (s.type !== "post") continue;
+      if (readSet.has(s.id)) continue;
+      map[s.categoryId] = (map[s.categoryId] ?? 0) + 1;
+    }
+    return map;
+  }, [author, stubs, readIds]);
 
   const visibleIds = new Set(visible.map((c) => c.id));
   // Roots: items without a parent, or whose parent is not in this tab.
@@ -179,7 +225,7 @@ function BoardListPage() {
           {roots
             .filter((c) => c.isGroup)
             .map((group) => (
-              <FolderNode key={group.id} group={group} childrenOf={childrenOf} depth={0} />
+              <FolderNode key={group.id} group={group} childrenOf={childrenOf} depth={0} unreadMap={unreadMap} />
             ))}
 
           {roots.some((c) => !c.isGroup) && (
@@ -187,7 +233,7 @@ function BoardListPage() {
               {roots
                 .filter((c) => !c.isGroup)
                 .map((c) => (
-                  <BoardCard key={c.id} category={c} />
+                  <BoardCard key={c.id} category={c} unread={unreadMap[c.id] ?? 0} />
                 ))}
             </div>
           )}

@@ -10,7 +10,9 @@ import {
   ogImageBackfillQueryOptions,
   myReviewedPostIdsQueryOptions,
   profileMapQueryOptions,
+  readPostIdsQueryOptions,
 } from "@/lib/platform.queries";
+import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import { type PostDTO } from "@/lib/platform.functions";
 import { groupLinksBySeries, seededShuffle, getOrderSeed } from "@/lib/series";
 import { getEmbedUrl, getThumbnailUrl, getCanvaPreviewUrl } from "@/lib/embed";
@@ -104,6 +106,14 @@ function BoardInner({
   );
   const reviewedSet = useMemo(() => new Set(reviewedIds), [reviewedIds]);
 
+  // 읽지 않은 글에 분홍 점 표시 — 닉네임이 등록된 경우에만.
+  const { identity } = useStoredIdentity();
+  const readerName = identity?.author ?? "";
+  const { data: readIds = [] } = useQuery(readPostIdsQueryOptions(readerName));
+  const readSet = useMemo(() => new Set(readIds), [readIds]);
+  const hasReader = readerName.trim().length > 0;
+  const isUnread = (id: string) => hasReader && !readSet.has(id);
+
   return (
     <div className="space-y-6">
       {category.enablePost && notices.length > 0 && (
@@ -119,7 +129,12 @@ function BoardInner({
               params={{ slug, postNo: String(n.postNo) }}
               className="flex items-center justify-between gap-5 rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
             >
-              <span className="flex-1 min-w-0 line-clamp-2 text-sm font-medium text-foreground">{n.title}</span>
+              <span className="flex flex-1 min-w-0 items-start gap-2">
+                {isUnread(n.id) && (
+                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-pink-500" aria-label="읽지 않음" />
+                )}
+                <span className="min-w-0 line-clamp-2 text-sm font-medium text-foreground">{n.title}</span>
+              </span>
               <span className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
                 {n.commentCount > 0 && (
                   <span className="flex items-center gap-1 text-primary">
@@ -171,7 +186,12 @@ function BoardInner({
                   params={{ slug, postNo: String(g.postNo) }}
                   className="flex items-center justify-between gap-5 rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
                 >
-                  <span className="flex-1 min-w-0 line-clamp-2 text-sm font-medium text-foreground">{g.title}</span>
+                  <span className="flex flex-1 min-w-0 items-start gap-2">
+                    {isUnread(g.id) && (
+                      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-pink-500" aria-label="읽지 않음" />
+                    )}
+                    <span className="min-w-0 line-clamp-2 text-sm font-medium text-foreground">{g.title}</span>
+                  </span>
                   <span className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
                     {g.commentCount > 0 && (
                       <span className="flex items-center gap-1 text-primary">
