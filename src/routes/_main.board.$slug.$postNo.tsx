@@ -133,6 +133,26 @@ export const Route = createFileRoute("/_main/board/$slug/$postNo")({
     }
     return null;
   },
+  head: ({ params, loaderData }) => {
+    const post = loaderData as PostDTO | null;
+    if (!post) return {};
+    const title = `${post.title} — SEN _DEV_CONNECT`;
+    const description = toPlainExcerpt(post.content);
+    const url = `https://sendev.kr/board/${params.slug}/${params.postNo}`;
+    const meta: Array<Record<string, string>> = [
+      { title },
+      { name: "description", content: description },
+      { property: "og:title", content: post.title },
+      { property: "og:description", content: description },
+      { property: "og:type", content: "article" },
+      { property: "og:url", content: url },
+    ];
+    if (post.ogImageUrl) {
+      meta.push({ property: "og:image", content: post.ogImageUrl });
+      meta.push({ name: "twitter:image", content: post.ogImageUrl });
+    }
+    return { meta, links: [{ rel: "canonical", href: url }] };
+  },
   errorComponent: ({ error }) => (
     <div role="alert" className="p-6 text-sm text-destructive">
       산출물을 불러오지 못했어요: {error.message}
