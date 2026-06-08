@@ -223,6 +223,7 @@ export interface PostDTO {
   series: string;
   createdAt: string;
   commentCount: number;
+  viewCount: number;
 }
 
 export interface SearchResultDTO extends PostDTO {
