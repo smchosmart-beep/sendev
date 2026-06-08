@@ -303,6 +303,10 @@ function GuidePage() {
         <p className="text-sm text-muted-foreground">
           ※ 문장 중간에 들어간 링크는 미리보기 카드 없이 일반 텍스트 링크로 표시됩니다. 미리보기 카드를 원하면 링크만 한 줄에 따로 적어주세요.
         </p>
+        <p className="text-sm text-muted-foreground">
+          ※ 게시글의 <strong>공유</strong> 버튼으로 링크를 카카오톡·SNS 등에 공유하면, 미리보기에 <strong>게시글 제목</strong>이 표시됩니다. (카카오톡 등은 미리보기를 잠시 저장해 두므로, 새 글은 갱신에 약간 시간이 걸릴 수 있습니다.)
+        </p>
+
       </Section>
 
 
