@@ -34,6 +34,7 @@ import {
   Maximize,
   Minimize,
   FolderInput,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 
