@@ -1,24 +1,28 @@
-## 라이트박스 모달 버튼 배치 개선
+## 라이트박스 전체화면 보기 버튼 추가
 
-게시글 본문 이미지 라이트박스에서 닫기/다운로드 버튼이 **이미지 위가 아니라 라이트박스의 어두운 배경 영역**에 위치하도록 한다.
+라이트박스(`BodyImage`, `src/routes/_main.board.$slug.$postNo.tsx`)에 이미지 전체화면 보기 버튼을 추가한다. 가로가 더 긴(가로형) 이미지는 모바일에서 가로 모드로 회전시켜 화면에 꽉 차게 보여준다.
 
-### 핵심 변경
-현재는 `DialogContent`가 투명하고 이미지 크기에 딱 맞게 줄어들어 버튼이 이미지 위에 겹쳐 보인다.
-→ `DialogContent`를 **화면 전체(거의 전체)를 차지하는 어두운 오버레이**로 만들고, 그 안에서 이미지는 중앙에 작게(여백 두고) 배치한다. 버튼은 화면 우측 상단의 어두운 영역에 둔다.
+### 동작
+- 우측 상단 버튼 그룹에 **전체화면 보기 버튼**(`Maximize` 아이콘) 추가 — 배치 순서: 전체화면 · 다운로드 · 닫기
+- 클릭 시 이미지를 감싼 컨테이너에 브라우저 **Fullscreen API**(`requestFullscreen`) 적용
+- 전체화면 상태에서는 버튼이 **나가기**(`Minimize` 아이콘)로 토글
+- 전체화면 진입 시 이미지의 자연 크기 비율을 확인해 **가로 > 세로(가로형)** 이고 모바일이면 **Screen Orientation API**(`screen.orientation.lock("landscape")`)로 가로 모드 고정 시도
+  - 미지원 브라우저(특히 iOS Safari)는 `try/catch`로 무시 → 그래도 전체화면 자체는 동작
+- 전체화면에서는 이미지를 `object-contain` + 화면 전체(`100vw/100vh`)로 채워 가로 모드일 때 꽉 차게 표시
+- 전체화면 종료(ESC/버튼) 시 orientation lock 해제(`screen.orientation.unlock()`)
 
-### 작업 항목 (`src/routes/_main.board.$slug.$postNo.tsx` - `BodyImage`)
-1. `DialogContent`를 전체화면 컨테이너로 변경
-   - `max-w/max-h`를 화면 가득 채우도록(`w-screen h-screen` 수준), 어두운 배경 유지, 패딩으로 이미지 주변 여백 확보
-   - 기존 `DialogContent` 내장 닫기 버튼은 숨김(`[&>button]:hidden`) 처리
-2. 이미지는 컨테이너 중앙에 배치하되 버튼 영역과 겹치지 않도록 상단 여백 확보(`object-contain`, `max-h` 조정)
-3. 우측 상단 **어두운 영역**에 버튼 2개 배치 (커스텀 버튼)
-   - 다운로드 버튼(왼쪽) + 닫기 버튼(오른쪽), 흰색 아이콘
-   - 다운로드: `Download` 아이콘, 클릭 시 `downloadFile(src, 파일명)` 호출
-   - 닫기: `X` 아이콘, 클릭 시 `setOpen(false)`
-   - 파일명: 이미지 URL 마지막 path segment, 없으면 `image`
+### 구현 (`BodyImage`)
+- `useRef`로 전체화면 대상 컨테이너(이미지 래퍼) 참조
+- `isFullscreen` 상태 + `fullscreenchange` 이벤트 리스너로 동기화
+- `enterFullscreen`/`exitFullscreen` 핸들러
+  - 진입: `ref.requestFullscreen()` → 성공 후 이미지 `naturalWidth > naturalHeight` && 모바일이면 orientation lock 시도
+  - 종료: `document.exitFullscreen()` + orientation unlock
+- 전체화면일 때 이미지 클래스 전환(여백 제한 해제, 화면 꽉 차게)
+
+### 기술 참고
+- 외부 라이브러리 없음 (기존 `Maximize`/`Minimize` 아이콘 재사용)
+- Fullscreen/Orientation API 미지원 환경에서도 오류 없이 동작(graceful degradation)
+- 모바일 판별은 기존 `use-mobile` 훅 또는 `screen.orientation` 존재 여부 활용
 
 ### 가이드 업데이트 (`src/routes/_main.guide.tsx`)
-- 라이트박스 안내에 "우측 상단에서 이미지 다운로드/닫기 가능" 문구 반영
-
-### 외부 라이브러리
-- 없음 (`Dialog`, `lucide-react`의 `Download`/`X`, `downloadFile` 재사용)
+- 라이트박스 안내에 "전체화면 보기 버튼(가로형 이미지는 모바일에서 가로 모드로 꽉 차게 표시)" 문구 추가

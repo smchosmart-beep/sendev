@@ -533,6 +533,16 @@ function BodyImage({
   ...props
 }: ImgHTMLAttributes<HTMLImageElement>) {
   const [open, setOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const fsImgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
   if (!src) return null;
 
   const fileName = (() => {
@@ -544,6 +554,44 @@ function BodyImage({
       return "image";
     }
   })();
+
+  const enterFullscreen = async () => {
+    const el = wrapperRef.current;
+    if (!el?.requestFullscreen) return;
+    try {
+      await el.requestFullscreen();
+      // 가로형 이미지는 모바일에서 가로 모드로 회전해 꽉 차게 표시
+      const img = fsImgRef.current;
+      const orientation = screen.orientation as
+        | (ScreenOrientation & { lock?: (o: string) => Promise<void> })
+        | undefined;
+      if (
+        img &&
+        img.naturalWidth > img.naturalHeight &&
+        orientation?.lock
+      ) {
+        try {
+          await orientation.lock("landscape");
+        } catch {
+          /* iOS Safari 등 미지원 환경 무시 */
+        }
+      }
+    } catch {
+      /* 전체화면 미지원 환경 무시 */
+    }
+  };
+
+  const exitFullscreen = async () => {
+    try {
+      const orientation = screen.orientation as
+        | (ScreenOrientation & { unlock?: () => void })
+        | undefined;
+      orientation?.unlock?.();
+      if (document.fullscreenElement) await document.exitFullscreen();
+    } catch {
+      /* 무시 */
+    }
+  };
 
   return (
     <>
@@ -568,6 +616,18 @@ function BodyImage({
           <div className="absolute right-3 top-3 z-10 flex items-center gap-2">
             <button
               type="button"
+              onClick={() => (isFullscreen ? exitFullscreen() : enterFullscreen())}
+              aria-label={isFullscreen ? "전체화면 나가기" : "전체화면 보기"}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-white opacity-80 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-white/50"
+            >
+              {isFullscreen ? (
+                <Minimize className="h-5 w-5" />
+              ) : (
+                <Maximize className="h-5 w-5" />
+              )}
+            </button>
+            <button
+              type="button"
               onClick={() => downloadFile(src, fileName)}
               aria-label="이미지 다운로드"
               className="flex h-10 w-10 items-center justify-center rounded-full text-white opacity-80 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-white/50"
@@ -584,16 +644,27 @@ function BodyImage({
             </button>
           </div>
 
-          <img
-            src={src}
-            alt={alt ?? ""}
-            className="max-h-[82vh] max-w-[92vw] w-auto rounded-lg object-contain"
-          />
+          <div
+            ref={wrapperRef}
+            className="flex h-full w-full items-center justify-center bg-black/90"
+          >
+            <img
+              ref={fsImgRef}
+              src={src}
+              alt={alt ?? ""}
+              className={
+                isFullscreen
+                  ? "h-screen w-screen object-contain"
+                  : "max-h-[82vh] max-w-[92vw] w-auto rounded-lg object-contain"
+              }
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </>
   );
 }
+
 
 // Renders an OG-style preview card for an arbitrary link placed alone in a
 // post body. Falls back to a plain link when no metadata is available.
