@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 
 // Accepts https://github.com/owner/repo (with optional trailing path/slash).
 export const GITHUB_URL_RE =
@@ -62,12 +63,31 @@ function normalizeName(name: string): string {
   return (name ?? "").trim().toLowerCase();
 }
 
+// Secrets (nickname passwords, recovery answers) are salted and hashed with
+// bcrypt before storage. New values use bcrypt; legacy saltless SHA-256 hashes
+// stay verifiable so existing nicknames keep working without a migration.
+const BCRYPT_COST = 10;
+
 async function hashSecret(secret: string): Promise<string> {
+  return bcrypt.hash(`sendev-nick:${secret}`, BCRYPT_COST);
+}
+
+async function sha256Legacy(secret: string): Promise<string> {
   const bytes = new TextEncoder().encode(`sendev-nick:${secret}`);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+}
+
+// Compares a plaintext secret against a stored hash. bcrypt hashes start with
+// "$2"; anything else is treated as a legacy SHA-256 hex digest.
+async function verifySecret(plaintext: string, stored: string): Promise<boolean> {
+  if (!stored) return false;
+  if (stored.startsWith("$2")) {
+    return bcrypt.compare(`sendev-nick:${plaintext}`, stored);
+  }
+  return (await sha256Legacy(plaintext)) === stored;
 }
 
 // Verifies (or first-time claims) ownership of an author nickname.
