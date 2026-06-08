@@ -276,7 +276,8 @@ export function PostEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({ paragraph: false }),
+      ParagraphWithMarkdown,
       TextStyleWithMarkdown,
       Color,
       FontSize,
