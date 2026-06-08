@@ -165,7 +165,7 @@ const TEXT_COLORS = [
 ];
 
 const FONT_SIZES = [
-  { label: "작게", value: "0.875rem" },
+  { label: "작게", value: "0.75rem" },
   { label: "보통", value: null },
   { label: "크게", value: "1.25rem" },
   { label: "매우 크게", value: "1.5rem" },
