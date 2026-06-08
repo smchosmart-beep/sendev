@@ -1,28 +1,29 @@
-## 라이트박스 전체화면 보기 버튼 추가
+## 라이트박스 핀치 줌 + 한 손가락 이동(팬) 지원
 
-라이트박스(`BodyImage`, `src/routes/_main.board.$slug.$postNo.tsx`)에 이미지 전체화면 보기 버튼을 추가한다. 가로가 더 긴(가로형) 이미지는 모바일에서 가로 모드로 회전시켜 화면에 꽉 차게 보여준다.
+모바일 라이트박스에서 두 손가락 핀치로 확대는 되지만, 확대 후 한 손가락으로 이미지를 끌어 이동할 수 없는 문제를 해결한다.
 
-### 동작
-- 우측 상단 버튼 그룹에 **전체화면 보기 버튼**(`Maximize` 아이콘) 추가 — 배치 순서: 전체화면 · 다운로드 · 닫기
-- 클릭 시 이미지를 감싼 컨테이너에 브라우저 **Fullscreen API**(`requestFullscreen`) 적용
-- 전체화면 상태에서는 버튼이 **나가기**(`Minimize` 아이콘)로 토글
-- 전체화면 진입 시 이미지의 자연 크기 비율을 확인해 **가로 > 세로(가로형)** 이고 모바일이면 **Screen Orientation API**(`screen.orientation.lock("landscape")`)로 가로 모드 고정 시도
-  - 미지원 브라우저(특히 iOS Safari)는 `try/catch`로 무시 → 그래도 전체화면 자체는 동작
-- 전체화면에서는 이미지를 `object-contain` + 화면 전체(`100vw/100vh`)로 채워 가로 모드일 때 꽉 차게 표시
-- 전체화면 종료(ESC/버튼) 시 orientation lock 해제(`screen.orientation.unlock()`)
+### 원인
+현재 이미지는 브라우저 네이티브 핀치 줌(뷰포트 줌)에 의존한다. 그러나 라이트박스가 Radix Dialog(전체화면 고정 레이어)로 떠 있어 모달 내부의 한 손가락 패닝 제스처가 차단되어 확대 후 이동이 불가능하다.
 
-### 구현 (`BodyImage`)
-- `useRef`로 전체화면 대상 컨테이너(이미지 래퍼) 참조
-- `isFullscreen` 상태 + `fullscreenchange` 이벤트 리스너로 동기화
-- `enterFullscreen`/`exitFullscreen` 핸들러
-  - 진입: `ref.requestFullscreen()` → 성공 후 이미지 `naturalWidth > naturalHeight` && 모바일이면 orientation lock 시도
-  - 종료: `document.exitFullscreen()` + orientation unlock
-- 전체화면일 때 이미지 클래스 전환(여백 제한 해제, 화면 꽉 차게)
+### 해결 방향
+이미지 자체에 **직접 제어하는 줌/팬**을 구현한다. 검증된 경량 라이브러리 `react-zoom-pan-pinch`를 사용해 안정적으로 처리한다.
+- 두 손가락 핀치 → 확대/축소
+- 한 손가락 드래그 → 이동(팬) (확대된 상태에서)
+- 더블탭/더블클릭 → 확대 토글
+- 닫기/다운로드/전체화면 버튼은 그대로 우측 상단 유지
+
+### 구현 (`BodyImage`, `src/routes/_main.board.$slug.$postNo.tsx`)
+- `react-zoom-pan-pinch`의 `TransformWrapper` / `TransformComponent`로 라이트박스 이미지를 감싼다.
+- 이미지 컨테이너에 `touch-action: none`을 적용해 라이브러리가 제스처를 직접 처리하도록 한다(브라우저 기본 제스처와 충돌 방지).
+- 모달이 닫히거나 다시 열릴 때 줌 상태를 초기화한다.
+- 확대 중 배경 클릭으로 인한 의도치 않은 닫힘을 방지(드래그가 닫힘으로 처리되지 않도록).
+- 전체화면 모드에서도 동일하게 줌/팬 동작.
 
 ### 기술 참고
-- 외부 라이브러리 없음 (기존 `Maximize`/`Minimize` 아이콘 재사용)
-- Fullscreen/Orientation API 미지원 환경에서도 오류 없이 동작(graceful degradation)
-- 모바일 판별은 기존 `use-mobile` 훅 또는 `screen.orientation` 존재 여부 활용
+- 신규 의존성: `react-zoom-pan-pinch` (경량, 터치/마우스 모두 지원, SSR 안전).
+- 기존 다운로드/전체화면/닫기 버튼 로직과 아이콘은 유지.
 
 ### 가이드 업데이트 (`src/routes/_main.guide.tsx`)
-- 라이트박스 안내에 "전체화면 보기 버튼(가로형 이미지는 모바일에서 가로 모드로 꽉 차게 표시)" 문구 추가
+- 라이트박스 안내에 "확대 후 한 손가락으로 끌어 이미지를 이동할 수 있습니다(모바일 핀치 줌 지원)" 문구 추가.
+</content>
+<parameter name="summary">라이트박스 이미지에 react-zoom-pan-pinch로 핀치 줌 + 한 손가락 팬 구현, 가이드 업데이트
