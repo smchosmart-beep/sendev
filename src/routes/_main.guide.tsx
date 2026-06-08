@@ -293,6 +293,7 @@ function GuidePage() {
           <li>산출물·링크 게시판은 기존과 동일하게 별도로 운영됩니다.</li>
           <li>본문 편집기 상단 도구 모음에서 <strong>제목·굵게·기울임·밑줄</strong>, <strong>글자 색상·글자 크기</strong>, 인용·목록·링크·이미지 서식을 적용할 수 있습니다. 글자 크기는 <strong>작게·보통·크게·매우 크게</strong> 4단계로 조절할 수 있습니다.</li>
           <li>본문에 넣는 이미지는 <strong>JPG·PNG·WEBP·GIF</strong> 형식만 지원하며, 올릴 때 자동으로 압축되어 <strong>2MB 이내</strong>로 저장됩니다. 행사·공지 첨부파일은 <strong>1개당 3MB</strong>까지 올릴 수 있습니다.</li>
+          <li>게시글을 볼 때 <strong>본문 이미지를 누르면</strong> 전체화면 확대 보기(라이트박스)가 열립니다. 배경을 누르거나 <strong>ESC</strong> 키로 닫을 수 있습니다.</li>
           <li>도구 모음의 <strong>클립(파일 첨부)</strong> 버튼으로 <strong>HWP·PDF·ZIP·오피스 문서</strong> 등 일반 파일을 올릴 수 있습니다. 파일당 <strong>3MB</strong>까지 가능하며, 본문에는 클릭하면 내려받는 <strong>다운로드 카드</strong>로 표시됩니다. 파일 종류에 따라 아이콘이 달라집니다 — <strong>HWP·PDF·문서</strong>는 문서 아이콘, <strong>XLS·XLSX</strong>는 표(시트) 아이콘, <strong>ZIP</strong>은 압축파일 아이콘으로 표시됩니다.</li>
         </ul>
 
