@@ -18,6 +18,8 @@ import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import { Extension } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import { Paragraph } from "@tiptap/extension-paragraph";
+import { Bold as BoldExtension } from "@tiptap/extension-bold";
+import { Italic as ItalicExtension } from "@tiptap/extension-italic";
 import Image from "@tiptap/extension-image";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
@@ -127,6 +129,26 @@ const ParagraphWithMarkdown = Paragraph.extend({
     };
   },
 });
+
+// Markdown's `**`/`*` emphasis delimiters can't sit directly next to raw HTML
+// tags (밑줄 <u>, 색상 <span>) without breaking the closing rule (flanking),
+// which produced corrupted output like `</u**>` and leaked literal `</u>` text.
+// Serialize bold/italic as <strong>/<em> HTML tags instead so all inline marks
+// are consistent raw HTML and never collide.
+const htmlMarkStorage = (open: string, close: string) => ({
+  addStorage() {
+    return {
+      markdown: {
+        serialize: { open, close, mixable: true, expelEnclosingWhitespace: true },
+      },
+    };
+  },
+});
+
+const BoldWithMarkdown = BoldExtension.extend(htmlMarkStorage("<strong>", "</strong>"));
+const ItalicWithMarkdown = ItalicExtension.extend(htmlMarkStorage("<em>", "</em>"));
+
+
 
 const TEXT_COLORS = [
   { label: "기본", value: null },
@@ -282,12 +304,18 @@ export function PostEditor({
       // underline leaked an unclosed <u> and spread to the rest of the post).
       StarterKit.configure({
         paragraph: false,
+        // Disable bundled bold/italic so we can serialize them as <strong>/<em>
+        // HTML tags (markdown `**`/`*` corrupts adjacent raw HTML like <u>).
+        bold: false,
+        italic: false,
         link: {
           openOnClick: false,
           autolink: true,
           HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
         },
       }),
+      BoldWithMarkdown,
+      ItalicWithMarkdown,
       ParagraphWithMarkdown,
       TextStyleWithMarkdown,
       Color,
