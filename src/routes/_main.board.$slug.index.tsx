@@ -557,10 +557,16 @@ function ProjectCard({
 
       <div className="p-5">
         <h3 className="font-semibold text-foreground">{post.title}</h3>
-        <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-          <User className="h-3.5 w-3.5" />
-          {post.author}
-          <AuthorBadge author={post.author} profileMap={profileMap} />
+        <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <User className="h-3.5 w-3.5" />
+            {post.author}
+            <AuthorBadge author={post.author} profileMap={profileMap} />
+          </span>
+          <span className="flex items-center gap-1">
+            <Eye className="h-3.5 w-3.5" />
+            {post.viewCount}
+          </span>
         </p>
       </div>
     </Link>
