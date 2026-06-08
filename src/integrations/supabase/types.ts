@@ -299,6 +299,7 @@ export type Database = {
           series: string
           title: string
           type: string
+          view_count: number
         }
         Insert: {
           author?: string
@@ -315,6 +316,7 @@ export type Database = {
           series?: string
           title: string
           type: string
+          view_count?: number
         }
         Update: {
           author?: string
@@ -331,6 +333,7 @@ export type Database = {
           series?: string
           title?: string
           type?: string
+          view_count?: number
         }
         Relationships: [
           {
@@ -534,7 +537,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_post_view: { Args: { p_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

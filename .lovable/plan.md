@@ -1,46 +1,47 @@
-## 읽지 않은 게시글 표시 기능 (닉네임 기준, 기기 간 연동)
+# 게시글 조회수 기능
 
-읽음 상태를 **등록된 닉네임 기준으로 서버(DB)에 저장**합니다. 같은 닉네임이면 휴대폰에서 읽은 글이 PC에서도 읽음으로 반영됩니다. 닉네임이 없으면 카드 숫자/분홍 점 등 어떤 표시도 하지 않습니다.
+게시판 유형(일반/비밀번호/카드형)에 관계없이 모든 게시글에 조회수를 표시합니다. 집계는 **상세 페이지 진입 시 매 조회마다 +1**(새로고침 포함)입니다.
 
-선택 반영: 카드 카운트는 **일반 글만**, 비밀번호 게시판도 **숫자 표시**, 분홍 점은 **고정글 포함**.
+## 1. DB (마이그레이션 — 코드보다 먼저 적용)
 
-### 1. DB: 읽음 기록 테이블 (`post_reads`)
-- 컬럼: `id`, `username_key`(닉네임 정규화 키), `post_id`, `created_at`.
-- `(username_key, post_id)` 유니크 → 중복 읽음 방지.
-- RLS 활성화, anon/authenticated 정책 없음(공개 읽기 금지). 서버 함수의 service_role 로만 접근.
-- GRANT: service_role 전체 권한(서버 함수 전용).
+- `posts` 테이블에 `view_count integer not null default 0` 컬럼 추가.
+- 원자적 증가용 함수 `increment_post_view(p_id uuid)` 생성 (`security definer`, `set search_path = public`): `update posts set view_count = view_count + 1 where id = p_id`. 동시 접속에서도 경쟁 상태 없이 정확히 누적.
+- 함수 실행 권한: `grant execute on function public.increment_post_view(uuid) to service_role` (서버 함수의 service-role 클라이언트 전용).
 
-### 2. 서버 함수 (`platform.functions.ts`) + 쿼리 옵션 (`platform.queries.ts`)
-- `markPostRead({ author, postId })`: `author` 를 `normalizeUsername` 으로 키화해 `post_reads` 에 upsert(`on conflict do nothing`).
-- `listReadPostIds({ author })`: 해당 닉네임이 읽은 모든 `post_id` 배열 반환.
-- `listPostStubs()`: 모든 게시글의 `{ id, categoryId, type }[]` 반환(제목/본문 미포함, 비밀번호 무관).
-- **입력 검증(zod)**: `author` 는 `trim().min(1).max(50)`, `postId` 는 `z.string().uuid()`. 검증 실패 시 그냥 무시(읽음은 비핵심 기능).
-- 쿼리 옵션: `readPostIdsQueryOptions(author)`, `postStubsQueryOptions()`.
+> 순서 필수: 마이그레이션이 승인·실행되고 `types.ts`가 재생성된 **다음에** 아래 코드 변경을 적용합니다. 컬럼이 없는 상태에서 `view_count`를 SELECT하면 에러납니다.
 
-### 3. 닉네임 연동 (클라이언트)
-- 기존 `useStoredIdentity()`(`sendev:identity`)로 현재 닉네임을 가져옴.
-- 닉네임이 없으면 읽음 관련 쿼리를 `enabled: false` 로 비활성화하고, 카드 숫자/분홍 점을 전혀 렌더하지 않음.
+## 2. 서버 (`platform.functions.ts`)
 
-### 4. 카테고리 카드 미열람 수 (`_main.board.index.tsx`)
-- 닉네임이 있으면 `postStubsQueryOptions()` + `readPostIdsQueryOptions(author)` 로드.
-- 카테고리별 `type === "post"`(일반 글) 중 읽은 id 에 없는 개수를 계산.
-- `BoardCard` 에 0보다 클 때 미열람 배지(분홍 톤 숫자) 표시. 닉네임 없으면 배지 없음.
+- `PostDTO`에 `viewCount: number` 추가, `mapPost`에서 `p.view_count ?? 0` 매핑.
+- `POST_COLUMNS`(목록/상세 공용 SELECT)에 `view_count` 추가 → **추가 쿼리 없이** 기존 SELECT에 묻어옴.
+- 신규 함수 `incrementPostView({ postId })`:
+  - 입력 검증(zod): `postId`는 `z.string().uuid()`. 검증 실패 시 조용히 무시(조회수는 비핵심 지표).
+  - service-role 클라이언트로 `increment_post_view` RPC 호출, `{ ok: true }` 반환.
+- 쿼리 옵션은 불필요(증가는 mutation, 표시는 기존 post 쿼리에 포함).
 
-### 5. 글 목록 분홍 점 (`_main.board.$slug.index.tsx`)
-- `readPostIdsQueryOptions(author)` 사용. 닉네임 없으면 점 없음.
-- 고정 게시글 + 일반 게시글 목록에서 읽지 않은 글 제목 앞에 분홍색 점 표시.
+## 3. 클라이언트 — 표시 위치
 
-### 6. 읽음 처리 (`_main.board.$slug.$postNo.tsx`)
-- 상세 진입 시 닉네임이 있으면 `markPostRead({ author, postId })` 호출(useMutation).
-- **이중 호출 가드**: `useRef` 로 (postId 기준) 1회만 호출되도록 막아 StrictMode/리렌더 중복 방지.
-- 성공 시 `readPostIdsQueryOptions(author)` 무효화 → 목록/카드에 즉시 반영.
+- **상세 페이지 (`_main.board.$slug.$postNo.tsx`)**: 작성자/날짜 메타 영역에 `Eye` 아이콘 + 조회수 표시(모든 화면).
+- **카드형 목록(산출물/링크)**: 카드에 조회수 표시(모든 화면).
+- **게시판 목록(일반/고정 게시글)**: 댓글수 옆에 조회수 표시하되 **모바일에서는 숨김**(`hidden sm:flex`).
 
-### 7. 가이드 업데이트 (`_main.guide.tsx`)
-- 읽지 않은 글 표시는 닉네임 등록 시 동작하며, 같은 닉네임이면 기기 간 연동된다는 점과 카드 숫자/분홍 점 의미를 설명에 추가.
+## 4. 클라이언트 — 증가 처리 (보완점 반영)
 
-### 기술 참고 (검토 반영)
-- **행 제한 주의**: Supabase 쿼리당 기본 1000행 제한. 현재 글 58개로 무관하나, `listPostStubs`/`listReadPostIds` 는 명시적 정렬(`created_at`)을 두고, 향후 글이 1000개를 넘으면 범위/페이지네이션이 필요함을 주석으로 남김.
-- 읽음 기록은 글을 열 때마다 1행 upsert(중복 무시)로 쓰기 비용 최소화.
-- 카운트는 클라이언트에서 스텁 ∩ (읽지 않음) 으로 계산.
-- 분홍 점/뱃지는 Tailwind 핑크 계열 또는 `styles.css` 의미 토큰으로 처리.
-- 새 테이블·함수·쿼리 키만 추가해 기존 기능(캘린더/평가/좋아요/댓글)과 격리됨.
+상세 페이지(`_main.board.$slug.$postNo.tsx`)에서:
+
+- **이중 호출 가드**: `markPostRead`와 동일한 `useRef` 패턴. postId 기준으로 `useEffect` 내 1회만 호출 → React StrictMode 개발 모드 이중 렌더만 차단. **새로고침은 컴포넌트 재마운트라 가드가 리셋되므로 의도대로 +1** 됨.
+- **이중 카운트 방지(표시 동기화)**: "낙관적 +1"과 "캐시 invalidate 재조회"를 **동시에 쓰지 않음**. 둘 중 하나만 사용 → 증가 호출 성공 시 해당 글 쿼리(`post-by-no`/`post`)만 invalidate해 서버 값으로 다시 읽어옴(+1 화면 반영). 낙관적 업데이트는 사용하지 않아 +2 표시 버그 차단.
+- **크롤러 영향 없음**: 증가 호출은 클라이언트 `useEffect`에만 둠. OG 메타용 `loader`(SSR)에는 두지 않으므로 카카오/구글 크롤러는 조회수를 올리지 않음.
+
+## 5. 가이드 (`_main.guide.tsx`)
+
+- 조회수는 모든 게시판 유형에서 표시되며, 상세 페이지 진입(새로고침 포함)마다 1씩 증가함을 설명.
+- 모바일에서는 일반/고정 글 목록의 조회수가 숨겨진다는 점 명시.
+- 조회수는 읽음 표시(`post_reads`)·좋아요·댓글·평가와 **독립된 별개 지표**임을 안내.
+
+## 기술 참고 (검토 결론)
+
+- **기능 오작동**: 낮음 — StrictMode 가드 + 단일 동기화 방식 + 원자적 RPC로 정확.
+- **서버비**: 거의 없음 — 목록은 추가 쿼리 0건(같은 SELECT), 상세 진입당 쓰기 1회 + 글 1건 재조회 1회. 소규모 커뮤니티 규모에서 무시 가능.
+- **다른 기능 악영향**: 없음 — `viewCount`는 추가 필드일 뿐 기존 필드 유지(`listPosts`·`getPost`·`getPostByNo`·검색 모두 호환). 정렬은 `created_at` 그대로라 목록 순서 변화 없음. `posts` 행 누적이라 1000행 제한과 무관.
+- **적용 순서**: ① 마이그레이션 → ② 타입 재생성 → ③ 서버·클라이언트 코드.

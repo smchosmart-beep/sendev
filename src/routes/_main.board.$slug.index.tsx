@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers, CheckCircle2, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 
 import {
   postsQueryOptions,
@@ -136,6 +136,10 @@ function BoardInner({
                 <span className="min-w-0 line-clamp-2 text-sm font-medium text-foreground">{n.title}</span>
               </span>
               <span className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
+                <span className="hidden sm:flex items-center gap-1">
+                  <Eye className="h-3.5 w-3.5" />
+                  {n.viewCount}
+                </span>
                 {n.commentCount > 0 && (
                   <span className="flex items-center gap-1 text-primary">
                     <MessageCircle className="h-3.5 w-3.5" />
@@ -193,6 +197,10 @@ function BoardInner({
                     <span className="min-w-0 line-clamp-2 text-sm font-medium text-foreground">{g.title}</span>
                   </span>
                   <span className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
+                    <span className="hidden sm:flex items-center gap-1">
+                      <Eye className="h-3.5 w-3.5" />
+                      {g.viewCount}
+                    </span>
                     {g.commentCount > 0 && (
                       <span className="flex items-center gap-1 text-primary">
                         <MessageCircle className="h-3.5 w-3.5" />
@@ -482,10 +490,16 @@ function LinkCard({ post, slug }: { post: PostDTO; slug: string }) {
       </div>
       <div className="p-5">
         <h3 className="font-semibold text-foreground">{post.title}</h3>
-        <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-          <User className="h-3.5 w-3.5" />
-          {post.author}
-          <AuthorBadge author={post.author} profileMap={profileMap} />
+        <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <User className="h-3.5 w-3.5" />
+            {post.author}
+            <AuthorBadge author={post.author} profileMap={profileMap} />
+          </span>
+          <span className="flex items-center gap-1">
+            <Eye className="h-3.5 w-3.5" />
+            {post.viewCount}
+          </span>
         </p>
       </div>
     </Link>
@@ -543,10 +557,16 @@ function ProjectCard({
 
       <div className="p-5">
         <h3 className="font-semibold text-foreground">{post.title}</h3>
-        <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-          <User className="h-3.5 w-3.5" />
-          {post.author}
-          <AuthorBadge author={post.author} profileMap={profileMap} />
+        <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <User className="h-3.5 w-3.5" />
+            {post.author}
+            <AuthorBadge author={post.author} profileMap={profileMap} />
+          </span>
+          <span className="flex items-center gap-1">
+            <Eye className="h-3.5 w-3.5" />
+            {post.viewCount}
+          </span>
         </p>
       </div>
     </Link>
