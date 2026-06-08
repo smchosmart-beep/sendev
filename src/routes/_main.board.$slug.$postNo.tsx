@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type ImgHTMLAttributes } from "react";
 import {
   createFileRoute,
   Link,
@@ -354,6 +354,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw, [rehypeSanitize, POST_HTML_SCHEMA]]}
                 components={{
+                  img: ({ node, ...props }) => <BodyImage {...props} />,
                   a: ({ node, className, ...props }) => (
                     <a
                       {...props}
@@ -521,6 +522,43 @@ function FileCard({ href, name }: { href: string; name: string }) {
         <Download className="h-4 w-4" />
       </span>
     </button>
+  );
+}
+
+// Renders a post-body image that opens a full-screen lightbox on click.
+function BodyImage({
+  src,
+  alt,
+  ...props
+}: ImgHTMLAttributes<HTMLImageElement>) {
+  const [open, setOpen] = useState(false);
+  if (!src) return null;
+  return (
+    <>
+      <img
+        {...props}
+        src={src}
+        alt={alt ?? ""}
+        loading="lazy"
+        onClick={() => setOpen(true)}
+        className="cursor-zoom-in rounded-xl"
+      />
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent
+          className="flex max-h-[95vh] max-w-[95vw] items-center justify-center border-0 bg-transparent p-0 shadow-none sm:max-w-[95vw] [&>button]:text-white"
+        >
+          <DialogTitle className="sr-only">{alt || "이미지 확대"}</DialogTitle>
+          <DialogDescription className="sr-only">
+            전체화면으로 확대된 이미지입니다. 닫으려면 ESC를 누르거나 배경을 클릭하세요.
+          </DialogDescription>
+          <img
+            src={src}
+            alt={alt ?? ""}
+            className="max-h-[92vh] max-w-[92vw] w-auto rounded-lg object-contain"
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
