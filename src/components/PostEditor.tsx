@@ -12,6 +12,8 @@ import {
   Loader2,
   Palette,
   Type,
+  Paperclip,
+
 } from "lucide-react";
 import { toast } from "sonner";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
