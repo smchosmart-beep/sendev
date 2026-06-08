@@ -262,6 +262,27 @@ export type Database = {
         }
         Relationships: []
       }
+      post_reads: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          username_key: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          username_key: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          username_key?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           author: string
