@@ -19,6 +19,7 @@ import { eventsQueryOptions } from "@/lib/platform.queries";
 import { type EventDTO } from "@/lib/platform.functions";
 import { getHolidayName } from "@/lib/holidays";
 import { downloadFile } from "@/lib/download";
+import { getFileIcon } from "@/lib/file-icons";
 import { EmptyState } from "@/components/EmptyState";
 import { KakaoMap } from "@/components/KakaoMap";
 import { Button } from "@/components/ui/button";
