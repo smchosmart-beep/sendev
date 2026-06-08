@@ -230,6 +230,30 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
   const { data: post } = useSuspenseQuery(postByNoQueryOptions(slug, postNo, getBoardPassword(slug)));
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
 
+  // 닉네임이 등록된 경우, 상세 진입 시 글을 읽음으로 기록(기기 간 연동).
+  // useRef 가드로 StrictMode/리렌더 중복 호출 방지.
+  const { identity } = useStoredIdentity();
+  const queryClient = useQueryClient();
+  const markRead = useServerFn(markPostRead);
+  const markedRef = useRef<string | null>(null);
+  const readerName = (identity?.author ?? "").trim();
+  const currentPostId = post?.id ?? null;
+  useEffect(() => {
+    if (!currentPostId || readerName.length === 0) return;
+    if (markedRef.current === currentPostId) return;
+    markedRef.current = currentPostId;
+    markRead({ data: { author: readerName, postId: currentPostId } })
+      .then(() => {
+        queryClient.invalidateQueries({
+          queryKey: ["read-post-ids", readerName.toLowerCase()],
+        });
+        queryClient.invalidateQueries({ queryKey: ["post-stubs"] });
+      })
+      .catch(() => {
+        markedRef.current = null;
+      });
+  }, [currentPostId, readerName, markRead, queryClient]);
+
   if (!post) {
     return (
       <div className="space-y-6">
