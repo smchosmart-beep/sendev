@@ -1,15 +1,11 @@
-## 문제
-`PostEditor`의 폰트 크기 4단계 중 **작게(0.875rem = 14px)**와 **보통(null = 기본 1rem = 16px)** 차이가 너무 미미해 실제로 똑같아 보입니다.
+## 원인
+`post-files` 버킷은 생성됐지만 **RLS 정책이 하나도 없어서** 업로드(INSERT)가 전부 차단됩니다 (`new row violates row-level security policy`). 또한 용량 제한·MIME 화이트리스트도 설정돼 있지 않습니다. (이전 마이그레이션이 적용되지 않은 상태)
 
-## 변경
-`FONT_SIZES` 배열 값을 4단계가 눈에 띄게 구분되도록 조정합니다.
+## 변경 (DB 마이그레이션)
+`post-images` 버킷과 동일한 패턴으로 `post-files`에 정책을 추가합니다.
 
-| 단계 | 기존 | 변경 후 |
-|------|------|---------|
-| 작게 | 0.875rem | 0.75rem (12px) |
-| 보통 | null | 1rem (16px) |
-| 크게 | 1.25rem | 1.25rem (20px) — 그대로 |
-| 매우 크게 | 1.5rem | 1.5rem (24px) — 그대로 |
+1. **INSERT 정책** — `anon`, `authenticated` 가 `post-files` 버킷에 업로드 허용
+2. **SELECT 정책** — `anon`, `authenticated` 가 `post-files` 파일 읽기(서명 URL 생성) 허용
+3. **버킷 설정** — `file_size_limit = 3145728`(3MB), `allowed_mime_types`에 xlsx·hwp·pdf·오피스 문서·zip·텍스트·이미지 등 일반 첨부 형식 화이트리스트 지정
 
-- "보통"을 `null` 대신 명시적 `1rem`으로 지정해 에디터에서 기본값과 구분된 스타일 마크를 남깁니다.
-- 가이드 페이지의 글쓰기 안내 섹션에 "글자 크기는 작게·보통·크게·매우 크게 4단계" 문구를 추가합니다.
+이렇게 하면 xlsx를 포함한 일반 파일 첨부가 정상 동작합니다.
