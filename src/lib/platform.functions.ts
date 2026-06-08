@@ -1610,6 +1610,84 @@ export const listMyReviewedPostIds = createServerFn({ method: "GET" })
     return ids;
   });
 
+/* ------------------------------ Post reads (읽음 추적) ------------------------------ */
+
+export interface PostStub {
+  id: string;
+  categoryId: string;
+  type: string;
+}
+
+// 모든 게시글의 최소 정보(제목/본문 미포함, 비밀번호 무관)만 반환.
+// 카테고리 카드의 미열람 수 계산에 사용.
+// 주의: Supabase 쿼리당 기본 1000행 제한. 현재 글 수는 100개 미만이라 무관하나,
+// 글이 1000개를 넘으면 범위/페이지네이션 처리가 필요함.
+export const listPostStubs = createServerFn({ method: "GET" }).handler(
+  async (): Promise<PostStub[]> => {
+    const db = await getAdmin();
+    const { data: rows, error } = await db
+      .from("posts")
+      .select("id, category_id, type")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map((r: any) => ({
+      id: String(r.id),
+      categoryId: String(r.category_id),
+      type: String(r.type),
+    }));
+  },
+);
+
+// 특정 닉네임이 읽은 모든 게시글 id 목록.
+// 주의: 1000행 제한 — 한 사용자가 1000개 이상 읽으면 범위 처리가 필요함.
+export const listReadPostIds = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z.object({ author: z.string().trim().min(1).max(50) }).parse(input),
+  )
+  .handler(async ({ data }): Promise<string[]> => {
+    const usernameKey = normalizeUsername(data.author);
+    if (!usernameKey) return [];
+    const db = await getAdmin();
+    const { data: rows, error } = await db
+      .from("post_reads")
+      .select("post_id")
+      .eq("username_key", usernameKey)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    const ids: string[] = Array.from(
+      new Set((rows ?? []).map((r: any) => String(r.post_id))),
+    );
+    ids.sort();
+    return ids;
+  });
+
+// 글을 읽음으로 기록(닉네임 정규화 키 + post_id, 중복은 무시).
+// 검증 실패 시 조용히 무시 — 읽음은 비핵심 기능이라 에러로 흐름을 막지 않음.
+export const markPostRead = createServerFn({ method: "POST" })
+  .inputValidator((input) => {
+    const parsed = z
+      .object({
+        author: z.string().trim().min(1).max(50),
+        postId: z.string().uuid(),
+      })
+      .safeParse(input);
+    return parsed.success ? parsed.data : null;
+  })
+  .handler(async ({ data }): Promise<{ ok: boolean }> => {
+    if (!data) return { ok: false };
+    const usernameKey = normalizeUsername(data.author);
+    if (!usernameKey) return { ok: false };
+    const db = await getAdmin();
+    const { error } = await db
+      .from("post_reads")
+      .upsert(
+        { username_key: usernameKey, post_id: data.postId },
+        { onConflict: "username_key,post_id", ignoreDuplicates: true },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 /* ------------------------------ Comments ------------------------------ */
 
 export interface CommentDTO {
