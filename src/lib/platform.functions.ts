@@ -1690,7 +1690,21 @@ export const markPostRead = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/* ------------------------------ Comments ------------------------------ */
+// 게시글 조회수를 1 증가시킨다. 상세 페이지 진입 시마다 호출(새로고침 포함).
+// 조회수는 비핵심 지표이므로 입력 검증 실패 시 조용히 무시한다.
+export const incrementPostView = createServerFn({ method: "POST" })
+  .inputValidator((input) => {
+    const parsed = z.object({ postId: z.string().uuid() }).safeParse(input);
+    return parsed.success ? parsed.data : null;
+  })
+  .handler(async ({ data }): Promise<{ ok: boolean }> => {
+    if (!data) return { ok: false };
+    const db = await getAdmin();
+    const { error } = await db.rpc("increment_post_view", { p_id: data.postId });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 
 export interface CommentDTO {
   id: string;
