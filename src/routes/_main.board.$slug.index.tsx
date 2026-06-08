@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers, CheckCircle2, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 
 import {
   postsQueryOptions,
