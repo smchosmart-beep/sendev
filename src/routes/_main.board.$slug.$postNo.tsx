@@ -114,6 +114,18 @@ function safeExternalHref(url: string): string | null {
   }
 }
 
+// Strips markdown/HTML from post content and trims to a share-friendly excerpt.
+function toPlainExcerpt(content: string, max = 160): string {
+  const text = (content ?? "")
+    .replace(/<[^>]*>/g, " ") // HTML tags
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ") // images
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1") // links -> text
+    .replace(/[#>*_`~|-]/g, " ") // markdown symbols
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length > max ? `${text.slice(0, max).trim()}…` : text;
+}
+
 
 const TAB_LABELS: Record<TabGroup, string> = {
   hackathon: "해커톤",
