@@ -525,7 +525,7 @@ function FileCard({ href, name }: { href: string; name: string }) {
 }
 
 // Renders a post-body image that opens a full-screen lightbox on click.
-function LightboxImage({
+function BodyImage({
   src,
   alt,
   ...props
