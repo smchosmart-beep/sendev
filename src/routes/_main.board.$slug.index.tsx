@@ -106,6 +106,14 @@ function BoardInner({
   );
   const reviewedSet = useMemo(() => new Set(reviewedIds), [reviewedIds]);
 
+  // 읽지 않은 글에 분홍 점 표시 — 닉네임이 등록된 경우에만.
+  const { identity } = useStoredIdentity();
+  const readerName = identity?.author ?? "";
+  const { data: readIds = [] } = useQuery(readPostIdsQueryOptions(readerName));
+  const readSet = useMemo(() => new Set(readIds), [readIds]);
+  const hasReader = readerName.trim().length > 0;
+  const isUnread = (id: string) => hasReader && !readSet.has(id);
+
   return (
     <div className="space-y-6">
       {category.enablePost && notices.length > 0 && (
