@@ -318,6 +318,10 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
               hour12: true,
             })}
           </span>
+          <span className="flex items-center gap-1.5">
+            <Eye className="h-4 w-4" />
+            {post.viewCount.toLocaleString("ko-KR")}
+          </span>
           {!isLink && safeExternalHref(post.githubUrl) && (
             <a
               href={safeExternalHref(post.githubUrl)!}
