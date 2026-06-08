@@ -73,6 +73,7 @@ import { AuthorBadge } from "@/components/AuthorBadge";
 import { CommentImagePicker } from "@/components/CommentImagePicker";
 import { getEmbedUrl } from "@/lib/embed";
 import { downloadFile } from "@/lib/download";
+import { getFileIcon } from "@/lib/file-icons";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
