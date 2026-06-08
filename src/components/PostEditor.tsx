@@ -304,12 +304,18 @@ export function PostEditor({
       // underline leaked an unclosed <u> and spread to the rest of the post).
       StarterKit.configure({
         paragraph: false,
+        // Disable bundled bold/italic so we can serialize them as <strong>/<em>
+        // HTML tags (markdown `**`/`*` corrupts adjacent raw HTML like <u>).
+        bold: false,
+        italic: false,
         link: {
           openOnClick: false,
           autolink: true,
           HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
         },
       }),
+      BoldWithMarkdown,
+      ItalicWithMarkdown,
       ParagraphWithMarkdown,
       TextStyleWithMarkdown,
       Color,
