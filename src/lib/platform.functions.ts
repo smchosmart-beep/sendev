@@ -116,8 +116,7 @@ async function ensureNicknameOwnership(
     if (!nicknamePassword) {
       throw new Error("이미 사용 중인 닉네임입니다. 닉네임 비밀번호를 입력해주세요.");
     }
-    const incoming = await hashSecret(nicknamePassword);
-    if (incoming !== row.nickname_password) {
+    if (!(await verifySecret(nicknamePassword, row.nickname_password))) {
       throw new Error("닉네임 비밀번호가 맞지 않습니다.");
     }
     return;
@@ -998,8 +997,7 @@ async function checkPostPassword(
       .eq("username_key", key)
       .maybeSingle();
     if (prof?.nickname_password) {
-      const incoming = await hashSecret(password);
-      if (incoming === prof.nickname_password) return true;
+      if (await verifySecret(password, prof.nickname_password)) return true;
     }
   }
 
@@ -1837,8 +1835,7 @@ export const deleteComment = createServerFn({ method: "POST" })
           .eq("username_key", key)
           .maybeSingle();
         if (prof?.nickname_password) {
-          const incoming = await hashSecret(data.password);
-          if (incoming === prof.nickname_password) allowed = true;
+          if (await verifySecret(data.password, prof.nickname_password)) allowed = true;
         }
       }
       // Fallback: legacy plaintext per-comment password.
@@ -2584,7 +2581,7 @@ export const setRecoveryQuestion = createServerFn({ method: "POST" })
     if (!row || !row.nickname_password) {
       throw new Error("등록되지 않은 닉네임이거나 비밀번호가 설정되지 않았습니다.");
     }
-    if ((await hashSecret(data.password)) !== row.nickname_password) {
+    if (!(await verifySecret(data.password, row.nickname_password))) {
       throw new Error("비밀번호가 일치하지 않습니다.");
     }
     const hashedAnswer = await hashSecret(normalizeAnswer(data.answer));
@@ -2648,8 +2645,7 @@ export const recoverNicknamePassword = createServerFn({ method: "POST" })
         "이 닉네임에는 복구 질문이 설정되어 있지 않습니다. 관리자에게 초기화를 요청해주세요.",
       );
     }
-    const incoming = await hashSecret(normalizeAnswer(data.answer));
-    if (incoming !== row.recovery_answer) {
+    if (!(await verifySecret(normalizeAnswer(data.answer), row.recovery_answer))) {
       throw new Error("복구 답변이 일치하지 않습니다.");
     }
     const hashed = await hashSecret(data.newPassword.trim());
@@ -2961,8 +2957,7 @@ export const verifyNicknameLogin = createServerFn({ method: "POST" })
           "등록되지 않은 닉네임이거나 비밀번호가 설정되지 않았습니다. 글이나 댓글을 작성하면 닉네임이 등록됩니다.",
         );
       }
-      const incoming = await hashSecret(data.password);
-      if (incoming !== row.nickname_password) {
+      if (!(await verifySecret(data.password, row.nickname_password))) {
         throw new Error("비밀번호가 일치하지 않습니다.");
       }
       return { ok: true, username: row.username ?? data.username.trim() };
@@ -3079,7 +3074,7 @@ export const getMyDashboard = createServerFn({ method: "POST" })
     if (!prof || !prof.nickname_password) {
       throw new Error("등록되지 않은 닉네임이거나 비밀번호가 설정되지 않았습니다.");
     }
-    if ((await hashSecret(data.password)) !== prof.nickname_password) {
+    if (!(await verifySecret(data.password, prof.nickname_password))) {
       throw new Error("비밀번호가 일치하지 않습니다.");
     }
 
@@ -3319,7 +3314,7 @@ export const renameNickname = createServerFn({ method: "POST" })
     if (!prof || !prof.nickname_password) {
       throw new Error("등록되지 않은 닉네임이거나 비밀번호가 설정되지 않았습니다.");
     }
-    if ((await hashSecret(data.password)) !== prof.nickname_password) {
+    if (!(await verifySecret(data.password, prof.nickname_password))) {
       throw new Error("비밀번호가 일치하지 않습니다.");
     }
 
