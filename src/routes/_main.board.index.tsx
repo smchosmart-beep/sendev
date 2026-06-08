@@ -61,7 +61,187 @@ export const Route = createFileRoute("/_main/board/")({
   component: BoardListPage,
 });
 
-function BoardCard({ category }: { category: CategoryDTO }) {
+function UnreadBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span className="ml-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-pink-500 px-1.5 text-xs font-bold leading-none text-white">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
+function BoardCard({
+  category,
+  unread = 0,
+}: {
+  category: CategoryDTO;
+  unread?: number;
+}) {
+  return (
+    <Link
+      to="/board/$slug"
+      params={{ slug: category.slug }}
+      className="group flex flex-col justify-between rounded-2xl bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md active:scale-95"
+    >
+      <div>
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+          {category.name}
+          {category.hasPassword && <Lock className="h-4 w-4 text-muted-foreground" />}
+          <UnreadBadge count={unread} />
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {category.description || "설명이 없습니다."}
+        </p>
+      </div>
+      <div className="mt-6 flex items-center justify-between text-sm font-medium text-primary">
+        <span>{category.hasPassword ? "비밀번호 입장" : "바로 입장"}</span>
+        <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+      </div>
+    </Link>
+  );
+}
+
+function FolderNode({
+  group,
+  childrenOf,
+  depth,
+  unreadMap,
+}: {
+  group: CategoryDTO;
+  childrenOf: (parentId: string) => CategoryDTO[];
+  depth: number;
+  unreadMap: Record<string, number>;
+}) {
+  const [open, setOpen] = useState(true);
+  const children = childrenOf(group.id);
+
+  return (
+    <div className="rounded-2xl bg-card/60 shadow-sm">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-2 rounded-2xl p-4 text-left transition-colors hover:bg-accent/50 active:scale-[0.99]"
+      >
+        <ChevronRight
+          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${open ? "rotate-90" : ""}`}
+        />
+        {open ? (
+          <FolderOpen className="h-5 w-5 shrink-0 text-primary" />
+        ) : (
+          <Folder className="h-5 w-5 shrink-0 text-primary" />
+        )}
+        <span className="flex-1 min-w-0">
+          <span className="block truncate text-base font-semibold text-foreground">
+            {group.name}
+          </span>
+          {group.description && (
+            <span className="block truncate text-xs text-muted-foreground">
+              {group.description}
+            </span>
+          )}
+        </span>
+        <span className="shrink-0 text-xs text-muted-foreground">{children.length}</span>
+      </button>
+
+      {open && children.length > 0 && (
+        <div className="space-y-3 px-3 pb-3 pl-6 sm:pl-9">
+          {children.map((child) =>
+            child.isGroup ? (
+              <FolderNode
+                key={child.id}
+                group={child}
+                childrenOf={childrenOf}
+                depth={depth + 1}
+                unreadMap={unreadMap}
+              />
+            ) : (
+              <BoardCard key={child.id} category={child} unread={unreadMap[child.id] ?? 0} />
+            ),
+          )}
+        </div>
+      )}
+
+      {open && children.length === 0 && (
+        <p className="px-6 pb-4 pl-12 text-sm text-muted-foreground sm:pl-14">
+          아직 하위 게시판이 없어요.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function BoardListPage() {
+  const { tab } = Route.useSearch();
+  const activeTab = normalizeTab(tab);
+  const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
+  const visible = categories.filter((c) => (c.tabGroup ?? "hackathon") === activeTab);
+
+  // 닉네임이 등록된 경우에만 미열람 수를 계산/표시한다.
+  const { identity } = useStoredIdentity();
+  const author = identity?.author ?? "";
+  const { data: stubs = [] } = useQuery({
+    ...postStubsQueryOptions(),
+    enabled: author.trim().length > 0,
+  });
+  const { data: readIds = [] } = useQuery(readPostIdsQueryOptions(author));
+
+  const unreadMap = useMemo(() => {
+    if (author.trim().length === 0) return {} as Record<string, number>;
+    const readSet = new Set(readIds);
+    const map: Record<string, number> = {};
+    for (const s of stubs) {
+      // 일반 글(type === "post")만 카운트.
+      if (s.type !== "post") continue;
+      if (readSet.has(s.id)) continue;
+      map[s.categoryId] = (map[s.categoryId] ?? 0) + 1;
+    }
+    return map;
+  }, [author, stubs, readIds]);
+
+  const visibleIds = new Set(visible.map((c) => c.id));
+  // Roots: items without a parent, or whose parent is not in this tab.
+  const roots = visible.filter(
+    (c) => !c.parentId || !visibleIds.has(c.parentId),
+  );
+  const childrenOf = (parentId: string) =>
+    visible.filter((c) => c.parentId === parentId);
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold text-foreground">{TAB_LABELS[activeTab]}</h1>
+        <p className="text-sm text-muted-foreground">{TAB_DESCRIPTIONS[activeTab]}</p>
+      </div>
+
+      {visible.length === 0 ? (
+        <EmptyState
+          icon={LayoutGrid}
+          title="아직 등록된 카테고리이 없어요."
+          description="관리자 페이지에서 이 탭에 카테고리을 추가해보세요!"
+        />
+      ) : (
+        <div className="space-y-4">
+          {/* Folders first (full width), then standalone boards in a grid. */}
+          {roots
+            .filter((c) => c.isGroup)
+            .map((group) => (
+              <FolderNode key={group.id} group={group} childrenOf={childrenOf} depth={0} unreadMap={unreadMap} />
+            ))}
+
+          {roots.some((c) => !c.isGroup) && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {roots
+                .filter((c) => !c.isGroup)
+                .map((c) => (
+                  <BoardCard key={c.id} category={c} unread={unreadMap[c.id] ?? 0} />
+                ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
   return (
     <Link
       to="/board/$slug"
