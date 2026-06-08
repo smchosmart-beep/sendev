@@ -254,6 +254,27 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
       });
   }, [currentPostId, readerName, markRead, queryClient]);
 
+  // 조회수 증가: 상세 진입(새로고침 포함)마다 +1. useRef 가드는 StrictMode
+  // 이중 렌더만 차단하며, 새로고침은 재마운트라 가드가 리셋되어 정상 집계된다.
+  // 표시는 낙관적 업데이트 없이 해당 글 쿼리만 invalidate해 서버 값으로 동기화.
+  const incrementView = useServerFn(incrementPostView);
+  const viewedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!currentPostId) return;
+    if (viewedRef.current === currentPostId) return;
+    viewedRef.current = currentPostId;
+    incrementView({ data: { postId: currentPostId } })
+      .then(() => {
+        queryClient.invalidateQueries({
+          queryKey: ["post-by-no", slug, postNo],
+        });
+        queryClient.invalidateQueries({ queryKey: ["post", currentPostId] });
+      })
+      .catch(() => {
+        viewedRef.current = null;
+      });
+  }, [currentPostId, incrementView, queryClient, slug, postNo]);
+
   if (!post) {
     return (
       <div className="space-y-6">
