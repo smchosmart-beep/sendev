@@ -30,6 +30,7 @@ import {
   Trash2,
   Share2,
   MessageCircle,
+  Eye,
   CornerDownRight,
   Maximize,
   Minimize,
