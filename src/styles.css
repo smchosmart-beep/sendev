@@ -220,6 +220,16 @@
     border-radius: 0.5rem;
     margin: 0.5rem 0;
   }
+  /* 색을 입힌 span 안의 굵게/기울임/코드/링크가 글자색을 상속하도록.
+     prose의 prose-strong 등 규칙이 검은색을 강제해 색이 덮이는 문제 해결. */
+  .tiptap-editor span[style*="color"] strong,
+  .tiptap-editor span[style*="color"] em,
+  .tiptap-editor span[style*="color"] code,
+  .post-content span[style*="color"] strong,
+  .post-content span[style*="color"] em,
+  .post-content span[style*="color"] code {
+    color: inherit;
+  }
   .tiptap-editor p.is-editor-empty:first-child::before {
     content: attr(data-placeholder);
     color: var(--color-muted-foreground);
