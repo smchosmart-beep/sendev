@@ -54,6 +54,7 @@ import {
   commentsQueryOptions,
   profileMapQueryOptions,
   linkPreviewQueryOptions,
+  readPostIdsQueryOptions,
 } from "@/lib/platform.queries";
 import { stableEvalOrder, getOrderSeed } from "@/lib/series";
 import {
@@ -64,6 +65,7 @@ import {
   createComment,
   deleteComment,
   verifyPostPassword,
+  markPostRead,
   type PostDTO,
   type CommentDTO,
   type TabGroup,
