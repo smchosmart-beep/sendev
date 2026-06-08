@@ -72,6 +72,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { AuthorBadge } from "@/components/AuthorBadge";
 import { CommentImagePicker } from "@/components/CommentImagePicker";
 import { getEmbedUrl } from "@/lib/embed";
+import { downloadFile } from "@/lib/download";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -449,11 +450,10 @@ function FileCard({ href, name }: { href: string; name: string }) {
   const fileName = name || "첨부파일";
   const ext = (fileName.match(/\.([a-zA-Z0-9]{1,10})$/)?.[1] ?? "FILE").toUpperCase();
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="my-4 flex items-center gap-4 rounded-2xl border border-border bg-card p-4 no-underline shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+    <button
+      type="button"
+      onClick={() => downloadFile(href, fileName)}
+      className="my-4 flex w-full items-center gap-4 rounded-2xl border border-border bg-card p-4 text-left no-underline shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
     >
       <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
         <FileText className="h-6 w-6" />
@@ -465,7 +465,7 @@ function FileCard({ href, name }: { href: string; name: string }) {
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
         <Download className="h-4 w-4" />
       </span>
-    </a>
+    </button>
   );
 }
 
