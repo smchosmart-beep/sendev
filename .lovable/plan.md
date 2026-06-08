@@ -1,28 +1,21 @@
 ## 목표
-글 에디터에서 선택한 글자색이 글 등록/수정 후 상세 페이지에서도 그대로 보이도록 수정합니다. 기존 글자크기 기능은 유지하고, 빈 줄 보존 수정도 깨지지 않게 유지합니다.
+게시글 작성 에디터 툴바에 밑줄(underline) 서식 버튼을 추가한다.
 
-## 확인된 원인 후보
-- 상세 페이지는 `<span style="...">`를 허용하도록 되어 있지만, `react-markdown`/`rehype-sanitize` 조합에서 `style` 속성이 실제 렌더링 시 제거되거나 무력화될 수 있습니다.
-- 에디터 저장 단계도 현재 `TextStyle` 마크를 `<span style="color: ...">`로 직렬화하려고 하지만, 라이브러리 동작상 저장 문자열에 색상 HTML이 안정적으로 들어가지 않을 가능성이 있습니다.
+## 배경
+현재 에디터에는 굵게(Bold), 기울임(Italic), 제목, 목록, 링크, 이미지, 인용, 글자색, 글자크기 버튼이 있지만 밑줄 버튼은 없다.
 
-## 구현 계획
-1. **저장 형식 안정화**
-   - `src/components/PostEditor.tsx`에서 색상/글자크기 직렬화를 다시 보강합니다.
-   - 글자색은 저장 문자열에 확실히 남도록 `<span style="color: ...">` 또는 안전하게 처리 가능한 HTML 속성 형태로 변환합니다.
-   - 글자크기는 기존처럼 반영되던 동작을 유지합니다.
+## 작업 내용
 
-2. **상세 페이지 렌더링 보강**
-   - `src/routes/_main.board.$slug.$postNo.tsx`의 본문 렌더링에서 `span` 컴포넌트를 명시적으로 처리합니다.
-   - 저장된 색상 정보가 있으면 React `style.color`로 직접 적용되게 하여, CSS 클래스(`prose-p:text-foreground`) 때문에 검은색으로 덮이지 않게 합니다.
-   - 허용할 스타일은 `color`, `font-size`처럼 에디터가 생성하는 값만 제한적으로 처리해 보안 위험을 줄입니다.
+1. **의존성 설치**
+   - TipTap underline 확장이 필요: `@tiptap/extension-underline`를 설치한다.
 
-3. **수정 모달까지 동일 적용 확인**
-   - 새 글 등록뿐 아니라 기존 글 수정 시에도 같은 `PostEditor`를 쓰므로, 색상 저장이 동일하게 유지되는지 확인합니다.
+2. **PostEditor.tsx 수정**
+   - `Underline`을 `@tiptap/extension-underline`에서 import한다.
+   - `lucide-react`의 `Underline` 아이콘을 import한다.
+   - `useEditor`의 `extensions` 배열에 `Underline`을 추가한다.
+   - 툴바에 "밑줄" 버튼을 추가한다. Bold/Italic 버튼 사이에 배치하며, `editor?.isActive('underline')`로 활성 상태를 표시하고 `toggleUnderline()` 명령을 실행한다.
 
-4. **가이드 업데이트 여부**
-   - 이번 변경은 버그 수정이므로 `/guide`의 사용법 설명 변경은 하지 않습니다.
-
-## 검증 기준
-- 에디터에서 빨강/파랑 등 색을 지정하고 등록하면 상세 페이지에서도 같은 색으로 표시됩니다.
-- 수정 모드로 다시 열어도 색상 정보가 사라지지 않습니다.
-- 글자크기와 빈 줄 보존 기능은 기존처럼 동작합니다.
+3. **저장 및 렌더링 호환성 확인**
+   - tiptap-markdown(`html: true`) 설정으로 인해 `<u>` 태그가 markdown에 그대로 저장된다.
+   - 게시글 상세 페이지(`_main.board.$slug.$postNo.tsx`)의 `react-markdown` + `rehype-sanitize` 조합이 `<u>` 태그를 허용하는지 확인한다. 필요 시 sanitize 설정에 `u` 태그를 추가한다.
+   - `styles.css`에 `post-content u` 및 `tiptap-editor u` 스타일이 필요한 경우 추가한다(기본적으로 브라우저가 underline을 렌더링하므로 대부분 불필요).
