@@ -643,7 +643,7 @@ export const uploadEventFile = createServerFn({ method: "POST" })
       .object({
         name: z.string().trim().min(1).max(255),
         contentType: z.string().trim().max(200).default("application/octet-stream"),
-        dataBase64: z.string().min(1).max(15_000_000),
+        dataBase64: z.string().min(1).max(4_500_000),
         adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
