@@ -18,6 +18,7 @@ import {
 import { eventsQueryOptions } from "@/lib/platform.queries";
 import { type EventDTO } from "@/lib/platform.functions";
 import { getHolidayName } from "@/lib/holidays";
+import { downloadFile } from "@/lib/download";
 import { EmptyState } from "@/components/EmptyState";
 import { KakaoMap } from "@/components/KakaoMap";
 import { Button } from "@/components/ui/button";
@@ -494,16 +495,15 @@ function CalendarPage() {
                 <div className="space-y-1">
                   <p className="text-xs font-semibold text-muted-foreground">첨부 파일</p>
                   {selected.attachments.map((a, i) => (
-                    <a
+                    <button
                       key={i}
-                      href={a.url.includes("download=") ? a.url : `${a.url}${a.url.includes("?") ? "&" : "?"}download=${encodeURIComponent(a.name)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex w-full min-w-0 items-center gap-2 rounded-lg bg-muted px-3 py-2 text-foreground transition-colors hover:bg-accent"
+                      type="button"
+                      onClick={() => downloadFile(a.url, a.name)}
+                      className="flex w-full min-w-0 items-center gap-2 rounded-lg bg-muted px-3 py-2 text-left text-foreground transition-colors hover:bg-accent"
                     >
                       <Download className="h-4 w-4 shrink-0 text-primary" />
                       <span className="min-w-0 flex-1 truncate">{a.name}</span>
-                    </a>
+                    </button>
                   ))}
                 </div>
               )}
