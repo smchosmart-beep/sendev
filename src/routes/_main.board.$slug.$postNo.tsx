@@ -449,6 +449,7 @@ function isPostFileHref(href: string): boolean {
 function FileCard({ href, name }: { href: string; name: string }) {
   const fileName = name || "첨부파일";
   const ext = (fileName.match(/\.([a-zA-Z0-9]{1,10})$/)?.[1] ?? "FILE").toUpperCase();
+  const FileIcon = getFileIcon(fileName);
   return (
     <button
       type="button"
@@ -456,7 +457,7 @@ function FileCard({ href, name }: { href: string; name: string }) {
       className="my-4 flex w-full items-center gap-4 rounded-2xl border border-border bg-card p-4 text-left no-underline shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
     >
       <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
-        <FileText className="h-6 w-6" />
+        <FileIcon className="h-6 w-6" />
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate font-semibold text-foreground">{fileName}</span>
