@@ -1,21 +1,18 @@
-## 목표
-게시글 작성 에디터 툴바에 밑줄(underline) 서식 버튼을 추가한다.
+## 수정 계획
 
-## 배경
-현재 에디터에는 굵게(Bold), 기울임(Italic), 제목, 목록, 링크, 이미지, 인용, 글자색, 글자크기 버튼이 있지만 밑줄 버튼은 없다.
+1. **밑줄 저장 형식 교정**
+   - 현재 밑줄이 HTML/마크다운 변환 과정에서 잘못 직렬화되어 `</u>`가 본문에 노출되고, 이후 내용 전체에 밑줄이 전파되는 문제가 생깁니다.
+   - `PostEditor`에서 밑줄 전용 마크를 안전하게 확장해 저장 시 선택한 구간만 `<u>...</u>`로 감싸지도록 고정하겠습니다.
 
-## 작업 내용
+2. **글자색 저장/표시 방식 보강**
+   - 글자색은 `<span style="color: ...">...</span>` 형태로 저장되지만 게시글 렌더링의 sanitize/schema·마크다운 변환 과정에서 style 적용이 누락될 수 있습니다.
+   - 게시글 렌더러에서 허용할 `style` 속성을 명확히 유지하고, `span` 컴포넌트에서 안전한 `color`/`font-size`만 React style 객체로 직접 변환해 표시되도록 하겠습니다.
 
-1. **의존성 설치**
-   - TipTap underline 확장이 필요: `@tiptap/extension-underline`를 설치한다.
+3. **기존 깨진 표시 완화**
+   - 이미 저장된 글에 노출된 `</u>` 같은 잔여 태그 텍스트가 화면에 그대로 보이지 않도록 렌더링 직전에 정리하는 방어 로직을 추가하겠습니다.
 
-2. **PostEditor.tsx 수정**
-   - `Underline`을 `@tiptap/extension-underline`에서 import한다.
-   - `lucide-react`의 `Underline` 아이콘을 import한다.
-   - `useEditor`의 `extensions` 배열에 `Underline`을 추가한다.
-   - 툴바에 "밑줄" 버튼을 추가한다. Bold/Italic 버튼 사이에 배치하며, `editor?.isActive('underline')`로 활성 상태를 표시하고 `toggleUnderline()` 명령을 실행한다.
+4. **가이드 업데이트**
+   - 프로젝트 규칙에 따라 `/guide`의 에디터 설명도 현재 동작 기준으로 간단히 보강하겠습니다.
 
-3. **저장 및 렌더링 호환성 확인**
-   - tiptap-markdown(`html: true`) 설정으로 인해 `<u>` 태그가 markdown에 그대로 저장된다.
-   - 게시글 상세 페이지(`_main.board.$slug.$postNo.tsx`)의 `react-markdown` + `rehype-sanitize` 조합이 `<u>` 태그를 허용하는지 확인한다. 필요 시 sanitize 설정에 `u` 태그를 추가한다.
-   - `styles.css`에 `post-content u` 및 `tiptap-editor u` 스타일이 필요한 경우 추가한다(기본적으로 브라우저가 underline을 렌더링하므로 대부분 불필요).
+5. **확인**
+   - 부분 밑줄, 밑줄 해제 후 이어쓰기, 글자색 적용 후 게시글 보기까지 확인해 문제가 사라졌는지 검증하겠습니다.
