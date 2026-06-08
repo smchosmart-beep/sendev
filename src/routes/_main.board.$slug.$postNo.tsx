@@ -310,6 +310,9 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
                   p: ({ node, children, ...props }) => {
                     const href = soleLinkHref(node);
                     if (href) {
+                      if (isPostFileHref(href)) {
+                        return <FileCard href={href} name={soleLinkText(node)} />;
+                      }
                       const embedUrl = getEmbedUrl(href);
                       if (embedUrl) {
                         return <EmbeddedFrame embedUrl={embedUrl} href={href} />;
