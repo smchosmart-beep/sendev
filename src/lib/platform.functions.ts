@@ -395,6 +395,7 @@ export const createCategory = createServerFn({ method: "POST" })
       project_name: data.projectName || "산출물",
       link_name: data.linkName || "링크",
       tab_group: data.tabGroup,
+      hidden: data.hidden,
       sort_order: nextOrder,
     });
     if (error) throw new Error(error.message);
