@@ -461,7 +461,7 @@ function GuidePage() {
         </p>
         <p className="mt-3">
           관리자가 <strong>목록에서 숨기기</strong>를 켠 폴더·게시판은 목록에서 사라지지 않고
-          <strong>회색 비활성 상태로 표시</strong>되며, 클릭해서 들어갈 수 없습니다(직접 링크로는 접근 가능).
+          <strong>회색 비활성 상태로 표시</strong>되며, 클릭해서 들어갈 수 없습니다 (직접 링크로는 접근 가능).
         </p>
         <ul className="ml-5 list-disc space-y-2">
           <li><strong>폴더(그룹)</strong>: 게시판들을 묶어두는 상자입니다. 폴더에는 글을 쓰지 않습니다.</li>
