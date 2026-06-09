@@ -4,6 +4,7 @@ import {
   listCategories,
   listEvents,
   listPosts,
+  listPostNav,
   getPost,
   getPostByNo,
   listPostChain,
@@ -118,6 +119,14 @@ export const postByNoQueryOptions = (
     queryKey: ["post-by-no", slug, postNo, boardPassword],
     queryFn: () => getPostByNo({ data: { slug, postNo, boardPassword } }),
   });
+
+// Lightweight list of a board's posts for prev/next navigation.
+export const postNavQueryOptions = (slug: string, boardPassword = "") =>
+  queryOptions({
+    queryKey: ["post-nav", slug, boardPassword],
+    queryFn: () => listPostNav({ data: { slug, boardPassword } }),
+  });
+
 
 export const criteriaQueryOptions = (categoryId: string, activeOnly = false) =>
   queryOptions({

@@ -54,6 +54,7 @@ import {
   myReviewQueryOptions,
   myReviewedPostIdsQueryOptions,
   postsQueryOptions,
+  postNavQueryOptions,
   postChainQueryOptions,
   commentsQueryOptions,
   profileMapQueryOptions,
@@ -419,10 +420,80 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
 
       {isBoardPost && <SeriesChainSection post={post} slug={slug} />}
 
+      <PostNavSection post={post} slug={slug} />
+
       {isBoardPost && <CommentsSection postId={post.id} />}
     </div>
   );
 }
+
+// 같은 게시판의 같은 종류 글을 작성 순서대로 넘겨보는 이전글/다음글 네비게이션.
+// 목록 정렬(최신순)과 동일하게 동작하며, 게시글은 공지(pinned)/일반 그룹을
+// 분리해 현재 글이 속한 그룹 안에서만 이동한다.
+function PostNavSection({ post, slug }: { post: PostDTO; slug: string }) {
+  const { data: navItems } = useQuery(
+    postNavQueryOptions(slug, getBoardPassword(slug)),
+  );
+
+  if (!navItems || navItems.length < 2) return null;
+
+  // 현재 글과 같은 종류만, 게시글이면 같은 pinned 그룹만 추린다(목록과 동일).
+  const group = navItems.filter((item) => {
+    if (item.type !== post.type) return false;
+    if (post.type === "post") return item.pinned === post.pinned;
+    return true;
+  });
+
+  const idx = group.findIndex((item) => item.id === post.id);
+  if (idx === -1) return null;
+
+  // created_at desc 정렬 → 인덱스가 클수록 더 오래된 글.
+  const newer = idx > 0 ? group[idx - 1] : null; // 다음글(더 최신)
+  const older = idx < group.length - 1 ? group[idx + 1] : null; // 이전글(더 오래됨)
+
+  if (!newer && !older) return null;
+
+  return (
+    <nav className="flex items-stretch gap-3" aria-label="이전글 다음글">
+      {older ? (
+        <Button
+          asChild
+          variant="secondary"
+          className="h-auto flex-1 justify-start rounded-2xl px-4 py-3 text-left active:scale-[0.98]"
+        >
+          <Link to="/board/$slug/$postNo" params={{ slug, postNo: String(older.postNo) }}>
+            <ArrowLeft className="h-4 w-4 shrink-0" />
+            <span className="flex min-w-0 flex-col">
+              <span className="text-xs text-muted-foreground">이전글</span>
+              <span className="truncate text-sm font-medium">{older.title}</span>
+            </span>
+          </Link>
+        </Button>
+      ) : (
+        <span className="flex-1" />
+      )}
+      {newer ? (
+        <Button
+          asChild
+          variant="secondary"
+          className="h-auto flex-1 justify-end rounded-2xl px-4 py-3 text-right active:scale-[0.98]"
+        >
+          <Link to="/board/$slug/$postNo" params={{ slug, postNo: String(newer.postNo) }}>
+            <span className="flex min-w-0 flex-col items-end">
+              <span className="text-xs text-muted-foreground">다음글</span>
+              <span className="truncate text-sm font-medium">{newer.title}</span>
+            </span>
+            <ArrowRight className="h-4 w-4 shrink-0" />
+          </Link>
+        </Button>
+      ) : (
+        <span className="flex-1" />
+      )}
+    </nav>
+  );
+}
+
+
 
 // 답글로 이어지는 연재(체인)를 글 상세 하단에 표시한다. 같은 연재의 모든 편을
 // 작성순으로 보여주고, 현재 편을 강조하며 이전/다음 편으로 이동할 수 있다.

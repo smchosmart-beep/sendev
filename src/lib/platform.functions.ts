@@ -845,6 +845,54 @@ export const getPostByNo = createServerFn({ method: "GET" })
     return row ? mapPost(row) : null;
   });
 
+// Lightweight item for prev/next navigation within a board (no body/comments).
+export interface PostNavItemDTO {
+  id: string;
+  postNo: number;
+  type: string;
+  pinned: boolean;
+  title: string;
+}
+
+// Returns a lightweight list of a board's posts (only the columns needed for
+// prev/next navigation). Excludes body content and comment aggregation to keep
+// the payload and query cost minimal compared to listPosts.
+export const listPostNav = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z
+      .object({
+        slug: z.string().min(1).max(31),
+        boardPassword: z.string().max(100).optional(),
+        adminPassword: z.string().max(200).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<PostNavItemDTO[]> => {
+    const db = await getAdmin();
+    const { data: cat } = await db
+      .from("categories")
+      .select("id")
+      .eq("slug", data.slug)
+      .maybeSingle();
+    if (!cat) return [];
+    if (!(await boardAccessOk(db, cat.id, data.boardPassword, data.adminPassword))) {
+      return [];
+    }
+    const { data: rows, error } = await db
+      .from("posts")
+      .select("id, post_no, type, pinned, title, created_at")
+      .eq("category_id", cat.id)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map((p: any) => ({
+      id: p.id,
+      postNo: p.post_no ?? 0,
+      type: p.type,
+      pinned: !!p.pinned,
+      title: p.title,
+    }));
+  });
+
 // A single episode within a reply-chain series (lightweight stub for listing).
 export interface PostChainItemDTO {
   id: string;
