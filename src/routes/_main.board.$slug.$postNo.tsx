@@ -835,9 +835,9 @@ function LinkPreviewCard({ href }: { href: string }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="my-4 flex flex-col overflow-hidden rounded-2xl border border-border bg-card no-underline shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:flex-row"
+      className="my-4 flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 no-underline shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center"
     >
-      <span className="flex aspect-video w-full shrink-0 items-center justify-center overflow-hidden bg-accent text-primary sm:w-64">
+      <span className="flex aspect-video w-full shrink-0 items-center justify-center overflow-hidden rounded-xl bg-accent text-primary sm:w-56">
         {image ? (
           <img
             src={image}
@@ -851,7 +851,7 @@ function LinkPreviewCard({ href }: { href: string }) {
           <ExternalLink className="h-8 w-8" />
         )}
       </span>
-      <span className="flex min-w-0 flex-1 flex-col justify-center gap-1 p-4">
+      <span className="flex min-w-0 flex-1 flex-col justify-center gap-1 px-1 pb-1 sm:px-2">
         <span className="line-clamp-2 font-semibold text-foreground">
           {isLoading ? "미리보기 불러오는 중…" : title}
         </span>
