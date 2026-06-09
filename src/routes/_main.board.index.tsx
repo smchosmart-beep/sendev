@@ -237,6 +237,7 @@ function BoardListPage() {
   const activeTab = normalizeTab(tab);
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
   // 숨김 처리: 직접 hidden이거나, 조상 폴더 중 하나라도 hidden이면 목록에서 제외.
+  // 숨김 처리: 직접 hidden이거나, 조상 폴더 중 하나라도 hidden이면 비활성으로 표시(제거하지 않음).
   const byId = new Map(categories.map((c) => [c.id, c] as const));
   const isHiddenByChain = (c: CategoryDTO): boolean => {
     let node: CategoryDTO | undefined = c;
@@ -249,7 +250,7 @@ function BoardListPage() {
     return false;
   };
   const visible = categories.filter(
-    (c) => (c.tabGroup ?? "hackathon") === activeTab && !isHiddenByChain(c),
+    (c) => (c.tabGroup ?? "hackathon") === activeTab,
   );
 
   // 닉네임이 등록된 경우에만 미열람 수를 계산/표시한다.
