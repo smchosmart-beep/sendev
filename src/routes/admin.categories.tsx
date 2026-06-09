@@ -189,6 +189,7 @@ function CategoriesPage() {
       setLinkName("링크");
       setTabGroup("hackathon");
       setIsGroup(false);
+      setHidden(false);
       setParentId("");
 
       toast.success("새 카테고리이 추가되었어요.");
