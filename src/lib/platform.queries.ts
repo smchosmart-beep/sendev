@@ -7,6 +7,7 @@ import {
   getPost,
   getPostByNo,
   listPostChain,
+  resolveCanvaLink,
   searchPosts,
   listCriteria,
   listReviews,
