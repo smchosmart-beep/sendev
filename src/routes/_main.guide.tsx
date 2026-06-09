@@ -82,7 +82,182 @@ function Section({
   );
 }
 
+const HIGHLIGHT_SUPPORTED =
+  typeof CSS !== "undefined" &&
+  typeof Highlight !== "undefined" &&
+  !!(CSS as unknown as { highlights?: unknown }).highlights;
+
+// In-page search for the guide. Uses the CSS Custom Highlight API so the DOM
+// structure React owns is never mutated (no removeChild / hydration conflicts).
+function useGuideSearch(containerRef: React.RefObject<HTMLDivElement | null>) {
+  const [query, setQuery] = useState("");
+  const [matchCount, setMatchCount] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const rangesRef = useRef<Range[]>([]);
+
+  const clearHighlights = useCallback(() => {
+    if (!HIGHLIGHT_SUPPORTED) return;
+    const highlights = (CSS as unknown as { highlights: Map<string, unknown> }).highlights;
+    highlights.delete("guide-search");
+    highlights.delete("guide-search-active");
+  }, []);
+
+  // Build ranges for the current query.
+  useEffect(() => {
+    if (!HIGHLIGHT_SUPPORTED) return;
+    const container = containerRef.current;
+    const term = query.trim().toLowerCase();
+    rangesRef.current = [];
+
+    if (!container || term.length === 0) {
+      clearHighlights();
+      setMatchCount(0);
+      setActiveIndex(0);
+      return;
+    }
+
+    const ranges: Range[] = [];
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    while (node) {
+      const text = node.textContent ?? "";
+      const lower = text.toLowerCase();
+      let from = 0;
+      let idx = lower.indexOf(term, from);
+      while (idx !== -1) {
+        const range = document.createRange();
+        range.setStart(node, idx);
+        range.setEnd(node, idx + term.length);
+        ranges.push(range);
+        from = idx + term.length;
+        idx = lower.indexOf(term, from);
+      }
+      node = walker.nextNode();
+    }
+
+    rangesRef.current = ranges;
+    setMatchCount(ranges.length);
+    setActiveIndex(ranges.length > 0 ? 0 : 0);
+
+    const highlights = (CSS as unknown as { highlights: Map<string, unknown> }).highlights;
+    if (ranges.length > 0) {
+      highlights.set("guide-search", new Highlight(...ranges));
+    } else {
+      highlights.delete("guide-search");
+      highlights.delete("guide-search-active");
+    }
+  }, [query, containerRef, clearHighlights]);
+
+  // Apply the active highlight + scroll into view whenever active index changes.
+  useEffect(() => {
+    if (!HIGHLIGHT_SUPPORTED) return;
+    const ranges = rangesRef.current;
+    const highlights = (CSS as unknown as { highlights: Map<string, unknown> }).highlights;
+    if (ranges.length === 0) {
+      highlights.delete("guide-search-active");
+      return;
+    }
+    const active = ranges[activeIndex];
+    if (!active) return;
+    highlights.set("guide-search-active", new Highlight(active));
+    const el =
+      active.startContainer.parentElement ?? (active.startContainer as HTMLElement);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [activeIndex, matchCount]);
+
+  // Clean up on unmount.
+  useEffect(() => clearHighlights, [clearHighlights]);
+
+  const goNext = useCallback(() => {
+    setActiveIndex((i) => (matchCount === 0 ? 0 : (i + 1) % matchCount));
+  }, [matchCount]);
+
+  const goPrev = useCallback(() => {
+    setActiveIndex((i) => (matchCount === 0 ? 0 : (i - 1 + matchCount) % matchCount));
+  }, [matchCount]);
+
+  return {
+    query,
+    setQuery,
+    matchCount,
+    activeIndex,
+    goNext,
+    goPrev,
+    supported: HIGHLIGHT_SUPPORTED,
+  };
+}
+
+function GuideSearch({
+  containerRef,
+}: {
+  containerRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const { query, setQuery, matchCount, activeIndex, goNext, goPrev, supported } =
+    useGuideSearch(containerRef);
+
+  if (!supported) return null;
+
+  return (
+    <div className="sticky top-2 z-20 rounded-2xl border border-border bg-card/95 p-2 shadow-sm backdrop-blur">
+      <div className="flex items-center gap-2">
+        <div className="flex flex-1 items-center gap-2 rounded-xl border border-border bg-background px-3">
+          <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (e.shiftKey) goPrev();
+                else goNext();
+              }
+            }}
+            placeholder="가이드 내용 검색 (Enter: 다음)"
+            className="h-10 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+            aria-label="가이드 내용 검색"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="검색어 지우기"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        {query.trim().length > 0 && (
+          <span className="min-w-[3.5rem] shrink-0 text-center text-xs font-medium text-muted-foreground">
+            {matchCount > 0 ? `${activeIndex + 1} / ${matchCount}` : "0 / 0"}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={goPrev}
+          disabled={matchCount === 0}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
+          aria-label="이전 일치"
+        >
+          <ChevronUp className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={goNext}
+          disabled={matchCount === 0}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
+          aria-label="다음 일치"
+        >
+          <ChevronDown className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function GuidePage() {
+  const contentRef = useRef<HTMLDivElement>(null);
   return (
     <div className="space-y-8">
       <header className="rounded-3xl bg-gradient-to-br from-primary/15 to-secondary/40 p-8 text-center shadow-sm">
