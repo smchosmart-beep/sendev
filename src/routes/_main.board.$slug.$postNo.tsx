@@ -58,6 +58,7 @@ import {
   commentsQueryOptions,
   profileMapQueryOptions,
   linkPreviewQueryOptions,
+  canvaLinkQueryOptions,
   readPostIdsQueryOptions,
 } from "@/lib/platform.queries";
 import { stableEvalOrder, getOrderSeed } from "@/lib/series";
@@ -372,6 +373,9 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
                     if (href) {
                       if (isPostFileHref(href)) {
                         return <FileCard href={href} name={soleLinkText(node)} />;
+                      }
+                      if (isCanvaHref(href)) {
+                        return <CanvaLinkCard href={href} />;
                       }
                       const embedUrl = getEmbedUrl(href);
                       if (embedUrl) {
@@ -816,6 +820,47 @@ function GoogleDriveIcon({ className }: { className?: string }) {
   );
 }
 
+// Canva brand mark (simplified inline SVG, no extra dependency).
+function CanvaIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} aria-hidden="true">
+      <circle cx="24" cy="24" r="24" fill="#00C4CC" />
+      <circle cx="24" cy="24" r="24" fill="url(#canva-grad)" />
+      <defs>
+        <linearGradient id="canva-grad" x1="8" y1="6" x2="40" y2="42" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#823AF3" />
+          <stop offset="0.5" stopColor="#4B66E1" />
+          <stop offset="1" stopColor="#01F1C4" />
+        </linearGradient>
+      </defs>
+      <text
+        x="24"
+        y="32"
+        textAnchor="middle"
+        fontFamily="Georgia, 'Times New Roman', serif"
+        fontSize="22"
+        fontStyle="italic"
+        fill="#ffffff"
+      >
+        C
+      </text>
+    </svg>
+  );
+}
+
+// True for Canva share links (short canva.link links and canva.com design links).
+function isCanvaHref(href: string): boolean {
+  try {
+    const host = new URL(href).hostname.replace(/^www\./, "").toLowerCase();
+    if (host === "canva.link") return true;
+    if (host === "canva.com")
+      return new URL(href).pathname.includes("/design/");
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 function LinkPreviewCard({ href }: { href: string }) {
   const { data, isLoading } = useQuery(linkPreviewQueryOptions(href));
   let hostname = href;
@@ -826,6 +871,12 @@ function LinkPreviewCard({ href }: { href: string }) {
   }
   const isGoogleDrive =
     hostname === "drive.google.com" || hostname === "docs.google.com";
+  const isCanva = isCanvaHref(href);
+  const brandIcon = isGoogleDrive
+    ? GoogleDriveIcon
+    : isCanva
+      ? CanvaIcon
+      : null;
   const title = data?.title || hostname;
   const siteName = data?.siteName || hostname;
   const image = data?.image || null;
@@ -845,8 +896,11 @@ function LinkPreviewCard({ href }: { href: string }) {
             loading="lazy"
             className="h-full w-full object-cover"
           />
-        ) : isGoogleDrive ? (
-          <GoogleDriveIcon className="h-12 w-12" />
+        ) : brandIcon ? (
+          (() => {
+            const Brand = brandIcon;
+            return <Brand className="h-12 w-12" />;
+          })()
         ) : (
           <ExternalLink className="h-8 w-8" />
         )}
@@ -856,8 +910,11 @@ function LinkPreviewCard({ href }: { href: string }) {
           {isLoading ? "미리보기 불러오는 중…" : title}
         </span>
         <span className="flex items-center gap-1 truncate text-xs text-muted-foreground">
-          {isGoogleDrive ? (
-            <GoogleDriveIcon className="h-3.5 w-3.5 shrink-0" />
+          {brandIcon ? (
+            (() => {
+              const Brand = brandIcon;
+              return <Brand className="h-3.5 w-3.5 shrink-0" />;
+            })()
           ) : (
             <ExternalLink className="h-3 w-3 shrink-0" />
           )}
@@ -898,6 +955,31 @@ function EmbeddedFrame({ embedUrl, href }: { embedUrl: string; href: string }) {
     </span>
   );
 }
+
+// Resolves a Canva link (incl. canva.link short links) server-side and renders
+// it as an inline embed (view-only links) or a Canva-icon preview card
+// (project/edit links that cannot be embedded).
+function CanvaLinkCard({ href }: { href: string }) {
+  const { data, isLoading } = useQuery(canvaLinkQueryOptions(href));
+
+  if (isLoading) {
+    return (
+      <span className="my-4 block overflow-hidden rounded-2xl bg-card shadow-sm">
+        <span className="flex aspect-video w-full items-center justify-center bg-accent text-primary">
+          <CanvaIcon className="h-12 w-12 animate-pulse" />
+        </span>
+      </span>
+    );
+  }
+
+  if (data?.kind === "view" && data.embedUrl) {
+    return <EmbeddedFrame embedUrl={data.embedUrl} href={href} />;
+  }
+
+  return <LinkPreviewCard href={href} />;
+}
+
+
 
 function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
   const navigate = useNavigate();

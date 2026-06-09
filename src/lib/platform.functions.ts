@@ -2101,6 +2101,82 @@ export const fetchLinkPreview = createServerFn({ method: "GET" })
     return resolveOgMeta(data.url);
   });
 
+// Resolves a Canva link (including canva.link short links) by following
+// redirects server-side to the final canva.com design URL, then classifies it:
+// - a ".../view" link is publicly embeddable  -> kind "view" + embed URL
+// - a ".../edit" link is a project/edit link  -> kind "edit" (icon only)
+// Keeps cost low: HEAD requests, manual redirect following, max a few hops.
+export interface CanvaResolution {
+  kind: "view" | "edit" | "other";
+  embedUrl: string | null;
+}
+
+async function followRedirects(start: string, maxHops = 5): Promise<string> {
+  let current = start;
+  for (let i = 0; i < maxHops; i++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 7000);
+    let res: Response;
+    try {
+      res = await fetch(current, {
+        method: "HEAD",
+        redirect: "manual",
+        signal: controller.signal,
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; EduShareBot/1.0)" },
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get("location");
+      if (!loc) return current;
+      try {
+        current = new URL(loc, current).href;
+      } catch {
+        return current;
+      }
+      continue;
+    }
+    return current;
+  }
+  return current;
+}
+
+export const resolveCanvaLink = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z.object({ url: z.string().trim().url().max(500) }).parse(input),
+  )
+  .handler(async ({ data }): Promise<CanvaResolution> => {
+    let host: string;
+    try {
+      host = new URL(data.url).hostname.replace(/^www\./, "").toLowerCase();
+    } catch {
+      return { kind: "other", embedUrl: null };
+    }
+    if (host !== "canva.link" && host !== "canva.com") {
+      return { kind: "other", embedUrl: null };
+    }
+    try {
+      const finalUrl = await followRedirects(data.url);
+      const u = new URL(finalUrl);
+      const finalHost = u.hostname.replace(/^www\./, "").toLowerCase();
+      if (finalHost !== "canva.com" || !u.pathname.includes("/design/")) {
+        return { kind: "other", embedUrl: null };
+      }
+      if (/\/view\/?$/.test(u.pathname)) {
+        const base = `${u.origin}${u.pathname.replace(/\/$/, "")}`;
+        return { kind: "view", embedUrl: `${base}?embed` };
+      }
+      if (/\/edit\/?$/.test(u.pathname)) {
+        return { kind: "edit", embedUrl: null };
+      }
+      return { kind: "other", embedUrl: null };
+    } catch (e) {
+      console.error("resolveCanvaLink failed:", e);
+      return { kind: "other", embedUrl: null };
+    }
+  });
+
 // Backfills the cached OG image for an existing post whose og_image_url is
 // empty. Resolves once, stores it, and returns the image so the board can show
 // it immediately and never re-fetch the external site again.

@@ -7,6 +7,7 @@ import {
   getPost,
   getPostByNo,
   listPostChain,
+  resolveCanvaLink,
   searchPosts,
   listCriteria,
   listReviews,
@@ -44,6 +45,15 @@ export const postChainQueryOptions = (postId: string) =>
     queryKey: ["post-chain", postId],
     queryFn: () => listPostChain({ data: { postId } }),
     enabled: !!postId,
+  });
+
+export const canvaLinkQueryOptions = (url: string) =>
+  queryOptions({
+    queryKey: ["canva-link", url],
+    queryFn: () => resolveCanvaLink({ data: { url } }),
+    enabled: !!url,
+    staleTime: 60 * 60 * 1000,
+    retry: false,
   });
 
 
