@@ -241,6 +241,7 @@ export interface PostDTO {
   deployUrl: string;
   ogImageUrl: string;
   series: string;
+  parentPostId: string | null;
   createdAt: string;
   commentCount: number;
   viewCount: number;
@@ -704,7 +705,7 @@ export const deleteEvent = createServerFn({ method: "POST" })
 /* -------------------------------- Posts ------------------------------- */
 
 const POST_COLUMNS =
-  "id, category_id, post_no, type, pinned, title, content, author, github_url, deploy_url, og_image_url, series, created_at, view_count";
+  "id, category_id, post_no, type, pinned, title, content, author, github_url, deploy_url, og_image_url, series, parent_post_id, created_at, view_count";
 
 // Returns true when the caller may read a protected board's content. Open
 // boards (no password) always pass. Protected boards pass only when the
@@ -1165,6 +1166,7 @@ function mapPost(p: any, commentCount = 0): PostDTO {
     deployUrl: p.deploy_url ?? "",
     ogImageUrl: p.og_image_url ?? "",
     series: p.series ?? "",
+    parentPostId: p.parent_post_id ?? null,
     createdAt: p.created_at,
     commentCount,
     viewCount: p.view_count ?? 0,
