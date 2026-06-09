@@ -96,6 +96,7 @@ function CategoriesPage() {
   const [linkName, setLinkName] = useState("링크");
   const [tabGroup, setTabGroup] = useState<TabGroup>("hackathon");
   const [isGroup, setIsGroup] = useState(false);
+  const [hidden, setHidden] = useState(false);
   const [parentId, setParentId] = useState<string>("");
 
   const [editing, setEditing] = useState<CategoryDTO | null>(null);
