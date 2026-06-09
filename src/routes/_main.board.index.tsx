@@ -302,7 +302,14 @@ function BoardListPage() {
           {roots
             .filter((c) => c.isGroup)
             .map((group) => (
-              <FolderNode key={group.id} group={group} childrenOf={childrenOf} depth={0} unreadMap={unreadMap} />
+              <FolderNode
+                key={group.id}
+                group={group}
+                childrenOf={childrenOf}
+                depth={0}
+                unreadMap={unreadMap}
+                disabled={isHiddenByChain(group)}
+              />
             ))}
 
           {roots.some((c) => !c.isGroup) && (
@@ -310,7 +317,12 @@ function BoardListPage() {
               {roots
                 .filter((c) => !c.isGroup)
                 .map((c) => (
-                  <BoardCard key={c.id} category={c} unread={unreadMap[c.id] ?? 0} />
+                  <BoardCard
+                    key={c.id}
+                    category={c}
+                    unread={unreadMap[c.id] ?? 0}
+                    disabled={isHiddenByChain(c)}
+                  />
                 ))}
             </div>
           )}
