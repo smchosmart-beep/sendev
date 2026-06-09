@@ -412,6 +412,8 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
         </>
       )}
 
+      {isBoardPost && <SeriesChainSection post={post} slug={slug} />}
+
       {isBoardPost && <CommentsSection postId={post.id} />}
     </div>
   );
