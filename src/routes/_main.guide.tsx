@@ -297,7 +297,17 @@ function GuidePage() {
           <li>도구 모음의 <strong>클립(파일 첨부)</strong> 버튼으로 <strong>HWP·PDF·ZIP·오피스 문서</strong> 등 일반 파일을 올릴 수 있습니다. 파일당 <strong>3MB</strong>까지 가능하며, 본문에는 클릭하면 내려받는 <strong>다운로드 카드</strong>로 표시됩니다. 파일 종류에 따라 아이콘이 달라집니다 — <strong>HWP·PDF·문서</strong>는 문서 아이콘, <strong>XLS·XLSX</strong>는 표(시트) 아이콘, <strong>ZIP</strong>은 압축파일 아이콘으로 표시됩니다.</li>
         </ul>
 
+        <p className="mt-4">
+          <strong>연재(이어쓰기)</strong>: 일반 글은 <strong>답글 형태로 다음 편을 이어 붙여</strong> 하나의 연재 시리즈로 묶을 수 있습니다.
+        </p>
+        <ul className="ml-5 list-disc space-y-2">
+          <li>글 상세 페이지 하단 <strong>연재</strong> 영역의 <strong>다음 편 작성</strong> 버튼을 누르면 그 글에 이어지는 새 글을 쓸 수 있습니다. <strong>누구나</strong> 이어서 작성할 수 있습니다.</li>
+          <li>같은 연재의 모든 편이 <strong>작성순 목록</strong>으로 표시되며, 현재 보고 있는 편이 강조됩니다. <strong>이전 편 / 다음 편</strong> 버튼으로 바로 이동할 수 있습니다.</li>
+          <li>연재는 <strong>같은 게시판 안에서만</strong> 묶입니다. 관리자가 글을 다른 게시판으로 옮기면 <strong>연결된 연재 전체가 함께 이동</strong>해 순서가 유지됩니다.</li>
+        </ul>
+
       </Section>
+
 
       <Section id="unread" icon={Bell} title="읽지 않은 글 표시">
         <p>
