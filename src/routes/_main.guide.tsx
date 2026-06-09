@@ -583,6 +583,9 @@ function GuidePage() {
           <li><strong>제목+내용</strong>: 제목과 본문 내용을 함께 검색</li>
           <li><strong>작성자</strong>: 닉네임(작성자)으로 검색</li>
         </ul>
+        <p className="mt-3">
+          <strong>가이드 페이지 내 검색</strong>: 이 가이드 페이지 상단의 검색창에 단어를 입력하면 문서에서 일치하는 부분이 모두 강조됩니다. 같은 단어가 여러 곳에 있으면 <strong>다음(▼)·이전(▲) 버튼</strong>이나 <strong>Enter(다음)·Shift+Enter(이전)</strong>로 순차 이동할 수 있고, 마지막 위치에서는 처음으로 돌아갑니다.
+        </p>
       </Section>
 
       <Section id="mypage" icon={UserRound} title="내 페이지에서 할 수 있는 것">
