@@ -54,6 +54,7 @@ import {
   myReviewQueryOptions,
   myReviewedPostIdsQueryOptions,
   postsQueryOptions,
+  postNavQueryOptions,
   postChainQueryOptions,
   commentsQueryOptions,
   profileMapQueryOptions,
