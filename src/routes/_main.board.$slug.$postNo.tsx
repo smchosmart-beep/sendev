@@ -53,6 +53,7 @@ import {
   myReviewQueryOptions,
   myReviewedPostIdsQueryOptions,
   postsQueryOptions,
+  postChainQueryOptions,
   commentsQueryOptions,
   profileMapQueryOptions,
   linkPreviewQueryOptions,
