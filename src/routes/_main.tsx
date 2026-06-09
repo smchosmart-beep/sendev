@@ -187,7 +187,10 @@ function MainLayout() {
             aria-label="내 페이지"
             className="hidden h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:flex"
           >
-            <UserRound className="h-5 w-5" />
+            <span className="relative inline-flex">
+              <UserRound className="h-5 w-5" />
+              <span className="pointer-events-none absolute -bottom-1 -right-1.5 rounded-full bg-primary px-1 text-[8px] font-bold leading-[1.4] text-primary-foreground">my</span>
+            </span>
           </Link>
 
 
