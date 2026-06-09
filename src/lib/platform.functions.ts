@@ -180,6 +180,7 @@ export interface CategoryDTO {
   evalOpen: boolean;
   evalSeed: number;
   reviewAllowlistOnly: boolean;
+  hidden: boolean;
 }
 
 // Board slug: lowercase letters, digits and hyphens. Used in short URLs.
