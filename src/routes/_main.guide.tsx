@@ -624,6 +624,7 @@ function GuidePage() {
         </p>
 
       </Section>
+      </div>
 
       <p className="flex items-center justify-center gap-2 pt-2 text-center text-xs text-muted-foreground">
         <ListChecks className="h-4 w-4" />
