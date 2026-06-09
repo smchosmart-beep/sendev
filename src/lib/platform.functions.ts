@@ -302,6 +302,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       evalOpen: !!c.eval_open,
       evalSeed: Number(c.eval_seed ?? 0),
       reviewAllowlistOnly: !!c.review_allowlist_only,
+      hidden: !!c.hidden,
     }));
   },
 );
