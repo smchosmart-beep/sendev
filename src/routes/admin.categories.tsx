@@ -216,6 +216,7 @@ function CategoriesPage() {
           linkName: editLinkName.trim(),
           tabGroup: editTabGroup,
           isGroup: editIsGroup,
+          hidden: editHidden,
           parentId: editParentId || null,
 
         },
