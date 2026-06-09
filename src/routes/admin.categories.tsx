@@ -598,6 +598,12 @@ function CategoriesPage() {
                     <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                       {TAB_LABEL[c.tabGroup ?? "hackathon"]}
                     </span>
+                    {c.hidden && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700">
+                        <EyeOff className="h-3 w-3" />
+                        목록에서 숨김
+                      </span>
+                    )}
                     {c.isGroup && <SectionBadge label={`폴더 · 하위 ${childCount}개`} />}
                     {c.parentId && (
                       <SectionBadge
