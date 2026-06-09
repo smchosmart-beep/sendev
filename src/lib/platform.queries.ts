@@ -4,6 +4,7 @@ import {
   listCategories,
   listEvents,
   listPosts,
+  listPostNav,
   getPost,
   getPostByNo,
   listPostChain,
