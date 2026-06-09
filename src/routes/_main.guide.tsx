@@ -199,8 +199,8 @@ function GuideSearch({
 
   return (
     <div className="sticky top-2 z-20 rounded-2xl border border-border bg-card/95 p-2 shadow-sm backdrop-blur">
-      <div className="flex items-center gap-2">
-        <div className="flex flex-1 items-center gap-2 rounded-xl border border-border bg-background px-3">
+      <div className="flex w-full min-w-0 items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-border bg-background px-3">
           <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
           <input
             type="text"
@@ -214,7 +214,7 @@ function GuideSearch({
               }
             }}
             placeholder="가이드 내용 검색 (Enter: 다음)"
-            className="h-10 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+            className="h-10 w-full min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
             aria-label="가이드 내용 검색"
           />
           {query && (
