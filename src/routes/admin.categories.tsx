@@ -169,6 +169,7 @@ function CategoriesPage() {
           linkName: linkName.trim(),
           tabGroup,
           isGroup,
+          hidden,
           parentId: parentId || null,
 
         },
