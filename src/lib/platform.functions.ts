@@ -241,6 +241,7 @@ export interface PostDTO {
   deployUrl: string;
   ogImageUrl: string;
   series: string;
+  parentPostId: string | null;
   createdAt: string;
   commentCount: number;
   viewCount: number;
@@ -704,7 +705,7 @@ export const deleteEvent = createServerFn({ method: "POST" })
 /* -------------------------------- Posts ------------------------------- */
 
 const POST_COLUMNS =
-  "id, category_id, post_no, type, pinned, title, content, author, github_url, deploy_url, og_image_url, series, created_at, view_count";
+  "id, category_id, post_no, type, pinned, title, content, author, github_url, deploy_url, og_image_url, series, parent_post_id, created_at, view_count";
 
 // Returns true when the caller may read a protected board's content. Open
 // boards (no password) always pass. Protected boards pass only when the
@@ -838,7 +839,39 @@ export const getPostByNo = createServerFn({ method: "GET" })
     return row ? mapPost(row) : null;
   });
 
-// Searches all posts by title, title+content, or author across every category.
+// A single episode within a reply-chain series (lightweight stub for listing).
+export interface PostChainItemDTO {
+  id: string;
+  postNo: number;
+  title: string;
+  author: string;
+  parentPostId: string | null;
+  createdAt: string;
+}
+
+// Returns the full reply-chain series a post belongs to (root -> all
+// descendants), ordered by creation time, via a single recursive RPC call.
+export const listPostChain = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z.object({ postId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }): Promise<PostChainItemDTO[]> => {
+    const db = await getAdmin();
+    const { data: rows, error } = await db.rpc("get_post_chain", {
+      p_post_id: data.postId,
+    });
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map((r: any) => ({
+      id: r.id,
+      postNo: r.post_no ?? 0,
+      title: r.title,
+      author: r.author,
+      parentPostId: r.parent_post_id ?? null,
+      createdAt: r.created_at,
+    }));
+  });
+
+
 export const searchPosts = createServerFn({ method: "GET" })
   .inputValidator((input) =>
     z
@@ -908,6 +941,7 @@ export const createPost = createServerFn({ method: "POST" })
         githubUrl: z.string().trim().max(300).default(""),
         deployUrl: z.string().trim().max(300).default(""),
         series: z.string().trim().max(100).default(""),
+        parentPostId: z.string().uuid().nullable().default(null),
         nicknamePassword: z.string().trim().max(100).default(""),
         adminPassword: z.string().max(200).default(""),
       })
@@ -929,6 +963,19 @@ export const createPost = createServerFn({ method: "POST" })
     const author = data.author;
     // Verify the author owns this nickname (or claim it on first use).
     await ensureNicknameOwnership(db, author, data.nicknamePassword, false);
+    // Validate the optional parent (reply chain): it must exist and live in the
+    // same category. Cross-category chains would break next/prev navigation.
+    let parentPostId: string | null = null;
+    if (data.parentPostId) {
+      const { data: parent } = await db
+        .from("posts")
+        .select("id, category_id")
+        .eq("id", data.parentPostId)
+        .maybeSingle();
+      if (parent && parent.category_id === data.categoryId) {
+        parentPostId = parent.id;
+      }
+    }
     // Resolve and cache the deploy site's OG image once at creation time so the
     // board never re-fetches the external site on subsequent loads.
     const ogImageUrl = data.deployUrl
@@ -956,6 +1003,7 @@ export const createPost = createServerFn({ method: "POST" })
         deploy_url: data.deployUrl,
         og_image_url: ogImageUrl,
         series: data.series,
+        parent_post_id: parentPostId,
       });
       if (!error) return { ok: true, postNo: nextNo };
       // Retry on unique violation (concurrent insert); otherwise fail.
@@ -1122,32 +1170,16 @@ export const movePost = createServerFn({ method: "POST" })
         .maybeSingle();
       if (catErr) throw new Error(catErr.message);
       if (!target) return { ok: false };
-      const newType = "post";
-      // Assign the next per-board number in the target board, retrying on
-      // a unique collision (concurrent insert/move).
-      for (let attempt = 0; attempt < 3; attempt++) {
-        const { data: maxRow } = await db
-          .from("posts")
-          .select("post_no")
-          .eq("category_id", data.targetCategoryId)
-          .order("post_no", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        const nextNo = (maxRow?.post_no ?? 0) + 1;
-        const { error } = await db
-          .from("posts")
-          .update({
-            category_id: data.targetCategoryId,
-            post_no: nextNo,
-            type: newType,
-          })
-          .eq("id", data.id);
-        if (!error) return { ok: true, slug: target.slug ?? "", postNo: nextNo };
-        if (!String(error.message ?? "").toLowerCase().includes("duplicate")) {
-          throw new Error(error.message);
-        }
-      }
-      throw new Error("게시글 번호를 부여하지 못했어요. 다시 시도해주세요.");
+      // Move the entire connected series (this post's chain) in a single
+      // transaction so the series stays within one board and next/prev links
+      // never break. Returns the clicked post's new per-board number.
+      const { data: newNo, error: moveErr } = await db.rpc("move_post_chain", {
+        p_post_id: data.id,
+        p_target_category: data.targetCategoryId,
+      });
+      if (moveErr) throw new Error(moveErr.message);
+      if (newNo == null) return { ok: false };
+      return { ok: true, slug: target.slug ?? "", postNo: Number(newNo) };
     },
   );
 
@@ -1165,6 +1197,7 @@ function mapPost(p: any, commentCount = 0): PostDTO {
     deployUrl: p.deploy_url ?? "",
     ogImageUrl: p.og_image_url ?? "",
     series: p.series ?? "",
+    parentPostId: p.parent_post_id ?? null,
     createdAt: p.created_at,
     commentCount,
     viewCount: p.view_count ?? 0,

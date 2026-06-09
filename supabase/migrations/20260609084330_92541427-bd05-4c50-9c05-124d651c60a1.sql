@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.move_post_chain(uuid, uuid) FROM anon, authenticated, public;

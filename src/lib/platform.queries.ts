@@ -6,6 +6,7 @@ import {
   listPosts,
   getPost,
   getPostByNo,
+  listPostChain,
   searchPosts,
   listCriteria,
   listReviews,
@@ -37,6 +38,15 @@ export const searchPostsQueryOptions = (
     queryFn: () => searchPosts({ data: { q: q.trim(), mode } }),
     enabled: q.trim().length > 0,
   });
+
+export const postChainQueryOptions = (postId: string) =>
+  queryOptions({
+    queryKey: ["post-chain", postId],
+    queryFn: () => listPostChain({ data: { postId } }),
+    enabled: !!postId,
+  });
+
+
 
 
 export const heroSlidesQueryOptions = () =>

@@ -5,12 +5,16 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { useSuspenseQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useSuspenseQuery, useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, MessageCircle } from "lucide-react";
+import { ArrowLeft, MessageCircle, CornerDownRight } from "lucide-react";
 import { toast } from "sonner";
 
-import { categoriesQueryOptions } from "@/lib/platform.queries";
+import {
+  categoriesQueryOptions,
+  postByNoQueryOptions,
+  getBoardPassword,
+} from "@/lib/platform.queries";
 import { createPost } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { PostEditor } from "@/components/PostEditor";
@@ -23,6 +27,10 @@ import { useNicknameIdentity, useNicknameClaimed } from "@/hooks/useNicknameIden
 
 
 export const Route = createFileRoute("/_main/board/$slug/new-general")({
+  validateSearch: (search: Record<string, unknown>) => {
+    const raw = Number(search.parent);
+    return { parent: Number.isFinite(raw) && raw > 0 ? raw : undefined };
+  },
   loader: ({ context }) =>
     context.queryClient.ensureQueryData(categoriesQueryOptions()),
   errorComponent: ({ error }) => (
@@ -35,12 +43,21 @@ export const Route = createFileRoute("/_main/board/$slug/new-general")({
 
 function NewGeneralPage() {
   const { slug } = useParams({ from: "/_main/board/$slug/new-general" });
+  const { parent } = Route.useSearch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const create = useServerFn(createPost);
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
   const category = categories.find((c) => c.slug === slug);
   const boardName = category?.generalName || "일반게시판";
+
+  // 연재(답글)로 작성하는 경우 부모 글을 불러와 안내와 연결에 사용한다.
+  const { data: parentPost } = useQuery({
+    ...postByNoQueryOptions(slug, parent ?? 0, getBoardPassword(slug)),
+    enabled: !!parent,
+  });
+  const parentPostId = parentPost?.id ?? null;
+
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -71,12 +88,16 @@ function NewGeneralPage() {
           nicknamePassword,
           githubUrl: "",
           deployUrl: "",
+          parentPostId,
         },
       }),
     onSuccess: (res) => {
       persistIdentity();
       queryClient.invalidateQueries({ queryKey: ["posts", category!.id] });
-      toast.success("글이 등록되었어요!");
+      if (parentPostId) {
+        queryClient.invalidateQueries({ queryKey: ["post-chain"] });
+      }
+      toast.success(parentPostId ? "다음 편이 등록되었어요!" : "글이 등록되었어요!");
       navigate({
         to: "/board/$slug/$postNo",
         params: { slug, postNo: String(res.postNo) },
@@ -104,10 +125,23 @@ function NewGeneralPage() {
       <BackLink slug={slug} />
 
       <div className="rounded-2xl bg-card p-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-foreground">{boardName} 글 등록</h1>
+        <h1 className="text-2xl font-bold text-foreground">
+          {parentPost ? "다음 편 작성" : `${boardName} 글 등록`}
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          자유롭게 글을 남겨보세요.
+          {parentPost ? "이전 편에 이어지는 연재 글을 작성해요." : "자유롭게 글을 남겨보세요."}
         </p>
+
+        {parentPost && (
+          <div className="mt-4 flex items-start gap-2 rounded-xl bg-accent p-3 text-sm text-foreground">
+            <CornerDownRight className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <span>
+              <span className="font-medium">{parentPost.title}</span>
+              <span className="text-muted-foreground">에 이어지는 다음 편 작성 중</span>
+            </span>
+          </div>
+        )}
+
 
         <form
           onSubmit={(e) => {

@@ -294,6 +294,7 @@ export type Database = {
           github_url: string
           id: string
           og_image_url: string
+          parent_post_id: string | null
           pinned: boolean
           post_no: number | null
           series: string
@@ -311,6 +312,7 @@ export type Database = {
           github_url?: string
           id?: string
           og_image_url?: string
+          parent_post_id?: string | null
           pinned?: boolean
           post_no?: number | null
           series?: string
@@ -328,6 +330,7 @@ export type Database = {
           github_url?: string
           id?: string
           og_image_url?: string
+          parent_post_id?: string | null
           pinned?: boolean
           post_no?: number | null
           series?: string
@@ -341,6 +344,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_parent_post_id_fkey"
+            columns: ["parent_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
             referencedColumns: ["id"]
           },
         ]
@@ -537,7 +547,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_post_chain: {
+        Args: { p_post_id: string }
+        Returns: {
+          author: string
+          category_id: string
+          created_at: string
+          id: string
+          parent_post_id: string
+          post_no: number
+          title: string
+        }[]
+      }
       increment_post_view: { Args: { p_id: string }; Returns: undefined }
+      move_post_chain: {
+        Args: { p_post_id: string; p_target_category: string }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
