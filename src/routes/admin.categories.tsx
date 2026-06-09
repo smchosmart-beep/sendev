@@ -386,6 +386,17 @@ function CategoriesPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-1 pt-1">
+              <SectionToggle
+                id="add-hidden"
+                label="목록에서 숨기기"
+                checked={hidden}
+                onChange={setHidden}
+              />
+              <p className="text-xs text-muted-foreground">
+                켜면 게시판 목록에 노출되지 않아요(직접 링크로는 접근 가능). 폴더를 숨기면 하위 게시판도 함께 숨겨져요.
+              </p>
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="name">카테고리 이름</Label>
