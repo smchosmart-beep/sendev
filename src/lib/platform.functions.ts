@@ -459,6 +459,7 @@ export const updateCategory = createServerFn({ method: "POST" })
     if (data.linkName !== undefined)
       patch.link_name = data.linkName || "링크";
     if (data.tabGroup !== undefined) patch.tab_group = data.tabGroup;
+    if (data.hidden !== undefined) patch.hidden = data.hidden;
     const { error } = await db.from("categories").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
