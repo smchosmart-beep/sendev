@@ -305,6 +305,7 @@ function CategoriesPage() {
     setEditLinkName(c.linkName);
     setEditTabGroup(c.tabGroup ?? "hackathon");
     setEditIsGroup(c.isGroup);
+    setEditHidden(c.hidden);
     setEditParentId(c.parentId ?? "");
     if (c.hasPassword) {
       getPasswordFn({ data: { id: c.id, adminPassword: getAdminPassword() } })
