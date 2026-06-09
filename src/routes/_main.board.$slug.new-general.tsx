@@ -5,12 +5,16 @@ import {
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { useSuspenseQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useSuspenseQuery, useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, MessageCircle } from "lucide-react";
+import { ArrowLeft, MessageCircle, CornerDownRight } from "lucide-react";
 import { toast } from "sonner";
 
-import { categoriesQueryOptions } from "@/lib/platform.queries";
+import {
+  categoriesQueryOptions,
+  postByNoQueryOptions,
+  getBoardPassword,
+} from "@/lib/platform.queries";
 import { createPost } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import { PostEditor } from "@/components/PostEditor";
@@ -23,6 +27,10 @@ import { useNicknameIdentity, useNicknameClaimed } from "@/hooks/useNicknameIden
 
 
 export const Route = createFileRoute("/_main/board/$slug/new-general")({
+  validateSearch: (search: Record<string, unknown>) => {
+    const raw = Number(search.parent);
+    return { parent: Number.isFinite(raw) && raw > 0 ? raw : undefined };
+  },
   loader: ({ context }) =>
     context.queryClient.ensureQueryData(categoriesQueryOptions()),
   errorComponent: ({ error }) => (
