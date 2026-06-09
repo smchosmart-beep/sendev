@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { LayoutGrid, SlidersHorizontal, ShieldCheck, Lock, AlertCircle, Megaphone, CalendarDays, Home, UserCog, Eye, EyeOff } from "lucide-react";
+import { LayoutGrid, SlidersHorizontal, ShieldCheck, Lock, AlertCircle, CalendarDays, Home, UserCog, Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 
@@ -147,7 +147,6 @@ const tabs = [
   { to: "/admin/categories", label: "카테고리 관리", icon: LayoutGrid },
   { to: "/admin/home", label: "홈 화면 구성", icon: Home },
   { to: "/admin/calendar", label: "캘린더 관리", icon: CalendarDays },
-  { to: "/admin/notices", label: "공지사항 관리", icon: Megaphone },
   { to: "/admin/criteria", label: "평가 관리", icon: SlidersHorizontal },
   { to: "/admin/profiles", label: "사용자 프로필 🔒", icon: UserCog },
 ] as const;
