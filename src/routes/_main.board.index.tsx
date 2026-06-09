@@ -174,7 +174,21 @@ function BoardListPage() {
   const { tab } = Route.useSearch();
   const activeTab = normalizeTab(tab);
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
-  const visible = categories.filter((c) => (c.tabGroup ?? "hackathon") === activeTab);
+  // 숨김 처리: 직접 hidden이거나, 조상 폴더 중 하나라도 hidden이면 목록에서 제외.
+  const byId = new Map(categories.map((c) => [c.id, c] as const));
+  const isHiddenByChain = (c: CategoryDTO): boolean => {
+    let node: CategoryDTO | undefined = c;
+    const seen = new Set<string>();
+    while (node && !seen.has(node.id)) {
+      if (node.hidden) return true;
+      seen.add(node.id);
+      node = node.parentId ? byId.get(node.parentId) : undefined;
+    }
+    return false;
+  };
+  const visible = categories.filter(
+    (c) => (c.tabGroup ?? "hackathon") === activeTab && !isHiddenByChain(c),
+  );
 
   // 닉네임이 등록된 경우에만 미열람 수를 계산/표시한다.
   const { identity } = useStoredIdentity();
