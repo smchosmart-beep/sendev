@@ -125,10 +125,23 @@ function NewGeneralPage() {
       <BackLink slug={slug} />
 
       <div className="rounded-2xl bg-card p-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-foreground">{boardName} 글 등록</h1>
+        <h1 className="text-2xl font-bold text-foreground">
+          {parentPost ? "다음 편 작성" : `${boardName} 글 등록`}
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          자유롭게 글을 남겨보세요.
+          {parentPost ? "이전 편에 이어지는 연재 글을 작성해요." : "자유롭게 글을 남겨보세요."}
         </p>
+
+        {parentPost && (
+          <div className="mt-4 flex items-start gap-2 rounded-xl bg-accent p-3 text-sm text-foreground">
+            <CornerDownRight className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <span>
+              <span className="font-medium">{parentPost.title}</span>
+              <span className="text-muted-foreground">에 이어지는 다음 편 작성 중</span>
+            </span>
+          </div>
+        )}
+
 
         <form
           onSubmit={(e) => {
