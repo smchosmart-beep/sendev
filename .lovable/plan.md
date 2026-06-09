@@ -1,39 +1,35 @@
 ## 목표
-게시글 상세 페이지 **하단**에 **이전글 / 다음글** 버튼을 추가해, 목록으로 돌아가지 않고 같은 게시판의 같은 종류 글을 순서대로 넘겨본다.
+1. **목록에서 숨기기**된 폴더/카테고리를 완전히 제거하는 대신 **회색 비활성 상태(클릭 불가)**로 모든 사용자에게 표시한다.
+2. 폴더의 펼침/접힘 상태를 **기기별로 기억**해(localStorage) 다시 방문해도 직전 상태를 유지한다.
 
-선택 동작: **같은 종류만 이동** + **글 하단 배치**. 부작용 검토에서 나온 **서버 부하 보완**을 반영한다.
+대상 파일: `src/routes/_main.board.index.tsx`, `src/routes/_main.guide.tsx`
 
 ## 작업 내용
 
-### 1. 가벼운 이웃 글 조회 서버 함수 추가 (`src/lib/platform.functions.ts`)
-- 새 함수 `listPostNav` 추가: 입력 `{ slug, boardPassword?, adminPassword? }`.
-- 해당 카테고리의 글에서 **`id, post_no, type, pinned, title, created_at`만** select(본문 content·댓글 집계 없음), `created_at desc` 정렬.
-- 비밀번호 게시판은 기존 `boardAccessOk`(또는 동일 검증)로 접근 확인 후 빈 배열 반환.
-- 가벼운 DTO 배열 반환(`PostNavItemDTO[]`: id, postNo, type, pinned, title).
-- 기존 `listPosts`는 그대로 두어 목록 페이지에 영향 없음.
+### 1. 숨김 → 비활성 표시 (`_main.board.index.tsx`)
+- 현재 `visible` 필터에서 `isHiddenByChain`으로 **제외**하던 로직을 제거하고, 모든 항목을 렌더하되 `isHiddenByChain` 결과를 `disabled` 플래그로 넘긴다.
+- `BoardCard`: `disabled`일 때
+  - `<Link>` 대신 클릭 불가한 `<div>`로 렌더(이동 막음, `aria-disabled`).
+  - 흐린 스타일 적용(`opacity-60`, `pointer-events-none`, `cursor-not-allowed`, muted 색), 하단 "바로 입장/비밀번호 입장" 문구를 "비활성" 표기로 대체.
+- `FolderNode`: `disabled`일 때
+  - 헤더는 펼침/접힘 토글은 가능하되 흐린 스타일로 표시(또는 토글도 비활성 — 아래 기술 메모 참고로 토글은 유지하고 시각만 흐리게).
+  - 하위 항목은 부모가 disabled면 체인에 의해 자연히 모두 disabled로 표시됨.
+- 미열람 배지(`unreadMap`)는 비활성 항목에서 표시하지 않음(혼동 방지).
 
-### 2. 쿼리 옵션 추가 (`src/lib/platform.queries.ts`)
-- `postNavQueryOptions(slug, boardPassword)` 추가: `queryKey: ["post-nav", slug, boardPassword]`, `queryFn: () => listPostNav(...)`.
+### 2. 폴더 펼침 상태 기기별 기억 (`_main.board.index.tsx`)
+- `FolderNode`의 `useState(true)`를 localStorage 연동으로 변경:
+  - 키: `board-folder-open-${group.id}`.
+  - 초기값: 저장된 값이 있으면 그 값, 없으면 기존처럼 `true`(펼침).
+  - 토글 시 localStorage에 즉시 저장(`"1"`/`"0"`).
+  - SSR 안전: 초기 렌더는 기본값(true)로, 마운트 후 `useEffect`로 저장값 반영(하이드레이션 불일치 방지).
 
-### 3. 상세 페이지에 이전/다음 네비게이션 (`src/routes/_main.board.$slug.$postNo.tsx`)
-- `useQuery(postNavQueryOptions(slug, getBoardPassword(slug)))`로 가벼운 목록을 가져온다.
-- 현재 글과 **같은 `type`**만 추리되, 게시글(post)은 목록과 동일하게 **pinned 그룹/일반 그룹을 분리**해 현재 글이 속한 그룹 안에서만 순서를 만든다.
-- 배열에서 현재 글 위치를 찾아 바로 앞(다음글)·뒤(이전글)를 결정. (정렬이 최신순이므로 "이전글 = 더 오래된 글", "다음글 = 더 최신 글"로 라벨링.)
-- 글 하단(좋아요 아래, 연재/댓글 위)에 카드형 네비게이션 렌더:
-  - `<Link to="/board/$slug/$postNo" params=...>` 사용, 대상 글 제목 표시.
-  - 한쪽 끝이면 해당 버튼 숨김/비활성.
-- 데이터 로딩 중이거나 이웃이 없으면 영역 자체를 렌더하지 않아 깜빡임/오작동 방지.
-
-```text
-[ ← 이전글            다음글 → ]
-  (더 오래된 글 제목)   (더 최신 글 제목)
-```
-
-### 4. 사용자 가이드 업데이트 (`src/routes/_main.guide.tsx`)
-- "게시글 하단의 이전글/다음글 버튼으로 같은 게시판의 같은 종류 글을 순서대로 넘겨볼 수 있다" 설명 추가(가이드 동기화 규칙 준수).
+### 3. 사용자 가이드 업데이트 (`_main.guide.tsx`)
+- "목록에서 숨기기" 설명을 "완전히 사라지지 않고 회색 비활성 상태로 표시되며 클릭할 수 없다"로 갱신.
+- "폴더 펼침/접힘 상태는 기기별로 기억되어 다음 방문 시 유지된다" 설명 추가.
 
 ## 기술 메모 / 부작용 대응
-- **서버 부하**: 본문·댓글집계를 제외한 경량 컬럼만 조회하는 전용 함수 사용 → 글 하나 열 때 비용 최소화. 캐시 키 분리로 목록 쿼리와 독립.
-- **기존 기능 영향 없음**: DB 변경 없음, `listPosts`/연재/댓글/조회수/평가 로직 미수정. 연재 네비와 역할이 달라 중복 동작 아님.
-- **잠금 게시판 안전**: 통과한 비밀번호만 사용, 서버에서 접근 재검증.
-- **엣지 케이스**: pinned/일반 그룹 분리 처리로 순서 어긋남 방지. 삭제·이동된 이웃 클릭 시 "글 없음"으로 자연 처리.
+- **DB 변경 없음**: `hidden` 컬럼/서버 로직은 그대로, 프론트 표현만 변경.
+- **접근성**: 비활성 카드는 `aria-disabled`와 비클릭 요소로 처리해 키보드/스크린리더에서도 비활성임이 드러나게.
+- **폴더 토글 유지 여부**: 비활성 폴더라도 하위 구조를 볼 수 있게 토글 자체는 허용(시각만 흐림). 만약 토글도 막길 원하면 조정 가능.
+- **localStorage 안전**: try/catch로 감싸 사생활 보호 모드 등에서 예외 무시.
+- **기존 기능 영향 없음**: 이전/다음글, 댓글, 평가 등 다른 기능과 무관.
