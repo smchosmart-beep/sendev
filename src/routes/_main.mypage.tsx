@@ -116,8 +116,9 @@ function MyPage() {
     <div className="mx-auto max-w-md py-8">
 
       <div className="mb-6 text-center">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <div className="relative mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
           <UserRound className="h-6 w-6" />
+          <span className="pointer-events-none absolute -bottom-1 -right-1 rounded-full bg-primary px-1.5 text-[9px] font-bold leading-[1.4] text-primary-foreground">my</span>
         </div>
         <h1 className="text-xl font-bold text-foreground">내 페이지</h1>
         <p className="mt-1 text-sm text-muted-foreground">
