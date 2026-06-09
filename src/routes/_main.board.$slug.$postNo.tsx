@@ -31,6 +31,7 @@ import {
   Share2,
   MessageCircle,
   Eye,
+  Layers,
   CornerDownRight,
   Maximize,
   Minimize,
