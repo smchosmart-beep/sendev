@@ -896,8 +896,11 @@ function LinkPreviewCard({ href }: { href: string }) {
             loading="lazy"
             className="h-full w-full object-cover"
           />
-        ) : isGoogleDrive ? (
-          <GoogleDriveIcon className="h-12 w-12" />
+        ) : brandIcon ? (
+          (() => {
+            const Brand = brandIcon;
+            return <Brand className="h-12 w-12" />;
+          })()
         ) : (
           <ExternalLink className="h-8 w-8" />
         )}
@@ -907,8 +910,11 @@ function LinkPreviewCard({ href }: { href: string }) {
           {isLoading ? "미리보기 불러오는 중…" : title}
         </span>
         <span className="flex items-center gap-1 truncate text-xs text-muted-foreground">
-          {isGoogleDrive ? (
-            <GoogleDriveIcon className="h-3.5 w-3.5 shrink-0" />
+          {brandIcon ? (
+            (() => {
+              const Brand = brandIcon;
+              return <Brand className="h-3.5 w-3.5 shrink-0" />;
+            })()
           ) : (
             <ExternalLink className="h-3 w-3 shrink-0" />
           )}
