@@ -95,7 +95,7 @@ function BoardCard({
           </p>
         </div>
         <div className="mt-6 flex items-center justify-between text-sm font-medium text-muted-foreground">
-          <span>비활성 (숨김)</span>
+          <span>비활성</span>
         </div>
       </div>
     );
@@ -187,7 +187,7 @@ function FolderNode({
         <span className="flex-1 min-w-0">
           <span className={`block truncate text-base font-semibold ${disabled ? "text-muted-foreground" : "text-foreground"}`}>
             {group.name}
-            {disabled && <span className="ml-2 text-xs font-normal">(숨김)</span>}
+            {disabled && <span className="ml-2 text-xs font-normal">(비활성)</span>}
           </span>
           {group.description && (
             <span className="block truncate text-xs text-muted-foreground">
