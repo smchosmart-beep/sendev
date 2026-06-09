@@ -820,6 +820,47 @@ function GoogleDriveIcon({ className }: { className?: string }) {
   );
 }
 
+// Canva brand mark (simplified inline SVG, no extra dependency).
+function CanvaIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} aria-hidden="true">
+      <circle cx="24" cy="24" r="24" fill="#00C4CC" />
+      <circle cx="24" cy="24" r="24" fill="url(#canva-grad)" />
+      <defs>
+        <linearGradient id="canva-grad" x1="8" y1="6" x2="40" y2="42" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#823AF3" />
+          <stop offset="0.5" stopColor="#4B66E1" />
+          <stop offset="1" stopColor="#01F1C4" />
+        </linearGradient>
+      </defs>
+      <text
+        x="24"
+        y="32"
+        textAnchor="middle"
+        fontFamily="Georgia, 'Times New Roman', serif"
+        fontSize="22"
+        fontStyle="italic"
+        fill="#ffffff"
+      >
+        C
+      </text>
+    </svg>
+  );
+}
+
+// True for Canva share links (short canva.link links and canva.com design links).
+function isCanvaHref(href: string): boolean {
+  try {
+    const host = new URL(href).hostname.replace(/^www\./, "").toLowerCase();
+    if (host === "canva.link") return true;
+    if (host === "canva.com")
+      return new URL(href).pathname.includes("/design/");
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 function LinkPreviewCard({ href }: { href: string }) {
   const { data, isLoading } = useQuery(linkPreviewQueryOptions(href));
   let hostname = href;
@@ -830,6 +871,12 @@ function LinkPreviewCard({ href }: { href: string }) {
   }
   const isGoogleDrive =
     hostname === "drive.google.com" || hostname === "docs.google.com";
+  const isCanva = isCanvaHref(href);
+  const brandIcon = isGoogleDrive
+    ? GoogleDriveIcon
+    : isCanva
+      ? CanvaIcon
+      : null;
   const title = data?.title || hostname;
   const siteName = data?.siteName || hostname;
   const image = data?.image || null;
