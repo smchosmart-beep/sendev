@@ -899,7 +899,7 @@ function LinkPreviewCard({ href }: { href: string }) {
         ) : brandIcon ? (
           (() => {
             const Brand = brandIcon;
-            return <Brand className="h-12 w-12" />;
+            return <Brand className="h-20 w-20" />;
           })()
         ) : (
           <ExternalLink className="h-8 w-8" />
