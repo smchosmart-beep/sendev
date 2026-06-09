@@ -966,7 +966,7 @@ function CanvaLinkCard({ href }: { href: string }) {
     return (
       <span className="my-4 block overflow-hidden rounded-2xl bg-card shadow-sm">
         <span className="flex aspect-video w-full items-center justify-center bg-accent text-primary">
-          <CanvaIcon className="h-12 w-12 animate-pulse" />
+          <CanvaIcon className="h-20 w-20 animate-pulse" />
         </span>
       </span>
     );
