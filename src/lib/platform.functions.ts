@@ -839,7 +839,39 @@ export const getPostByNo = createServerFn({ method: "GET" })
     return row ? mapPost(row) : null;
   });
 
-// Searches all posts by title, title+content, or author across every category.
+// A single episode within a reply-chain series (lightweight stub for listing).
+export interface PostChainItemDTO {
+  id: string;
+  postNo: number;
+  title: string;
+  author: string;
+  parentPostId: string | null;
+  createdAt: string;
+}
+
+// Returns the full reply-chain series a post belongs to (root -> all
+// descendants), ordered by creation time, via a single recursive RPC call.
+export const listPostChain = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z.object({ postId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }): Promise<PostChainItemDTO[]> => {
+    const db = await getAdmin();
+    const { data: rows, error } = await db.rpc("get_post_chain", {
+      p_post_id: data.postId,
+    });
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map((r: any) => ({
+      id: r.id,
+      postNo: r.post_no ?? 0,
+      title: r.title,
+      author: r.author,
+      parentPostId: r.parent_post_id ?? null,
+      createdAt: r.created_at,
+    }));
+  });
+
+
 export const searchPosts = createServerFn({ method: "GET" })
   .inputValidator((input) =>
     z
