@@ -306,6 +306,15 @@ function GuidePage() {
           <li>연재는 <strong>같은 게시판 안에서만</strong> 묶입니다. 관리자가 글을 다른 게시판으로 옮기면 <strong>연결된 연재 전체가 함께 이동</strong>해 순서가 유지됩니다.</li>
         </ul>
 
+        <p className="mt-4">
+          <strong>이전글 / 다음글</strong>: 글 상세 페이지 하단에 <strong>이전글·다음글</strong> 버튼이 있어, 목록으로 돌아가지 않고도 글을 바로 넘겨볼 수 있습니다.
+        </p>
+        <ul className="ml-5 list-disc space-y-2">
+          <li><strong>같은 게시판의 같은 종류 글</strong>끼리만 이동합니다(게시글은 게시글끼리, 공지는 공지끼리). 순서는 게시판 목록과 동일합니다.</li>
+          <li>버튼에 이동할 글의 <strong>제목</strong>이 함께 표시되며, 맨 앞·맨 뒤 글에서는 해당 방향 버튼이 표시되지 않습니다.</li>
+        </ul>
+
+
       </Section>
 
 
