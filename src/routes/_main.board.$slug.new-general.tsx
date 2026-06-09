@@ -43,12 +43,21 @@ export const Route = createFileRoute("/_main/board/$slug/new-general")({
 
 function NewGeneralPage() {
   const { slug } = useParams({ from: "/_main/board/$slug/new-general" });
+  const { parent } = Route.useSearch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const create = useServerFn(createPost);
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
   const category = categories.find((c) => c.slug === slug);
   const boardName = category?.generalName || "일반게시판";
+
+  // 연재(답글)로 작성하는 경우 부모 글을 불러와 안내와 연결에 사용한다.
+  const { data: parentPost } = useQuery({
+    ...postByNoQueryOptions(slug, parent ?? 0, getBoardPassword(slug)),
+    enabled: !!parent,
+  });
+  const parentPostId = parentPost?.id ?? null;
+
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -79,12 +88,16 @@ function NewGeneralPage() {
           nicknamePassword,
           githubUrl: "",
           deployUrl: "",
+          parentPostId,
         },
       }),
     onSuccess: (res) => {
       persistIdentity();
       queryClient.invalidateQueries({ queryKey: ["posts", category!.id] });
-      toast.success("글이 등록되었어요!");
+      if (parentPostId) {
+        queryClient.invalidateQueries({ queryKey: ["post-chain"] });
+      }
+      toast.success(parentPostId ? "다음 편이 등록되었어요!" : "글이 등록되었어요!");
       navigate({
         to: "/board/$slug/$postNo",
         params: { slug, postNo: String(res.postNo) },
