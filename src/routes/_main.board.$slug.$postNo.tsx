@@ -374,6 +374,9 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
                       if (isPostFileHref(href)) {
                         return <FileCard href={href} name={soleLinkText(node)} />;
                       }
+                      if (isCanvaHref(href)) {
+                        return <CanvaLinkCard href={href} />;
+                      }
                       const embedUrl = getEmbedUrl(href);
                       if (embedUrl) {
                         return <EmbeddedFrame embedUrl={embedUrl} href={href} />;
