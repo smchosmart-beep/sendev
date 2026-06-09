@@ -113,6 +113,7 @@ function CategoriesPage() {
   const [editLinkName, setEditLinkName] = useState("링크");
   const [editTabGroup, setEditTabGroup] = useState<TabGroup>("hackathon");
   const [editIsGroup, setEditIsGroup] = useState(false);
+  const [editHidden, setEditHidden] = useState(false);
   const [editParentId, setEditParentId] = useState<string>("");
 
   const [deleting, setDeleting] = useState<CategoryDTO | null>(null);
