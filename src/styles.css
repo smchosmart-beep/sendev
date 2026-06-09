@@ -292,3 +292,13 @@
     }
   }
 }
+
+/* Guide in-page search highlights (CSS Custom Highlight API). */
+::highlight(guide-search) {
+  background-color: color-mix(in oklch, var(--primary) 25%, transparent);
+  color: inherit;
+}
+::highlight(guide-search-active) {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
