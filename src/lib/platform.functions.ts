@@ -364,6 +364,7 @@ export const createCategory = createServerFn({ method: "POST" })
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .default("hackathon"),
+        hidden: z.boolean().default(false),
         adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
