@@ -1138,32 +1138,16 @@ export const movePost = createServerFn({ method: "POST" })
         .maybeSingle();
       if (catErr) throw new Error(catErr.message);
       if (!target) return { ok: false };
-      const newType = "post";
-      // Assign the next per-board number in the target board, retrying on
-      // a unique collision (concurrent insert/move).
-      for (let attempt = 0; attempt < 3; attempt++) {
-        const { data: maxRow } = await db
-          .from("posts")
-          .select("post_no")
-          .eq("category_id", data.targetCategoryId)
-          .order("post_no", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        const nextNo = (maxRow?.post_no ?? 0) + 1;
-        const { error } = await db
-          .from("posts")
-          .update({
-            category_id: data.targetCategoryId,
-            post_no: nextNo,
-            type: newType,
-          })
-          .eq("id", data.id);
-        if (!error) return { ok: true, slug: target.slug ?? "", postNo: nextNo };
-        if (!String(error.message ?? "").toLowerCase().includes("duplicate")) {
-          throw new Error(error.message);
-        }
-      }
-      throw new Error("게시글 번호를 부여하지 못했어요. 다시 시도해주세요.");
+      // Move the entire connected series (this post's chain) in a single
+      // transaction so the series stays within one board and next/prev links
+      // never break. Returns the clicked post's new per-board number.
+      const { data: newNo, error: moveErr } = await db.rpc("move_post_chain", {
+        p_post_id: data.id,
+        p_target_category: data.targetCategoryId,
+      });
+      if (moveErr) throw new Error(moveErr.message);
+      if (newNo == null) return { ok: false };
+      return { ok: true, slug: target.slug ?? "", postNo: Number(newNo) };
     },
   );
 
