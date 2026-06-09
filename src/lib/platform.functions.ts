@@ -931,6 +931,19 @@ export const createPost = createServerFn({ method: "POST" })
     const author = data.author;
     // Verify the author owns this nickname (or claim it on first use).
     await ensureNicknameOwnership(db, author, data.nicknamePassword, false);
+    // Validate the optional parent (reply chain): it must exist and live in the
+    // same category. Cross-category chains would break next/prev navigation.
+    let parentPostId: string | null = null;
+    if (data.parentPostId) {
+      const { data: parent } = await db
+        .from("posts")
+        .select("id, category_id")
+        .eq("id", data.parentPostId)
+        .maybeSingle();
+      if (parent && parent.category_id === data.categoryId) {
+        parentPostId = parent.id;
+      }
+    }
     // Resolve and cache the deploy site's OG image once at creation time so the
     // board never re-fetches the external site on subsequent loads.
     const ogImageUrl = data.deployUrl
@@ -958,6 +971,7 @@ export const createPost = createServerFn({ method: "POST" })
         deploy_url: data.deployUrl,
         og_image_url: ogImageUrl,
         series: data.series,
+        parent_post_id: parentPostId,
       });
       if (!error) return { ok: true, postNo: nextNo };
       // Retry on unique violation (concurrent insert); otherwise fail.
