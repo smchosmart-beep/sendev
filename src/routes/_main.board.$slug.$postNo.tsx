@@ -785,6 +785,37 @@ function BodyImage({
 
 // Renders an OG-style preview card for an arbitrary link placed alone in a
 // post body. Falls back to a plain link when no metadata is available.
+function GoogleDriveIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 87.3 78" className={className} aria-hidden="true">
+      <path
+        d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L27.5 53H0c0 1.55.4 3.1 1.2 4.5z"
+        fill="#0066da"
+      />
+      <path
+        d="M43.65 25L29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3L1.2 48.5C.4 49.9 0 51.45 0 53h27.5z"
+        fill="#00ac47"
+      />
+      <path
+        d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.5l5.85 11.5z"
+        fill="#ea4335"
+      />
+      <path
+        d="M43.65 25L57.4 1.2C56.05.4 54.5 0 52.95 0H34.35c-1.55 0-3.1.45-4.45 1.2z"
+        fill="#00832d"
+      />
+      <path
+        d="M59.8 53H27.5L13.75 76.8c1.35.8 2.9 1.2 4.45 1.2h50.9c1.55 0 3.1-.45 4.45-1.2z"
+        fill="#2684fc"
+      />
+      <path
+        d="M73.4 26.5l-12.75-22c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25 59.8 53h27.45c0-1.55-.4-3.1-1.2-4.5z"
+        fill="#ffba00"
+      />
+    </svg>
+  );
+}
+
 function LinkPreviewCard({ href }: { href: string }) {
   const { data, isLoading } = useQuery(linkPreviewQueryOptions(href));
   let hostname = href;
@@ -793,6 +824,8 @@ function LinkPreviewCard({ href }: { href: string }) {
   } catch {
     /* ignore */
   }
+  const isGoogleDrive =
+    hostname === "drive.google.com" || hostname === "docs.google.com";
   const title = data?.title || hostname;
   const siteName = data?.siteName || hostname;
   const image = data?.image || null;
@@ -812,6 +845,8 @@ function LinkPreviewCard({ href }: { href: string }) {
             loading="lazy"
             className="h-full w-full object-cover"
           />
+        ) : isGoogleDrive ? (
+          <GoogleDriveIcon className="h-12 w-12" />
         ) : (
           <ExternalLink className="h-8 w-8" />
         )}
@@ -821,7 +856,11 @@ function LinkPreviewCard({ href }: { href: string }) {
           {isLoading ? "미리보기 불러오는 중…" : title}
         </span>
         <span className="flex items-center gap-1 truncate text-xs text-muted-foreground">
-          <ExternalLink className="h-3 w-3 shrink-0" />
+          {isGoogleDrive ? (
+            <GoogleDriveIcon className="h-3.5 w-3.5 shrink-0" />
+          ) : (
+            <ExternalLink className="h-3 w-3 shrink-0" />
+          )}
           {siteName}
         </span>
       </span>
