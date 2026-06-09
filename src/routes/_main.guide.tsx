@@ -271,6 +271,9 @@ function GuidePage() {
         </p>
       </header>
 
+      <GuideSearch containerRef={contentRef} />
+
+      <div ref={contentRef} className="space-y-8">
       {/* 목차 */}
       <nav className="rounded-3xl border border-border bg-card p-5 shadow-sm">
         <p className="mb-3 text-sm font-semibold text-foreground">목차</p>
