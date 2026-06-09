@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   HelpCircle,
   KeyRound,
@@ -15,6 +16,9 @@ import {
   LinkIcon,
   Bell,
   Eye,
+  ChevronUp,
+  ChevronDown,
+  X,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_main/guide")({
