@@ -956,6 +956,31 @@ function EmbeddedFrame({ embedUrl, href }: { embedUrl: string; href: string }) {
   );
 }
 
+// Resolves a Canva link (incl. canva.link short links) server-side and renders
+// it as an inline embed (view-only links) or a Canva-icon preview card
+// (project/edit links that cannot be embedded).
+function CanvaLinkCard({ href }: { href: string }) {
+  const { data, isLoading } = useQuery(canvaLinkQueryOptions(href));
+
+  if (isLoading) {
+    return (
+      <span className="my-4 block overflow-hidden rounded-2xl bg-card shadow-sm">
+        <span className="flex aspect-video w-full items-center justify-center bg-accent text-primary">
+          <CanvaIcon className="h-12 w-12 animate-pulse" />
+        </span>
+      </span>
+    );
+  }
+
+  if (data?.kind === "view" && data.embedUrl) {
+    return <EmbeddedFrame embedUrl={data.embedUrl} href={href} />;
+  }
+
+  return <LinkPreviewCard href={href} />;
+}
+
+
+
 function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
