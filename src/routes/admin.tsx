@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { LayoutGrid, SlidersHorizontal, ShieldCheck, Lock, AlertCircle, Megaphone, CalendarDays, Home, UserCog, Eye, EyeOff } from "lucide-react";
+import { LayoutGrid, SlidersHorizontal, ShieldCheck, Lock, AlertCircle, CalendarDays, Home, UserCog, Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 
