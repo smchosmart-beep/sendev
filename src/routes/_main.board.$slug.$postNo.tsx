@@ -419,6 +419,92 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
   );
 }
 
+// 답글로 이어지는 연재(체인)를 글 상세 하단에 표시한다. 같은 연재의 모든 편을
+// 작성순으로 보여주고, 현재 편을 강조하며 이전/다음 편으로 이동할 수 있다.
+function SeriesChainSection({ post, slug }: { post: PostDTO; slug: string }) {
+  const { data: chain } = useQuery(postChainQueryOptions(post.id));
+  const episodes = chain ?? [];
+  const currentIndex = episodes.findIndex((e) => e.id === post.id);
+  const prev = currentIndex > 0 ? episodes[currentIndex - 1] : null;
+  const next =
+    currentIndex >= 0 && currentIndex < episodes.length - 1
+      ? episodes[currentIndex + 1]
+      : null;
+  const hasSeries = episodes.length > 1;
+
+  return (
+    <section className="rounded-2xl bg-card p-6 shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+          <Layers className="h-5 w-5 text-primary" />
+          연재 {hasSeries ? `(${episodes.length}편)` : ""}
+        </h2>
+        <Button asChild size="sm" className="rounded-xl active:scale-95">
+          <Link
+            to="/board/$slug/new-general"
+            params={{ slug }}
+            search={{ parent: post.postNo }}
+          >
+            <CornerDownRight className="h-4 w-4" />
+            다음 편 작성
+          </Link>
+        </Button>
+      </div>
+
+      {hasSeries && (
+        <>
+          <ol className="mt-4 space-y-1.5">
+            {episodes.map((ep, i) => {
+              const isCurrent = ep.id === post.id;
+              return (
+                <li key={ep.id}>
+                  <Link
+                    to="/board/$slug/$postNo"
+                    params={{ slug, postNo: String(ep.postNo) }}
+                    className={`flex items-start gap-2 rounded-xl px-3 py-2 text-sm transition-colors ${
+                      isCurrent
+                        ? "bg-accent font-medium text-foreground"
+                        : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                    }`}
+                  >
+                    <span className="shrink-0 tabular-nums text-primary">{i + 1}.</span>
+                    <span className="break-words">{ep.title}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ol>
+
+          <div className="mt-4 flex items-center justify-between gap-2">
+            {prev ? (
+              <Button asChild variant="secondary" size="sm" className="rounded-xl active:scale-95">
+                <Link to="/board/$slug/$postNo" params={{ slug, postNo: String(prev.postNo) }}>
+                  <ArrowLeft className="h-4 w-4" />
+                  이전 편
+                </Link>
+              </Button>
+            ) : (
+              <span />
+            )}
+            {next ? (
+              <Button asChild variant="secondary" size="sm" className="rounded-xl active:scale-95">
+                <Link to="/board/$slug/$postNo" params={{ slug, postNo: String(next.postNo) }}>
+                  다음 편
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            ) : (
+              <span />
+            )}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+
+
 function LinkEmbedSection({
   embedUrl,
   deployUrl,
