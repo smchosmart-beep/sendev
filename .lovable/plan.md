@@ -1,42 +1,39 @@
 ## 목표
-관리자가 특정 게시판(폴더 또는 하위 게시판)을 **목록에서 즉시 숨길 수 있는** 토글을 제공한다. 예: 지금은 "성장형" 기간이라 "입문형", "도전형" 게시판을 잠시 숨겨둔다.
+게시글 상세 페이지 **하단**에 **이전글 / 다음글** 버튼을 추가해, 목록으로 돌아가지 않고 같은 게시판의 같은 종류 글을 순서대로 넘겨본다.
 
-선택된 동작:
-- **즉시 숨김 토글** (날짜 기간 없이 ON/OFF)
-- **목록에서만 숨김** (직접 URL로는 여전히 접근 가능 — 관리자 미리보기·공유 링크 유지)
-- **폴더를 숨기면 하위 게시판도 함께 숨김**
+선택 동작: **같은 종류만 이동** + **글 하단 배치**. 부작용 검토에서 나온 **서버 부하 보완**을 반영한다.
 
 ## 작업 내용
 
-### 1. DB: `hidden` 컬럼 추가 (migration)
-`public.categories`에 `hidden boolean not null default false` 컬럼 추가. 기존 행은 모두 노출 상태(false) 유지.
+### 1. 가벼운 이웃 글 조회 서버 함수 추가 (`src/lib/platform.functions.ts`)
+- 새 함수 `listPostNav` 추가: 입력 `{ slug, boardPassword?, adminPassword? }`.
+- 해당 카테고리의 글에서 **`id, post_no, type, pinned, title, created_at`만** select(본문 content·댓글 집계 없음), `created_at desc` 정렬.
+- 비밀번호 게시판은 기존 `boardAccessOk`(또는 동일 검증)로 접근 확인 후 빈 배열 반환.
+- 가벼운 DTO 배열 반환(`PostNavItemDTO[]`: id, postNo, type, pinned, title).
+- 기존 `listPosts`는 그대로 두어 목록 페이지에 영향 없음.
 
-### 2. 서버/데이터 매핑 (`src/lib/platform.functions.ts`)
-- `CategoryDTO`에 `hidden: boolean` 필드 추가.
-- `listCategories` select 목록에 `hidden` 추가하고 매핑(`hidden: !!c.hidden`). (관리자/공개 양쪽이 같은 쿼리를 쓰므로 여기서는 **필터링하지 않고** 값만 내려줌.)
-- `createCategory` 입력에 `hidden`(default false), `updateCategory` 입력에 `hidden`(optional) 추가 → patch 반영.
+### 2. 쿼리 옵션 추가 (`src/lib/platform.queries.ts`)
+- `postNavQueryOptions(slug, boardPassword)` 추가: `queryKey: ["post-nav", slug, boardPassword]`, `queryFn: () => listPostNav(...)`.
 
-### 3. 공개 목록 필터 (`src/routes/_main.board.index.tsx`)
-- 탭 필터(`visible`)에서 `hidden === true`인 항목 제외.
-- **폴더 함께 숨김**: 어떤 항목의 상위(부모/조상) 폴더가 hidden이면 그 항목도 목록에서 제외(조상 체인을 따라 hidden 여부 확인하는 헬퍼 추가).
-- 직접 URL 접근(`_main.board.$slug...`)은 변경하지 않음 → 목록에서만 숨김.
-
-### 4. 관리자 설정 UI (`src/routes/admin.categories.tsx`)
-- 생성/수정 모달에 "목록에서 숨기기" 스위치(Switch) 추가 — 폴더·게시판 공통.
-- 카테고리 트리 항목에 숨김 상태 표시(예: `EyeOff` 아이콘 + "숨김" 배지)로 한눈에 식별.
-- 저장 시 `hidden` 값을 create/update에 전달.
-
-### 5. 사용자 가이드 업데이트 (`src/routes/_main.guide.tsx`)
-- 관리자 설정에 "게시판 숨기기(목록 비노출)" 동작 설명 추가 — 프로젝트 메모리 규칙(가이드 동기화) 준수.
-
-## 기술 메모
-- 숨김은 표시 로직만 변경하며, 게시글/평가 등 다른 기능에는 영향 없음.
-- 폴더 숨김의 하위 전파는 DB가 아닌 렌더 단계(조상 체인 검사)에서 처리해 데이터 일관성 유지(폴더를 다시 노출하면 하위도 즉시 복귀).
+### 3. 상세 페이지에 이전/다음 네비게이션 (`src/routes/_main.board.$slug.$postNo.tsx`)
+- `useQuery(postNavQueryOptions(slug, getBoardPassword(slug)))`로 가벼운 목록을 가져온다.
+- 현재 글과 **같은 `type`**만 추리되, 게시글(post)은 목록과 동일하게 **pinned 그룹/일반 그룹을 분리**해 현재 글이 속한 그룹 안에서만 순서를 만든다.
+- 배열에서 현재 글 위치를 찾아 바로 앞(다음글)·뒤(이전글)를 결정. (정렬이 최신순이므로 "이전글 = 더 오래된 글", "다음글 = 더 최신 글"로 라벨링.)
+- 글 하단(좋아요 아래, 연재/댓글 위)에 카드형 네비게이션 렌더:
+  - `<Link to="/board/$slug/$postNo" params=...>` 사용, 대상 글 제목 표시.
+  - 한쪽 끝이면 해당 버튼 숨김/비활성.
+- 데이터 로딩 중이거나 이웃이 없으면 영역 자체를 렌더하지 않아 깜빡임/오작동 방지.
 
 ```text
-입문형 폴더(hidden) ─┐ (목록에서 숨김)
-  ├─ 입문 1게시판   ─┤ → 조상이 숨김이라 함께 숨김
-  └─ 입문 2게시판   ─┘
-도전형 게시판(hidden) → 단독 숨김
-성장형 게시판        → 정상 노출
+[ ← 이전글            다음글 → ]
+  (더 오래된 글 제목)   (더 최신 글 제목)
 ```
+
+### 4. 사용자 가이드 업데이트 (`src/routes/_main.guide.tsx`)
+- "게시글 하단의 이전글/다음글 버튼으로 같은 게시판의 같은 종류 글을 순서대로 넘겨볼 수 있다" 설명 추가(가이드 동기화 규칙 준수).
+
+## 기술 메모 / 부작용 대응
+- **서버 부하**: 본문·댓글집계를 제외한 경량 컬럼만 조회하는 전용 함수 사용 → 글 하나 열 때 비용 최소화. 캐시 키 분리로 목록 쿼리와 독립.
+- **기존 기능 영향 없음**: DB 변경 없음, `listPosts`/연재/댓글/조회수/평가 로직 미수정. 연재 네비와 역할이 달라 중복 동작 아님.
+- **잠금 게시판 안전**: 통과한 비밀번호만 사용, 서버에서 접근 재검증.
+- **엣지 케이스**: pinned/일반 그룹 분리 처리로 순서 어긋남 방지. 삭제·이동된 이웃 클릭 시 "글 없음"으로 자연 처리.
