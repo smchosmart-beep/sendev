@@ -288,7 +288,10 @@ function MainLayout() {
                   onClick={() => setMenuOpen(false)}
                   className="mt-2 flex items-center gap-3 rounded-2xl border border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
-                  <UserRound className="h-5 w-5" />
+                  <span className="relative inline-flex">
+                    <UserRound className="h-5 w-5" />
+                    <span className="pointer-events-none absolute -bottom-1 -right-1.5 rounded-full bg-primary px-1 text-[8px] font-bold leading-[1.4] text-primary-foreground">my</span>
+                  </span>
                   내 페이지
                 </Link>
 
