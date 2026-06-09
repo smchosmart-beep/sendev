@@ -73,10 +73,34 @@ function UnreadBadge({ count }: { count: number }) {
 function BoardCard({
   category,
   unread = 0,
+  disabled = false,
 }: {
   category: CategoryDTO;
   unread?: number;
+  disabled?: boolean;
 }) {
+  if (disabled) {
+    return (
+      <div
+        aria-disabled="true"
+        className="flex flex-col justify-between rounded-2xl bg-card p-6 shadow-sm opacity-60 cursor-not-allowed select-none"
+      >
+        <div>
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-muted-foreground">
+            {category.name}
+            {category.hasPassword && <Lock className="h-4 w-4 text-muted-foreground" />}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {category.description || "설명이 없습니다."}
+          </p>
+        </div>
+        <div className="mt-6 flex items-center justify-between text-sm font-medium text-muted-foreground">
+          <span>비활성 (숨김)</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Link
       to="/board/$slug"
@@ -101,38 +125,69 @@ function BoardCard({
   );
 }
 
+// Remembers a folder's open/closed state per device (localStorage), keyed by id.
+function useFolderOpen(folderId: string): [boolean, () => void] {
+  const storageKey = `board-folder-open-${folderId}`;
+  const [open, setOpen] = useState(true);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved !== null) setOpen(saved === "1");
+    } catch {
+      /* ignore */
+    }
+  }, [storageKey]);
+
+  const toggle = () =>
+    setOpen((v) => {
+      const next = !v;
+      try {
+        localStorage.setItem(storageKey, next ? "1" : "0");
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+
+  return [open, toggle];
+}
+
 function FolderNode({
   group,
   childrenOf,
   depth,
   unreadMap,
+  disabled = false,
 }: {
   group: CategoryDTO;
   childrenOf: (parentId: string) => CategoryDTO[];
   depth: number;
   unreadMap: Record<string, number>;
+  disabled?: boolean;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, toggle] = useFolderOpen(group.id);
   const children = childrenOf(group.id);
 
   return (
-    <div className="rounded-2xl bg-card/60 shadow-sm">
+    <div className={`rounded-2xl bg-card/60 shadow-sm ${disabled ? "opacity-60" : ""}`}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         className="flex w-full items-center gap-2 rounded-2xl p-4 text-left transition-colors hover:bg-accent/50 active:scale-[0.99]"
       >
         <ChevronRight
           className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${open ? "rotate-90" : ""}`}
         />
         {open ? (
-          <FolderOpen className="h-5 w-5 shrink-0 text-primary" />
+          <FolderOpen className={`h-5 w-5 shrink-0 ${disabled ? "text-muted-foreground" : "text-primary"}`} />
         ) : (
-          <Folder className="h-5 w-5 shrink-0 text-primary" />
+          <Folder className={`h-5 w-5 shrink-0 ${disabled ? "text-muted-foreground" : "text-primary"}`} />
         )}
         <span className="flex-1 min-w-0">
-          <span className="block truncate text-base font-semibold text-foreground">
+          <span className={`block truncate text-base font-semibold ${disabled ? "text-muted-foreground" : "text-foreground"}`}>
             {group.name}
+            {disabled && <span className="ml-2 text-xs font-normal">(숨김)</span>}
           </span>
           {group.description && (
             <span className="block truncate text-xs text-muted-foreground">
@@ -145,19 +200,26 @@ function FolderNode({
 
       {open && children.length > 0 && (
         <div className="space-y-3 px-3 pb-3 pl-6 sm:pl-9">
-          {children.map((child) =>
-            child.isGroup ? (
+          {children.map((child) => {
+            const childDisabled = disabled || !!child.hidden;
+            return child.isGroup ? (
               <FolderNode
                 key={child.id}
                 group={child}
                 childrenOf={childrenOf}
                 depth={depth + 1}
                 unreadMap={unreadMap}
+                disabled={childDisabled}
               />
             ) : (
-              <BoardCard key={child.id} category={child} unread={unreadMap[child.id] ?? 0} />
-            ),
-          )}
+              <BoardCard
+                key={child.id}
+                category={child}
+                unread={unreadMap[child.id] ?? 0}
+                disabled={childDisabled}
+              />
+            );
+          })}
         </div>
       )}
 
