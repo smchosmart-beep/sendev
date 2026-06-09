@@ -295,10 +295,10 @@
 
 /* Guide in-page search highlights (CSS Custom Highlight API). */
 ::highlight(guide-search) {
-  background-color: hsl(var(--primary) / 0.22);
+  background-color: color-mix(in oklch, var(--primary) 25%, transparent);
   color: inherit;
 }
 ::highlight(guide-search-active) {
-  background-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
+  background-color: var(--primary);
+  color: var(--primary-foreground);
 }
