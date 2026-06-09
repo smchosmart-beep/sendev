@@ -47,6 +47,15 @@ export const postChainQueryOptions = (postId: string) =>
     enabled: !!postId,
   });
 
+export const canvaLinkQueryOptions = (url: string) =>
+  queryOptions({
+    queryKey: ["canva-link", url],
+    queryFn: () => resolveCanvaLink({ data: { url } }),
+    enabled: !!url,
+    staleTime: 60 * 60 * 1000,
+    retry: false,
+  });
+
 
 
 
