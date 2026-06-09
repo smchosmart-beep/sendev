@@ -909,6 +909,7 @@ export const createPost = createServerFn({ method: "POST" })
         githubUrl: z.string().trim().max(300).default(""),
         deployUrl: z.string().trim().max(300).default(""),
         series: z.string().trim().max(100).default(""),
+        parentPostId: z.string().uuid().nullable().default(null),
         nicknamePassword: z.string().trim().max(100).default(""),
         adminPassword: z.string().max(200).default(""),
       })
