@@ -583,6 +583,7 @@ function CategoriesPage() {
                     {c.isGroup && <Folder className="h-4 w-4 shrink-0 text-primary" />}
                     {c.name}
                     {c.hasPassword && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+                    {c.hidden && <EyeOff className="h-3.5 w-3.5 shrink-0 text-amber-600" />}
                   </h3>
                   <p className="mt-1 truncate text-sm text-muted-foreground">
                     {c.description || "설명이 없습니다."}
