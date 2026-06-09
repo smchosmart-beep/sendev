@@ -58,6 +58,7 @@ import {
   commentsQueryOptions,
   profileMapQueryOptions,
   linkPreviewQueryOptions,
+  canvaLinkQueryOptions,
   readPostIdsQueryOptions,
 } from "@/lib/platform.queries";
 import { stableEvalOrder, getOrderSeed } from "@/lib/series";
