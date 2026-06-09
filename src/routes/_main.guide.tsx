@@ -362,8 +362,11 @@ function GuidePage() {
         </p>
         <ul className="ml-5 list-disc space-y-2">
           <li><strong>유튜브·비메오·캔바</strong> 링크: 본문에서 바로 재생·임베드되는 화면으로 표시됩니다.</li>
+          <li><strong>캔바 링크</strong>는 종류에 따라 자동 구분됩니다. <strong>보기 전용 링크</strong>는 본문에 바로 임베드되어 미리 볼 수 있고, <strong>프로젝트(편집) 공유 링크</strong>는 임베드가 불가능하므로 <strong>캔바 아이콘</strong> 미리보기 카드로 표시됩니다.</li>
+          <li><strong>구글 드라이브</strong> 링크: 구글 드라이브 아이콘이 있는 미리보기 카드로 표시됩니다.</li>
           <li><strong>그 외 모든 웹사이트</strong>(블로그, 뉴스, 깃허브 등): 썸네일 이미지 + 제목 + 사이트 주소가 담긴 미리보기 카드로 표시됩니다.</li>
           <li>대상 사이트가 미리보기 정보를 제공하지 않으면 썸네일 없이 제목·주소만, 그래도 안 되면 일반 링크로 표시됩니다.</li>
+
         </ul>
         <p className="text-sm text-muted-foreground">
           ※ 문장 중간에 들어간 링크는 미리보기 카드 없이 일반 텍스트 링크로 표시됩니다. 미리보기 카드를 원하면 링크만 한 줄에 따로 적어주세요.
