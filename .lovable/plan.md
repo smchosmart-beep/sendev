@@ -1,39 +1,42 @@
 ## 목표
-본문 게시글에 캔바(canva) 링크를 삽입했을 때:
-- **보기 전용 링크**(리다이렉트 결과가 `/view`) → 링크 게시판처럼 **자동 임베드**(iframe 미리보기)
-- **프로젝트 공유 링크**(리다이렉트 결과가 `/edit`, 임베드 불가) → 구글 드라이브처럼 **캔바 아이콘** 미리보기 카드
+관리자가 특정 게시판(폴더 또는 하위 게시판)을 **목록에서 즉시 숨길 수 있는** 토글을 제공한다. 예: 지금은 "성장형" 기간이라 "입문형", "도전형" 게시판을 잠시 숨겨둔다.
 
-## 배경 (확인된 사실)
-두 링크 모두 `canva.link/...` 단축 URL이라 문자열만으로 구분 불가. 서버에서 리다이렉트를 따라가면 구분됨:
-- `canva.link/p1b65...` → `.../design/<id>/<token>/view?...` (임베드 가능)
-- `canva.link/ecseu...` → `.../design/<id>/<token>/edit?...` (403, 임베드 불가)
-
-현재 `getEmbedUrl`은 `canva.com/design/.../view`만 임베드 처리하고 `canva.link` 단축 URL은 처리하지 못해, 본문에서 두 링크 모두 일반 미리보기 카드로만 표시됨.
+선택된 동작:
+- **즉시 숨김 토글** (날짜 기간 없이 ON/OFF)
+- **목록에서만 숨김** (직접 URL로는 여전히 접근 가능 — 관리자 미리보기·공유 링크 유지)
+- **폴더를 숨기면 하위 게시판도 함께 숨김**
 
 ## 작업 내용
 
-### 1. 서버 함수 추가 (`src/lib/platform.functions.ts`)
-- `resolveCanvaLink({ url })`: `canva.link`/`canva.com` 링크의 리다이렉트를 서버에서 **수동으로 최대 몇 홉** 따라가(HEAD + Location 헤더, 봇 차단 회피용 User-Agent 지정) 최종 canva.com 디자인 URL을 구함.
-- 반환: `{ kind: "view" | "edit" | "other", embedUrl: string | null }`
-  - 최종 경로가 `/view` → `kind:"view"`, `embedUrl = https://www.canva.com/design/<id>/<token>/view?embed`
-  - 최종 경로가 `/edit` → `kind:"edit"`, `embedUrl: null`
-  - 그 외/실패 → `kind:"other"`, `embedUrl: null`
+### 1. DB: `hidden` 컬럼 추가 (migration)
+`public.categories`에 `hidden boolean not null default false` 컬럼 추가. 기존 행은 모두 노출 상태(false) 유지.
 
-### 2. 쿼리 옵션 (`src/lib/platform.queries.ts`)
-- `canvaLinkQueryOptions(url)` 추가(`staleTime` 길게 잡아 외부 요청·서버 비용 최소화).
+### 2. 서버/데이터 매핑 (`src/lib/platform.functions.ts`)
+- `CategoryDTO`에 `hidden: boolean` 필드 추가.
+- `listCategories` select 목록에 `hidden` 추가하고 매핑(`hidden: !!c.hidden`). (관리자/공개 양쪽이 같은 쿼리를 쓰므로 여기서는 **필터링하지 않고** 값만 내려줌.)
+- `createCategory` 입력에 `hidden`(default false), `updateCategory` 입력에 `hidden`(optional) 추가 → patch 반영.
 
-### 3. 본문 렌더러 + 카드 (`src/routes/_main.board.$slug.$postNo.tsx`)
-- 본문 단독 링크(`soleLinkHref`) 처리 순서에서 **캔바 호스트(`canva.link` 또는 `canva.com/design`)면** 새 컴포넌트 `CanvaLinkCard`로 분기(기존 `getEmbedUrl`/`LinkPreviewCard`보다 먼저).
-- `CanvaLinkCard`:
-  - `canvaLinkQueryOptions`로 해석. 로딩 중에는 가벼운 자리표시(skeleton) 카드.
-  - `kind === "view"` → 기존 `EmbeddedFrame`로 자동 임베드.
-  - 그 외(`edit`/`other`) → `LinkPreviewCard`로 폴백(아래 아이콘 표시 적용).
-- `CanvaIcon`(인라인 SVG, 별도 의존성 없음) 추가하고, `LinkPreviewCard`에서 호스트가 `canva.link`/`canva.com`이면 구글 드라이브처럼 캔바 아이콘을 미리보기 영역과 사이트명 줄에 표시.
+### 3. 공개 목록 필터 (`src/routes/_main.board.index.tsx`)
+- 탭 필터(`visible`)에서 `hidden === true`인 항목 제외.
+- **폴더 함께 숨김**: 어떤 항목의 상위(부모/조상) 폴더가 hidden이면 그 항목도 목록에서 제외(조상 체인을 따라 hidden 여부 확인하는 헬퍼 추가).
+- 직접 URL 접근(`_main.board.$slug...`)은 변경하지 않음 → 목록에서만 숨김.
 
-### 4. 사용자 가이드 업데이트 (`src/routes/_main.guide.tsx`)
-- "본문에 캔바 보기 전용 링크 → 자동 임베드 / 프로젝트 공유 링크 → 캔바 아이콘 카드" 동작 설명 추가.
+### 4. 관리자 설정 UI (`src/routes/admin.categories.tsx`)
+- 생성/수정 모달에 "목록에서 숨기기" 스위치(Switch) 추가 — 폴더·게시판 공통.
+- 카테고리 트리 항목에 숨김 상태 표시(예: `EyeOff` 아이콘 + "숨김" 배지)로 한눈에 식별.
+- 저장 시 `hidden` 값을 create/update에 전달.
 
-## 범위/안전
-- 외부 요청은 캔바 호스트에 한해 1회 해석 + React Query 캐시로 비용 최소화.
-- 기존 YouTube/Vimeo/일반 링크 임베드 및 링크 게시판 동작에는 영향 없음(본문 캔바 분기만 우선 적용).
-- DB/스키마 변경 없음. 표시·해석 로직만 추가.
+### 5. 사용자 가이드 업데이트 (`src/routes/_main.guide.tsx`)
+- 관리자 설정에 "게시판 숨기기(목록 비노출)" 동작 설명 추가 — 프로젝트 메모리 규칙(가이드 동기화) 준수.
+
+## 기술 메모
+- 숨김은 표시 로직만 변경하며, 게시글/평가 등 다른 기능에는 영향 없음.
+- 폴더 숨김의 하위 전파는 DB가 아닌 렌더 단계(조상 체인 검사)에서 처리해 데이터 일관성 유지(폴더를 다시 노출하면 하위도 즉시 복귀).
+
+```text
+입문형 폴더(hidden) ─┐ (목록에서 숨김)
+  ├─ 입문 1게시판   ─┤ → 조상이 숨김이라 함께 숨김
+  └─ 입문 2게시판   ─┘
+도전형 게시판(hidden) → 단독 숨김
+성장형 게시판        → 정상 노출
+```

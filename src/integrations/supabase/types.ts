@@ -55,6 +55,7 @@ export type Database = {
           eval_seed: number
           general_name: string
           github_required: boolean
+          hidden: boolean
           id: string
           is_group: boolean
           link_name: string
@@ -80,6 +81,7 @@ export type Database = {
           eval_seed?: number
           general_name?: string
           github_required?: boolean
+          hidden?: boolean
           id?: string
           is_group?: boolean
           link_name?: string
@@ -105,6 +107,7 @@ export type Database = {
           eval_seed?: number
           general_name?: string
           github_required?: boolean
+          hidden?: boolean
           id?: string
           is_group?: boolean
           link_name?: string

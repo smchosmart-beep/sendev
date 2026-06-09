@@ -180,6 +180,7 @@ export interface CategoryDTO {
   evalOpen: boolean;
   evalSeed: number;
   reviewAllowlistOnly: boolean;
+  hidden: boolean;
 }
 
 // Board slug: lowercase letters, digits and hyphens. Used in short URLs.
@@ -277,7 +278,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const { data, error } = await db
       .from("categories")
       .select(
-        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, general_name, project_name, link_name, tab_group, eval_open, eval_seed, review_allowlist_only",
+        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, general_name, project_name, link_name, tab_group, eval_open, eval_seed, review_allowlist_only, hidden",
       )
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
@@ -301,6 +302,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       evalOpen: !!c.eval_open,
       evalSeed: Number(c.eval_seed ?? 0),
       reviewAllowlistOnly: !!c.review_allowlist_only,
+      hidden: !!c.hidden,
     }));
   },
 );
@@ -362,6 +364,7 @@ export const createCategory = createServerFn({ method: "POST" })
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .default("hackathon"),
+        hidden: z.boolean().default(false),
         adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
@@ -392,6 +395,7 @@ export const createCategory = createServerFn({ method: "POST" })
       project_name: data.projectName || "산출물",
       link_name: data.linkName || "링크",
       tab_group: data.tabGroup,
+      hidden: data.hidden,
       sort_order: nextOrder,
     });
     if (error) throw new Error(error.message);
@@ -420,6 +424,7 @@ export const updateCategory = createServerFn({ method: "POST" })
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .optional(),
+        hidden: z.boolean().optional(),
         adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
@@ -454,6 +459,7 @@ export const updateCategory = createServerFn({ method: "POST" })
     if (data.linkName !== undefined)
       patch.link_name = data.linkName || "링크";
     if (data.tabGroup !== undefined) patch.tab_group = data.tabGroup;
+    if (data.hidden !== undefined) patch.hidden = data.hidden;
     const { error } = await db.from("categories").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

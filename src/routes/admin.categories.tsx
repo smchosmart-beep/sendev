@@ -3,7 +3,7 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { FolderPlus, Folder, Pencil, Trash2, LayoutGrid, Lock, Github, ChevronUp, ChevronDown, ChevronRight } from "lucide-react";
+import { FolderPlus, Folder, Pencil, Trash2, LayoutGrid, Lock, Github, ChevronUp, ChevronDown, ChevronRight, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 import { categoriesQueryOptions } from "@/lib/platform.queries";
@@ -96,6 +96,7 @@ function CategoriesPage() {
   const [linkName, setLinkName] = useState("링크");
   const [tabGroup, setTabGroup] = useState<TabGroup>("hackathon");
   const [isGroup, setIsGroup] = useState(false);
+  const [hidden, setHidden] = useState(false);
   const [parentId, setParentId] = useState<string>("");
 
   const [editing, setEditing] = useState<CategoryDTO | null>(null);
@@ -112,6 +113,7 @@ function CategoriesPage() {
   const [editLinkName, setEditLinkName] = useState("링크");
   const [editTabGroup, setEditTabGroup] = useState<TabGroup>("hackathon");
   const [editIsGroup, setEditIsGroup] = useState(false);
+  const [editHidden, setEditHidden] = useState(false);
   const [editParentId, setEditParentId] = useState<string>("");
 
   const [deleting, setDeleting] = useState<CategoryDTO | null>(null);
@@ -167,6 +169,7 @@ function CategoriesPage() {
           linkName: linkName.trim(),
           tabGroup,
           isGroup,
+          hidden,
           parentId: parentId || null,
 
         },
@@ -186,6 +189,7 @@ function CategoriesPage() {
       setLinkName("링크");
       setTabGroup("hackathon");
       setIsGroup(false);
+      setHidden(false);
       setParentId("");
 
       toast.success("새 카테고리이 추가되었어요.");
@@ -212,6 +216,7 @@ function CategoriesPage() {
           linkName: editLinkName.trim(),
           tabGroup: editTabGroup,
           isGroup: editIsGroup,
+          hidden: editHidden,
           parentId: editParentId || null,
 
         },
@@ -300,6 +305,7 @@ function CategoriesPage() {
     setEditLinkName(c.linkName);
     setEditTabGroup(c.tabGroup ?? "hackathon");
     setEditIsGroup(c.isGroup);
+    setEditHidden(c.hidden);
     setEditParentId(c.parentId ?? "");
     if (c.hasPassword) {
       getPasswordFn({ data: { id: c.id, adminPassword: getAdminPassword() } })
@@ -379,6 +385,17 @@ function CategoriesPage() {
                     ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-1 pt-1">
+              <SectionToggle
+                id="add-hidden"
+                label="목록에서 숨기기"
+                checked={hidden}
+                onChange={setHidden}
+              />
+              <p className="text-xs text-muted-foreground">
+                켜면 게시판 목록에 노출되지 않아요(직접 링크로는 접근 가능). 폴더를 숨기면 하위 게시판도 함께 숨겨져요.
+              </p>
             </div>
           </div>
           <div className="space-y-2">
@@ -566,6 +583,7 @@ function CategoriesPage() {
                     {c.isGroup && <Folder className="h-4 w-4 shrink-0 text-primary" />}
                     {c.name}
                     {c.hasPassword && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+                    {c.hidden && <EyeOff className="h-3.5 w-3.5 shrink-0 text-amber-600" />}
                   </h3>
                   <p className="mt-1 truncate text-sm text-muted-foreground">
                     {c.description || "설명이 없습니다."}
@@ -580,6 +598,12 @@ function CategoriesPage() {
                     <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                       {TAB_LABEL[c.tabGroup ?? "hackathon"]}
                     </span>
+                    {c.hidden && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700">
+                        <EyeOff className="h-3 w-3" />
+                        목록에서 숨김
+                      </span>
+                    )}
                     {c.isGroup && <SectionBadge label={`폴더 · 하위 ${childCount}개`} />}
                     {c.parentId && (
                       <SectionBadge
@@ -709,6 +733,17 @@ function CategoriesPage() {
                       ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-1 pt-1">
+                <SectionToggle
+                  id="edit-hidden"
+                  label="목록에서 숨기기"
+                  checked={editHidden}
+                  onChange={setEditHidden}
+                />
+                <p className="text-xs text-muted-foreground">
+                  켜면 게시판 목록에 노출되지 않아요(직접 링크로는 접근 가능). 폴더를 숨기면 하위 게시판도 함께 숨겨져요.
+                </p>
               </div>
             </div>
             <div className="space-y-2">
