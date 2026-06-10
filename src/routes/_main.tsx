@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Calendar, Code2, Settings, Trophy, BookOpen, Rocket, Terminal, Menu, Home, Search, UserRound, HelpCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -10,7 +11,14 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  categoriesQueryOptions,
+  postStubsQueryOptions,
+  readPostIdsQueryOptions,
+} from "@/lib/platform.queries";
+import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import type { TabGroup } from "@/lib/platform.functions";
+
 
 
 type SearchMode = "title" | "title_content" | "author";
@@ -86,6 +94,20 @@ const boardTabs: { group: TabGroup; label: string; icon: typeof Trophy }[] = [
   { group: "helloworld", label: "Hello, World", icon: Terminal },
 ];
 
+function TabUnreadBadge({ count, active }: { count: number; active?: boolean }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      className={cn(
+        "ml-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-xs font-bold leading-none",
+        active ? "bg-white/25 text-primary-foreground" : "bg-pink-500 text-white",
+      )}
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
 function MainLayout() {
   const location = useRouterState({ select: (s) => s.location });
   const pathname = location.pathname;
@@ -96,6 +118,38 @@ function MainLayout() {
   const onBoardList = pathname === "/board";
   const activeGroup = (location.search as { tab?: TabGroup })?.tab ?? "hackathon";
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // 탭별 미열람 글 수 합산: 닉네임이 등록된 경우에만 계산/표시.
+  const { identity } = useStoredIdentity();
+  const author = identity?.author ?? "";
+  const { data: categories = [] } = useQuery(categoriesQueryOptions());
+  const { data: stubs = [] } = useQuery({
+    ...postStubsQueryOptions(),
+    enabled: author.trim().length > 0,
+  });
+  const { data: readIds = [] } = useQuery(readPostIdsQueryOptions(author));
+
+  const unreadByTab = useMemo(() => {
+    const map: Record<TabGroup, number> = {
+      hackathon: 0,
+      resources: 0,
+      devground: 0,
+      helloworld: 0,
+    };
+    if (author.trim().length === 0) return map;
+    const catTab = new Map<string, TabGroup>(
+      categories.map((c) => [c.id, (c.tabGroup ?? "hackathon") as TabGroup]),
+    );
+    const readSet = new Set(readIds);
+    for (const s of stubs) {
+      if (s.type !== "post") continue;
+      if (readSet.has(s.id)) continue;
+      const tab = catTab.get(s.categoryId);
+      if (tab && tab in map) map[tab] += 1;
+    }
+    return map;
+  }, [author, categories, stubs, readIds]);
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -167,6 +221,8 @@ function MainLayout() {
                 >
                   <Icon className="h-4 w-4" />
                   {label}
+                  <TabUnreadBadge count={unreadByTab[group]} active={active} />
+
                 </Link>
               );
             })}
@@ -275,6 +331,8 @@ function MainLayout() {
                     >
                       <Icon className="h-5 w-5" />
                       {label}
+                      <TabUnreadBadge count={unreadByTab[group]} active={active} />
+
                     </Link>
                   );
                 })}

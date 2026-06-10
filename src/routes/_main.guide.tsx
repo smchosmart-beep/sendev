@@ -513,9 +513,14 @@ function GuidePage() {
         </p>
         <ul className="ml-5 list-disc space-y-2">
           <li>
+            <strong>탭 메뉴</strong>: 상단 메뉴(또는 모바일 메뉴)의 <strong>해커톤·자료집·Dev Ground·Hello, World</strong> 옆에
+            해당 탭에 속한 모든 게시판의 <strong>읽지 않은 일반 글 개수를 합산</strong>한 분홍색 숫자 배지가 표시됩니다.
+          </li>
+          <li>
             <strong>카테고리 카드</strong>: 각 게시판 카드 제목 옆에 <strong>읽지 않은 일반 글 개수</strong>가 분홍색 숫자
             배지로 표시됩니다. (산출물·링크는 세지 않고 일반 글만 셉니다.)
           </li>
+
           <li>
             <strong>글 목록</strong>: 아직 읽지 않은 글 제목 앞에 <strong>분홍색 점</strong>이 붙습니다. 상단 고정(공지) 글도
             포함됩니다. 글을 열어 보면 점이 사라집니다.
