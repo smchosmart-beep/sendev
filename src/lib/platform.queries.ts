@@ -179,6 +179,7 @@ export const postStubsQueryOptions = () =>
   queryOptions({
     queryKey: ["post-stubs"],
     queryFn: () => listPostStubs(),
+    staleTime: 60 * 1000,
   });
 
 export const readPostIdsQueryOptions = (author: string) =>
