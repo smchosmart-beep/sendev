@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Calendar, Code2, Settings, Trophy, BookOpen, Rocket, Terminal, Menu, Home, Search, UserRound, HelpCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -10,7 +11,14 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  categoriesQueryOptions,
+  postStubsQueryOptions,
+  readPostIdsQueryOptions,
+} from "@/lib/platform.queries";
+import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import type { TabGroup } from "@/lib/platform.functions";
+
 
 
 type SearchMode = "title" | "title_content" | "author";
