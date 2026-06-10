@@ -221,6 +221,8 @@ function MainLayout() {
                 >
                   <Icon className="h-4 w-4" />
                   {label}
+                  <TabUnreadBadge count={unreadByTab[group]} active={active} />
+
                 </Link>
               );
             })}
