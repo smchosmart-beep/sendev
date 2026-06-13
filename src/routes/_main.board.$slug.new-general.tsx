@@ -17,6 +17,7 @@ import {
 } from "@/lib/platform.queries";
 import { createPost } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
+import { CopyrightNoticeDialog } from "@/components/CopyrightNoticeDialog";
 import { PostEditor } from "@/components/PostEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

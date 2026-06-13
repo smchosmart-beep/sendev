@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { categoriesQueryOptions, postsQueryOptions, getBoardPassword } from "@/lib/platform.queries";
 import { createPost } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
+import { CopyrightNoticeDialog } from "@/components/CopyrightNoticeDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
