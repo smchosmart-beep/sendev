@@ -472,6 +472,36 @@ function GuidePage() {
         </ul>
       </Section>
 
+      <Section id="hackathon-reviews" icon={StickyNote} title="해커톤 후기카드">
+        <p>
+          <strong>해커톤</strong> 탭에서는 참가자들이 남긴 <strong>후기카드</strong>를
+          알록달록한 포스트잇 형태로 볼 수 있습니다. 넓은 화면(PC)에서는 가운데 목록
+          좌우의 빈 여백에 카드가 떠 있고, 좁은 화면(모바일)에서는 게시판 목록 위쪽에
+          가로로 넘겨 볼 수 있는 띠 형태로 표시됩니다.
+        </p>
+        <p className="mt-3">
+          후기를 쓰려면 <strong>“해커톤” 글자 오른쪽의 포스트잇 “후기” 버튼</strong>을
+          누르세요. 닉네임과 비밀번호로 본인 확인을 한 뒤, 참가 유형(입문형·성장형·도전형)을
+          고르고 소감을 적으면 됩니다.
+        </p>
+        <ul className="ml-5 mt-3 list-disc space-y-2">
+          <li>
+            <strong>작성 권한</strong>: 해커톤(입문형·성장형·도전형) 게시판에 글을
+            <strong> 1개 이상 작성한 닉네임</strong>만 후기를 남길 수 있습니다.
+          </li>
+          <li>
+            <strong>수정·삭제</strong>: 내 후기 카드를 누르면 닉네임 비밀번호 확인 후
+            언제든 수정하거나 삭제할 수 있습니다.
+          </li>
+          <li>
+            <strong>참가 유형</strong>은 작성자가 직접 선택하며, 카드에 배지로 함께
+            표시됩니다.
+          </li>
+        </ul>
+      </Section>
+
+
+
       <Section id="posting" icon={LayoutGrid} title="글쓰기와 공지">
         <p>
           공지·질문·일반글은 하나의 <strong>글</strong> 형태로 통합되었습니다. 게시판에서 <strong>글 등록</strong> 버튼으로
