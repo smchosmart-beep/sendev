@@ -390,17 +390,31 @@ export function HackathonReviewSideColumns({
 
   if (reviews.length === 0) return null;
 
-  // Render the masonry block; duplicated inside the marquee track for a
-  // seamless infinite loop.
-  const masonry = (items: HackathonReviewDTO[], hidden: boolean) => (
-    <div className="columns-2 gap-2 px-1" aria-hidden={hidden}>
-      {items.map((r) => (
-        <div key={(hidden ? "dup-" : "") + r.id} className="mb-2 break-inside-avoid">
-          <ReviewCard review={r} rotate="0deg" onEdit={onEdit} />
-        </div>
-      ))}
-    </div>
-  );
+  // Render one wall block as two explicit flex columns. Every card carries the
+  // same bottom margin so vertical gaps are always identical and cards never
+  // overlap (unlike CSS multi-column, which rebalances and creates uneven gaps).
+  // The block is duplicated inside the marquee track for a seamless loop; the
+  // trailing margin on the last card also spaces the seam evenly.
+  const block = (items: HackathonReviewDTO[], hidden: boolean) => {
+    const colA: HackathonReviewDTO[] = [];
+    const colB: HackathonReviewDTO[] = [];
+    items.forEach((r, i) => (i % 2 === 0 ? colA : colB).push(r));
+    const column = (col: HackathonReviewDTO[]) => (
+      <div className="flex flex-1 flex-col">
+        {col.map((r) => (
+          <div key={(hidden ? "dup-" : "") + r.id} className="mb-2">
+            <ReviewCard review={r} rotate="0deg" onEdit={onEdit} />
+          </div>
+        ))}
+      </div>
+    );
+    return (
+      <div className="flex gap-2 px-1" aria-hidden={hidden}>
+        {column(colA)}
+        {column(colB)}
+      </div>
+    );
+  };
 
   const wall = (items: HackathonReviewDTO[], side: "left" | "right") => {
     // Few cards fit on screen → keep them static (no movement, manual scroll).
@@ -426,11 +440,11 @@ export function HackathonReviewSideColumns({
               { "--postit-marquee-duration": `${duration}s` } as CSSProperties
             }
           >
-            {masonry(items, false)}
-            {masonry(items, true)}
+            {block(items, false)}
+            {block(items, true)}
           </div>
         ) : (
-          masonry(items, false)
+          block(items, false)
         )}
       </div>
     );
