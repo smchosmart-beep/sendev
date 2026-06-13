@@ -258,8 +258,8 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
         })
     : null;
   const swipe = useSwipeNavigation({
-    onSwipeLeft: goNewer,
-    onSwipeRight: goOlder,
+    onSwipeLeft: goOlder,
+    onSwipeRight: goNewer,
   });
   // PC: → 다음글, ← 이전글
   useKeyboardNavigation({ onArrowLeft: goOlder, onArrowRight: goNewer });
