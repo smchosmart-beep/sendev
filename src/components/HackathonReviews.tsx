@@ -81,7 +81,7 @@ function ReviewCard({
         </span>
         <Pencil className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-70" />
       </div>
-      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed line-clamp-6">
+      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
         {review.content}
       </p>
       <p className="mt-3 text-right text-xs font-semibold opacity-80">
@@ -356,7 +356,7 @@ export function HackathonReviewStripMobile({
   const { data: reviews = [] } = useQuery(hackathonReviewsQueryOptions());
   if (reviews.length === 0) return null;
   return (
-    <div className="xl:hidden">
+    <div className="2xl:hidden">
       <div className="flex gap-3 overflow-x-auto pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {reviews.map((r, i) => (
           <div key={r.id} className="w-56 shrink-0">
@@ -372,8 +372,9 @@ export function HackathonReviewStripMobile({
   );
 }
 
-// Desktop: two vertical columns floating in the left/right margins, only when
-// there is enough room (xl and up). Split reviews alternately between sides.
+// Desktop: two Padlet-style walls floating in the left/right margins, each a
+// 2-column masonry. Only shown at 2xl and up, where there is room beside the
+// max-w-5xl (32rem half-width) content so cards never cover the body.
 export function HackathonReviewSideColumns({
   onEdit,
 }: {
@@ -390,32 +391,33 @@ export function HackathonReviewSideColumns({
 
   if (reviews.length === 0) return null;
 
-  const column = (items: HackathonReviewDTO[], side: "left" | "right") => (
+  const wall = (items: HackathonReviewDTO[], side: "left" | "right") => (
     <div
       className={cn(
-        "pointer-events-none fixed top-28 bottom-6 hidden w-64 flex-col gap-4 overflow-y-auto px-2 xl:flex [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        "fixed top-28 bottom-6 hidden w-[15rem] overflow-y-auto px-2 2xl:block [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         side === "left"
-          ? "left-[max(0.5rem,calc(50%-44rem))]"
-          : "right-[max(0.5rem,calc(50%-44rem))]",
+          ? "left-[calc(50%-47rem)]"
+          : "left-[calc(50%+32rem)]",
       )}
-      aria-hidden="false"
     >
-      {items.map((r, i) => (
-        <div key={r.id} className="pointer-events-auto">
-          <ReviewCard
-            review={r}
-            rotate={ROTATIONS[i % ROTATIONS.length]}
-            onEdit={onEdit}
-          />
-        </div>
-      ))}
+      <div className="columns-2 gap-3">
+        {items.map((r, i) => (
+          <div key={r.id} className="mb-3 break-inside-avoid">
+            <ReviewCard
+              review={r}
+              rotate={ROTATIONS[i % ROTATIONS.length]}
+              onEdit={onEdit}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 
   return (
     <>
-      {column(left, "left")}
-      {column(right, "right")}
+      {wall(left, "left")}
+      {wall(right, "right")}
     </>
   );
 }
