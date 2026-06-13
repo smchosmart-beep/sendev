@@ -100,6 +100,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AutoTextarea } from "@/components/ui/auto-textarea";
 import { PostEditor } from "@/components/PostEditor";
 import { useNicknameIdentity, useStoredIdentity, useNicknameClaimed } from "@/hooks/useNicknameIdentity";
+import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
 
 const NUMERIC_RE = /^\d+$/;
 
