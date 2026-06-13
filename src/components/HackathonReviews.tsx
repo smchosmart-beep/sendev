@@ -423,7 +423,7 @@ export function HackathonReviewSideColumns({
               side === "right" ? "is-reverse" : "",
             )}
             style={
-              { "--postit-marquee-duration": `${duration}s` } as React.CSSProperties
+              { "--postit-marquee-duration": `${duration}s` } as CSSProperties
             }
           >
             {masonry(items, false)}
