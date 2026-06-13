@@ -68,9 +68,8 @@ function ReviewCard({
     <button
       type="button"
       onClick={() => onEdit(review)}
-      style={{ transform: `rotate(${rotate})` }}
       className={cn(
-        "group block w-full rounded-md p-4 text-left text-postit-foreground shadow-md transition-transform duration-200 hover:rotate-0 hover:scale-[1.03] hover:shadow-lg",
+        "group block w-full rounded-md p-4 text-left text-postit-foreground shadow-md transition-transform duration-200 hover:scale-[1.03] hover:shadow-lg",
         colorClass(review.color),
       )}
       title="후기 수정/삭제"
