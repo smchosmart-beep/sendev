@@ -1,37 +1,28 @@
 ## 목표
-모바일 화면에서 해커톤 후기 포스트잇을 화면 하단에 고정된 **가로 1열 마퀴**(자동으로 옆으로 흐르는 띠)로 바꾸고, 각 포스트잇은 **세로 길이를 가로 너비만큼 고정한 정사각형** 카드로 만든다.
+모바일 게시글 상세 화면에서 좌우 터치 스와이프로 이전글/다음글을 넘긴다.
 
-## 현재 상태
-- 모바일에서는 `HackathonReviewStripMobile`이 카테고리 목록 위에 손으로만 스크롤되는 가로 띠로 들어가 있다(자동 이동 없음).
-- 세로 마퀴용 CSS(`postit-marquee-up`)만 있고 가로 마퀴 키프레임은 없다.
+## 동작
+- **왼쪽으로 스와이프(손가락 ←)** → **다음글**(`newer`, 더 최신)
+- **오른쪽으로 스와이프(손가락 →)** → **이전글**(`older`, 더 오래된 글)
+- 터치 전용(데스크톱/마우스 영향 없음). 양 끝(대상 글 없음)에서는 동작 없음.
+- 가로 이동이 세로 이동보다 우세하고 임계값(약 60px) 이상일 때만 이동 → 세로 스크롤과 충돌 방지.
+- 이동 대상은 기존 `PostNavSection`(이전글/다음글 버튼)과 동일하게 계산한다.
 
 ## 변경 사항
 
-### 1) `src/styles.css` — 가로 마퀴 키프레임 추가
-```text
-@keyframes postit-marquee-left {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-.postit-marquee-row { animation: postit-marquee-left var(--duration) linear infinite; }
-.postit-marquee-row:hover { animation-play-state: paused; }
-(prefers-reduced-motion 시 정지)
-```
+### 1) `src/hooks/useSwipeNavigation.ts` (신규)
+- `onSwipeLeft`, `onSwipeRight` 콜백을 받아 `onTouchStart/onTouchMove/onTouchEnd` 핸들러를 반환하는 훅.
+- 가로 우세 판정 + 임계값 로직 포함. 콜백이 없으면 해당 방향 무시.
 
-### 2) `src/components/HackathonReviews.tsx` — `HackathonReviewStripMobile` 재작성
-- 화면 하단 고정(`fixed bottom-0 inset-x-0`) 띠로 변경, `xl:hidden`(데스크톱은 기존 좌우 세로 벽 유지).
-- 내부는 가로 한 줄(`flex`)로 카드들 + 복제본을 이어 붙여 끊김 없는 무한 가로 마퀴 구성(`-50%` 이동과 맞물림).
-- **각 카드는 정사각형**: 고정 너비(예: `w-44`)에 `aspect-square`로 세로 길이를 가로 너비와 동일하게 고정. 내용이 길면 넘치지 않게 `overflow-hidden`(필요 시 `line-clamp`)으로 처리.
-- 카드 사이 간격 균일(`mr-3`), 겹침 없음.
-- 카드 수에 비례한 지속시간(카드당 ~4s, 최소값 보장). 카드가 적을 때(≤2)는 복제 없이 정적 배치.
-- 하단 고정 띠가 본문 마지막 콘텐츠를 가리지 않도록 본문 컨테이너에 하단 여백 확보.
+### 2) `src/routes/_main.board.$slug.$postNo.tsx`
+- `PostNavSection`의 newer/older 계산을 작은 헬퍼 `usePostNav(post, slug)`로 추출해 `{ newer, older }`를 반환(중복 제거). `PostNavSection`도 이 헬퍼를 사용.
+- `ProjectDetailPage`에서 `usePostNav`로 대상 글을 구하고 `useSwipeNavigation`을 최상위 컨테이너(`<div className="space-y-6">`)에 연결.
+- 왼쪽 스와이프 → `useNavigate`로 `newer.postNo`, 오른쪽 스와이프 → `older.postNo`로 이동(`/board/$slug/$postNo`).
+- 입력/textarea/이미지 줌(`react-zoom-pan-pinch`) 영역에서 시작된 터치는 무시해 오작동 방지.
 
-### 3) `src/routes/_main.board.index.tsx`
-- `HackathonReviewStripMobile`은 하단 고정으로 동작(컴포넌트 내부에서 `fixed` 처리). 본문에 하단 여백(`pb`) 추가로 가림 방지.
+### 3) `src/routes/_main.guide.tsx`
+- 게시글 보기 안내에 "모바일에서는 좌우 스와이프로 다음글(←)/이전글(→) 이동" 한 줄 추가.
 
 ## 검증
-- 모바일 폭(예: 375px)에서 `/board?tab=hackathon` 확인: 하단에 정사각형 포스트잇이 가로 1열로 자동으로 흐르는지, 카드 정사각형 비율·간격 균일·겹침 없음·끊김 없는 루프인지 확인.
-- 데스크톱(xl 이상)에서는 기존 좌우 세로 벽 마퀴 유지 확인.
-
-## 가이드
-`/guide`에 모바일 후기 표시 방식 설명이 있으면 "하단 가로 정사각형 마퀴"로 갱신, 없으면 변경 불필요(확인 후 반영).
+- 모바일 뷰포트에서 게시글 상세 좌/우 스와이프 이동 확인, 세로 스크롤 정상, 양 끝에서 멈춤 확인.
+- 데스크톱 동작 변화 없음 확인.

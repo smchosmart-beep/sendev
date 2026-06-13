@@ -100,6 +100,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AutoTextarea } from "@/components/ui/auto-textarea";
 import { PostEditor } from "@/components/PostEditor";
 import { useNicknameIdentity, useStoredIdentity, useNicknameClaimed } from "@/hooks/useNicknameIdentity";
+import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
 
 const NUMERIC_RE = /^\d+$/;
 
@@ -238,6 +239,27 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
   const { data: post } = useSuspenseQuery(postByNoQueryOptions(slug, postNo, getBoardPassword(slug)));
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
 
+  // 모바일 좌우 스와이프로 다음글(←)/이전글(→) 이동.
+  const navigate = useNavigate();
+  const { newer, older } = usePostNav(post, slug);
+  const swipe = useSwipeNavigation({
+    onSwipeLeft: newer
+      ? () =>
+          navigate({
+            to: "/board/$slug/$postNo",
+            params: { slug, postNo: String(newer.postNo) },
+          })
+      : null,
+    onSwipeRight: older
+      ? () =>
+          navigate({
+            to: "/board/$slug/$postNo",
+            params: { slug, postNo: String(older.postNo) },
+          })
+      : null,
+  });
+
+
   // 닉네임이 등록된 경우, 상세 진입 시 글을 읽음으로 기록(기기 간 연동).
   // useRef 가드로 StrictMode/리렌더 중복 호출 방지.
   const { identity } = useStoredIdentity();
@@ -301,7 +323,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
   const embedUrl = isLink ? getEmbedUrl(post.deployUrl) : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" {...swipe}>
       <BackLink slug={slug} />
 
       <div className="rounded-2xl bg-card p-6 shadow-sm">
@@ -428,15 +450,16 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
   );
 }
 
-// 같은 게시판의 같은 종류 글을 작성 순서대로 넘겨보는 이전글/다음글 네비게이션.
+// 같은 게시판의 같은 종류 글을 작성 순서대로 넘겨보는 이전글/다음글 계산.
 // 목록 정렬(최신순)과 동일하게 동작하며, 게시글은 공지(pinned)/일반 그룹을
 // 분리해 현재 글이 속한 그룹 안에서만 이동한다.
-function PostNavSection({ post, slug }: { post: PostDTO; slug: string }) {
+function usePostNav(post: PostDTO | null | undefined, slug: string) {
   const { data: navItems } = useQuery(
     postNavQueryOptions(slug, getBoardPassword(slug)),
   );
 
-  if (!navItems || navItems.length < 2) return null;
+  if (!post || !navItems || navItems.length < 2)
+    return { newer: null, older: null };
 
   // 현재 글과 같은 종류만, 게시글이면 같은 pinned 그룹만 추린다(목록과 동일).
   const group = navItems.filter((item) => {
@@ -446,11 +469,16 @@ function PostNavSection({ post, slug }: { post: PostDTO; slug: string }) {
   });
 
   const idx = group.findIndex((item) => item.id === post.id);
-  if (idx === -1) return null;
+  if (idx === -1) return { newer: null, older: null };
 
   // created_at desc 정렬 → 인덱스가 클수록 더 오래된 글.
   const newer = idx > 0 ? group[idx - 1] : null; // 다음글(더 최신)
   const older = idx < group.length - 1 ? group[idx + 1] : null; // 이전글(더 오래됨)
+  return { newer, older };
+}
+
+function PostNavSection({ post, slug }: { post: PostDTO; slug: string }) {
+  const { newer, older } = usePostNav(post, slug);
 
   if (!newer && !older) return null;
 
