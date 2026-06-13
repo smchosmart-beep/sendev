@@ -275,3 +275,10 @@ export const awardIconRulesQueryOptions = () =>
     queryFn: () => listAwardIconRules(),
     staleTime: 5 * 60 * 1000,
   });
+
+export const hackathonReviewsQueryOptions = () =>
+  queryOptions({
+    queryKey: ["hackathon-reviews"],
+    queryFn: () => listHackathonReviews(),
+    staleTime: 60 * 1000,
+  });
