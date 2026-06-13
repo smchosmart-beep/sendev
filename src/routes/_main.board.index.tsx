@@ -18,6 +18,13 @@ import {
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import type { CategoryDTO, TabGroup } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
+import {
+  HackathonReviewButton,
+  HackathonReviewDialog,
+  HackathonReviewStripMobile,
+  HackathonReviewSideColumns,
+  type HackathonReviewDTO,
+} from "@/components/HackathonReviews";
 
 const TAB_LABELS: Record<TabGroup, string> = {
   hackathon: "해커톤",
@@ -235,6 +242,15 @@ function FolderNode({
 function BoardListPage() {
   const { tab } = Route.useSearch();
   const activeTab = normalizeTab(tab);
+  const isHackathon = activeTab === "hackathon";
+  const [reviewDialog, setReviewDialog] = useState<{
+    open: boolean;
+    editing: HackathonReviewDTO | null;
+  }>({ open: false, editing: null });
+  const openCreateReview = () =>
+    setReviewDialog({ open: true, editing: null });
+  const openEditReview = (r: HackathonReviewDTO) =>
+    setReviewDialog({ open: true, editing: r });
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
   // 숨김 처리: 직접 hidden이거나, 조상 폴더 중 하나라도 hidden이면 목록에서 제외.
   // 숨김 처리: 직접 hidden이거나, 조상 폴더 중 하나라도 hidden이면 비활성으로 표시(제거하지 않음).
@@ -285,10 +301,21 @@ function BoardListPage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-foreground">{TAB_LABELS[activeTab]}</h1>
-        <p className="text-sm text-muted-foreground">{TAB_DESCRIPTIONS[activeTab]}</p>
+      {isHackathon && <HackathonReviewSideColumns onEdit={openEditReview} />}
+
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <h1 className="text-2xl font-bold text-foreground">{TAB_LABELS[activeTab]}</h1>
+          <p className="text-sm text-muted-foreground">{TAB_DESCRIPTIONS[activeTab]}</p>
+        </div>
+        {isHackathon && (
+          <div className="shrink-0">
+            <HackathonReviewButton onClick={openCreateReview} />
+          </div>
+        )}
       </div>
+
+      {isHackathon && <HackathonReviewStripMobile onEdit={openEditReview} />}
 
       {visible.length === 0 ? (
         <EmptyState
@@ -328,6 +355,13 @@ function BoardListPage() {
           )}
         </div>
       )}
+
+      <HackathonReviewDialog
+        state={reviewDialog}
+        onOpenChange={(open) =>
+          setReviewDialog((prev) => ({ ...prev, open }))
+        }
+      />
     </div>
   );
 }

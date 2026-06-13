@@ -29,6 +29,7 @@ import {
   getNicknameStatus,
   getAwardIcon,
   listAwardIconRules,
+  listHackathonReviews,
 } from "./platform.functions";
 
 export const searchPostsQueryOptions = (
@@ -273,4 +274,11 @@ export const awardIconRulesQueryOptions = () =>
     queryKey: ["award-icon-rules"],
     queryFn: () => listAwardIconRules(),
     staleTime: 5 * 60 * 1000,
+  });
+
+export const hackathonReviewsQueryOptions = () =>
+  queryOptions({
+    queryKey: ["hackathon-reviews"],
+    queryFn: () => listHackathonReviews(),
+    staleTime: 60 * 1000,
   });
