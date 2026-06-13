@@ -1,38 +1,37 @@
 ## 목표
-좌우 포스트잇 벽에서 컬럼 높이 불균형 때문에 생기는 "넓은 간격"을 없애고, 모든 카드 사이 간격을 항상 동일하게 유지한다.
+모바일 화면에서 해커톤 후기 포스트잇을 화면 하단에 고정된 **가로 1열 마퀴**(자동으로 옆으로 흐르는 띠)로 바꾸고, 각 포스트잇은 **세로 길이를 가로 너비만큼 고정한 정사각형** 카드로 만든다.
 
-## 원인
-현재 구조(`src/components/HackathonReviews.tsx`)는 한 블록 안에 좌/우 2개 컬럼을 가로로 묶고, 그 블록 전체를 복제하여 세로 마퀴로 흘린다.
-
-```text
-[ 블록1: colA(높이 800) | colB(높이 600) ]   ← 블록 높이 = 800
-[ 블록2: colA           | colB           ]
-```
-
-두 컬럼의 카드 높이 합이 달라서, 짧은 컬럼(colB)은 블록 경계에서 다음 블록이 시작될 때까지 약 200px의 빈 공간이 생긴다. 이것이 보이는 넓은 간격이다.
-
-## 해결 방법
-"블록 단위 복제"를 버리고, **각 컬럼을 독립된 마퀴 트랙으로** 만든다. 각 컬럼은 자기 카드 목록 + 그 복제본만 이어 붙이므로, 컬럼 내부에서 카드 간격(`mb-2`)이 처음부터 끝까지(이음새 포함) 균일하게 유지되고, 다른 컬럼 높이에 영향받지 않는다.
-
-```text
-열A 트랙: [A카드들][A카드들복제]  ← 자체적으로 무한 루프
-열B 트랙: [B카드들][B카드들복제]  ← 자체적으로 무한 루프
-(두 트랙을 flex gap-2로 가로 배치)
-```
+## 현재 상태
+- 모바일에서는 `HackathonReviewStripMobile`이 카테고리 목록 위에 손으로만 스크롤되는 가로 띠로 들어가 있다(자동 이동 없음).
+- 세로 마퀴용 CSS(`postit-marquee-up`)만 있고 가로 마퀴 키프레임은 없다.
 
 ## 변경 사항
-- `src/components/HackathonReviews.tsx`
-  - `block()` 함수를 제거하고, 컬럼 1개를 받아 `flex flex-col`로 카드들(각 `mb-2`)을 렌더링하는 `marqueeColumn(items, side)` 헬퍼로 교체.
-  - 애니메이션 시 각 컬럼은 `postit-marquee-track`을 적용하고 내부에 `[원본 카드들][복제 카드들]`을 넣어 자체 루프 구성(`-50%` 이동과 맞물려 이음새 균일).
-  - `wall()`은 좌측 벽 카드를 다시 2개 컬럼으로 분할하여 두 개의 독립 마퀴 컬럼을 `flex gap-2`로 가로 배치. 우측 벽도 동일하게 `is-reverse` 적용.
-  - 카드 수가 적어 정지 상태(`animate=false`)일 때는 복제 없이 2개 컬럼만 렌더(현행 정적 동작 유지).
-  - 마퀴 지속시간은 컬럼별 카드 수 기준으로 계산해 길이가 달라도 자연스럽게 흐르게 한다.
 
-- CSS(`src/styles.css`)는 기존 `postit-marquee-track` 키프레임 그대로 사용(변경 없음).
+### 1) `src/styles.css` — 가로 마퀴 키프레임 추가
+```text
+@keyframes postit-marquee-left {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.postit-marquee-row { animation: postit-marquee-left var(--duration) linear infinite; }
+.postit-marquee-row:hover { animation-play-state: paused; }
+(prefers-reduced-motion 시 정지)
+```
+
+### 2) `src/components/HackathonReviews.tsx` — `HackathonReviewStripMobile` 재작성
+- 화면 하단 고정(`fixed bottom-0 inset-x-0`) 띠로 변경, `xl:hidden`(데스크톱은 기존 좌우 세로 벽 유지).
+- 내부는 가로 한 줄(`flex`)로 카드들 + 복제본을 이어 붙여 끊김 없는 무한 가로 마퀴 구성(`-50%` 이동과 맞물림).
+- **각 카드는 정사각형**: 고정 너비(예: `w-44`)에 `aspect-square`로 세로 길이를 가로 너비와 동일하게 고정. 내용이 길면 넘치지 않게 `overflow-hidden`(필요 시 `line-clamp`)으로 처리.
+- 카드 사이 간격 균일(`mr-3`), 겹침 없음.
+- 카드 수에 비례한 지속시간(카드당 ~4s, 최소값 보장). 카드가 적을 때(≤2)는 복제 없이 정적 배치.
+- 하단 고정 띠가 본문 마지막 콘텐츠를 가리지 않도록 본문 컨테이너에 하단 여백 확보.
+
+### 3) `src/routes/_main.board.index.tsx`
+- `HackathonReviewStripMobile`은 하단 고정으로 동작(컴포넌트 내부에서 `fixed` 처리). 본문에 하단 여백(`pb`) 추가로 가림 방지.
 
 ## 검증
-- `/board?tab=hackathon`을 PC 너비에서 확인: 좌/우 벽 카드 사이 세로 간격이 모두 동일하고, 컬럼 경계/이음새에서 넓은 빈칸이나 겹침이 없는지 확인.
-- 마퀴가 끊김 없이 무한 반복되는지, 카드 적을 때 정적 스크롤이 유지되는지 확인.
+- 모바일 폭(예: 375px)에서 `/board?tab=hackathon` 확인: 하단에 정사각형 포스트잇이 가로 1열로 자동으로 흐르는지, 카드 정사각형 비율·간격 균일·겹침 없음·끊김 없는 루프인지 확인.
+- 데스크톱(xl 이상)에서는 기존 좌우 세로 벽 마퀴 유지 확인.
 
 ## 가이드
-`/guide` 변경 불필요(동작 설명 변동 없음).
+`/guide`에 모바일 후기 표시 방식 설명이 있으면 "하단 가로 정사각형 마퀴"로 갱신, 없으면 변경 불필요(확인 후 반영).
