@@ -670,7 +670,7 @@ function soleLinkHref(node: unknown): string | null {
   if (children.length !== 1) return null;
   const only = children[0];
   if (only.tagName !== "a") return null;
-  const href = only.properties?.href;
+  const href = normalizeExternalHref(only.properties?.href);
   if (!href || !/^https?:\/\//i.test(href)) return null;
   return href;
 }
