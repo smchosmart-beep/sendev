@@ -124,6 +124,7 @@ function NewGeneralPage() {
   return (
     <div className="space-y-6">
       <BackLink slug={slug} />
+      <CopyrightNoticeDialog />
 
       <div className="rounded-2xl bg-card p-6 shadow-sm">
         <h1 className="text-2xl font-bold text-foreground">
