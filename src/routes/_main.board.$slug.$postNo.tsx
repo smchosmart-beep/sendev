@@ -323,7 +323,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
   const embedUrl = isLink ? getEmbedUrl(post.deployUrl) : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" {...swipe}>
       <BackLink slug={slug} />
 
       <div className="rounded-2xl bg-card p-6 shadow-sm">
