@@ -240,25 +240,30 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
   const { data: post } = useSuspenseQuery(postByNoQueryOptions(slug, postNo, getBoardPassword(slug)));
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
 
-  // 모바일 좌우 스와이프로 다음글(←)/이전글(→) 이동.
+  // 모바일 좌우 스와이프 / PC 좌우 방향키로 다음글(←)/이전글(→) 이동.
   const navigate = useNavigate();
   const { newer, older } = usePostNav(post, slug);
+  const goNewer = newer
+    ? () =>
+        navigate({
+          to: "/board/$slug/$postNo",
+          params: { slug, postNo: String(newer.postNo) },
+        })
+    : null;
+  const goOlder = older
+    ? () =>
+        navigate({
+          to: "/board/$slug/$postNo",
+          params: { slug, postNo: String(older.postNo) },
+        })
+    : null;
   const swipe = useSwipeNavigation({
-    onSwipeLeft: newer
-      ? () =>
-          navigate({
-            to: "/board/$slug/$postNo",
-            params: { slug, postNo: String(newer.postNo) },
-          })
-      : null,
-    onSwipeRight: older
-      ? () =>
-          navigate({
-            to: "/board/$slug/$postNo",
-            params: { slug, postNo: String(older.postNo) },
-          })
-      : null,
+    onSwipeLeft: goNewer,
+    onSwipeRight: goOlder,
   });
+  // PC: → 다음글, ← 이전글
+  useKeyboardNavigation({ onArrowLeft: goOlder, onArrowRight: goNewer });
+
 
 
   // 닉네임이 등록된 경우, 상세 진입 시 글을 읽음으로 기록(기기 간 연동).
