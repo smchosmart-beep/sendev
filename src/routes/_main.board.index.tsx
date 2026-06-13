@@ -355,6 +355,13 @@ function BoardListPage() {
           )}
         </div>
       )}
+
+      <HackathonReviewDialog
+        state={reviewDialog}
+        onOpenChange={(open) =>
+          setReviewDialog((prev) => ({ ...prev, open }))
+        }
+      />
     </div>
   );
 }
