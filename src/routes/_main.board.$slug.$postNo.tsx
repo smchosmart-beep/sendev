@@ -494,7 +494,7 @@ function PostNavSection({ post, slug }: { post: PostDTO; slug: string }) {
         <Button
           asChild
           variant="secondary"
-          className="h-auto flex-1 justify-start rounded-2xl px-4 py-3 text-left active:scale-[0.98]"
+          className="h-auto min-w-0 flex-1 justify-start rounded-2xl px-4 py-3 text-left active:scale-[0.98]"
         >
           <Link to="/board/$slug/$postNo" params={{ slug, postNo: String(older.postNo) }}>
             <ArrowLeft className="h-4 w-4 shrink-0" />
@@ -511,7 +511,7 @@ function PostNavSection({ post, slug }: { post: PostDTO; slug: string }) {
         <Button
           asChild
           variant="secondary"
-          className="h-auto flex-1 justify-end rounded-2xl px-4 py-3 text-right active:scale-[0.98]"
+          className="h-auto min-w-0 flex-1 justify-end rounded-2xl px-4 py-3 text-right active:scale-[0.98]"
         >
           <Link to="/board/$slug/$postNo" params={{ slug, postNo: String(newer.postNo) }}>
             <span className="flex min-w-0 flex-col items-end">
