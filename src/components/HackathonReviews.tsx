@@ -390,28 +390,46 @@ export function HackathonReviewSideColumns({
 
   if (reviews.length === 0) return null;
 
-  // Render one wall block as two explicit flex columns. Every card carries the
-  // same bottom margin so vertical gaps are always identical and cards never
-  // overlap (unlike CSS multi-column, which rebalances and creates uneven gaps).
-  // The block is duplicated inside the marquee track for a seamless loop; the
-  // trailing margin on the last card also spaces the seam evenly.
-  const block = (items: HackathonReviewDTO[], hidden: boolean) => {
-    const colA: HackathonReviewDTO[] = [];
-    const colB: HackathonReviewDTO[] = [];
-    items.forEach((r, i) => (i % 2 === 0 ? colA : colB).push(r));
-    const column = (col: HackathonReviewDTO[]) => (
-      <div className="flex flex-1 flex-col">
-        {col.map((r) => (
-          <div key={(hidden ? "dup-" : "") + r.id} className="mb-2">
-            <ReviewCard review={r} rotate="0deg" onEdit={onEdit} />
-          </div>
-        ))}
-      </div>
-    );
+  // Render one vertical column as an independent marquee track. Each column
+  // contains only its own cards (plus a duplicate for a seamless loop), so the
+  // bottom margin (`mb-2`) between every card stays identical from start to
+  // seam to end — unaffected by the other column's height. This removes the
+  // wide gaps that appeared when whole blocks of unequal-height columns were
+  // duplicated together.
+  const marqueeColumn = (
+    items: HackathonReviewDTO[],
+    side: "left" | "right",
+    animate: boolean,
+  ) => {
+    const cards = (dup: boolean) =>
+      items.map((r) => (
+        <div key={(dup ? "dup-" : "") + r.id} className="mb-2">
+          <ReviewCard review={r} rotate="0deg" onEdit={onEdit} />
+        </div>
+      ));
+
+    if (!animate) {
+      return <div className="flex flex-1 flex-col">{cards(false)}</div>;
+    }
+
+    // ~4s per card, min 24s. Slower as the column grows so cards stay readable.
+    const duration = Math.max(24, items.length * 4);
     return (
-      <div className="flex gap-2 px-1" aria-hidden={hidden}>
-        {column(colA)}
-        {column(colB)}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <div
+          className={cn(
+            "postit-marquee-track flex flex-col",
+            side === "right" ? "is-reverse" : "",
+          )}
+          style={
+            { "--postit-marquee-duration": `${duration}s` } as CSSProperties
+          }
+        >
+          {cards(false)}
+          <div aria-hidden className="flex flex-col">
+            {cards(true)}
+          </div>
+        </div>
       </div>
     );
   };
@@ -419,33 +437,24 @@ export function HackathonReviewSideColumns({
   const wall = (items: HackathonReviewDTO[], side: "left" | "right") => {
     // Few cards fit on screen → keep them static (no movement, manual scroll).
     const animate = items.length > 4;
-    // Slower as the wall grows so cards stay readable. ~4s per card, min 24s.
-    const duration = Math.max(24, items.length * 4);
+    const colA: HackathonReviewDTO[] = [];
+    const colB: HackathonReviewDTO[] = [];
+    items.forEach((r, i) => (i % 2 === 0 ? colA : colB).push(r));
 
     return (
       <div
         className={cn(
           "fixed top-28 bottom-6 hidden w-[calc(50%-33rem)] overflow-hidden xl:block",
-          animate ? "" : "overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+          animate
+            ? ""
+            : "overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
           side === "left" ? "left-1" : "right-1",
         )}
       >
-        {animate ? (
-          <div
-            className={cn(
-              "postit-marquee-track",
-              side === "right" ? "is-reverse" : "",
-            )}
-            style={
-              { "--postit-marquee-duration": `${duration}s` } as CSSProperties
-            }
-          >
-            {block(items, false)}
-            {block(items, true)}
-          </div>
-        ) : (
-          block(items, false)
-        )}
+        <div className="flex gap-2 px-1">
+          {marqueeColumn(colA, side, animate)}
+          {marqueeColumn(colB, side, animate)}
+        </div>
       </div>
     );
   };
