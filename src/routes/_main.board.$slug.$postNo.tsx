@@ -489,7 +489,7 @@ function PostNavSection({ post, slug }: { post: PostDTO; slug: string }) {
   if (!newer && !older) return null;
 
   return (
-    <nav className="flex items-stretch gap-3" aria-label="이전글 다음글">
+    <nav className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-stretch gap-3" aria-label="이전글 다음글">
       {older ? (
         <Button
           asChild
@@ -1015,7 +1015,7 @@ function LinkPreviewCard({ href }: { href: string }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="my-4 flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 no-underline shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center"
+      className="my-4 flex flex-col gap-3 overflow-hidden rounded-2xl border border-border bg-card p-3 no-underline shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center"
     >
       <span className="flex aspect-video w-full shrink-0 items-center justify-center overflow-hidden rounded-xl bg-accent text-primary sm:w-56">
         {image ? (
@@ -1035,7 +1035,7 @@ function LinkPreviewCard({ href }: { href: string }) {
         )}
       </span>
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-1 px-1 pb-1 sm:px-2">
-        <span className="line-clamp-2 break-words [overflow-wrap:anywhere] font-semibold text-foreground">
+        <span className="line-clamp-2 break-all [overflow-wrap:anywhere] font-semibold text-foreground">
           {isLoading ? "미리보기 불러오는 중…" : title}
         </span>
         <span className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
