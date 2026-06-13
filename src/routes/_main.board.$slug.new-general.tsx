@@ -17,6 +17,7 @@ import {
 } from "@/lib/platform.queries";
 import { createPost } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
+import { CopyrightNoticeDialog } from "@/components/CopyrightNoticeDialog";
 import { PostEditor } from "@/components/PostEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -123,6 +124,7 @@ function NewGeneralPage() {
   return (
     <div className="space-y-6">
       <BackLink slug={slug} />
+      <CopyrightNoticeDialog />
 
       <div className="rounded-2xl bg-card p-6 shadow-sm">
         <h1 className="text-2xl font-bold text-foreground">

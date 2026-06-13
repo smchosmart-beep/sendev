@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { categoriesQueryOptions } from "@/lib/platform.queries";
 import { createPost, GITHUB_URL_RE } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
+import { CopyrightNoticeDialog } from "@/components/CopyrightNoticeDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -98,6 +99,7 @@ function NewProjectPage() {
   return (
     <div className="space-y-6">
       <BackLink slug={slug} />
+      <CopyrightNoticeDialog />
 
       <div className="rounded-2xl bg-card p-6 shadow-sm">
         <h1 className="text-2xl font-bold text-foreground">{category.projectName || "산출물"} 등록</h1>

@@ -50,6 +50,7 @@ const sections = [
   { id: "security", label: "보안 안전성" },
   { id: "menus", label: "메뉴 안내" },
   { id: "posting", label: "글쓰기와 공지" },
+  { id: "copyright", label: "저작권 및 게시물 이용 안내" },
   { id: "unread", label: "읽지 않은 글 표시" },
   { id: "views", label: "조회수" },
   { id: "links", label: "본문 링크 미리보기" },
@@ -504,6 +505,26 @@ function GuidePage() {
 
 
       </Section>
+
+      <Section id="copyright" icon={ShieldCheck} title="저작권 및 게시물 이용 안내">
+        <p>
+          게시글을 작성하는 화면에 들어가면 <strong>저작권 및 게시물 이용 안내</strong> 팝업이 먼저 표시됩니다.
+          팝업 하단의 <strong>다시 보지 않기</strong>를 체크하고 확인하면 이 브라우저에서는 다음부터 표시되지 않습니다(체크하지 않고 닫으면 다음 글쓰기 때 다시 표시됩니다).
+        </p>
+        <ol className="ml-5 list-decimal space-y-2">
+          <li>
+            <strong>저작권의 귀속</strong> — 선생님께서 sendev.kr에 직접 기획·집필·개발하여 게시한 강의 원고, PPT, 소스 코드 등의 모든 저작권(저작인격권 및 저작재산권)은 본래의 개발자(집필 교사) 본인에게 있습니다.
+          </li>
+          <li>
+            <strong>플랫폼 내 이용 허락</strong> — 원활한 서비스 제공을 위해, 등록된 게시물은 sendev.kr 플랫폼 내에서 노출·보관·커뮤니티 활성화를 위한 홍보 목적으로 무상 활용될 수 있습니다.
+          </li>
+          <li>
+            <strong>코드의 공유와 면책</strong> — 본 커뮤니티는 선생님들의 자발적인 지식 공유를 지향합니다. 단, 공유된 소스 코드나 자료를 활용하여 발생하는 결과에 대한 책임은 전적으로 활용자 본인에게 있으며, 플랫폼 및 원작자는 법적 책임을 지지 않습니다. 올바른 공유 문화를 위해 오픈소스 라이선스(예: MIT, CC-BY 등) 표기를 권장합니다.
+          </li>
+        </ol>
+      </Section>
+
+
 
 
       <Section id="unread" icon={Bell} title="읽지 않은 글 표시">
