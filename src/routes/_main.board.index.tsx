@@ -300,8 +300,9 @@ function BoardListPage() {
     visible.filter((c) => c.parentId === parentId);
 
   return (
-    <div className="space-y-6">
+    <div className={cn("space-y-6", isHackathon && "pb-56 xl:pb-0")}>
       {isHackathon && <HackathonReviewSideColumns onEdit={openEditReview} />}
+
 
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
