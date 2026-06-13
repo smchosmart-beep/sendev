@@ -149,6 +149,15 @@
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+
+  /* Sticky-note palette: slightly muted but still readable in dark mode */
+  --postit-foreground: oklch(0.25 0.04 60);
+  --postit-yellow: oklch(0.86 0.12 100);
+  --postit-pink: oklch(0.82 0.1 0);
+  --postit-green: oklch(0.84 0.12 145);
+  --postit-blue: oklch(0.83 0.09 235);
+  --postit-purple: oklch(0.82 0.1 310);
+  --postit-orange: oklch(0.83 0.12 60);
 }
 
 @layer base {
