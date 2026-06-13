@@ -301,10 +301,21 @@ function BoardListPage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-foreground">{TAB_LABELS[activeTab]}</h1>
-        <p className="text-sm text-muted-foreground">{TAB_DESCRIPTIONS[activeTab]}</p>
+      {isHackathon && <HackathonReviewSideColumns onEdit={openEditReview} />}
+
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <h1 className="text-2xl font-bold text-foreground">{TAB_LABELS[activeTab]}</h1>
+          <p className="text-sm text-muted-foreground">{TAB_DESCRIPTIONS[activeTab]}</p>
+        </div>
+        {isHackathon && (
+          <div className="shrink-0">
+            <HackathonReviewButton onClick={openCreateReview} />
+          </div>
+        )}
       </div>
+
+      {isHackathon && <HackathonReviewStripMobile onEdit={openEditReview} />}
 
       {visible.length === 0 ? (
         <EmptyState
