@@ -635,6 +635,29 @@ function LinkEmbedSection({
   );
 }
 
+// Adds a missing protocol to bare external links (e.g. "site.vercel.app" or
+// "example.com/path") so they open the external site instead of being treated
+// as a relative path inside the app. Leaves alone already-absolute URLs,
+// internal paths ("/..."), hash anchors ("#..."), and known schemes.
+function normalizeExternalHref(href: string | undefined | null): string | null {
+  if (!href) return null;
+  const trimmed = href.trim();
+  if (!trimmed) return null;
+  // Already a usable href: absolute URL, internal path, anchor, or a scheme.
+  if (
+    /^(https?:|mailto:|tel:|data:|blob:)/i.test(trimmed) ||
+    trimmed.startsWith("/") ||
+    trimmed.startsWith("#")
+  ) {
+    return trimmed;
+  }
+  // Looks like a bare domain (has a dot, no spaces) → assume https.
+  if (/^[^\s/]+\.[^\s]+$/.test(trimmed)) {
+    return `https://${trimmed}`;
+  }
+  return trimmed;
+}
+
 // Detects a markdown paragraph whose only meaningful child is a single link,
 // and returns its href (regardless of provider).
 function soleLinkHref(node: unknown): string | null {
