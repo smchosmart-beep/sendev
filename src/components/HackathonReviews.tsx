@@ -341,7 +341,7 @@ export function HackathonReviewButton({ onClick }: { onClick: () => void }) {
       className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-postit-yellow px-3 text-sm font-semibold text-postit-foreground shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
     >
       <StickyNote className="h-4 w-4" />
-      후기
+      후기 작성
     </button>
   );
 }
