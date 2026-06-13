@@ -1035,7 +1035,7 @@ function LinkPreviewCard({ href }: { href: string }) {
         )}
       </span>
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-1 px-1 pb-1 sm:px-2">
-        <span className="line-clamp-2 break-words [overflow-wrap:anywhere] font-semibold text-foreground">
+        <span className="line-clamp-2 break-all [overflow-wrap:anywhere] font-semibold text-foreground">
           {isLoading ? "미리보기 불러오는 중…" : title}
         </span>
         <span className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
