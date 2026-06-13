@@ -50,6 +50,7 @@ const sections = [
   { id: "badge", label: "배지 제도" },
   { id: "security", label: "보안 안전성" },
   { id: "menus", label: "메뉴 안내" },
+  { id: "hackathon-reviews", label: "해커톤 후기카드" },
   { id: "posting", label: "글쓰기와 공지" },
   { id: "copyright", label: "저작권 및 게시물 이용 안내" },
   { id: "unread", label: "읽지 않은 글 표시" },
