@@ -355,7 +355,7 @@ export function HackathonReviewStripMobile({
   const { data: reviews = [] } = useQuery(hackathonReviewsQueryOptions());
   if (reviews.length === 0) return null;
   return (
-    <div className="2xl:hidden">
+    <div className="xl:hidden">
       <div className="flex gap-3 overflow-x-auto pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {reviews.map((r, i) => (
           <div key={r.id} className="w-56 shrink-0">
