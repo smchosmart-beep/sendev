@@ -238,6 +238,27 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
   const { data: post } = useSuspenseQuery(postByNoQueryOptions(slug, postNo, getBoardPassword(slug)));
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
 
+  // 모바일 좌우 스와이프로 다음글(←)/이전글(→) 이동.
+  const navigate = useNavigate();
+  const { newer, older } = usePostNav(post, slug);
+  const swipe = useSwipeNavigation({
+    onSwipeLeft: newer
+      ? () =>
+          navigate({
+            to: "/board/$slug/$postNo",
+            params: { slug, postNo: String(newer.postNo) },
+          })
+      : null,
+    onSwipeRight: older
+      ? () =>
+          navigate({
+            to: "/board/$slug/$postNo",
+            params: { slug, postNo: String(older.postNo) },
+          })
+      : null,
+  });
+
+
   // 닉네임이 등록된 경우, 상세 진입 시 글을 읽음으로 기록(기기 간 연동).
   // useRef 가드로 StrictMode/리렌더 중복 호출 방지.
   const { identity } = useStoredIdentity();
