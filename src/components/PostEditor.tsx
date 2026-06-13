@@ -364,10 +364,19 @@ export function PostEditor({
   const confirmLink = () => {
     if (!editor) return;
     const title = linkTitle.trim();
-    const url = linkUrl.trim();
+    let url = linkUrl.trim();
     if (!url) {
       toast.error("URL을 입력해 주세요.");
       return;
+    }
+    // Add https:// to bare domains so the link opens externally, not as an
+    // in-app relative path.
+    if (
+      !/^(https?:|mailto:|tel:)/i.test(url) &&
+      !url.startsWith("/") &&
+      /^[^\s/]+\.[^\s]+$/.test(url)
+    ) {
+      url = `https://${url}`;
     }
     const text = title || url;
     editor
