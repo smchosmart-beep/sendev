@@ -106,14 +106,14 @@
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
 
-  /* Sticky-note (포스트잇) pastel palette */
-  --postit-foreground: oklch(0.3 0.04 60);
-  --postit-yellow: oklch(0.94 0.1 100);
-  --postit-pink: oklch(0.9 0.07 0);
-  --postit-green: oklch(0.92 0.09 145);
-  --postit-blue: oklch(0.91 0.06 235);
-  --postit-purple: oklch(0.9 0.07 310);
-  --postit-orange: oklch(0.91 0.09 60);
+  /* Sticky-note (포스트잇) — 플랫폼 민트/쿨 톤에 맞춘 채도 낮은 파스텔 */
+  --postit-foreground: oklch(0.36 0.03 200);
+  --postit-yellow: oklch(0.95 0.035 95);
+  --postit-pink: oklch(0.92 0.04 10);
+  --postit-green: oklch(0.93 0.05 162);
+  --postit-blue: oklch(0.93 0.04 220);
+  --postit-purple: oklch(0.92 0.035 290);
+  --postit-orange: oklch(0.93 0.045 60);
 }
 
 .dark {
@@ -150,14 +150,14 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
 
-  /* Sticky-note palette: slightly muted but still readable in dark mode */
-  --postit-foreground: oklch(0.25 0.04 60);
-  --postit-yellow: oklch(0.86 0.12 100);
-  --postit-pink: oklch(0.82 0.1 0);
-  --postit-green: oklch(0.84 0.12 145);
-  --postit-blue: oklch(0.83 0.09 235);
-  --postit-purple: oklch(0.82 0.1 310);
-  --postit-orange: oklch(0.83 0.12 60);
+  /* Sticky-note palette: 다크에서도 톤 통일 유지, 대비 확보 */
+  --postit-foreground: oklch(0.28 0.03 200);
+  --postit-yellow: oklch(0.86 0.05 95);
+  --postit-pink: oklch(0.83 0.055 10);
+  --postit-green: oklch(0.85 0.07 162);
+  --postit-blue: oklch(0.84 0.055 220);
+  --postit-purple: oklch(0.83 0.05 290);
+  --postit-orange: oklch(0.85 0.06 60);
 }
 
 @layer base {
