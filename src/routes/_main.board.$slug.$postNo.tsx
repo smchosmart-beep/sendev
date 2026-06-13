@@ -489,7 +489,7 @@ function PostNavSection({ post, slug }: { post: PostDTO; slug: string }) {
   if (!newer && !older) return null;
 
   return (
-    <nav className="flex items-stretch gap-3" aria-label="이전글 다음글">
+    <nav className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-stretch gap-3" aria-label="이전글 다음글">
       {older ? (
         <Button
           asChild
