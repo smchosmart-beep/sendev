@@ -431,12 +431,13 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
 // 같은 게시판의 같은 종류 글을 작성 순서대로 넘겨보는 이전글/다음글 계산.
 // 목록 정렬(최신순)과 동일하게 동작하며, 게시글은 공지(pinned)/일반 그룹을
 // 분리해 현재 글이 속한 그룹 안에서만 이동한다.
-function usePostNav(post: PostDTO, slug: string) {
+function usePostNav(post: PostDTO | null | undefined, slug: string) {
   const { data: navItems } = useQuery(
     postNavQueryOptions(slug, getBoardPassword(slug)),
   );
 
-  if (!navItems || navItems.length < 2) return { newer: null, older: null };
+  if (!post || !navItems || navItems.length < 2)
+    return { newer: null, older: null };
 
   // 현재 글과 같은 종류만, 게시글이면 같은 pinned 그룹만 추린다(목록과 동일).
   const group = navItems.filter((item) => {
