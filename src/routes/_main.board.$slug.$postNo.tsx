@@ -361,9 +361,10 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
                 rehypePlugins={[rehypeRaw, [rehypeSanitize, POST_HTML_SCHEMA]]}
                 components={{
                   img: ({ node, ...props }) => <BodyImage {...props} />,
-                  a: ({ node, className, ...props }) => (
+                  a: ({ node, className, href, ...props }) => (
                     <a
                       {...props}
+                      href={normalizeExternalHref(href) ?? href}
                       className={`break-words [overflow-wrap:anywhere] ${className ?? ""}`}
                       target="_blank"
                       rel="noopener noreferrer"
