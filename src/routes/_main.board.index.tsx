@@ -18,6 +18,13 @@ import {
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import type { CategoryDTO, TabGroup } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
+import {
+  HackathonReviewButton,
+  HackathonReviewDialog,
+  HackathonReviewStripMobile,
+  HackathonReviewSideColumns,
+  type HackathonReviewDTO,
+} from "@/components/HackathonReviews";
 
 const TAB_LABELS: Record<TabGroup, string> = {
   hackathon: "해커톤",
