@@ -68,9 +68,8 @@ function ReviewCard({
     <button
       type="button"
       onClick={() => onEdit(review)}
-      style={{ transform: `rotate(${rotate})` }}
       className={cn(
-        "group block w-full rounded-md p-4 text-left text-postit-foreground shadow-md transition-transform duration-200 hover:rotate-0 hover:scale-[1.03] hover:shadow-lg",
+        "group block w-full rounded-md p-4 text-left text-postit-foreground shadow-md transition-transform duration-200 hover:scale-[1.03] hover:shadow-lg",
         colorClass(review.color),
       )}
       title="후기 수정/삭제"
@@ -356,7 +355,7 @@ export function HackathonReviewStripMobile({
   const { data: reviews = [] } = useQuery(hackathonReviewsQueryOptions());
   if (reviews.length === 0) return null;
   return (
-    <div className="2xl:hidden">
+    <div className="xl:hidden">
       <div className="flex gap-3 overflow-x-auto pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {reviews.map((r, i) => (
           <div key={r.id} className="w-56 shrink-0">
@@ -394,20 +393,14 @@ export function HackathonReviewSideColumns({
   const wall = (items: HackathonReviewDTO[], side: "left" | "right") => (
     <div
       className={cn(
-        "fixed top-28 bottom-6 hidden w-[15rem] overflow-y-auto px-2 2xl:block [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-        side === "left"
-          ? "left-[calc(50%-47rem)]"
-          : "left-[calc(50%+32rem)]",
+        "fixed top-28 bottom-6 hidden w-[calc(50%-33rem)] overflow-y-auto px-1 xl:block [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        side === "left" ? "left-1" : "right-1",
       )}
     >
-      <div className="columns-2 gap-3">
-        {items.map((r, i) => (
-          <div key={r.id} className="mb-3 break-inside-avoid">
-            <ReviewCard
-              review={r}
-              rotate={ROTATIONS[i % ROTATIONS.length]}
-              onEdit={onEdit}
-            />
+      <div className="columns-2 gap-2">
+        {items.map((r) => (
+          <div key={r.id} className="mb-2 break-inside-avoid">
+            <ReviewCard review={r} rotate="0deg" onEdit={onEdit} />
           </div>
         ))}
       </div>
