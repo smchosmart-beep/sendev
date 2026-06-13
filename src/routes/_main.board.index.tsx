@@ -16,6 +16,7 @@ import {
   readPostIdsQueryOptions,
 } from "@/lib/platform.queries";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
+import { cn } from "@/lib/utils";
 import type { CategoryDTO, TabGroup } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
 import {
@@ -300,8 +301,9 @@ function BoardListPage() {
     visible.filter((c) => c.parentId === parentId);
 
   return (
-    <div className="space-y-6">
+    <div className={cn("space-y-6", isHackathon && "pb-56 xl:pb-0")}>
       {isHackathon && <HackathonReviewSideColumns onEdit={openEditReview} />}
+
 
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">

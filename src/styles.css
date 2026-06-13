@@ -338,8 +338,25 @@
   animation-play-state: paused;
 }
 
+@keyframes postit-marquee-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.postit-marquee-row {
+  animation: postit-marquee-left var(--postit-marquee-duration, 40s) linear infinite;
+}
+.postit-marquee-row:hover {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .postit-marquee-track {
+  .postit-marquee-track,
+  .postit-marquee-row {
     animation: none;
   }
 }

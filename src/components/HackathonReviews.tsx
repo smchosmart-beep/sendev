@@ -59,10 +59,14 @@ function ReviewCard({
   review,
   rotate,
   onEdit,
+  className,
+  square,
 }: {
   review: HackathonReviewDTO;
   rotate: string;
   onEdit: (r: HackathonReviewDTO) => void;
+  className?: string;
+  square?: boolean;
 }) {
   return (
     <button
@@ -70,7 +74,9 @@ function ReviewCard({
       onClick={() => onEdit(review)}
       className={cn(
         "group block w-full rounded-md p-4 text-left text-postit-foreground shadow-md transition-transform duration-200 hover:scale-[1.03] hover:shadow-lg",
+        square && "flex h-full flex-col overflow-hidden",
         colorClass(review.color),
+        className,
       )}
       title="후기 수정/삭제"
     >
@@ -80,7 +86,12 @@ function ReviewCard({
         </span>
         <Pencil className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-70" />
       </div>
-      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+      <p
+        className={cn(
+          "whitespace-pre-wrap break-words text-sm leading-relaxed",
+          square && "min-h-0 flex-1 overflow-hidden",
+        )}
+      >
         {review.content}
       </p>
       <p className="mt-3 text-right text-xs font-semibold opacity-80">
@@ -346,7 +357,10 @@ export function HackathonReviewButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-// Mobile: horizontal scrolling strip above the category list.
+// Mobile: a single horizontal marquee row fixed to the bottom of the screen.
+// Each post-it is a fixed-width square card (height locked to width via
+// aspect-square). Cards (plus a duplicate copy) scroll left for a seamless
+// infinite loop. Hidden on desktop (xl+), where the side walls are used.
 export function HackathonReviewStripMobile({
   onEdit,
 }: {
@@ -354,15 +368,33 @@ export function HackathonReviewStripMobile({
 }) {
   const { data: reviews = [] } = useQuery(hackathonReviewsQueryOptions());
   if (reviews.length === 0) return null;
+
+  // Animate only when there are enough cards to scroll; otherwise lay them out
+  // statically so they don't jitter.
+  const animate = reviews.length > 2;
+  const duration = Math.max(24, reviews.length * 5);
+  const cards = animate ? [...reviews, ...reviews] : reviews;
+
   return (
-    <div className="xl:hidden">
-      <div className="flex gap-3 overflow-x-auto pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {reviews.map((r, i) => (
-          <div key={r.id} className="w-56 shrink-0">
+    <div className="fixed inset-x-0 bottom-0 z-40 overflow-hidden border-t border-black/5 bg-background/80 py-3 backdrop-blur xl:hidden">
+      <div
+        className={cn(
+          "flex w-max gap-3 px-3",
+          animate && "postit-marquee-row",
+        )}
+        style={
+          animate
+            ? ({ "--postit-marquee-duration": `${duration}s` } as CSSProperties)
+            : undefined
+        }
+      >
+        {cards.map((r, i) => (
+          <div key={`${r.id}-${i}`} className="aspect-square w-44 shrink-0">
             <ReviewCard
               review={r}
               rotate={ROTATIONS[i % ROTATIONS.length]}
               onEdit={onEdit}
+              square
             />
           </div>
         ))}
