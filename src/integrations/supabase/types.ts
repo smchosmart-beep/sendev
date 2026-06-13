@@ -211,6 +211,36 @@ export type Database = {
         }
         Relationships: []
       }
+      hackathon_reviews: {
+        Row: {
+          color: string
+          content: string
+          created_at: string
+          id: string
+          nickname: string
+          participant_type: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          content: string
+          created_at?: string
+          id?: string
+          nickname: string
+          participant_type: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          content?: string
+          created_at?: string
+          id?: string
+          nickname?: string
+          participant_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hero_slides: {
         Row: {
           caption: string
