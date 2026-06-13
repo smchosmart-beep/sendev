@@ -535,7 +535,7 @@ function GuidePage() {
         <ul className="ml-5 list-disc space-y-2">
           <li><strong>같은 게시판의 같은 종류 글</strong>끼리만 이동합니다(게시글은 게시글끼리, 공지는 공지끼리). 순서는 게시판 목록과 동일합니다.</li>
           <li>버튼에 이동할 글의 <strong>제목</strong>이 함께 표시되며, 맨 앞·맨 뒤 글에서는 해당 방향 버튼이 표시되지 않습니다.</li>
-          <li><strong>모바일에서는 좌우 스와이프</strong>로도 넘길 수 있습니다. <strong>왼쪽으로 밀면 다음글</strong>, <strong>오른쪽으로 밀면 이전글</strong>로 이동합니다.</li>
+          <li><strong>모바일에서는 좌우 스와이프</strong>로도 넘길 수 있습니다. <strong>왼쪽으로 밀면 이전글</strong>, <strong>오른쪽으로 밀면 다음글</strong>로 이동합니다.</li>
           <li><strong>PC에서는 좌우 방향키</strong>로도 넘길 수 있습니다. <strong>→ 키는 다음글</strong>, <strong>← 키는 이전글</strong>로 이동합니다.</li>
         </ul>
 
