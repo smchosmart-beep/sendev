@@ -59,10 +59,14 @@ function ReviewCard({
   review,
   rotate,
   onEdit,
+  className,
+  square,
 }: {
   review: HackathonReviewDTO;
   rotate: string;
   onEdit: (r: HackathonReviewDTO) => void;
+  className?: string;
+  square?: boolean;
 }) {
   return (
     <button
@@ -70,7 +74,9 @@ function ReviewCard({
       onClick={() => onEdit(review)}
       className={cn(
         "group block w-full rounded-md p-4 text-left text-postit-foreground shadow-md transition-transform duration-200 hover:scale-[1.03] hover:shadow-lg",
+        square && "flex h-full flex-col overflow-hidden",
         colorClass(review.color),
+        className,
       )}
       title="후기 수정/삭제"
     >
@@ -80,7 +86,12 @@ function ReviewCard({
         </span>
         <Pencil className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-70" />
       </div>
-      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+      <p
+        className={cn(
+          "whitespace-pre-wrap break-words text-sm leading-relaxed",
+          square && "min-h-0 flex-1 overflow-hidden",
+        )}
+      >
         {review.content}
       </p>
       <p className="mt-3 text-right text-xs font-semibold opacity-80">
