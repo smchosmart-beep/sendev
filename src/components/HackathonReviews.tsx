@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { StickyNote, Pencil, Trash2 } from "lucide-react";
@@ -390,22 +390,51 @@ export function HackathonReviewSideColumns({
 
   if (reviews.length === 0) return null;
 
-  const wall = (items: HackathonReviewDTO[], side: "left" | "right") => (
-    <div
-      className={cn(
-        "fixed top-28 bottom-6 hidden w-[calc(50%-33rem)] overflow-y-auto px-1 xl:block [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-        side === "left" ? "left-1" : "right-1",
-      )}
-    >
-      <div className="columns-2 gap-2">
-        {items.map((r) => (
-          <div key={r.id} className="mb-2 break-inside-avoid">
-            <ReviewCard review={r} rotate="0deg" onEdit={onEdit} />
-          </div>
-        ))}
-      </div>
+  // Render the masonry block; duplicated inside the marquee track for a
+  // seamless infinite loop.
+  const masonry = (items: HackathonReviewDTO[], hidden: boolean) => (
+    <div className="columns-2 gap-2 px-1" aria-hidden={hidden}>
+      {items.map((r) => (
+        <div key={(hidden ? "dup-" : "") + r.id} className="mb-2 break-inside-avoid">
+          <ReviewCard review={r} rotate="0deg" onEdit={onEdit} />
+        </div>
+      ))}
     </div>
   );
+
+  const wall = (items: HackathonReviewDTO[], side: "left" | "right") => {
+    // Few cards fit on screen → keep them static (no movement, manual scroll).
+    const animate = items.length > 4;
+    // Slower as the wall grows so cards stay readable. ~4s per card, min 24s.
+    const duration = Math.max(24, items.length * 4);
+
+    return (
+      <div
+        className={cn(
+          "fixed top-28 bottom-6 hidden w-[calc(50%-33rem)] overflow-hidden xl:block",
+          animate ? "" : "overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+          side === "left" ? "left-1" : "right-1",
+        )}
+      >
+        {animate ? (
+          <div
+            className={cn(
+              "postit-marquee-track",
+              side === "right" ? "is-reverse" : "",
+            )}
+            style={
+              { "--postit-marquee-duration": `${duration}s` } as CSSProperties
+            }
+          >
+            {masonry(items, false)}
+            {masonry(items, true)}
+          </div>
+        ) : (
+          masonry(items, false)
+        )}
+      </div>
+    );
+  };
 
   return (
     <>

@@ -318,6 +318,32 @@
   }
 }
 
+/* Postit wall vertical marquee (auto-scrolling sticky-note walls). */
+@keyframes postit-marquee-up {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+.postit-marquee-track {
+  animation: postit-marquee-up var(--postit-marquee-duration, 40s) linear infinite;
+}
+.postit-marquee-track.is-reverse {
+  animation-direction: reverse;
+}
+.postit-marquee-track:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .postit-marquee-track {
+    animation: none;
+  }
+}
+
 /* Guide in-page search highlights (CSS Custom Highlight API). */
 ::highlight(guide-search) {
   background-color: color-mix(in oklch, var(--primary) 25%, transparent);
