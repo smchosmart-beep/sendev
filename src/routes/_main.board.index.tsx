@@ -242,6 +242,15 @@ function FolderNode({
 function BoardListPage() {
   const { tab } = Route.useSearch();
   const activeTab = normalizeTab(tab);
+  const isHackathon = activeTab === "hackathon";
+  const [reviewDialog, setReviewDialog] = useState<{
+    open: boolean;
+    editing: HackathonReviewDTO | null;
+  }>({ open: false, editing: null });
+  const openCreateReview = () =>
+    setReviewDialog({ open: true, editing: null });
+  const openEditReview = (r: HackathonReviewDTO) =>
+    setReviewDialog({ open: true, editing: r });
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
   // 숨김 처리: 직접 hidden이거나, 조상 폴더 중 하나라도 hidden이면 목록에서 제외.
   // 숨김 처리: 직접 hidden이거나, 조상 폴더 중 하나라도 hidden이면 비활성으로 표시(제거하지 않음).
