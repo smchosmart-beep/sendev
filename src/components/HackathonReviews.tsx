@@ -81,7 +81,7 @@ function ReviewCard({
         </span>
         <Pencil className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-70" />
       </div>
-      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed line-clamp-6">
+      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
         {review.content}
       </p>
       <p className="mt-3 text-right text-xs font-semibold opacity-80">
