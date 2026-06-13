@@ -357,7 +357,10 @@ export function HackathonReviewButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-// Mobile: horizontal scrolling strip above the category list.
+// Mobile: a single horizontal marquee row fixed to the bottom of the screen.
+// Each post-it is a fixed-width square card (height locked to width via
+// aspect-square). Cards (plus a duplicate copy) scroll left for a seamless
+// infinite loop. Hidden on desktop (xl+), where the side walls are used.
 export function HackathonReviewStripMobile({
   onEdit,
 }: {
@@ -365,15 +368,33 @@ export function HackathonReviewStripMobile({
 }) {
   const { data: reviews = [] } = useQuery(hackathonReviewsQueryOptions());
   if (reviews.length === 0) return null;
+
+  // Animate only when there are enough cards to scroll; otherwise lay them out
+  // statically so they don't jitter.
+  const animate = reviews.length > 2;
+  const duration = Math.max(24, reviews.length * 5);
+  const cards = animate ? [...reviews, ...reviews] : reviews;
+
   return (
-    <div className="xl:hidden">
-      <div className="flex gap-3 overflow-x-auto pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {reviews.map((r, i) => (
-          <div key={r.id} className="w-56 shrink-0">
+    <div className="fixed inset-x-0 bottom-0 z-40 overflow-hidden border-t border-black/5 bg-background/80 py-3 backdrop-blur xl:hidden">
+      <div
+        className={cn(
+          "flex w-max gap-3 px-3",
+          animate && "postit-marquee-row",
+        )}
+        style={
+          animate
+            ? ({ "--postit-marquee-duration": `${duration}s` } as CSSProperties)
+            : undefined
+        }
+      >
+        {cards.map((r, i) => (
+          <div key={`${r.id}-${i}`} className="aspect-square w-44 shrink-0">
             <ReviewCard
               review={r}
               rotate={ROTATIONS[i % ROTATIONS.length]}
               onEdit={onEdit}
+              square
             />
           </div>
         ))}
