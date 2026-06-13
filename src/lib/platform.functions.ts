@@ -3561,3 +3561,191 @@ export const renameNickname = createServerFn({ method: "POST" })
 
     return { ok: true, username: newName };
   });
+
+// ----------------------------- Hackathon reviews -----------------------------
+// Participants who posted in any hackathon-tab board can leave a short "review"
+// (소감) shown as a colorful sticky note. Write/edit/delete reuse the shared
+// nickname-ownership credential; eligibility requires at least one hackathon
+// post under the author's nickname.
+
+export const HACKATHON_REVIEW_TYPES = ["intro", "growth", "challenge"] as const;
+export type HackathonParticipantType = (typeof HACKATHON_REVIEW_TYPES)[number];
+
+const HACKATHON_REVIEW_COLORS = [
+  "yellow",
+  "pink",
+  "green",
+  "blue",
+  "purple",
+  "orange",
+] as const;
+
+export interface HackathonReviewDTO {
+  id: string;
+  nickname: string;
+  participantType: HackathonParticipantType;
+  content: string;
+  color: string;
+  createdAt: string;
+}
+
+// Returns true if the nickname authored at least one post in a hackathon-tab
+// category. Used to gate review creation.
+async function nicknameHasHackathonPost(
+  db: { from: (t: string) => any },
+  author: string,
+): Promise<boolean> {
+  const name = (author ?? "").trim();
+  if (!name) return false;
+  const { data: cats, error: catErr } = await db
+    .from("categories")
+    .select("id")
+    .eq("tab_group", "hackathon");
+  if (catErr) throw new Error(catErr.message);
+  const ids = (cats ?? []).map((c: { id: string }) => c.id);
+  if (ids.length === 0) return false;
+  const { data: rows, error } = await db
+    .from("posts")
+    .select("id")
+    .ilike("author", name)
+    .in("category_id", ids)
+    .limit(1);
+  if (error) throw new Error(error.message);
+  return (rows ?? []).length > 0;
+}
+
+export const listHackathonReviews = createServerFn({ method: "GET" }).handler(
+  async (): Promise<HackathonReviewDTO[]> => {
+    const db = await getAdmin();
+    const { data, error } = await db
+      .from("hackathon_reviews")
+      .select("id, nickname, participant_type, content, color, created_at")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((r: any) => ({
+      id: r.id,
+      nickname: r.nickname,
+      participantType: r.participant_type,
+      content: r.content,
+      color: r.color,
+      createdAt: r.created_at,
+    }));
+  },
+);
+
+export const checkHackathonEligibility = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z.object({ author: z.string().trim().max(100) }).parse(input),
+  )
+  .handler(async ({ data }): Promise<{ eligible: boolean }> => {
+    const db = await getAdmin();
+    const eligible = await nicknameHasHackathonPost(db, data.author);
+    return { eligible };
+  });
+
+export const createHackathonReview = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        nickname: z.string().trim().min(1).max(100),
+        nicknamePassword: z.string().trim().max(100).default(""),
+        participantType: z.enum(HACKATHON_REVIEW_TYPES),
+        content: z.string().trim().min(1).max(1000),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ ok: true; id: string }> => {
+    const db = await getAdmin();
+    // Verify nickname ownership (or first-time claim with password).
+    await ensureNicknameOwnership(db, data.nickname, data.nicknamePassword, false);
+    // Eligibility: must have at least one hackathon-tab post.
+    const eligible = await nicknameHasHackathonPost(db, data.nickname);
+    if (!eligible) {
+      throw new Error(
+        "후기는 해커톤(입문형·성장형·도전형) 게시판에 글을 1개 이상 작성한 닉네임만 쓸 수 있어요.",
+      );
+    }
+    const color =
+      HACKATHON_REVIEW_COLORS[
+        Math.floor(Math.random() * HACKATHON_REVIEW_COLORS.length)
+      ];
+    const { data: row, error } = await db
+      .from("hackathon_reviews")
+      .insert({
+        nickname: data.nickname,
+        participant_type: data.participantType,
+        content: data.content,
+        color,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return { ok: true, id: row.id };
+  });
+
+export const updateHackathonReview = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        nickname: z.string().trim().min(1).max(100),
+        nicknamePassword: z.string().trim().max(100).default(""),
+        participantType: z.enum(HACKATHON_REVIEW_TYPES),
+        content: z.string().trim().min(1).max(1000),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ ok: true }> => {
+    const db = await getAdmin();
+    const { data: existing, error: getErr } = await db
+      .from("hackathon_reviews")
+      .select("id, nickname")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (getErr) throw new Error(getErr.message);
+    if (!existing) throw new Error("후기를 찾을 수 없어요.");
+    if (normalizeName(existing.nickname) !== normalizeName(data.nickname)) {
+      throw new Error("본인이 작성한 후기만 수정할 수 있어요.");
+    }
+    await ensureNicknameOwnership(db, data.nickname, data.nicknamePassword, false);
+    const { error } = await db
+      .from("hackathon_reviews")
+      .update({
+        participant_type: data.participantType,
+        content: data.content,
+      })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteHackathonReview = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        nickname: z.string().trim().min(1).max(100),
+        nicknamePassword: z.string().trim().max(100).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ ok: true }> => {
+    const db = await getAdmin();
+    const { data: existing, error: getErr } = await db
+      .from("hackathon_reviews")
+      .select("id, nickname")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (getErr) throw new Error(getErr.message);
+    if (!existing) throw new Error("후기를 찾을 수 없어요.");
+    if (normalizeName(existing.nickname) !== normalizeName(data.nickname)) {
+      throw new Error("본인이 작성한 후기만 삭제할 수 있어요.");
+    }
+    await ensureNicknameOwnership(db, data.nickname, data.nicknamePassword, false);
+    const { error } = await db
+      .from("hackathon_reviews")
+      .delete()
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
