@@ -1,14 +1,16 @@
-## 모바일 링크 미리보기 카드 오버플로우 방지
+## 모바일 이전글/다음글 버튼 오버플로우 방지
 
 ### 문제
-`LinkPreviewCard`에서 `apple-style-2cwucwxm1-seoulbin-s-projects.vercel.app` 같은 긴 무공백 URL이 제목/사이트명 영역에서 카드 폭을 넘쳐 넘친다. 제목은 `line-clamp-2`만 있고 단어 줄바꿈 처리가 없으며, 사이트명 줄의 `truncate`도 안정적으로 적용되지 않는다.
+`PostNavSection`의 이전글/다음글 버튼은 내부 제목 `<span>`에 `truncate`/`min-w-0`가 있지만, 버튼(`flex-1`) 자체에 `min-w-0`가 없어 컨텐츠 크기 미만으로 줄어들지 못한다. 그래서 긴 제목("우리반 발표망 발표자 랜덤뽑기 시스템")이 truncate되지 않고 카드 폭을 넘친다.
 
 ### 변경 파일
-**`src/routes/_main.board.$slug.$postNo.tsx`** — `LinkPreviewCard` 내부만 수정
+**`src/routes/_main.board.$slug.$postNo.tsx`** — `PostNavSection`만 수정
 
-1. 제목 `<span>`(line 1038): `line-clamp-2`에 `break-words [overflow-wrap:anywhere]` 추가해 긴 단어가 카드 폭 안에서 줄바꿈되도록 한다.
-2. 사이트명 `<span>`(line 1041): 현재 flex 컨테이너에 `truncate`가 직접 걸려 있어 아이콘+텍스트 구조에서 말줄임이 불안정하다. 텍스트를 `min-w-0`/`truncate`가 적용된 내부 `<span>`으로 감싸 한 줄 말줄임이 확실히 동작하게 한다.
+- 이전글 `<Button>`(line 497) className에 `min-w-0` 추가.
+- 다음글 `<Button>`(line 514) className에 `min-w-0` 추가.
+
+이렇게 하면 flex 아이템이 내용보다 작게 줄어들 수 있어 내부 `truncate`가 정상 동작한다.
 
 ### 기술 상세
-- 레이아웃/색상 토큰은 그대로 두고 오버플로우 관련 유틸 클래스만 추가하는 순수 프레젠테이션 수정.
-- 가이드 페이지는 사용법 변화가 없어 업데이트 불필요.
+- 레이아웃/색상 토큰 변경 없이 오버플로우 관련 유틸 클래스만 추가하는 프레젠테이션 수정.
+- 가이드 변화 없음.
