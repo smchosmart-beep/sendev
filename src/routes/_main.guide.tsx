@@ -18,6 +18,7 @@ import {
   Eye,
   ChevronUp,
   ChevronDown,
+  StickyNote,
   X,
 } from "lucide-react";
 
