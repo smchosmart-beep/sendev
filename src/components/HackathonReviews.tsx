@@ -367,6 +367,7 @@ export function HackathonReviewStripMobile({
   onEdit: (r: HackathonReviewDTO) => void;
 }) {
   const { data: reviews = [] } = useQuery(hackathonReviewsQueryOptions());
+  const [open, setOpen] = useState(true);
   if (reviews.length === 0) return null;
 
   // Animate only when there are enough cards to scroll; otherwise lay them out
@@ -376,28 +377,51 @@ export function HackathonReviewStripMobile({
   const cards = animate ? [...reviews, ...reviews] : reviews;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 overflow-hidden border-t border-black/5 bg-background/80 py-3 backdrop-blur xl:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-40 overflow-hidden border-t border-black/5 bg-background/80 backdrop-blur xl:hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-label={open ? "후기 접기" : "후기 펼치기"}
+        className="flex w-full items-center justify-center gap-1.5 py-1.5 text-xs font-semibold text-muted-foreground"
+      >
+        <StickyNote className="h-3.5 w-3.5" />
+        후기 {reviews.length}
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 transition-transform duration-300",
+            open && "rotate-180",
+          )}
+        />
+      </button>
       <div
         className={cn(
-          "flex w-max gap-3 px-3",
-          animate && "postit-marquee-row",
+          "overflow-hidden transition-all duration-300 ease-out",
+          open ? "max-h-60 pb-3 opacity-100" : "max-h-0 opacity-0",
         )}
-        style={
-          animate
-            ? ({ "--postit-marquee-duration": `${duration}s` } as CSSProperties)
-            : undefined
-        }
       >
-        {cards.map((r, i) => (
-          <div key={`${r.id}-${i}`} className="aspect-square w-44 shrink-0">
-            <ReviewCard
-              review={r}
-              rotate={ROTATIONS[i % ROTATIONS.length]}
-              onEdit={onEdit}
-              square
-            />
-          </div>
-        ))}
+        <div
+          className={cn(
+            "flex w-max gap-3 px-3",
+            animate && "postit-marquee-row",
+          )}
+          style={
+            animate
+              ? ({ "--postit-marquee-duration": `${duration}s` } as CSSProperties)
+              : undefined
+          }
+        >
+          {cards.map((r, i) => (
+            <div key={`${r.id}-${i}`} className="aspect-square w-44 shrink-0">
+              <ReviewCard
+                review={r}
+                rotate={ROTATIONS[i % ROTATIONS.length]}
+                onEdit={onEdit}
+                square
+              />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
