@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { StickyNote, Pencil, Trash2 } from "lucide-react";
+import { StickyNote, Pencil, Trash2, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 
 import {
