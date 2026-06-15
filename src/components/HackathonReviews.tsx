@@ -377,7 +377,7 @@ export function HackathonReviewStripMobile({
   const cards = animate ? [...reviews, ...reviews] : reviews;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 overflow-hidden border-t border-black/5 bg-background/80 backdrop-blur xl:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-40 overflow-hidden border-t border-black/5 bg-background backdrop-blur xl:hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -397,7 +397,7 @@ export function HackathonReviewStripMobile({
       <div
         className={cn(
           "overflow-hidden transition-all duration-300 ease-out",
-          open ? "max-h-52 pb-2 opacity-100" : "max-h-0 opacity-0",
+          open ? "max-h-52 opacity-100" : "max-h-0 opacity-0",
         )}
       >
         <div
