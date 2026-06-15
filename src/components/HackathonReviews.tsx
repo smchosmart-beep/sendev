@@ -377,7 +377,7 @@ export function HackathonReviewStripMobile({
   const cards = animate ? [...reviews, ...reviews] : reviews;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 overflow-hidden border-t border-black/5 bg-background/80 backdrop-blur xl:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-40 overflow-hidden border-t border-black/5 bg-background backdrop-blur xl:hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
