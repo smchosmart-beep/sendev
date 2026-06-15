@@ -397,12 +397,12 @@ export function HackathonReviewStripMobile({
       <div
         className={cn(
           "overflow-hidden transition-all duration-300 ease-out",
-          open ? "max-h-52 opacity-100" : "max-h-0 opacity-0",
+          open ? "h-44 opacity-100" : "h-0 opacity-0",
         )}
       >
         <div
           className={cn(
-            "flex w-max gap-3 px-3",
+            "flex h-full w-max items-end gap-3 px-3",
             animate && "postit-marquee-row",
           )}
           style={
