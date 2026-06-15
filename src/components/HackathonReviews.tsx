@@ -390,7 +390,7 @@ export function HackathonReviewStripMobile({
         <ChevronDown
           className={cn(
             "h-4 w-4 transition-transform duration-300",
-            open && "rotate-180",
+            !open && "rotate-180",
           )}
         />
       </button>
