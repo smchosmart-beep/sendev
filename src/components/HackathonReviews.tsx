@@ -397,7 +397,7 @@ export function HackathonReviewStripMobile({
       <div
         className={cn(
           "overflow-hidden transition-all duration-300 ease-out",
-          open ? "max-h-52 pb-2 opacity-100" : "max-h-0 opacity-0",
+          open ? "max-h-52 opacity-100" : "max-h-0 opacity-0",
         )}
       >
         <div
