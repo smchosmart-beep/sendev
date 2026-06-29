@@ -496,11 +496,11 @@ function PostNavSection({ post, slug }: { post: PostDTO; slug: string }) {
           variant="secondary"
           className="h-auto min-w-0 flex-1 justify-start rounded-2xl px-4 py-3 text-left active:scale-[0.98]"
         >
-          <Link to="/board/$slug/$postNo" params={{ slug, postNo: String(older.postNo) }}>
+          <Link to="/board/$slug/$postNo" params={{ slug, postNo: String(older.postNo) }} className="min-w-0 overflow-hidden">
             <ArrowLeft className="h-4 w-4 shrink-0" />
             <span className="flex min-w-0 flex-col">
               <span className="text-xs text-muted-foreground">이전글</span>
-              <span className="truncate text-sm font-medium">{older.title}</span>
+              <span className="block w-full truncate whitespace-nowrap text-sm font-medium">{older.title}</span>
             </span>
           </Link>
         </Button>
@@ -513,10 +513,10 @@ function PostNavSection({ post, slug }: { post: PostDTO; slug: string }) {
           variant="secondary"
           className="h-auto min-w-0 flex-1 justify-end rounded-2xl px-4 py-3 text-right active:scale-[0.98]"
         >
-          <Link to="/board/$slug/$postNo" params={{ slug, postNo: String(newer.postNo) }}>
+          <Link to="/board/$slug/$postNo" params={{ slug, postNo: String(newer.postNo) }} className="min-w-0 overflow-hidden">
             <span className="flex min-w-0 flex-col items-end">
               <span className="text-xs text-muted-foreground">다음글</span>
-              <span className="truncate text-sm font-medium">{newer.title}</span>
+              <span className="block w-full truncate whitespace-nowrap text-right text-sm font-medium">{newer.title}</span>
             </span>
             <ArrowRight className="h-4 w-4 shrink-0" />
           </Link>
