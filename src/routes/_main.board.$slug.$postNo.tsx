@@ -458,7 +458,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
         />
       )}
 
-      {!isBoardPost && !isLink && (
+      {post.type === "project" && (
         <>
           <ReadmeSection githubUrl={post.githubUrl} />
           <EvaluationSection categoryId={post.categoryId} postId={post.id} slug={slug} />
@@ -469,7 +469,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
 
       <PostNavSection post={post} slug={slug} />
 
-      {isBoardPost && <CommentsSection postId={post.id} />}
+      {(isBoardPost || post.type === "problem") && <CommentsSection postId={post.id} />}
     </div>
   );
 }
