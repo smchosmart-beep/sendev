@@ -387,6 +387,34 @@ function BoardInner({
             />
           ) : (
             <>
+              <div className="flex items-center gap-1 rounded-xl bg-muted p-1 w-fit">
+                {([
+                  { key: "recent", label: "최신순" },
+                  { key: "likes", label: "좋아요순" },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    aria-pressed={psort === opt.key}
+                    onClick={() =>
+                      navigate({
+                        search: (prev: { qpage: number; gpage: number; ppage: number; psort: "recent" | "likes" }) => ({
+                          ...prev,
+                          psort: opt.key,
+                          ppage: 1,
+                        }),
+                      })
+                    }
+                    className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors active:scale-95 ${
+                      psort === opt.key
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {pagedProblems.map((post) => {
                   const like = problemLikeMap?.[post.id];
@@ -405,7 +433,7 @@ function BoardInner({
                 page={currentPPage}
                 pageCount={problemPageCount}
                 onChange={(p) =>
-                  navigate({ search: (prev: { qpage: number; gpage: number; ppage: number }) => ({ ...prev, ppage: p }) })
+                  navigate({ search: (prev: { qpage: number; gpage: number; ppage: number; psort: "recent" | "likes" }) => ({ ...prev, ppage: p }) })
                 }
               />
             </>
