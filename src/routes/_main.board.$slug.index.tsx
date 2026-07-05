@@ -31,10 +31,11 @@ function toPage(value: unknown): number {
 }
 
 export const Route = createFileRoute("/_main/board/$slug/")({
-  validateSearch: (search: Record<string, unknown>): { qpage: number; gpage: number; ppage: number } => ({
+  validateSearch: (search: Record<string, unknown>): { qpage: number; gpage: number; ppage: number; psort: "recent" | "likes" } => ({
     qpage: toPage(search.qpage),
     gpage: toPage(search.gpage),
     ppage: toPage(search.ppage),
+    psort: search.psort === "likes" ? "likes" : "recent",
   }),
   loader: async ({ context, params }) => {
     const categories = await context.queryClient.ensureQueryData(
