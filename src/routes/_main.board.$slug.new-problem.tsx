@@ -31,7 +31,7 @@ import {
   useNicknameClaimed,
 } from "@/hooks/useNicknameIdentity";
 
-const TITLE_MAX = 30;
+const TITLE_MAX = 50;
 
 export const Route = createFileRoute("/_main/board/$slug/new-problem")({
   loader: ({ context }) =>
