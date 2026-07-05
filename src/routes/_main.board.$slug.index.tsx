@@ -418,7 +418,7 @@ function ProblemCard({ post, slug, likeCount, liked }: { post: PostDTO; slug: st
             <MessageCircle className="h-3.5 w-3.5" />
             {post.commentCount}
           </span>
-          <LikeButton targetType="post" targetId={post.id} size="sm" count={likeCount} liked={liked} />>
+          <LikeButton targetType="post" targetId={post.id} size="sm" count={likeCount} liked={liked} />
         </div>
       </div>
     </div>
