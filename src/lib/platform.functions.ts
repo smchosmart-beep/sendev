@@ -233,7 +233,7 @@ export interface PostDTO {
   id: string;
   categoryId: string;
   postNo: number;
-  type: "post" | "project" | "link";
+  type: "post" | "project" | "link" | "problem";
   pinned: boolean;
   title: string;
   content: string;
@@ -242,6 +242,8 @@ export interface PostDTO {
   deployUrl: string;
   ogImageUrl: string;
   series: string;
+  problemArea: string;
+  problemFrequency: string;
   parentPostId: string | null;
   createdAt: string;
   commentCount: number;
