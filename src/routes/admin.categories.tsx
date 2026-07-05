@@ -91,9 +91,11 @@ function CategoriesPage() {
   const [enablePost, setEnablePost] = useState(true);
   const [enableProject, setEnableProject] = useState(true);
   const [enableLink, setEnableLink] = useState(false);
+  const [enableProblem, setEnableProblem] = useState(false);
   const [generalName, setGeneralName] = useState("일반게시판");
   const [projectName, setProjectName] = useState("산출물");
   const [linkName, setLinkName] = useState("링크");
+  const [problemName, setProblemName] = useState("문제ZIP");
   const [tabGroup, setTabGroup] = useState<TabGroup>("hackathon");
   const [isGroup, setIsGroup] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -108,9 +110,11 @@ function CategoriesPage() {
   const [editEnablePost, setEditEnablePost] = useState(true);
   const [editEnableProject, setEditEnableProject] = useState(true);
   const [editEnableLink, setEditEnableLink] = useState(false);
+  const [editEnableProblem, setEditEnableProblem] = useState(false);
   const [editGeneralName, setEditGeneralName] = useState("일반게시판");
   const [editProjectName, setEditProjectName] = useState("산출물");
   const [editLinkName, setEditLinkName] = useState("링크");
+  const [editProblemName, setEditProblemName] = useState("문제ZIP");
   const [editTabGroup, setEditTabGroup] = useState<TabGroup>("hackathon");
   const [editIsGroup, setEditIsGroup] = useState(false);
   const [editHidden, setEditHidden] = useState(false);
@@ -164,9 +168,11 @@ function CategoriesPage() {
           enablePost,
           enableProject,
           enableLink,
+          enableProblem,
           generalName: generalName.trim(),
           projectName: projectName.trim(),
           linkName: linkName.trim(),
+          problemName: problemName.trim(),
           tabGroup,
           isGroup,
           hidden,
@@ -211,9 +217,11 @@ function CategoriesPage() {
           enablePost: editEnablePost,
           enableProject: editEnableProject,
           enableLink: editEnableLink,
+          enableProblem: editEnableProblem,
           generalName: editGeneralName.trim(),
           projectName: editProjectName.trim(),
           linkName: editLinkName.trim(),
+          problemName: editProblemName.trim(),
           tabGroup: editTabGroup,
           isGroup: editIsGroup,
           hidden: editHidden,
@@ -300,9 +308,11 @@ function CategoriesPage() {
     setEditEnablePost(c.enablePost);
     setEditEnableProject(c.enableProject);
     setEditEnableLink(c.enableLink);
+    setEditEnableProblem(c.enableProblem);
     setEditGeneralName(c.generalName);
     setEditProjectName(c.projectName);
     setEditLinkName(c.linkName);
+    setEditProblemName(c.problemName);
     setEditTabGroup(c.tabGroup ?? "hackathon");
     setEditIsGroup(c.isGroup);
     setEditHidden(c.hidden);
@@ -450,6 +460,7 @@ function CategoriesPage() {
               <SectionToggle id="add-sec-post" label="글 게시판" checked={enablePost} onChange={setEnablePost} />
               <SectionToggle id="add-sec-project" label="산출물 게시판" checked={enableProject} onChange={setEnableProject} />
               <SectionToggle id="add-sec-link" label="링크 게시판" checked={enableLink} onChange={setEnableLink} />
+              <SectionToggle id="add-sec-problem" label="문제ZIP 게시판" checked={enableProblem} onChange={setEnableProblem} />
             </div>
             {enablePost && (
               <div className="space-y-2 pt-1">
@@ -487,6 +498,21 @@ function CategoriesPage() {
                 />
                 <p className="text-xs text-muted-foreground">
                   링크 주소의 미리보기 썸네일이 카드에 크게 표시돼요.
+                </p>
+              </div>
+            )}
+            {enableProblem && (
+              <div className="space-y-2 pt-1">
+                <Label htmlFor="add-problem-name">문제ZIP 게시판 이름</Label>
+                <Input
+                  id="add-problem-name"
+                  value={problemName}
+                  onChange={(e) => setProblemName(e.target.value)}
+                  placeholder="예: 문제ZIP, 현장 고발"
+                  className="rounded-xl bg-background"
+                />
+                <p className="text-xs text-muted-foreground">
+                  영역·빈도 선택지는 관리자 &gt; 사이트 설정에서 편집해요.
                 </p>
               </div>
             )}
@@ -615,6 +641,9 @@ function CategoriesPage() {
                     )}
                     {!c.isGroup && c.enableProject && (
                       <SectionBadge label={c.projectName || "산출물"} />
+                    )}
+                    {!c.isGroup && c.enableProblem && (
+                      <SectionBadge label={c.problemName || "문제ZIP"} />
                     )}
                     {!c.isGroup && c.enableLink && (
                       <SectionBadge label={c.linkName || "링크"} />
@@ -806,6 +835,7 @@ function CategoriesPage() {
                 <SectionToggle id="edit-sec-post" label="글 게시판" checked={editEnablePost} onChange={setEditEnablePost} />
                 <SectionToggle id="edit-sec-project" label="산출물 게시판" checked={editEnableProject} onChange={setEditEnableProject} />
                 <SectionToggle id="edit-sec-link" label="링크 게시판" checked={editEnableLink} onChange={setEditEnableLink} />
+                <SectionToggle id="edit-sec-problem" label="문제ZIP 게시판" checked={editEnableProblem} onChange={setEditEnableProblem} />
               </div>
               {editEnablePost && (
                 <div className="space-y-2 pt-1">
@@ -839,6 +869,18 @@ function CategoriesPage() {
                     value={editLinkName}
                     onChange={(e) => setEditLinkName(e.target.value)}
                     placeholder="예: 추천 영상, 디자인 모음"
+                    className="rounded-xl bg-background"
+                  />
+                </div>
+              )}
+              {editEnableProblem && (
+                <div className="space-y-2 pt-1">
+                  <Label htmlFor="edit-problem-name">문제ZIP 게시판 이름</Label>
+                  <Input
+                    id="edit-problem-name"
+                    value={editProblemName}
+                    onChange={(e) => setEditProblemName(e.target.value)}
+                    placeholder="예: 문제ZIP, 현장 고발"
                     className="rounded-xl bg-background"
                   />
                 </div>

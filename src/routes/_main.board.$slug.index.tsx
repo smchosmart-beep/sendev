@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers, CheckCircle2, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers, CheckCircle2, ChevronLeft, ChevronRight, Eye, PackageOpen } from "lucide-react";
 
 import {
   postsQueryOptions,
@@ -20,6 +20,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { AuthorBadge } from "@/components/AuthorBadge";
 import { Button } from "@/components/ui/button";
 import { ThumbnailUploadButton } from "@/components/ThumbnailUploadButton";
+import { LikeButton } from "@/components/LikeButton";
 
 const PAGE_SIZE = 10;
 
@@ -77,6 +78,7 @@ function BoardInner({
   const generals = posts.filter((p) => p.type === "post" && !p.pinned);
   const projects = posts.filter((p) => p.type === "project");
   const links = posts.filter((p) => p.type === "link");
+  const problems = posts.filter((p) => p.type === "problem");
   const linkItems = groupLinksBySeries(links);
 
   const generalPageCount = Math.max(1, Math.ceil(generals.length / PAGE_SIZE));
@@ -305,9 +307,83 @@ function BoardInner({
           )}
         </section>
       )}
+
+      {category.enableProblem && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+              <PackageOpen className="h-5 w-5 text-primary" />
+              {category.problemName || "문제ZIP"}
+            </h2>
+            <Button asChild className="rounded-xl active:scale-95">
+              <Link to="/board/$slug/new-problem" params={{ slug }}>
+                <Plus className="h-4 w-4" />
+                문제 제보하기
+              </Link>
+            </Button>
+          </div>
+
+          {problems.length === 0 ? (
+            <EmptyState
+              icon={PackageOpen}
+              title="아직 제보된 문제가 없어요."
+              description="현장에서 겪는 불편을 한 줄로 남겨주세요!"
+            />
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {problems.map((post) => (
+                <ProblemCard key={post.id} post={post} slug={slug} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }
+
+function ProblemCard({ post, slug }: { post: PostDTO; slug: string }) {
+  const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
+  return (
+    <div className="flex flex-col justify-between gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md">
+      <Link
+        to="/board/$slug/$postNo"
+        params={{ slug, postNo: String(post.postNo) }}
+        className="space-y-3"
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          {post.problemArea && (
+            <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-primary">
+              {post.problemArea}
+            </span>
+          )}
+          {post.problemFrequency && (
+            <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+              {post.problemFrequency}
+            </span>
+          )}
+        </div>
+        <p className="text-base font-semibold leading-snug text-foreground">
+          {post.title}
+        </p>
+      </Link>
+      <div className="flex items-center justify-between">
+        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+          <User className="h-3.5 w-3.5" />
+          <AuthorBadge author={post.author} profileMap={profileMap} />
+        </span>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+            <MessageCircle className="h-3.5 w-3.5" />
+            {post.commentCount}
+          </span>
+          <LikeButton targetType="post" targetId={post.id} size="sm" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 function BoardPagination({
   page,

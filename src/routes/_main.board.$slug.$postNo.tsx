@@ -381,6 +381,24 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
           )}
         </div>
 
+        {post.type === "problem" &&
+          (post.problemArea || post.problemFrequency) && (
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
+              {post.problemArea && (
+                <span className="rounded-full bg-accent px-3 py-1 text-sm font-medium text-primary">
+                  {post.problemArea}
+                </span>
+              )}
+              {post.problemFrequency && (
+                <span className="rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">
+                  {post.problemFrequency}
+                </span>
+              )}
+            </div>
+          )}
+
+
+
         {isBoardPost && (
           <article className="post-content prose prose-sm mt-6 max-w-none break-words border-t border-border pt-6 [&_a]:break-words [&_a]:[overflow-wrap:anywhere] prose-headings:text-foreground prose-p:text-foreground prose-a:text-primary prose-a:no-underline prose-strong:text-foreground prose-code:text-primary prose-li:text-foreground prose-table:text-foreground">
             {post.content.trim() ? (

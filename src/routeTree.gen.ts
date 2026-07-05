@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminProfilesRouteImport } from './routes/admin.profiles'
+import { Route as AdminProblemOptionsRouteImport } from './routes/admin.problem-options'
 import { Route as AdminHomeRouteImport } from './routes/admin.home'
 import { Route as AdminCriteriaRouteImport } from './routes/admin.criteria'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
@@ -29,6 +30,7 @@ import { Route as MainBoardSlugRouteImport } from './routes/_main.board.$slug'
 import { Route as MainBoardSlugIndexRouteImport } from './routes/_main.board.$slug.index'
 import { Route as MainBoardSlugNewQuestionRouteImport } from './routes/_main.board.$slug.new-question'
 import { Route as MainBoardSlugNewProjectRouteImport } from './routes/_main.board.$slug.new-project'
+import { Route as MainBoardSlugNewProblemRouteImport } from './routes/_main.board.$slug.new-problem'
 import { Route as MainBoardSlugNewLinkRouteImport } from './routes/_main.board.$slug.new-link'
 import { Route as MainBoardSlugNewGeneralRouteImport } from './routes/_main.board.$slug.new-general'
 import { Route as MainBoardSlugPostNoRouteImport } from './routes/_main.board.$slug.$postNo'
@@ -61,6 +63,11 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
 const AdminProfilesRoute = AdminProfilesRouteImport.update({
   id: '/profiles',
   path: '/profiles',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminProblemOptionsRoute = AdminProblemOptionsRouteImport.update({
+  id: '/problem-options',
+  path: '/problem-options',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminHomeRoute = AdminHomeRouteImport.update({
@@ -134,6 +141,11 @@ const MainBoardSlugNewProjectRoute = MainBoardSlugNewProjectRouteImport.update({
   path: '/new-project',
   getParentRoute: () => MainBoardSlugRoute,
 } as any)
+const MainBoardSlugNewProblemRoute = MainBoardSlugNewProblemRouteImport.update({
+  id: '/new-problem',
+  path: '/new-problem',
+  getParentRoute: () => MainBoardSlugRoute,
+} as any)
 const MainBoardSlugNewLinkRoute = MainBoardSlugNewLinkRouteImport.update({
   id: '/new-link',
   path: '/new-link',
@@ -168,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/criteria': typeof AdminCriteriaRoute
   '/admin/home': typeof AdminHomeRoute
+  '/admin/problem-options': typeof AdminProblemOptionsRoute
   '/admin/profiles': typeof AdminProfilesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
@@ -176,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/board/$slug/$postNo': typeof MainBoardSlugPostNoRoute
   '/board/$slug/new-general': typeof MainBoardSlugNewGeneralRoute
   '/board/$slug/new-link': typeof MainBoardSlugNewLinkRoute
+  '/board/$slug/new-problem': typeof MainBoardSlugNewProblemRoute
   '/board/$slug/new-project': typeof MainBoardSlugNewProjectRoute
   '/board/$slug/new-question': typeof MainBoardSlugNewQuestionRoute
   '/board/$slug/': typeof MainBoardSlugIndexRoute
@@ -192,6 +206,7 @@ export interface FileRoutesByTo {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/criteria': typeof AdminCriteriaRoute
   '/admin/home': typeof AdminHomeRoute
+  '/admin/problem-options': typeof AdminProblemOptionsRoute
   '/admin/profiles': typeof AdminProfilesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin': typeof AdminIndexRoute
@@ -199,6 +214,7 @@ export interface FileRoutesByTo {
   '/board/$slug/$postNo': typeof MainBoardSlugPostNoRoute
   '/board/$slug/new-general': typeof MainBoardSlugNewGeneralRoute
   '/board/$slug/new-link': typeof MainBoardSlugNewLinkRoute
+  '/board/$slug/new-problem': typeof MainBoardSlugNewProblemRoute
   '/board/$slug/new-project': typeof MainBoardSlugNewProjectRoute
   '/board/$slug/new-question': typeof MainBoardSlugNewQuestionRoute
   '/board/$slug': typeof MainBoardSlugIndexRoute
@@ -218,6 +234,7 @@ export interface FileRoutesById {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/criteria': typeof AdminCriteriaRoute
   '/admin/home': typeof AdminHomeRoute
+  '/admin/problem-options': typeof AdminProblemOptionsRoute
   '/admin/profiles': typeof AdminProfilesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
@@ -226,6 +243,7 @@ export interface FileRoutesById {
   '/_main/board/$slug/$postNo': typeof MainBoardSlugPostNoRoute
   '/_main/board/$slug/new-general': typeof MainBoardSlugNewGeneralRoute
   '/_main/board/$slug/new-link': typeof MainBoardSlugNewLinkRoute
+  '/_main/board/$slug/new-problem': typeof MainBoardSlugNewProblemRoute
   '/_main/board/$slug/new-project': typeof MainBoardSlugNewProjectRoute
   '/_main/board/$slug/new-question': typeof MainBoardSlugNewQuestionRoute
   '/_main/board/$slug/': typeof MainBoardSlugIndexRoute
@@ -245,6 +263,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/criteria'
     | '/admin/home'
+    | '/admin/problem-options'
     | '/admin/profiles'
     | '/admin/settings'
     | '/admin/'
@@ -253,6 +272,7 @@ export interface FileRouteTypes {
     | '/board/$slug/$postNo'
     | '/board/$slug/new-general'
     | '/board/$slug/new-link'
+    | '/board/$slug/new-problem'
     | '/board/$slug/new-project'
     | '/board/$slug/new-question'
     | '/board/$slug/'
@@ -269,6 +289,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/criteria'
     | '/admin/home'
+    | '/admin/problem-options'
     | '/admin/profiles'
     | '/admin/settings'
     | '/admin'
@@ -276,6 +297,7 @@ export interface FileRouteTypes {
     | '/board/$slug/$postNo'
     | '/board/$slug/new-general'
     | '/board/$slug/new-link'
+    | '/board/$slug/new-problem'
     | '/board/$slug/new-project'
     | '/board/$slug/new-question'
     | '/board/$slug'
@@ -294,6 +316,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/criteria'
     | '/admin/home'
+    | '/admin/problem-options'
     | '/admin/profiles'
     | '/admin/settings'
     | '/admin/'
@@ -302,6 +325,7 @@ export interface FileRouteTypes {
     | '/_main/board/$slug/$postNo'
     | '/_main/board/$slug/new-general'
     | '/_main/board/$slug/new-link'
+    | '/_main/board/$slug/new-problem'
     | '/_main/board/$slug/new-project'
     | '/_main/board/$slug/new-question'
     | '/_main/board/$slug/'
@@ -356,6 +380,13 @@ declare module '@tanstack/react-router' {
       path: '/profiles'
       fullPath: '/admin/profiles'
       preLoaderRoute: typeof AdminProfilesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/problem-options': {
+      id: '/admin/problem-options'
+      path: '/problem-options'
+      fullPath: '/admin/problem-options'
+      preLoaderRoute: typeof AdminProblemOptionsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/home': {
@@ -456,6 +487,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainBoardSlugNewProjectRouteImport
       parentRoute: typeof MainBoardSlugRoute
     }
+    '/_main/board/$slug/new-problem': {
+      id: '/_main/board/$slug/new-problem'
+      path: '/new-problem'
+      fullPath: '/board/$slug/new-problem'
+      preLoaderRoute: typeof MainBoardSlugNewProblemRouteImport
+      parentRoute: typeof MainBoardSlugRoute
+    }
     '/_main/board/$slug/new-link': {
       id: '/_main/board/$slug/new-link'
       path: '/new-link'
@@ -491,6 +529,7 @@ interface MainBoardSlugRouteChildren {
   MainBoardSlugPostNoRoute: typeof MainBoardSlugPostNoRoute
   MainBoardSlugNewGeneralRoute: typeof MainBoardSlugNewGeneralRoute
   MainBoardSlugNewLinkRoute: typeof MainBoardSlugNewLinkRoute
+  MainBoardSlugNewProblemRoute: typeof MainBoardSlugNewProblemRoute
   MainBoardSlugNewProjectRoute: typeof MainBoardSlugNewProjectRoute
   MainBoardSlugNewQuestionRoute: typeof MainBoardSlugNewQuestionRoute
   MainBoardSlugIndexRoute: typeof MainBoardSlugIndexRoute
@@ -501,6 +540,7 @@ const MainBoardSlugRouteChildren: MainBoardSlugRouteChildren = {
   MainBoardSlugPostNoRoute: MainBoardSlugPostNoRoute,
   MainBoardSlugNewGeneralRoute: MainBoardSlugNewGeneralRoute,
   MainBoardSlugNewLinkRoute: MainBoardSlugNewLinkRoute,
+  MainBoardSlugNewProblemRoute: MainBoardSlugNewProblemRoute,
   MainBoardSlugNewProjectRoute: MainBoardSlugNewProjectRoute,
   MainBoardSlugNewQuestionRoute: MainBoardSlugNewQuestionRoute,
   MainBoardSlugIndexRoute: MainBoardSlugIndexRoute,
@@ -538,6 +578,7 @@ interface AdminRouteChildren {
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminCriteriaRoute: typeof AdminCriteriaRoute
   AdminHomeRoute: typeof AdminHomeRoute
+  AdminProblemOptionsRoute: typeof AdminProblemOptionsRoute
   AdminProfilesRoute: typeof AdminProfilesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -548,6 +589,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminCriteriaRoute: AdminCriteriaRoute,
   AdminHomeRoute: AdminHomeRoute,
+  AdminProblemOptionsRoute: AdminProblemOptionsRoute,
   AdminProfilesRoute: AdminProfilesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminIndexRoute: AdminIndexRoute,

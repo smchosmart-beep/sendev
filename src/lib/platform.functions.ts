@@ -173,9 +173,11 @@ export interface CategoryDTO {
   enablePost: boolean;
   enableProject: boolean;
   enableLink: boolean;
+  enableProblem: boolean;
   generalName: string;
   projectName: string;
   linkName: string;
+  problemName: string;
   tabGroup: TabGroup;
   evalOpen: boolean;
   evalSeed: number;
@@ -233,7 +235,7 @@ export interface PostDTO {
   id: string;
   categoryId: string;
   postNo: number;
-  type: "post" | "project" | "link";
+  type: "post" | "project" | "link" | "problem";
   pinned: boolean;
   title: string;
   content: string;
@@ -242,6 +244,8 @@ export interface PostDTO {
   deployUrl: string;
   ogImageUrl: string;
   series: string;
+  problemArea: string;
+  problemFrequency: string;
   parentPostId: string | null;
   createdAt: string;
   commentCount: number;
@@ -278,7 +282,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const { data, error } = await db
       .from("categories")
       .select(
-        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, general_name, project_name, link_name, tab_group, eval_open, eval_seed, review_allowlist_only, hidden",
+        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, enable_problem, general_name, project_name, link_name, problem_name, tab_group, eval_open, eval_seed, review_allowlist_only, hidden",
       )
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
@@ -295,9 +299,11 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       enablePost: c.enable_post ?? true,
       enableProject: c.enable_project ?? true,
       enableLink: c.enable_link ?? false,
+      enableProblem: c.enable_problem ?? false,
       generalName: c.general_name ?? "일반게시판",
       projectName: c.project_name ?? "산출물",
       linkName: c.link_name ?? "링크",
+      problemName: c.problem_name ?? "문제ZIP",
       tabGroup: (c.tab_group ?? "hackathon") as TabGroup,
       evalOpen: !!c.eval_open,
       evalSeed: Number(c.eval_seed ?? 0),
@@ -358,9 +364,11 @@ export const createCategory = createServerFn({ method: "POST" })
         enablePost: z.boolean().default(true),
         enableProject: z.boolean().default(true),
         enableLink: z.boolean().default(false),
+        enableProblem: z.boolean().default(false),
         generalName: z.string().trim().max(100).default("일반게시판"),
         projectName: z.string().trim().max(100).default("산출물"),
         linkName: z.string().trim().max(100).default("링크"),
+        problemName: z.string().trim().max(100).default("문제ZIP"),
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .default("hackathon"),
@@ -391,9 +399,11 @@ export const createCategory = createServerFn({ method: "POST" })
       enable_post: data.enablePost,
       enable_project: data.enableProject,
       enable_link: data.enableLink,
+      enable_problem: data.enableProblem,
       general_name: data.generalName || "일반게시판",
       project_name: data.projectName || "산출물",
       link_name: data.linkName || "링크",
+      problem_name: data.problemName || "문제ZIP",
       tab_group: data.tabGroup,
       hidden: data.hidden,
       sort_order: nextOrder,
@@ -418,9 +428,11 @@ export const updateCategory = createServerFn({ method: "POST" })
         enablePost: z.boolean().optional(),
         enableProject: z.boolean().optional(),
         enableLink: z.boolean().optional(),
+        enableProblem: z.boolean().optional(),
         generalName: z.string().trim().max(100).optional(),
         projectName: z.string().trim().max(100).optional(),
         linkName: z.string().trim().max(100).optional(),
+        problemName: z.string().trim().max(100).optional(),
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .optional(),
@@ -452,12 +464,15 @@ export const updateCategory = createServerFn({ method: "POST" })
     if (data.enableProject !== undefined)
       patch.enable_project = data.enableProject;
     if (data.enableLink !== undefined) patch.enable_link = data.enableLink;
+    if (data.enableProblem !== undefined) patch.enable_problem = data.enableProblem;
     if (data.generalName !== undefined)
       patch.general_name = data.generalName || "일반게시판";
     if (data.projectName !== undefined)
       patch.project_name = data.projectName || "산출물";
     if (data.linkName !== undefined)
       patch.link_name = data.linkName || "링크";
+    if (data.problemName !== undefined)
+      patch.problem_name = data.problemName || "문제ZIP";
     if (data.tabGroup !== undefined) patch.tab_group = data.tabGroup;
     if (data.hidden !== undefined) patch.hidden = data.hidden;
     const { error } = await db.from("categories").update(patch).eq("id", data.id);
@@ -711,7 +726,7 @@ export const deleteEvent = createServerFn({ method: "POST" })
 /* -------------------------------- Posts ------------------------------- */
 
 const POST_COLUMNS =
-  "id, category_id, post_no, type, pinned, title, content, author, github_url, deploy_url, og_image_url, series, parent_post_id, created_at, view_count";
+  "id, category_id, post_no, type, pinned, title, content, author, github_url, deploy_url, og_image_url, series, problem_area, problem_frequency, parent_post_id, created_at, view_count";
 
 // Returns true when the caller may read a protected board's content. Open
 // boards (no password) always pass. Protected boards pass only when the
@@ -987,9 +1002,11 @@ export const createPost = createServerFn({ method: "POST" })
     z
       .object({
         categoryId: z.string().uuid(),
-        type: z.enum(["post", "project", "link"]).default("post"),
+        type: z.enum(["post", "project", "link", "problem"]).default("post"),
         pinned: z.boolean().default(false),
         title: z.string().trim().min(1).max(200),
+        problemArea: z.string().trim().max(100).default(""),
+        problemFrequency: z.string().trim().max(100).default(""),
         content: z.string().max(20000).default(""),
         author: z.string().trim().max(100).default(""),
         githubUrl: z.string().trim().max(300).default(""),
@@ -1057,6 +1074,8 @@ export const createPost = createServerFn({ method: "POST" })
         deploy_url: data.deployUrl,
         og_image_url: ogImageUrl,
         series: data.series,
+        problem_area: data.type === "problem" ? data.problemArea : "",
+        problem_frequency: data.type === "problem" ? data.problemFrequency : "",
         parent_post_id: parentPostId,
       });
       if (!error) return { ok: true, postNo: nextNo };
@@ -1251,6 +1270,8 @@ function mapPost(p: any, commentCount = 0): PostDTO {
     deployUrl: p.deploy_url ?? "",
     ogImageUrl: p.og_image_url ?? "",
     series: p.series ?? "",
+    problemArea: p.problem_area ?? "",
+    problemFrequency: p.problem_frequency ?? "",
     parentPostId: p.parent_post_id ?? null,
     createdAt: p.created_at,
     commentCount,
@@ -2849,6 +2870,94 @@ export const AWARD_ICON_NAMES = [
 export type AwardIconName = (typeof AWARD_ICON_NAMES)[number];
 
 const DEFAULT_AWARD_ICON: AwardIconName = "Trophy";
+
+// ============================================================
+// 문제ZIP 게시판: 영역(Q1)/빈도(Q2) 선택지. 관리자가 편집하며
+// site_settings 테이블에 JSON 문자열로 저장된다.
+// ============================================================
+
+export interface ProblemOptions {
+  areas: string[];
+  frequencies: string[];
+}
+
+const DEFAULT_PROBLEM_AREAS = [
+  "💊보건/건강",
+  "📝행정/공문",
+  "👩‍🏫수업/평가",
+  "💬학부모소통",
+  "🏃‍♂️학교행사",
+];
+const DEFAULT_PROBLEM_FREQUENCIES = [
+  "숨 쉴 때마다 (매일)",
+  "잊을 만하면 (주 1~2회)",
+  "시즌 한정 (학기초/말)",
+];
+
+function parseStringArray(raw: unknown, fallback: string[]): string[] {
+  if (typeof raw !== "string" || !raw.trim()) return fallback;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      const items = parsed
+        .map((v) => String(v ?? "").trim())
+        .filter((v) => v.length > 0);
+      return items.length > 0 ? items : fallback;
+    }
+  } catch {
+    /* fall through to fallback */
+  }
+  return fallback;
+}
+
+// Public: returns the admin-editable 영역/빈도 option lists for 문제ZIP.
+export const getProblemOptions = createServerFn({ method: "GET" }).handler(
+  async (): Promise<ProblemOptions> => {
+    const db = await getAdmin();
+    const { data, error } = await db
+      .from("site_settings")
+      .select("key, value")
+      .in("key", ["problem_areas", "problem_frequencies"]);
+    if (error) throw new Error(error.message);
+    const map = new Map<string, string>(
+      (data ?? []).map((r: any) => [r.key, r.value as string]),
+    );
+    return {
+      areas: parseStringArray(map.get("problem_areas"), DEFAULT_PROBLEM_AREAS),
+      frequencies: parseStringArray(
+        map.get("problem_frequencies"),
+        DEFAULT_PROBLEM_FREQUENCIES,
+      ),
+    };
+  },
+);
+
+// Admin: replaces the 영역/빈도 option lists (gated by dashboard password).
+export const setProblemOptions = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        areas: z.array(z.string().trim().min(1).max(60)).max(30),
+        frequencies: z.array(z.string().trim().min(1).max(60)).max(30),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
+    const db = await getAdmin();
+    const { error } = await db.from("site_settings").upsert(
+      [
+        { key: "problem_areas", value: JSON.stringify(data.areas) },
+        { key: "problem_frequencies", value: JSON.stringify(data.frequencies) },
+      ],
+      { onConflict: "key" },
+    );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 
 // Public: returns the globally configured award badge icon name.
 export const getAwardIcon = createServerFn({ method: "GET" }).handler(
