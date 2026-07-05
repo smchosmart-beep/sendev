@@ -73,7 +73,7 @@ function BoardInner({
 }) {
   const { data: posts } = useSuspenseQuery(postsQueryOptions(category.id, getBoardPassword(slug)));
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
-  const { qpage, gpage } = Route.useSearch();
+  const { qpage, gpage, ppage } = Route.useSearch();
   const navigate = useNavigate({ from: "/board/$slug" });
   const notices = posts.filter((p) => p.type === "post" && p.pinned);
   const generals = posts.filter((p) => p.type === "post" && !p.pinned);
@@ -88,6 +88,27 @@ function BoardInner({
     (currentGPage - 1) * PAGE_SIZE,
     currentGPage * PAGE_SIZE,
   );
+
+  // 문제ZIP 페이지네이션 — 대량(수백) 참여 시 렌더/좋아요 조회 부하를 페이지당으로 제한.
+  const problemPageCount = Math.max(1, Math.ceil(problems.length / PAGE_SIZE));
+  const currentPPage = Math.min(ppage, problemPageCount);
+  const pagedProblems = problems.slice(
+    (currentPPage - 1) * PAGE_SIZE,
+    currentPPage * PAGE_SIZE,
+  );
+
+  // 현재 페이지 문제 카드들의 좋아요 상태를 1회로 배치 조회 (카드별 개별 호출 제거).
+  const { identity: likeIdentity } = useStoredIdentity();
+  const likerName = likeIdentity?.author ?? "";
+  const fetchLikeState = useServerFn(getLikeState);
+  const problemIds = pagedProblems.map((p) => p.id);
+  const { data: problemLikeMap } = useQuery({
+    queryKey: ["likeState", "post", "batch", slug, currentPPage, likerName, problemIds.join(",")],
+    queryFn: () =>
+      fetchLikeState({ data: { targetType: "post", targetIds: problemIds, likerName } }),
+    enabled: problemIds.length > 0,
+    staleTime: 30_000,
+  });
 
   // 공정 평가를 위한 기기별 고정 랜덤 순서.
   // SSR/최초 렌더는 원본 순서(하이드레이션 안전), 마운트 후 셔플 적용.
