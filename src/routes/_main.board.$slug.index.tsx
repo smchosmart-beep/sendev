@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers, CheckCircle2, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers, CheckCircle2, ChevronLeft, ChevronRight, Eye, PackageOpen } from "lucide-react";
 
 import {
   postsQueryOptions,
@@ -20,6 +20,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { AuthorBadge } from "@/components/AuthorBadge";
 import { Button } from "@/components/ui/button";
 import { ThumbnailUploadButton } from "@/components/ThumbnailUploadButton";
+import { LikeButton } from "@/components/LikeButton";
 
 const PAGE_SIZE = 10;
 
@@ -77,6 +78,7 @@ function BoardInner({
   const generals = posts.filter((p) => p.type === "post" && !p.pinned);
   const projects = posts.filter((p) => p.type === "project");
   const links = posts.filter((p) => p.type === "link");
+  const problems = posts.filter((p) => p.type === "problem");
   const linkItems = groupLinksBySeries(links);
 
   const generalPageCount = Math.max(1, Math.ceil(generals.length / PAGE_SIZE));
@@ -341,6 +343,7 @@ function BoardInner({
 }
 
 function ProblemCard({ post, slug }: { post: PostDTO; slug: string }) {
+  const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
   return (
     <div className="flex flex-col justify-between gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md">
       <Link
@@ -367,7 +370,7 @@ function ProblemCard({ post, slug }: { post: PostDTO; slug: string }) {
       <div className="flex items-center justify-between">
         <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
           <User className="h-3.5 w-3.5" />
-          <AuthorBadge author={post.author} />
+          <AuthorBadge author={post.author} profileMap={profileMap} />
         </span>
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
