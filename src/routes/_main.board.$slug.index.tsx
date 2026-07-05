@@ -383,7 +383,7 @@ function BoardInner({
   );
 }
 
-function ProblemCard({ post, slug }: { post: PostDTO; slug: string }) {
+function ProblemCard({ post, slug, likeCount, liked }: { post: PostDTO; slug: string; likeCount: number; liked: boolean }) {
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
   return (
     <div className="flex flex-col justify-between gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md">
