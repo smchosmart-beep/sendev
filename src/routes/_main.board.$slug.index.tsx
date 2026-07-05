@@ -91,26 +91,58 @@ function BoardInner({
     currentGPage * PAGE_SIZE,
   );
 
+  // 좋아요 배치 조회용 공통 준비.
+  const { identity: likeIdentity } = useStoredIdentity();
+  const likerName = likeIdentity?.author ?? "";
+  const fetchLikeState = useServerFn(getLikeState);
+
+  // 좋아요순 정렬일 때만 전체 문제의 좋아요 수를 조회(200개씩 청크). 최신순 기본값에서는
+  // 실행되지 않아 평상시 호출량을 늘리지 않는다.
+  const allProblemIds = problems.map((p) => p.id);
+  const { data: allLikeMap } = useQuery({
+    queryKey: ["likeState", "post", "problemAll", slug, likerName, allProblemIds.join(",")],
+    queryFn: async () => {
+      const map: import("@/lib/platform.functions").LikeStateMap = {};
+      for (let i = 0; i < allProblemIds.length; i += 200) {
+        const chunk = allProblemIds.slice(i, i + 200);
+        const res = await fetchLikeState({ data: { targetType: "post", targetIds: chunk, likerName } });
+        Object.assign(map, res);
+      }
+      return map;
+    },
+    enabled: psort === "likes" && allProblemIds.length > 0,
+    staleTime: 30_000,
+  });
+
+  // 정렬 적용 (problems는 이미 최신순). 좋아요순은 count 내림차순, 동점은 최신순 유지.
+  const sortedProblems = useMemo(() => {
+    if (psort !== "likes") return problems;
+    return [...problems].sort((a, b) => {
+      const ca = allLikeMap?.[a.id]?.count ?? 0;
+      const cb = allLikeMap?.[b.id]?.count ?? 0;
+      return cb - ca;
+    });
+  }, [problems, psort, allLikeMap]);
+
   // 문제ZIP 페이지네이션 — 대량(수백) 참여 시 렌더/좋아요 조회 부하를 페이지당으로 제한.
-  const problemPageCount = Math.max(1, Math.ceil(problems.length / PAGE_SIZE));
+  const problemPageCount = Math.max(1, Math.ceil(sortedProblems.length / PAGE_SIZE));
   const currentPPage = Math.min(ppage, problemPageCount);
-  const pagedProblems = problems.slice(
+  const pagedProblems = sortedProblems.slice(
     (currentPPage - 1) * PAGE_SIZE,
     currentPPage * PAGE_SIZE,
   );
 
-  // 현재 페이지 문제 카드들의 좋아요 상태를 1회로 배치 조회 (카드별 개별 호출 제거).
-  const { identity: likeIdentity } = useStoredIdentity();
-  const likerName = likeIdentity?.author ?? "";
-  const fetchLikeState = useServerFn(getLikeState);
-  const problemIds = pagedProblems.map((p) => p.id);
-  const { data: problemLikeMap } = useQuery({
-    queryKey: ["likeState", "post", "batch", slug, currentPPage, likerName, problemIds.join(",")],
+  // 최신순일 때는 현재 페이지 10개만 좋아요 배치 조회.
+  const pageProblemIds = pagedProblems.map((p) => p.id);
+  const { data: pageLikeMap } = useQuery({
+    queryKey: ["likeState", "post", "batch", slug, currentPPage, likerName, pageProblemIds.join(",")],
     queryFn: () =>
-      fetchLikeState({ data: { targetType: "post", targetIds: problemIds, likerName } }),
-    enabled: problemIds.length > 0,
+      fetchLikeState({ data: { targetType: "post", targetIds: pageProblemIds, likerName } }),
+    enabled: psort === "recent" && pageProblemIds.length > 0,
     staleTime: 30_000,
   });
+
+  const problemLikeMap = psort === "likes" ? allLikeMap : pageLikeMap;
 
   // 공정 평가를 위한 기기별 고정 랜덤 순서.
   // SSR/최초 렌더는 원본 순서(하이드레이션 안전), 마운트 후 셔플 적용.
