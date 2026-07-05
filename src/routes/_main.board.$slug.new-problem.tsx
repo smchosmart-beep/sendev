@@ -133,8 +133,8 @@ function NewProblemPage() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (!area) {
-              toast.error("고통받는 영역을 선택해주세요.");
+            if (isCustomArea ? !customArea.trim() : !area) {
+              toast.error("고통받는 영역을 입력해주세요.");
               return;
             }
             if (!frequency) {
