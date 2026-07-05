@@ -1052,8 +1052,13 @@ export const createPost = createServerFn({ method: "POST" })
     const ogImageUrl = data.deployUrl
       ? (await resolveOgImage(data.deployUrl)) ?? ""
       : "";
-    // Assign the next per-board number, retrying once on a unique collision.
-    for (let attempt = 0; attempt < 3; attempt++) {
+    // Assign the next per-board number, retrying on unique collisions. Under
+    // bursty concurrency (e.g. a class of ~600 submitting a 문제ZIP at once)
+    // many inserts race for the same next number; the unique constraint on
+    // (category_id, post_no) guarantees integrity while we retry with a short
+    // randomized backoff to spread contention.
+    const MAX_ATTEMPTS = 8;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       const { data: maxRow } = await db
         .from("posts")
         .select("post_no")
@@ -1083,6 +1088,10 @@ export const createPost = createServerFn({ method: "POST" })
       if (!String(error.message ?? "").toLowerCase().includes("duplicate")) {
         throw new Error(error.message);
       }
+      // Exponential backoff with jitter: ~20, 40, 80ms ... capped, to reduce
+      // repeated collisions when many writers retry simultaneously.
+      const base = Math.min(20 * 2 ** attempt, 400);
+      await new Promise((r) => setTimeout(r, base + Math.random() * base));
     }
     throw new Error("게시글 번호를 부여하지 못했어요. 다시 시도해주세요.");
   });
