@@ -1,31 +1,27 @@
-# 문제ZIP 제보 저장 오류 수정
+# 문제ZIP 상세 페이지: README/평가 제거, 댓글 추가
 
-## 문제
-문제ZIP에서 "제보하기"를 누르면 다음 오류가 발생하며 저장이 되지 않습니다:
+## 현재 동작
+`src/routes/_main.board.$slug.$postNo.tsx` 상세 페이지의 섹션 노출 조건:
+- README + 평가 섹션: `!isBoardPost && !isLink` → **project와 problem 모두** 표시됨 (그래서 문제ZIP에 README·평가가 나옴)
+- 댓글 섹션: `isBoardPost`(일반 글 `post`)일 때만 표시 → 문제ZIP에는 댓글이 없음
 
-```
-new row for relation "posts" violates check constraint "posts_type_check"
-```
+## 원하는 동작 (문제ZIP `problem` 유형)
+- README 섹션 숨김
+- 평가 섹션 숨김
+- 댓글 섹션 표시
 
-## 원인
-- 앱 코드(폼 + 서버 함수)는 문제ZIP 글을 `type = "problem"` 으로 저장합니다.
-- 그런데 데이터베이스의 `posts_type_check` 제약조건은 `'post', 'project', 'link'` 세 가지만 허용하고, `'problem'` 은 빠져 있습니다.
-- 그래서 문제ZIP 제보가 DB 저장 단계에서 거부됩니다.
+## 변경 내용 (한 파일)
+`src/routes/_main.board.$slug.$postNo.tsx`
 
-## 해결 방법
-데이터베이스 마이그레이션으로 `posts_type_check` 제약조건을 갱신해 `'problem'` 유형을 허용합니다.
+1. README + 평가는 산출물(`project`)에서만 나오도록 조건 변경
+   - `{!isBoardPost && !isLink && ( ... README/평가 ... )}` → `{post.type === "project" && ( ... )}`
 
-```sql
-ALTER TABLE public.posts DROP CONSTRAINT posts_type_check;
-ALTER TABLE public.posts
-  ADD CONSTRAINT posts_type_check
-  CHECK (type = ANY (ARRAY['post','project','link','problem']));
-```
+2. 댓글은 일반 글과 문제ZIP 모두에서 나오도록 조건 변경
+   - `{isBoardPost && <CommentsSection ... />}` → `{(isBoardPost || post.type === "problem") && <CommentsSection ... />}`
 
-코드 변경은 필요 없습니다(이미 `problem` 유형을 올바르게 사용 중).
-
-## 참고 사항
-- 화면에 보이는 글자수 표시가 `46/50` 으로 나오는 것은 게시된(sendev.kr) 사이트가 아직 이전 버전이라 그렇습니다. 100자 변경은 다음 게시(Publish) 시 반영됩니다. 원하시면 이번 수정과 함께 게시하시면 됩니다.
+## 참고
+- 가이드 문서(/guide)에 문제ZIP 관련 설명에 댓글/평가 언급이 있으면 함께 정합성 확인 후 업데이트.
 
 ## 검증
-- 마이그레이션 후 문제ZIP에서 실제 제보를 작성해 정상 저장·이동되는지 확인합니다.
+- 문제ZIP 글 상세에서 README·평가가 사라지고 댓글 작성 UI가 보이는지 확인
+- 산출물(project) 글은 기존대로 README·평가가 유지되는지 확인
