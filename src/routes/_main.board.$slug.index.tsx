@@ -75,7 +75,7 @@ function BoardInner({
 }) {
   const { data: posts } = useSuspenseQuery(postsQueryOptions(category.id, getBoardPassword(slug)));
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
-  const { qpage, gpage, ppage } = Route.useSearch();
+  const { qpage, gpage, ppage, psort } = Route.useSearch();
   const navigate = useNavigate({ from: "/board/$slug" });
   const notices = posts.filter((p) => p.type === "post" && p.pinned);
   const generals = posts.filter((p) => p.type === "post" && !p.pinned);
