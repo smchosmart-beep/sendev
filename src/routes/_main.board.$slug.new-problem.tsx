@@ -142,7 +142,7 @@ function NewProblemPage() {
               return;
             }
             if (!title.trim()) {
-              toast.error("한 줄 고발을 입력해주세요.");
+              toast.error("한 줄로 알려주세요.");
               return;
             }
             if (!author.trim()) {
@@ -218,13 +218,13 @@ function NewProblemPage() {
             </div>
           </div>
 
-          {/* Q3 한 줄 고발 */}
+          {/* Q3 한 줄로 알려주세요 */}
           <div className="space-y-2">
             <Label
               htmlFor="pb-title"
               className="text-base font-semibold text-foreground"
             >
-              Q3. 현장의 문제를 한 줄로 고발해주세요!
+              Q3. 현장의 문제를 한 줄로 알려주세요!
             </Label>
             <Input
               id="pb-title"

@@ -508,7 +508,7 @@ function CategoriesPage() {
                   id="add-problem-name"
                   value={problemName}
                   onChange={(e) => setProblemName(e.target.value)}
-                  placeholder="예: 문제ZIP, 현장 고발"
+                  placeholder="예: 문제ZIP, 현장 제보"
                   className="rounded-xl bg-background"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -880,7 +880,7 @@ function CategoriesPage() {
                     id="edit-problem-name"
                     value={editProblemName}
                     onChange={(e) => setEditProblemName(e.target.value)}
-                    placeholder="예: 문제ZIP, 현장 고발"
+                    placeholder="예: 문제ZIP, 현장 제보"
                     className="rounded-xl bg-background"
                   />
                 </div>
