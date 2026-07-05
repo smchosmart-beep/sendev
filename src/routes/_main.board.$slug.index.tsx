@@ -353,11 +353,29 @@ function BoardInner({
               description="현장에서 겪는 불편을 한 줄로 남겨주세요!"
             />
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {problems.map((post) => (
-                <ProblemCard key={post.id} post={post} slug={slug} />
-              ))}
-            </div>
+            <>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {pagedProblems.map((post) => {
+                  const like = problemLikeMap?.[post.id];
+                  return (
+                    <ProblemCard
+                      key={post.id}
+                      post={post}
+                      slug={slug}
+                      likeCount={like?.count ?? 0}
+                      liked={like?.liked ?? false}
+                    />
+                  );
+                })}
+              </div>
+              <BoardPagination
+                page={currentPPage}
+                pageCount={problemPageCount}
+                onChange={(p) =>
+                  navigate({ search: (prev) => ({ ...prev, ppage: p }) })
+                }
+              />
+            </>
           )}
         </section>
       )}
