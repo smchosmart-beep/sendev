@@ -14,7 +14,7 @@ import {
   readPostIdsQueryOptions,
 } from "@/lib/platform.queries";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
-import { type PostDTO } from "@/lib/platform.functions";
+import { type PostDTO, getLikeState } from "@/lib/platform.functions";
 import { groupLinksBySeries, seededShuffle, getOrderSeed } from "@/lib/series";
 import { getEmbedUrl, getThumbnailUrl, getCanvaPreviewUrl } from "@/lib/embed";
 import { EmptyState } from "@/components/EmptyState";
