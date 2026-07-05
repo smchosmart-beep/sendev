@@ -282,7 +282,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const { data, error } = await db
       .from("categories")
       .select(
-        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, general_name, project_name, link_name, tab_group, eval_open, eval_seed, review_allowlist_only, hidden",
+        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, enable_problem, general_name, project_name, link_name, problem_name, tab_group, eval_open, eval_seed, review_allowlist_only, hidden",
       )
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
@@ -299,9 +299,11 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       enablePost: c.enable_post ?? true,
       enableProject: c.enable_project ?? true,
       enableLink: c.enable_link ?? false,
+      enableProblem: c.enable_problem ?? false,
       generalName: c.general_name ?? "일반게시판",
       projectName: c.project_name ?? "산출물",
       linkName: c.link_name ?? "링크",
+      problemName: c.problem_name ?? "문제ZIP",
       tabGroup: (c.tab_group ?? "hackathon") as TabGroup,
       evalOpen: !!c.eval_open,
       evalSeed: Number(c.eval_seed ?? 0),
@@ -362,9 +364,11 @@ export const createCategory = createServerFn({ method: "POST" })
         enablePost: z.boolean().default(true),
         enableProject: z.boolean().default(true),
         enableLink: z.boolean().default(false),
+        enableProblem: z.boolean().default(false),
         generalName: z.string().trim().max(100).default("일반게시판"),
         projectName: z.string().trim().max(100).default("산출물"),
         linkName: z.string().trim().max(100).default("링크"),
+        problemName: z.string().trim().max(100).default("문제ZIP"),
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .default("hackathon"),
@@ -395,9 +399,11 @@ export const createCategory = createServerFn({ method: "POST" })
       enable_post: data.enablePost,
       enable_project: data.enableProject,
       enable_link: data.enableLink,
+      enable_problem: data.enableProblem,
       general_name: data.generalName || "일반게시판",
       project_name: data.projectName || "산출물",
       link_name: data.linkName || "링크",
+      problem_name: data.problemName || "문제ZIP",
       tab_group: data.tabGroup,
       hidden: data.hidden,
       sort_order: nextOrder,
@@ -422,9 +428,11 @@ export const updateCategory = createServerFn({ method: "POST" })
         enablePost: z.boolean().optional(),
         enableProject: z.boolean().optional(),
         enableLink: z.boolean().optional(),
+        enableProblem: z.boolean().optional(),
         generalName: z.string().trim().max(100).optional(),
         projectName: z.string().trim().max(100).optional(),
         linkName: z.string().trim().max(100).optional(),
+        problemName: z.string().trim().max(100).optional(),
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .optional(),
@@ -456,12 +464,15 @@ export const updateCategory = createServerFn({ method: "POST" })
     if (data.enableProject !== undefined)
       patch.enable_project = data.enableProject;
     if (data.enableLink !== undefined) patch.enable_link = data.enableLink;
+    if (data.enableProblem !== undefined) patch.enable_problem = data.enableProblem;
     if (data.generalName !== undefined)
       patch.general_name = data.generalName || "일반게시판";
     if (data.projectName !== undefined)
       patch.project_name = data.projectName || "산출물";
     if (data.linkName !== undefined)
       patch.link_name = data.linkName || "링크";
+    if (data.problemName !== undefined)
+      patch.problem_name = data.problemName || "문제ZIP";
     if (data.tabGroup !== undefined) patch.tab_group = data.tabGroup;
     if (data.hidden !== undefined) patch.hidden = data.hidden;
     const { error } = await db.from("categories").update(patch).eq("id", data.id);
@@ -715,7 +726,7 @@ export const deleteEvent = createServerFn({ method: "POST" })
 /* -------------------------------- Posts ------------------------------- */
 
 const POST_COLUMNS =
-  "id, category_id, post_no, type, pinned, title, content, author, github_url, deploy_url, og_image_url, series, parent_post_id, created_at, view_count";
+  "id, category_id, post_no, type, pinned, title, content, author, github_url, deploy_url, og_image_url, series, problem_area, problem_frequency, parent_post_id, created_at, view_count";
 
 // Returns true when the caller may read a protected board's content. Open
 // boards (no password) always pass. Protected boards pass only when the
@@ -1255,6 +1266,8 @@ function mapPost(p: any, commentCount = 0): PostDTO {
     deployUrl: p.deploy_url ?? "",
     ogImageUrl: p.og_image_url ?? "",
     series: p.series ?? "",
+    problemArea: p.problem_area ?? "",
+    problemFrequency: p.problem_frequency ?? "",
     parentPostId: p.parent_post_id ?? null,
     createdAt: p.created_at,
     commentCount,
