@@ -372,7 +372,7 @@ function BoardInner({
                 page={currentPPage}
                 pageCount={problemPageCount}
                 onChange={(p) =>
-                  navigate({ search: (prev) => ({ ...prev, ppage: p }) })
+                  navigate({ search: (prev: { qpage: number; gpage: number; ppage: number }) => ({ ...prev, ppage: p }) })
                 }
               />
             </>
