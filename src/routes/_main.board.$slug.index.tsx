@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers, CheckCircle2, ChevronLeft, ChevronRight, Eye, PackageOpen } from "lucide-react";
 
@@ -13,7 +14,7 @@ import {
   readPostIdsQueryOptions,
 } from "@/lib/platform.queries";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
-import { type PostDTO } from "@/lib/platform.functions";
+import { type PostDTO, getLikeState } from "@/lib/platform.functions";
 import { groupLinksBySeries, seededShuffle, getOrderSeed } from "@/lib/series";
 import { getEmbedUrl, getThumbnailUrl, getCanvaPreviewUrl } from "@/lib/embed";
 import { EmptyState } from "@/components/EmptyState";
@@ -30,9 +31,10 @@ function toPage(value: unknown): number {
 }
 
 export const Route = createFileRoute("/_main/board/$slug/")({
-  validateSearch: (search: Record<string, unknown>): { qpage: number; gpage: number } => ({
+  validateSearch: (search: Record<string, unknown>): { qpage: number; gpage: number; ppage: number } => ({
     qpage: toPage(search.qpage),
     gpage: toPage(search.gpage),
+    ppage: toPage(search.ppage),
   }),
   loader: async ({ context, params }) => {
     const categories = await context.queryClient.ensureQueryData(
@@ -72,7 +74,7 @@ function BoardInner({
 }) {
   const { data: posts } = useSuspenseQuery(postsQueryOptions(category.id, getBoardPassword(slug)));
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
-  const { qpage, gpage } = Route.useSearch();
+  const { qpage, gpage, ppage } = Route.useSearch();
   const navigate = useNavigate({ from: "/board/$slug" });
   const notices = posts.filter((p) => p.type === "post" && p.pinned);
   const generals = posts.filter((p) => p.type === "post" && !p.pinned);
@@ -87,6 +89,27 @@ function BoardInner({
     (currentGPage - 1) * PAGE_SIZE,
     currentGPage * PAGE_SIZE,
   );
+
+  // 문제ZIP 페이지네이션 — 대량(수백) 참여 시 렌더/좋아요 조회 부하를 페이지당으로 제한.
+  const problemPageCount = Math.max(1, Math.ceil(problems.length / PAGE_SIZE));
+  const currentPPage = Math.min(ppage, problemPageCount);
+  const pagedProblems = problems.slice(
+    (currentPPage - 1) * PAGE_SIZE,
+    currentPPage * PAGE_SIZE,
+  );
+
+  // 현재 페이지 문제 카드들의 좋아요 상태를 1회로 배치 조회 (카드별 개별 호출 제거).
+  const { identity: likeIdentity } = useStoredIdentity();
+  const likerName = likeIdentity?.author ?? "";
+  const fetchLikeState = useServerFn(getLikeState);
+  const problemIds = pagedProblems.map((p) => p.id);
+  const { data: problemLikeMap } = useQuery({
+    queryKey: ["likeState", "post", "batch", slug, currentPPage, likerName, problemIds.join(",")],
+    queryFn: () =>
+      fetchLikeState({ data: { targetType: "post", targetIds: problemIds, likerName } }),
+    enabled: problemIds.length > 0,
+    staleTime: 30_000,
+  });
 
   // 공정 평가를 위한 기기별 고정 랜덤 순서.
   // SSR/최초 렌더는 원본 순서(하이드레이션 안전), 마운트 후 셔플 적용.
@@ -330,11 +353,29 @@ function BoardInner({
               description="현장에서 겪는 불편을 한 줄로 남겨주세요!"
             />
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {problems.map((post) => (
-                <ProblemCard key={post.id} post={post} slug={slug} />
-              ))}
-            </div>
+            <>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {pagedProblems.map((post) => {
+                  const like = problemLikeMap?.[post.id];
+                  return (
+                    <ProblemCard
+                      key={post.id}
+                      post={post}
+                      slug={slug}
+                      likeCount={like?.count ?? 0}
+                      liked={like?.liked ?? false}
+                    />
+                  );
+                })}
+              </div>
+              <BoardPagination
+                page={currentPPage}
+                pageCount={problemPageCount}
+                onChange={(p) =>
+                  navigate({ search: (prev: { qpage: number; gpage: number; ppage: number }) => ({ ...prev, ppage: p }) })
+                }
+              />
+            </>
           )}
         </section>
       )}
@@ -342,7 +383,7 @@ function BoardInner({
   );
 }
 
-function ProblemCard({ post, slug }: { post: PostDTO; slug: string }) {
+function ProblemCard({ post, slug, likeCount, liked }: { post: PostDTO; slug: string; likeCount: number; liked: boolean }) {
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
   return (
     <div className="flex flex-col justify-between gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md">
@@ -377,7 +418,7 @@ function ProblemCard({ post, slug }: { post: PostDTO; slug: string }) {
             <MessageCircle className="h-3.5 w-3.5" />
             {post.commentCount}
           </span>
-          <LikeButton targetType="post" targetId={post.id} size="sm" />
+          <LikeButton targetType="post" targetId={post.id} size="sm" count={likeCount} liked={liked} />
         </div>
       </div>
     </div>
