@@ -49,6 +49,7 @@ export type Database = {
           enable_link: boolean
           enable_notice: boolean
           enable_post: boolean
+          enable_problem: boolean
           enable_project: boolean
           enable_question: boolean
           eval_open: boolean
@@ -62,6 +63,7 @@ export type Database = {
           name: string
           parent_id: string | null
           password: string
+          problem_name: string
           project_name: string
           review_allowlist_only: boolean
           slug: string
@@ -75,6 +77,7 @@ export type Database = {
           enable_link?: boolean
           enable_notice?: boolean
           enable_post?: boolean
+          enable_problem?: boolean
           enable_project?: boolean
           enable_question?: boolean
           eval_open?: boolean
@@ -88,6 +91,7 @@ export type Database = {
           name: string
           parent_id?: string | null
           password?: string
+          problem_name?: string
           project_name?: string
           review_allowlist_only?: boolean
           slug: string
@@ -101,6 +105,7 @@ export type Database = {
           enable_link?: boolean
           enable_notice?: boolean
           enable_post?: boolean
+          enable_problem?: boolean
           enable_project?: boolean
           enable_question?: boolean
           eval_open?: boolean
@@ -114,6 +119,7 @@ export type Database = {
           name?: string
           parent_id?: string | null
           password?: string
+          problem_name?: string
           project_name?: string
           review_allowlist_only?: boolean
           slug?: string
@@ -330,6 +336,8 @@ export type Database = {
           parent_post_id: string | null
           pinned: boolean
           post_no: number | null
+          problem_area: string
+          problem_frequency: string
           series: string
           title: string
           type: string
@@ -348,6 +356,8 @@ export type Database = {
           parent_post_id?: string | null
           pinned?: boolean
           post_no?: number | null
+          problem_area?: string
+          problem_frequency?: string
           series?: string
           title: string
           type: string
@@ -366,6 +376,8 @@ export type Database = {
           parent_post_id?: string | null
           pinned?: boolean
           post_no?: number | null
+          problem_area?: string
+          problem_frequency?: string
           series?: string
           title?: string
           type?: string
