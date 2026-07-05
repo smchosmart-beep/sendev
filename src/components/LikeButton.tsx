@@ -10,18 +10,33 @@ import { cn } from "@/lib/utils";
 
 type LikeTarget = "post" | "comment";
 
-// A self-contained like toggle. Fetches its own count/liked state keyed by the
-// target. The liker is identified by the browser-stored nickname; if none is
-// set we prompt the user to set one (no forced login).
+// A like toggle button.
+//
+// Two modes:
+// - Uncontrolled (default): fetches its own count/liked state keyed by the
+//   target. Used on post detail and comments.
+// - Controlled: when `count`/`liked` props are provided, the parent supplies
+//   the initial state (e.g. from a single batched getLikeState call for a whole
+//   list). The component skips its own query entirely and keeps count/liked in
+//   local state, updating optimistically on toggle. This avoids N per-card
+//   requests when rendering large lists (e.g. 문제ZIP boards).
+//
+// The liker is identified by the browser-stored nickname; if none is set we
+// prompt the user to set one (no forced login).
 export function LikeButton({
   targetType,
   targetId,
   size = "md",
+  count,
+  liked,
 }: {
   targetType: LikeTarget;
   targetId: string;
   size?: "sm" | "md";
+  count?: number;
+  liked?: boolean;
 }) {
+  const controlled = count !== undefined || liked !== undefined;
   const { identity } = useStoredIdentity();
   const likerName = identity?.author ?? "";
   const queryClient = useQueryClient();
@@ -35,9 +50,18 @@ export function LikeButton({
     queryFn: () =>
       fetchState({ data: { targetType, targetIds: [targetId], likerName } }),
     staleTime: 30_000,
+    enabled: !controlled,
   });
 
-  const entry = data?.[targetId] ?? { count: 0, liked: false };
+  // Local state for controlled mode (seeded from props).
+  const [local, setLocal] = useState<{ count: number; liked: boolean }>({
+    count: count ?? 0,
+    liked: liked ?? false,
+  });
+
+  const entry = controlled
+    ? local
+    : (data?.[targetId] ?? { count: 0, liked: false });
 
   const onClick = async () => {
     if (!likerName.trim()) {
@@ -52,9 +76,13 @@ export function LikeButton({
       const res = await toggle({
         data: { targetType, targetId, likerName },
       });
-      queryClient.setQueryData(queryKey, {
-        [targetId]: { count: res.count, liked: res.liked },
-      });
+      if (controlled) {
+        setLocal({ count: res.count, liked: res.liked });
+      } else {
+        queryClient.setQueryData(queryKey, {
+          [targetId]: { count: res.count, liked: res.liked },
+        });
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "좋아요에 실패했어요.");
     } finally {
