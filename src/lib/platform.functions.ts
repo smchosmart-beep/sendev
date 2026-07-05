@@ -173,9 +173,11 @@ export interface CategoryDTO {
   enablePost: boolean;
   enableProject: boolean;
   enableLink: boolean;
+  enableProblem: boolean;
   generalName: string;
   projectName: string;
   linkName: string;
+  problemName: string;
   tabGroup: TabGroup;
   evalOpen: boolean;
   evalSeed: number;
