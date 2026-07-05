@@ -57,6 +57,8 @@ function NewProblemPage() {
   const category = categories.find((c) => c.slug === slug);
 
   const [area, setArea] = useState("");
+  const [customArea, setCustomArea] = useState("");
+  const [isCustomArea, setIsCustomArea] = useState(false);
   const [frequency, setFrequency] = useState("");
   const [title, setTitle] = useState("");
   const {
