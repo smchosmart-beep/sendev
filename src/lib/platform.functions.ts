@@ -2871,6 +2871,94 @@ export type AwardIconName = (typeof AWARD_ICON_NAMES)[number];
 
 const DEFAULT_AWARD_ICON: AwardIconName = "Trophy";
 
+// ============================================================
+// 문제ZIP 게시판: 영역(Q1)/빈도(Q2) 선택지. 관리자가 편집하며
+// site_settings 테이블에 JSON 문자열로 저장된다.
+// ============================================================
+
+export interface ProblemOptions {
+  areas: string[];
+  frequencies: string[];
+}
+
+const DEFAULT_PROBLEM_AREAS = [
+  "💊보건/건강",
+  "📝행정/공문",
+  "👩‍🏫수업/평가",
+  "💬학부모소통",
+  "🏃‍♂️학교행사",
+];
+const DEFAULT_PROBLEM_FREQUENCIES = [
+  "숨 쉴 때마다 (매일)",
+  "잊을 만하면 (주 1~2회)",
+  "시즌 한정 (학기초/말)",
+];
+
+function parseStringArray(raw: unknown, fallback: string[]): string[] {
+  if (typeof raw !== "string" || !raw.trim()) return fallback;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      const items = parsed
+        .map((v) => String(v ?? "").trim())
+        .filter((v) => v.length > 0);
+      return items.length > 0 ? items : fallback;
+    }
+  } catch {
+    /* fall through to fallback */
+  }
+  return fallback;
+}
+
+// Public: returns the admin-editable 영역/빈도 option lists for 문제ZIP.
+export const getProblemOptions = createServerFn({ method: "GET" }).handler(
+  async (): Promise<ProblemOptions> => {
+    const db = await getAdmin();
+    const { data, error } = await db
+      .from("site_settings")
+      .select("key, value")
+      .in("key", ["problem_areas", "problem_frequencies"]);
+    if (error) throw new Error(error.message);
+    const map = new Map<string, string>(
+      (data ?? []).map((r: any) => [r.key, r.value as string]),
+    );
+    return {
+      areas: parseStringArray(map.get("problem_areas"), DEFAULT_PROBLEM_AREAS),
+      frequencies: parseStringArray(
+        map.get("problem_frequencies"),
+        DEFAULT_PROBLEM_FREQUENCIES,
+      ),
+    };
+  },
+);
+
+// Admin: replaces the 영역/빈도 option lists (gated by dashboard password).
+export const setProblemOptions = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        areas: z.array(z.string().trim().min(1).max(60)).max(30),
+        frequencies: z.array(z.string().trim().min(1).max(60)).max(30),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
+    const db = await getAdmin();
+    const { error } = await db.from("site_settings").upsert(
+      [
+        { key: "problem_areas", value: JSON.stringify(data.areas) },
+        { key: "problem_frequencies", value: JSON.stringify(data.frequencies) },
+      ],
+      { onConflict: "key" },
+    );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
+
 // Public: returns the globally configured award badge icon name.
 export const getAwardIcon = createServerFn({ method: "GET" }).handler(
   async (): Promise<AwardIconName> => {
