@@ -28,6 +28,7 @@ import {
   getProfileMap,
   getNicknameStatus,
   getAwardIcon,
+  getProblemOptions,
   listAwardIconRules,
   listHackathonReviews,
 } from "./platform.functions";
@@ -266,6 +267,13 @@ export const awardIconQueryOptions = () =>
   queryOptions({
     queryKey: ["award-icon"],
     queryFn: () => getAwardIcon(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+export const problemOptionsQueryOptions = () =>
+  queryOptions({
+    queryKey: ["problem-options"],
+    queryFn: () => getProblemOptions(),
     staleTime: 5 * 60 * 1000,
   });
 
