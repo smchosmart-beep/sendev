@@ -30,9 +30,10 @@ function toPage(value: unknown): number {
 }
 
 export const Route = createFileRoute("/_main/board/$slug/")({
-  validateSearch: (search: Record<string, unknown>): { qpage: number; gpage: number } => ({
+  validateSearch: (search: Record<string, unknown>): { qpage: number; gpage: number; ppage: number } => ({
     qpage: toPage(search.qpage),
     gpage: toPage(search.gpage),
+    ppage: toPage(search.ppage),
   }),
   loader: async ({ context, params }) => {
     const categories = await context.queryClient.ensureQueryData(
