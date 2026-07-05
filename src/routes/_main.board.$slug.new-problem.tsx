@@ -57,6 +57,8 @@ function NewProblemPage() {
   const category = categories.find((c) => c.slug === slug);
 
   const [area, setArea] = useState("");
+  const [customArea, setCustomArea] = useState("");
+  const [isCustomArea, setIsCustomArea] = useState(false);
   const [frequency, setFrequency] = useState("");
   const [title, setTitle] = useState("");
   const {
@@ -131,8 +133,8 @@ function NewProblemPage() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (!area) {
-              toast.error("고통받는 영역을 선택해주세요.");
+            if (isCustomArea ? !customArea.trim() : !area) {
+              toast.error("고통받는 영역을 입력해주세요.");
               return;
             }
             if (!frequency) {
@@ -168,11 +170,35 @@ function NewProblemPage() {
                 <ChoiceButton
                   key={opt}
                   label={opt}
-                  selected={area === opt}
-                  onClick={() => setArea(opt)}
+                  selected={!isCustomArea && area === opt}
+                  onClick={() => {
+                    setIsCustomArea(false);
+                    setArea(opt);
+                  }}
                 />
               ))}
+              <ChoiceButton
+                label="➕ 직접 입력"
+                selected={isCustomArea}
+                onClick={() => {
+                  setIsCustomArea(true);
+                  setArea(customArea);
+                }}
+              />
             </div>
+            {isCustomArea && (
+              <Input
+                value={customArea}
+                maxLength={20}
+                onChange={(e) => {
+                  const v = e.target.value.slice(0, 20);
+                  setCustomArea(v);
+                  setArea(v);
+                }}
+                placeholder="고통받는 영역을 직접 입력해주세요"
+                className="rounded-xl"
+              />
+            )}
           </div>
 
           {/* Q2 빈도 */}
