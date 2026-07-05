@@ -1002,9 +1002,11 @@ export const createPost = createServerFn({ method: "POST" })
     z
       .object({
         categoryId: z.string().uuid(),
-        type: z.enum(["post", "project", "link"]).default("post"),
+        type: z.enum(["post", "project", "link", "problem"]).default("post"),
         pinned: z.boolean().default(false),
         title: z.string().trim().min(1).max(200),
+        problemArea: z.string().trim().max(100).default(""),
+        problemFrequency: z.string().trim().max(100).default(""),
         content: z.string().max(20000).default(""),
         author: z.string().trim().max(100).default(""),
         githubUrl: z.string().trim().max(300).default(""),
@@ -1072,6 +1074,8 @@ export const createPost = createServerFn({ method: "POST" })
         deploy_url: data.deployUrl,
         og_image_url: ogImageUrl,
         series: data.series,
+        problem_area: data.type === "problem" ? data.problemArea : "",
+        problem_frequency: data.type === "problem" ? data.problemFrequency : "",
         parent_post_id: parentPostId,
       });
       if (!error) return { ok: true, postNo: nextNo };
