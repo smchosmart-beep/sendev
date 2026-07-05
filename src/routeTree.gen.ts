@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminProfilesRouteImport } from './routes/admin.profiles'
+import { Route as AdminProblemOptionsRouteImport } from './routes/admin.problem-options'
 import { Route as AdminHomeRouteImport } from './routes/admin.home'
 import { Route as AdminCriteriaRouteImport } from './routes/admin.criteria'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
@@ -62,6 +63,11 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
 const AdminProfilesRoute = AdminProfilesRouteImport.update({
   id: '/profiles',
   path: '/profiles',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminProblemOptionsRoute = AdminProblemOptionsRouteImport.update({
+  id: '/problem-options',
+  path: '/problem-options',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminHomeRoute = AdminHomeRouteImport.update({
@@ -174,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/criteria': typeof AdminCriteriaRoute
   '/admin/home': typeof AdminHomeRoute
+  '/admin/problem-options': typeof AdminProblemOptionsRoute
   '/admin/profiles': typeof AdminProfilesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
@@ -199,6 +206,7 @@ export interface FileRoutesByTo {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/criteria': typeof AdminCriteriaRoute
   '/admin/home': typeof AdminHomeRoute
+  '/admin/problem-options': typeof AdminProblemOptionsRoute
   '/admin/profiles': typeof AdminProfilesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin': typeof AdminIndexRoute
@@ -226,6 +234,7 @@ export interface FileRoutesById {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/criteria': typeof AdminCriteriaRoute
   '/admin/home': typeof AdminHomeRoute
+  '/admin/problem-options': typeof AdminProblemOptionsRoute
   '/admin/profiles': typeof AdminProfilesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
@@ -254,6 +263,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/criteria'
     | '/admin/home'
+    | '/admin/problem-options'
     | '/admin/profiles'
     | '/admin/settings'
     | '/admin/'
@@ -279,6 +289,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/criteria'
     | '/admin/home'
+    | '/admin/problem-options'
     | '/admin/profiles'
     | '/admin/settings'
     | '/admin'
@@ -305,6 +316,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/criteria'
     | '/admin/home'
+    | '/admin/problem-options'
     | '/admin/profiles'
     | '/admin/settings'
     | '/admin/'
@@ -368,6 +380,13 @@ declare module '@tanstack/react-router' {
       path: '/profiles'
       fullPath: '/admin/profiles'
       preLoaderRoute: typeof AdminProfilesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/problem-options': {
+      id: '/admin/problem-options'
+      path: '/problem-options'
+      fullPath: '/admin/problem-options'
+      preLoaderRoute: typeof AdminProblemOptionsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/home': {
@@ -559,6 +578,7 @@ interface AdminRouteChildren {
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminCriteriaRoute: typeof AdminCriteriaRoute
   AdminHomeRoute: typeof AdminHomeRoute
+  AdminProblemOptionsRoute: typeof AdminProblemOptionsRoute
   AdminProfilesRoute: typeof AdminProfilesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -569,6 +589,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminCriteriaRoute: AdminCriteriaRoute,
   AdminHomeRoute: AdminHomeRoute,
+  AdminProblemOptionsRoute: AdminProblemOptionsRoute,
   AdminProfilesRoute: AdminProfilesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminIndexRoute: AdminIndexRoute,
