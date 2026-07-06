@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { getLikeState, toggleLike } from "@/lib/platform.functions";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
