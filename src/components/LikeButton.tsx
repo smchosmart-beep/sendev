@@ -59,6 +59,17 @@ export function LikeButton({
     liked: liked ?? false,
   });
 
+  // Re-sync with parent-provided values when the server batch refetches
+  // (e.g. after switching profile or after a toggle invalidates the cache).
+  useEffect(() => {
+    if (controlled) {
+      setLocal((prev) => ({
+        count: count !== undefined ? count : prev.count,
+        liked: liked !== undefined ? liked : prev.liked,
+      }));
+    }
+  }, [controlled, count, liked]);
+
   const entry = controlled
     ? local
     : (data?.[targetId] ?? { count: 0, liked: false });
