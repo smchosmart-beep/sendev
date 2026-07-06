@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { getLikeState, toggleLike } from "@/lib/platform.functions";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
@@ -59,6 +59,17 @@ export function LikeButton({
     liked: liked ?? false,
   });
 
+  // Re-sync with parent-provided values when the server batch refetches
+  // (e.g. after switching profile or after a toggle invalidates the cache).
+  useEffect(() => {
+    if (controlled) {
+      setLocal((prev) => ({
+        count: count !== undefined ? count : prev.count,
+        liked: liked !== undefined ? liked : prev.liked,
+      }));
+    }
+  }, [controlled, count, liked]);
+
   const entry = controlled
     ? local
     : (data?.[targetId] ?? { count: 0, liked: false });
@@ -78,6 +89,9 @@ export function LikeButton({
       });
       if (controlled) {
         setLocal({ count: res.count, liked: res.liked });
+        // Refresh the parent list cache so the count stays correct across
+        // page navigation and sorting switches.
+        queryClient.invalidateQueries({ queryKey: ["likeState", targetType] });
       } else {
         queryClient.setQueryData(queryKey, {
           [targetId]: { count: res.count, liked: res.liked },

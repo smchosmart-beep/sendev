@@ -1,33 +1,43 @@
-# 문제집(문제ZIP) 정렬: 최신순 / 좋아요순 (위험 검토 반영)
+현상
+- 문제ZIP 목록에서 좋아요 버튼을 누르면 숫자가 올라가지만, 크롬 프로필을 바꾸면 0으로 돌아가거나 서버 데이터와 맞지 않음.
+- 원인: LikeButton의 controlled 모드(목록)가 최초 mount 시 props(count/liked)로만 local state를 초기화한 뒤, 서버/부모에서 새 값이 내려와도 동기화하지 않음. 따라서 화면에 보이는 숫자가 컴포넌트 내부 local state에만 머무름.
 
-문제ZIP 섹션에 정렬 토글을 추가해 **최신순**(기본)과 **좋아요순**으로 볼 수 있게 한다.
+변경 사항
+1. src/components/LikeButton.tsx
+   - controlled 모드에서 count/liked props가 변경될 때 local state를 다시 동기화하는 useEffect 추가.
+     ````
+     useEffect(() => {
+       if (controlled) {
+         setLocal((prev) => ({
+           count: count !== undefined ? count : prev.count,
+           liked: liked !== undefined ? liked : prev.liked,
+         }));
+       }
+     }, [controlled, count, liked]);
+     ````
+   - controlled 모드에서 toggle 성공 후, 상위 문제ZIP 목록의 좋아요 캐시를 무효화하여 다른 페이지에 다녀와도 최신 수치 유지.
+     ````
+     if (controlled) {
+       setLocal({ count: res.count, liked: res.liked });
+       queryClient.invalidateQueries({ queryKey: ["likeState", targetType] });
+     } else {
+       queryClient.setQueryData(queryKey, {
+         [targetId]: { count: res.count, liked: res.liked },
+       });
+     }
+     ````
 
-## 대상 파일
-`src/routes/_main.board.$slug.index.tsx` (+ 가이드 문구 반영: `src/routes/_main.guide.tsx`)
+안전성 검토
+- 기능 오작동: sync useEffect로 props가 변경될 때 화면이 서버 데이터와 일치하므로 정확도가 향상됨. 다만 "좋아요순" 정렬에서 좋아요 수가 바뀌면 항목 순서가 재정렬되어 페이지 간 이동이 발생할 수 있음. 이는 좋아요순 정렬의 자연스러운 동작이며 의도된 결과.
+- 서버비: toggle 당 추가 getLikeState 배치 조회 1회 발생. 200개씩 청크 처리되며, 기존 toggleLike 호출과 동일한 수준의 비용. 폴링/실시간/크론 등 지속적 호출은 없음.
+- 다른 기능 영향: uncontrolled 모드(글 상세, 댓글)는 기존 동작 유지. invalidate는 같은 prefix의 캐시를 재조회하도록 할 뿐이며, 기존 setQueryData 업데이트와 충돌하지 않음. 좋아요 외 다른 기능에 영향 없음.
+- 보안: 서버 함수나 RLS 변경 없음. 비밀 노출 없음.
 
-## 변경 1 — 정렬 상태를 URL 파라미터로
-- `validateSearch`에 `psort` 추가: `"recent"`(기본) | `"likes"`. 잘못된 값은 기본값으로 폴백(하위호환).
-- 정렬을 바꾸면 `ppage`는 1로 초기화.
+가이드 업데이트
+- 이번 수정은 내부 버그 픽스로 사용자에게 보이는 동작 변화가 없으므로 /guide 업데이트는 불필요.
 
-## 변경 2 — 정렬 UI
-- 문제ZIP 섹션 헤더에 세그먼트 토글: `최신순` / `좋아요순`.
-- 클릭 시 `navigate({ search: (prev) => ({ ...prev, psort, ppage: 1 }) })`.
-
-## 변경 3 — 좋아요순 정렬 로직 (호출 최소화 유지)
-- `psort === "likes"`일 때만 전체 문제 id 좋아요 수를 **하나의 useQuery**에서 200개씩 청크로 조회(수백 개면 2~3회), count 내림차순(동점 시 최신순)으로 정렬 후 페이지네이션.
-- `psort === "recent"`(기본)은 기존처럼 최신순 유지 + 현재 페이지 10개만 좋아요 배치 조회.
-- 두 경우 모두 결과를 `LikeButton`의 `count`/`liked` props로 전달 → 카드별 개별 호출 없음.
-- queryKey에 `psort`와 대상 id 목록을 포함해 정렬 전환 시 캐시 혼선 방지.
-
-## 검토 결론 (요청 사항 확인)
-- **기능 오작동**: 낮음. 정렬은 문제ZIP 섹션에만 국한, 잘못된 `psort`는 기본값 폴백. 좋아요순은 클라이언트 정렬 후 페이지네이션이라 순번/딥링크 로직과 무관.
-- **서버비 과다**: 없음. 좋아요순을 **사용자가 선택했을 때만** 전체 배치(2~3회, 30초 캐시)가 발생하고 최신순 기본값은 페이지당 1회 유지. `post_likes(target_type,target_id)` 인덱스로 조회 효율적. 신규 폴링/실시간/크론 없음.
-- **다른 기능 악영향**: 없음. 일반/산출물/링크 섹션, 글 상세·댓글 좋아요, 채번 로직 모두 무영향. 산출물의 기존 셔플 정렬과도 독립.
-
-## 가이드 반영
-- `/guide`의 문제ZIP 설명에 "최신순/좋아요순 정렬 가능" 한 줄 추가.
-
-## 검증
-- 토글 전환 시 순서 변경 및 URL `psort` 반영 확인.
-- 좋아요순에서 좋아요 많은 문제가 상단에 오는지 확인.
-- 네트워크 탭에서 최신순=페이지당 1회, 좋아요순=청크 수만큼만 호출되는지 확인.
+검증
+- 좋아요 토글 후 페이지 이동 후 돌아왔을 때 숫자가 유지.
+- 크롬 프로필 변경 후 서버에 저장된 좋아요 수가 표시됨.
+- 좋아요순/최신순 토글 시 정상 동작.
+- 네트워크 탭에서 toggle 후 getLikeState 재호출 확인.
