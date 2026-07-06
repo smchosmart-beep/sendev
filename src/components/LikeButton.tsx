@@ -89,6 +89,9 @@ export function LikeButton({
       });
       if (controlled) {
         setLocal({ count: res.count, liked: res.liked });
+        // Refresh the parent list cache so the count stays correct across
+        // page navigation and sorting switches.
+        queryClient.invalidateQueries({ queryKey: ["likeState", targetType] });
       } else {
         queryClient.setQueryData(queryKey, {
           [targetId]: { count: res.count, liked: res.liked },
