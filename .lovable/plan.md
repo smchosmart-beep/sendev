@@ -1,43 +1,37 @@
-현상
-- 문제ZIP 목록에서 좋아요 버튼을 누르면 숫자가 올라가지만, 크롬 프로필을 바꾸면 0으로 돌아가거나 서버 데이터와 맞지 않음.
-- 원인: LikeButton의 controlled 모드(목록)가 최초 mount 시 props(count/liked)로만 local state를 초기화한 뒤, 서버/부모에서 새 값이 내려와도 동기화하지 않음. 따라서 화면에 보이는 숫자가 컴포넌트 내부 local state에만 머무름.
+## 목표
+내 페이지(`/mypage`)에서 로그인 실패 시(등록되지 않은 닉네임이거나 비밀번호 미설정) 지금은 토스트로 짧게 뜨는 오류를, **모달(다이얼로그)**로 바꿔서 "닉네임은 글이나 댓글을 처음 작성할 때 등록된다"는 안내를 충분히 보여준다. (서버 로직 변경 없음, 화면 표시만 변경)
 
-변경 사항
-1. src/components/LikeButton.tsx
-   - controlled 모드에서 count/liked props가 변경될 때 local state를 다시 동기화하는 useEffect 추가.
-     ````
-     useEffect(() => {
-       if (controlled) {
-         setLocal((prev) => ({
-           count: count !== undefined ? count : prev.count,
-           liked: liked !== undefined ? liked : prev.liked,
-         }));
-       }
-     }, [controlled, count, liked]);
-     ````
-   - controlled 모드에서 toggle 성공 후, 상위 문제ZIP 목록의 좋아요 캐시를 무효화하여 다른 페이지에 다녀와도 최신 수치 유지.
-     ````
-     if (controlled) {
-       setLocal({ count: res.count, liked: res.liked });
-       queryClient.invalidateQueries({ queryKey: ["likeState", targetType] });
-     } else {
-       queryClient.setQueryData(queryKey, {
-         [targetId]: { count: res.count, liked: res.liked },
-       });
-     }
-     ````
+## 변경 범위
+`src/routes/_main.mypage.tsx` — 로그인 폼과 오류 처리 부분만 수정.
 
-안전성 검토
-- 기능 오작동: sync useEffect로 props가 변경될 때 화면이 서버 데이터와 일치하므로 정확도가 향상됨. 다만 "좋아요순" 정렬에서 좋아요 수가 바뀌면 항목 순서가 재정렬되어 페이지 간 이동이 발생할 수 있음. 이는 좋아요순 정렬의 자연스러운 동작이며 의도된 결과.
-- 서버비: toggle 당 추가 getLikeState 배치 조회 1회 발생. 200개씩 청크 처리되며, 기존 toggleLike 호출과 동일한 수준의 비용. 폴링/실시간/크론 등 지속적 호출은 없음.
-- 다른 기능 영향: uncontrolled 모드(글 상세, 댓글)는 기존 동작 유지. invalidate는 같은 prefix의 캐시를 재조회하도록 할 뿐이며, 기존 setQueryData 업데이트와 충돌하지 않음. 좋아요 외 다른 기능에 영향 없음.
-- 보안: 서버 함수나 RLS 변경 없음. 비밀 노출 없음.
+### 1. 안내 모달 추가
+shadcn `Dialog`(`@/components/ui/dialog`)를 사용해 안내 모달을 만든다. 모달 내용:
+- 제목: "닉네임을 아직 만들지 않으셨나요?" (또는 유사 문구)
+- 설명:
+  - 등록되지 않은 닉네임이거나 비밀번호가 설정되지 않았다는 안내
+  - **닉네임은 글이나 댓글을 처음 작성할 때 비밀번호와 함께 자동으로 등록된다**는 핵심 설명
+  - 등록 후 내 페이지에서 로그인해 활동을 확인할 수 있다는 안내
+- 액션 버튼:
+  - "게시판으로 이동" → `/board`로 이동해 바로 글을 쓸 수 있게 유도
+  - "닫기"
 
-가이드 업데이트
-- 이번 수정은 내부 버그 픽스로 사용자에게 보이는 동작 변화가 없으므로 /guide 업데이트는 불필요.
+디자인 토큰(`text-foreground`, `text-muted-foreground`, `bg-muted` 등) 사용, 하드코딩 색상 금지.
 
-검증
-- 좋아요 토글 후 페이지 이동 후 돌아왔을 때 숫자가 유지.
-- 크롬 프로필 변경 후 서버에 저장된 좋아요 수가 표시됨.
-- 좋아요순/최신순 토글 시 정상 동작.
-- 네트워크 탭에서 toggle 후 getLikeState 재호출 확인.
+### 2. 오류 처리 방식 변경
+로그인 `mutation`의 `onError`에서:
+- 현재: `toast.error(...)`
+- 변경: "등록되지 않은 닉네임 / 비밀번호 미설정" 계열 오류일 때는 토스트 대신 **모달을 연다** (`setInfoOpen(true)`).
+- 그 외 예기치 못한 오류는 기존처럼 토스트로 처리(안전한 fallback).
+
+상태 관리: `const [infoOpen, setInfoOpen] = useState(false)` 추가.
+
+### 3. (선택) 폼 하단 보조 안내
+로그인 카드 하단 "처음 쓰면 비밀번호가 등록돼요." 문구는 그대로 유지하되, 모달과 문맥이 자연스럽게 이어지도록 필요 시 소폭 정리.
+
+## 가이드 페이지 동기화
+Core 메모리 규칙에 따라, 이 안내가 사용자 가이드(`src/routes/_main.guide.tsx`, `/guide`)의 닉네임/내 페이지 설명과 어긋나지 않는지 확인하고 필요 시 문구를 맞춘다.
+
+## 안전성
+- 서버 함수·인증·데이터 흐름 변경 없음.
+- 순수 프론트엔드 표시(오류 표현 방식) 변경.
+- 기존 정상 로그인 동작에는 영향 없음.
