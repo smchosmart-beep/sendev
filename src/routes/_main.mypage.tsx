@@ -23,6 +23,15 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { PenLine } from "lucide-react";
+import {
   getMyDashboard,
   renameNickname,
   resolveAwardIcon,
@@ -63,6 +72,7 @@ function MyPage() {
   const [password, setPassword] = useState(identity?.nicknamePassword ?? "");
   const [remember, setRemember] = useState(true);
   const [data, setData] = useState<DashboardDTO | null>(null);
+  const [infoOpen, setInfoOpen] = useState(false);
   const fetchDashboard = useServerFn(getMyDashboard);
 
   const mutation = useMutation({
@@ -74,8 +84,15 @@ function MyPage() {
         save(vars.username, vars.password);
       }
     },
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "로그인에 실패했어요."),
+    onError: (err) => {
+      const msg = err instanceof Error ? err.message : "로그인에 실패했어요.";
+      // 등록되지 않은 닉네임 / 비밀번호 미설정은 모달로 안내한다.
+      if (msg.includes("등록되지 않은")) {
+        setInfoOpen(true);
+        return;
+      }
+      toast.error(msg);
+    },
   });
 
   const onSubmit = (e: React.FormEvent) => {
@@ -172,6 +189,46 @@ function MyPage() {
 
         </form>
       </Card>
+
+      <Dialog open={infoOpen} onOpenChange={setInfoOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <PenLine className="h-6 w-6" />
+            </div>
+            <DialogTitle className="text-center">
+              닉네임을 아직 만들지 않으셨나요?
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              입력하신 닉네임은 아직 등록되지 않았거나 비밀번호가 설정되지
+              않았어요.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 rounded-lg bg-muted p-4 text-sm text-muted-foreground">
+            <p>
+              닉네임은{" "}
+              <span className="font-semibold text-foreground">
+                글이나 댓글을 처음 작성할 때
+              </span>{" "}
+              입력한 비밀번호와 함께 자동으로 등록돼요.
+            </p>
+            <p>
+              게시판에서 글이나 댓글을 남기면 그 자리에서 닉네임이 만들어지고,
+              이후 내 페이지에서 로그인해 활동을 확인할 수 있어요.
+            </p>
+          </div>
+
+          <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-center">
+            <Button variant="outline" onClick={() => setInfoOpen(false)}>
+              닫기
+            </Button>
+            <Button asChild>
+              <Link to="/board">게시판으로 이동</Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
