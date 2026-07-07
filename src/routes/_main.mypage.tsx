@@ -72,6 +72,7 @@ function MyPage() {
   const [password, setPassword] = useState(identity?.nicknamePassword ?? "");
   const [remember, setRemember] = useState(true);
   const [data, setData] = useState<DashboardDTO | null>(null);
+  const [infoOpen, setInfoOpen] = useState(false);
   const fetchDashboard = useServerFn(getMyDashboard);
 
   const mutation = useMutation({
@@ -83,8 +84,15 @@ function MyPage() {
         save(vars.username, vars.password);
       }
     },
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "로그인에 실패했어요."),
+    onError: (err) => {
+      const msg = err instanceof Error ? err.message : "로그인에 실패했어요.";
+      // 등록되지 않은 닉네임 / 비밀번호 미설정은 모달로 안내한다.
+      if (msg.includes("등록되지 않은")) {
+        setInfoOpen(true);
+        return;
+      }
+      toast.error(msg);
+    },
   });
 
   const onSubmit = (e: React.FormEvent) => {
