@@ -1,37 +1,47 @@
 ## 목표
-내 페이지(`/mypage`)에서 로그인 실패 시(등록되지 않은 닉네임이거나 비밀번호 미설정) 지금은 토스트로 짧게 뜨는 오류를, **모달(다이얼로그)**로 바꿔서 "닉네임은 글이나 댓글을 처음 작성할 때 등록된다"는 안내를 충분히 보여준다. (서버 로직 변경 없음, 화면 표시만 변경)
+관리자가 각 게시판(카테고리)의 **작성자 목록을 엑셀(.xlsx) 파일로 다운로드**할 수 있는 기능 추가.
 
-## 변경 범위
-`src/routes/_main.mypage.tsx` — 로그인 폼과 오류 처리 부분만 수정.
+## 위치
+`admin/categories` 페이지의 각 카테고리 행에 "작성자 목록 다운로드" 버튼 추가. 관리자 인증이 이미 있는 페이지이므로 별도 인증 UI 불필요.
 
-### 1. 안내 모달 추가
-shadcn `Dialog`(`@/components/ui/dialog`)를 사용해 안내 모달을 만든다. 모달 내용:
-- 제목: "닉네임을 아직 만들지 않으셨나요?" (또는 유사 문구)
-- 설명:
-  - 등록되지 않은 닉네임이거나 비밀번호가 설정되지 않았다는 안내
-  - **닉네임은 글이나 댓글을 처음 작성할 때 비밀번호와 함께 자동으로 등록된다**는 핵심 설명
-  - 등록 후 내 페이지에서 로그인해 활동을 확인할 수 있다는 안내
-- 액션 버튼:
-  - "게시판으로 이동" → `/board`로 이동해 바로 글을 쓸 수 있게 유도
-  - "닫기"
+## 파일 형식
+- 확장자: `.xlsx` (SheetJS `xlsx` 라이브러리, 클라이언트 동적 import)
+- 파일명: `{게시판이름}_작성자목록_{YYYYMMDD}.xlsx`
+- 시트 컬럼:
+  1. 작성자명
+  2. 작성 글 수
+  3. 최초 작성일
+  4. 최근 작성일
+- 정렬: 글 수 내림차순 → 작성자명 오름차순
+- 중복 작성자는 1행으로 집계
 
-디자인 토큰(`text-foreground`, `text-muted-foreground`, `bg-muted` 등) 사용, 하드코딩 색상 금지.
+## 구현 상세
 
-### 2. 오류 처리 방식 변경
-로그인 `mutation`의 `onError`에서:
-- 현재: `toast.error(...)`
-- 변경: "등록되지 않은 닉네임 / 비밀번호 미설정" 계열 오류일 때는 토스트 대신 **모달을 연다** (`setInfoOpen(true)`).
-- 그 외 예기치 못한 오류는 기존처럼 토스트로 처리(안전한 fallback).
+### 1) 서버 함수 (`src/lib/platform.functions.ts`)
+- `listCategoryAuthors` 추가: `createServerFn({ method: "GET" })`.
+  - 입력: `{ categoryId, adminPassword }` (기존 `listReviewAllowlist` 등과 동일한 관리자 비밀번호 검증 패턴 재사용)
+  - 처리: `supabaseAdmin`으로 `posts`에서 해당 카테고리의 `author, created_at`만 SELECT → 서버에서 그룹핑(count/min/max) 후 반환.
+  - 반환: `{ author, count, firstAt, lastAt }[]`
 
-상태 관리: `const [infoOpen, setInfoOpen] = useState(false)` 추가.
+### 2) 클라이언트 다운로드 (`src/routes/admin.categories.tsx`)
+- 각 카테고리 행에 "작성자 다운로드" 버튼 추가.
+- 클릭 시 `listCategoryAuthors` 호출 → `await import("xlsx")`로 SheetJS 동적 로드 → `XLSX.utils.aoa_to_sheet` + `XLSX.writeFile`로 다운로드.
+- 빈 결과 시 토스트로 "작성자가 없습니다" 안내.
 
-### 3. (선택) 폼 하단 보조 안내
-로그인 카드 하단 "처음 쓰면 비밀번호가 등록돼요." 문구는 그대로 유지하되, 모달과 문맥이 자연스럽게 이어지도록 필요 시 소폭 정리.
+### 3) 의존성
+- `bun add xlsx` — 클라이언트 다운로드에만 사용, 동적 import이므로 초기 번들/SSR 영향 없음.
 
-## 가이드 페이지 동기화
-Core 메모리 규칙에 따라, 이 안내가 사용자 가이드(`src/routes/_main.guide.tsx`, `/guide`)의 닉네임/내 페이지 설명과 어긋나지 않는지 확인하고 필요 시 문구를 맞춘다.
+### 4) 가이드 (`src/routes/_main.guide.tsx`)
+- 관리자 섹션에 "게시판별 작성자 목록 엑셀 다운로드" 안내 한 줄 추가.
 
-## 안전성
-- 서버 함수·인증·데이터 흐름 변경 없음.
-- 순수 프론트엔드 표시(오류 표현 방식) 변경.
-- 기존 정상 로그인 동작에는 영향 없음.
+## 부작용 요약
+- 서버 부하: 관리자 버튼 클릭 시 1회 조회, 작은 컬럼만 SELECT → 무시할 수준.
+- 기존 기능: 신규 함수/버튼 추가만 있고 스키마·기존 로직 변경 없음.
+- 보안: 관리자 비밀번호 검증 통과 시에만 실행. 반환 데이터는 기존에도 공개된 `author` 정보.
+
+## 기술 요약
+```
+xlsx (SheetJS)           — 클라이언트 동적 import
+listCategoryAuthors       — supabaseAdmin + 관리자 비밀번호 검증
+admin.categories.tsx      — 행별 다운로드 버튼
+```

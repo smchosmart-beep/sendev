@@ -1446,6 +1446,68 @@ export const listReviewAllowlist = createServerFn({ method: "GET" })
     }));
   });
 
+// Aggregates post authors within a category for the admin export tool.
+// Returns one row per author with their post count and first/last post dates.
+export const listCategoryAuthors = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(
+    async ({
+      data,
+    }): Promise<
+      { author: string; count: number; firstAt: string; lastAt: string }[]
+    > => {
+      requireAdmin(data.adminPassword);
+      const db = await getAdmin();
+      // Page through posts to safely cover categories with many rows.
+      const pageSize = 1000;
+      let from = 0;
+      const grouped = new Map<
+        string,
+        { author: string; count: number; firstAt: string; lastAt: string }
+      >();
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data: rows, error } = await db
+          .from("posts")
+          .select("author, created_at")
+          .eq("category_id", data.categoryId)
+          .order("created_at", { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) throw new Error(error.message);
+        const list = (rows ?? []) as { author: string | null; created_at: string }[];
+        for (const r of list) {
+          const name = (r.author ?? "").trim();
+          if (!name) continue;
+          const existing = grouped.get(name);
+          if (!existing) {
+            grouped.set(name, {
+              author: name,
+              count: 1,
+              firstAt: r.created_at,
+              lastAt: r.created_at,
+            });
+          } else {
+            existing.count += 1;
+            if (r.created_at < existing.firstAt) existing.firstAt = r.created_at;
+            if (r.created_at > existing.lastAt) existing.lastAt = r.created_at;
+          }
+        }
+        if (list.length < pageSize) break;
+        from += pageSize;
+      }
+      return Array.from(grouped.values()).sort((a, b) =>
+        b.count !== a.count ? b.count - a.count : a.author.localeCompare(b.author, "ko"),
+      );
+    },
+  );
+
 export const addReviewAllowlistName = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { FolderPlus, Folder, Pencil, Trash2, LayoutGrid, Lock, Github, ChevronUp, ChevronDown, ChevronRight, EyeOff } from "lucide-react";
+import { FolderPlus, Folder, Pencil, Trash2, LayoutGrid, Lock, Github, ChevronUp, ChevronDown, ChevronRight, EyeOff, Download } from "lucide-react";
 import { toast } from "sonner";
 
 import { categoriesQueryOptions } from "@/lib/platform.queries";
@@ -13,6 +13,7 @@ import {
   deleteCategory,
   getCategoryPassword,
   swapCategoryOrder,
+  listCategoryAuthors,
 } from "@/lib/platform.functions";
 import type { CategoryDTO, TabGroup } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
@@ -79,9 +80,49 @@ function CategoriesPage() {
   const deleteFn = useServerFn(deleteCategory);
   const getPasswordFn = useServerFn(getCategoryPassword);
   const swapOrderFn = useServerFn(swapCategoryOrder);
+  const listAuthorsFn = useServerFn(listCategoryAuthors);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["categories"] });
+
+  const downloadAuthors = async (c: CategoryDTO) => {
+    if (downloadingId) return;
+    setDownloadingId(c.id);
+    try {
+      const rows = await listAuthorsFn({
+        data: { categoryId: c.id, adminPassword: getAdminPassword() },
+      });
+      if (!rows.length) {
+        toast.info("작성자가 없습니다.");
+        return;
+      }
+      const XLSX = await import("xlsx");
+      const fmt = (iso: string) => {
+        const d = new Date(iso);
+        const pad = (n: number) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      };
+      const aoa: (string | number)[][] = [
+        ["작성자명", "작성 글 수", "최초 작성일", "최근 작성일"],
+        ...rows.map((r) => [r.author, r.count, fmt(r.firstAt), fmt(r.lastAt)]),
+      ];
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws["!cols"] = [{ wch: 20 }, { wch: 12 }, { wch: 20 }, { wch: 20 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "작성자 목록");
+      const today = new Date();
+      const p = (n: number) => String(n).padStart(2, "0");
+      const ymd = `${today.getFullYear()}${p(today.getMonth() + 1)}${p(today.getDate())}`;
+      const safe = (c.name || "게시판").replace(/[\\/:*?"<>|]/g, "_");
+      XLSX.writeFile(wb, `${safe}_작성자목록_${ymd}.xlsx`);
+      toast.success(`${rows.length}명의 작성자를 내려받았습니다.`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "다운로드에 실패했어요.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -685,6 +726,19 @@ function CategoriesPage() {
                     <Pencil className="h-4 w-4" />
                     수정
                   </Button>
+                  {!c.isGroup && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => downloadAuthors(c)}
+                      disabled={downloadingId === c.id}
+                      className="w-full justify-center rounded-xl transition-all duration-200 active:scale-95"
+                      title="작성자 목록을 엑셀로 내려받기"
+                    >
+                      <Download className="h-4 w-4" />
+                      {downloadingId === c.id ? "준비 중" : "작성자"}
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
