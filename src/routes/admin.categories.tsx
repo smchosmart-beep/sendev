@@ -726,6 +726,19 @@ function CategoriesPage() {
                     <Pencil className="h-4 w-4" />
                     수정
                   </Button>
+                  {!c.isGroup && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => downloadAuthors(c)}
+                      disabled={downloadingId === c.id}
+                      className="w-full justify-center rounded-xl transition-all duration-200 active:scale-95"
+                      title="작성자 목록을 엑셀로 내려받기"
+                    >
+                      <Download className="h-4 w-4" />
+                      {downloadingId === c.id ? "준비 중" : "작성자"}
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
