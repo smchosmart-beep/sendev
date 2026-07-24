@@ -13,6 +13,7 @@ import {
   deleteCategory,
   getCategoryPassword,
   swapCategoryOrder,
+  listCategoryAuthors,
 } from "@/lib/platform.functions";
 import type { CategoryDTO, TabGroup } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
