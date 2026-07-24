@@ -80,9 +80,49 @@ function CategoriesPage() {
   const deleteFn = useServerFn(deleteCategory);
   const getPasswordFn = useServerFn(getCategoryPassword);
   const swapOrderFn = useServerFn(swapCategoryOrder);
+  const listAuthorsFn = useServerFn(listCategoryAuthors);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["categories"] });
+
+  const downloadAuthors = async (c: CategoryDTO) => {
+    if (downloadingId) return;
+    setDownloadingId(c.id);
+    try {
+      const rows = await listAuthorsFn({
+        data: { categoryId: c.id, adminPassword: getAdminPassword() },
+      });
+      if (!rows.length) {
+        toast.info("작성자가 없습니다.");
+        return;
+      }
+      const XLSX = await import("xlsx");
+      const fmt = (iso: string) => {
+        const d = new Date(iso);
+        const pad = (n: number) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      };
+      const aoa: (string | number)[][] = [
+        ["작성자명", "작성 글 수", "최초 작성일", "최근 작성일"],
+        ...rows.map((r) => [r.author, r.count, fmt(r.firstAt), fmt(r.lastAt)]),
+      ];
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws["!cols"] = [{ wch: 20 }, { wch: 12 }, { wch: 20 }, { wch: 20 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "작성자 목록");
+      const today = new Date();
+      const p = (n: number) => String(n).padStart(2, "0");
+      const ymd = `${today.getFullYear()}${p(today.getMonth() + 1)}${p(today.getDate())}`;
+      const safe = (c.name || "게시판").replace(/[\\/:*?"<>|]/g, "_");
+      XLSX.writeFile(wb, `${safe}_작성자목록_${ymd}.xlsx`);
+      toast.success(`${rows.length}명의 작성자를 내려받았습니다.`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "다운로드에 실패했어요.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
