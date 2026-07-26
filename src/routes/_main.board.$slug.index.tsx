@@ -367,11 +367,7 @@ function BoardInner({
 
       {category.enableProblem && (
         <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
-              <PackageOpen className="h-5 w-5 text-primary" />
-              {category.problemName || "문제ZIP"}
-            </h2>
+          <div className="flex items-center justify-end">
             <Button asChild className="rounded-xl active:scale-95">
               <Link to="/board/$slug/new-problem" params={{ slug }}>
                 <Plus className="h-4 w-4" />
@@ -379,6 +375,7 @@ function BoardInner({
               </Link>
             </Button>
           </div>
+
 
           {problems.length === 0 ? (
             <EmptyState
