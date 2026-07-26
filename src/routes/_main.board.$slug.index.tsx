@@ -24,6 +24,7 @@ import { ThumbnailUploadButton } from "@/components/ThumbnailUploadButton";
 import { LikeButton } from "@/components/LikeButton";
 
 const PAGE_SIZE = 10;
+const PROBLEM_PAGE_SIZE = 9;
 
 function toPage(value: unknown): number {
   const n = Number(value);
@@ -125,14 +126,14 @@ function BoardInner({
   }, [problems, psort, allLikeMap]);
 
   // 문제ZIP 페이지네이션 — 대량(수백) 참여 시 렌더/좋아요 조회 부하를 페이지당으로 제한.
-  const problemPageCount = Math.max(1, Math.ceil(sortedProblems.length / PAGE_SIZE));
+  const problemPageCount = Math.max(1, Math.ceil(sortedProblems.length / PROBLEM_PAGE_SIZE));
   const currentPPage = Math.min(ppage, problemPageCount);
   const pagedProblems = sortedProblems.slice(
-    (currentPPage - 1) * PAGE_SIZE,
-    currentPPage * PAGE_SIZE,
+    (currentPPage - 1) * PROBLEM_PAGE_SIZE,
+    currentPPage * PROBLEM_PAGE_SIZE,
   );
 
-  // 최신순일 때는 현재 페이지 10개만 좋아요 배치 조회.
+  // 최신순일 때는 현재 페이지 9개만 좋아요 배치 조회.
   const pageProblemIds = pagedProblems.map((p) => p.id);
   const { data: pageLikeMap } = useQuery({
     queryKey: ["likeState", "post", "batch", slug, currentPPage, likerName, pageProblemIds.join(",")],
