@@ -530,7 +530,6 @@ function BoardInner({
                 </>
               )}
             </>
-            </>
           )}
         </section>
       )}
