@@ -428,6 +428,48 @@ function BoardInner({
             />
           ) : (
             <>
+              <div className="flex flex-wrap items-center gap-2">
+                {[
+                  { key: "", label: "전체", count: problems.length },
+                  ...areaOptions.map((a) => ({
+                    key: a,
+                    label: a,
+                    count: areaCounts.get(a) ?? 0,
+                  })),
+                  ...(hasCustomArea
+                    ? [
+                        {
+                          key: CUSTOM_AREA_KEY,
+                          label: "직접 입력",
+                          count: areaCounts.get(CUSTOM_AREA_KEY) ?? 0,
+                        },
+                      ]
+                    : []),
+                ].map((opt) => (
+                  <button
+                    key={opt.key || "all"}
+                    type="button"
+                    aria-pressed={parea === opt.key}
+                    onClick={() =>
+                      navigate({
+                        search: (prev: BoardSearch) => ({
+                          ...prev,
+                          parea: opt.key,
+                          ppage: 1,
+                        }),
+                      })
+                    }
+                    className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors active:scale-95 ${
+                      parea === opt.key
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-input bg-card text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                    }`}
+                  >
+                    {opt.label}
+                    <span className="ml-1.5 text-xs opacity-70">{opt.count}</span>
+                  </button>
+                ))}
+              </div>
               <div className="flex items-center gap-1 rounded-xl bg-muted p-1 w-fit">
                 {([
                   { key: "recent", label: "최신순" },
@@ -439,7 +481,7 @@ function BoardInner({
                     aria-pressed={psort === opt.key}
                     onClick={() =>
                       navigate({
-                        search: (prev: { qpage: number; gpage: number; ppage: number; psort: "recent" | "likes" }) => ({
+                        search: (prev: BoardSearch) => ({
                           ...prev,
                           psort: opt.key,
                           ppage: 1,
@@ -456,27 +498,38 @@ function BoardInner({
                   </button>
                 ))}
               </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {pagedProblems.map((post) => {
-                  const like = problemLikeMap?.[post.id];
-                  return (
-                    <ProblemCard
-                      key={post.id}
-                      post={post}
-                      slug={slug}
-                      likeCount={like?.count ?? 0}
-                      liked={like?.liked ?? false}
-                    />
-                  );
-                })}
-              </div>
-              <BoardPagination
-                page={currentPPage}
-                pageCount={problemPageCount}
-                onChange={(p) =>
-                  navigate({ search: (prev: { qpage: number; gpage: number; ppage: number; psort: "recent" | "likes" }) => ({ ...prev, ppage: p }) })
-                }
-              />
+              {filteredProblems.length === 0 ? (
+                <EmptyState
+                  icon={PackageOpen}
+                  title="해당 영역의 문제가 아직 없어요."
+                  description="다른 영역을 선택하거나 새 문제를 제보해 주세요."
+                />
+              ) : (
+                <>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {pagedProblems.map((post) => {
+                      const like = problemLikeMap?.[post.id];
+                      return (
+                        <ProblemCard
+                          key={post.id}
+                          post={post}
+                          slug={slug}
+                          likeCount={like?.count ?? 0}
+                          liked={like?.liked ?? false}
+                        />
+                      );
+                    })}
+                  </div>
+                  <BoardPagination
+                    page={currentPPage}
+                    pageCount={problemPageCount}
+                    onChange={(p) =>
+                      navigate({ search: (prev: BoardSearch) => ({ ...prev, ppage: p }) })
+                    }
+                  />
+                </>
+              )}
+            </>
             </>
           )}
         </section>
