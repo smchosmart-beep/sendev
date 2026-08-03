@@ -177,14 +177,17 @@ function BoardInner({
     });
   }, [problems, psort, allLikeMap]);
 
-  // 정렬 뒤에 영역 필터를 적용 (좋아요 배치 조회 키가 필터에 흔들리지 않도록).
+  // 정렬 → 영역 필터 → 검색어 필터 순서 (좋아요 배치 조회 키가 필터에 흔들리지 않도록).
   const filteredProblems = useMemo(() => {
-    if (!parea) return sortedProblems;
+    let list = sortedProblems;
     if (parea === CUSTOM_AREA_KEY) {
-      return sortedProblems.filter((p) => !areaOptions.includes(p.problemArea));
+      list = list.filter((p) => !areaOptions.includes(p.problemArea));
+    } else if (parea) {
+      list = list.filter((p) => p.problemArea === parea);
     }
-    return sortedProblems.filter((p) => p.problemArea === parea);
-  }, [sortedProblems, parea, areaOptions.join("|")]);
+    if (keyword) list = list.filter(matchesQuery);
+    return list;
+  }, [sortedProblems, parea, areaOptions.join("|"), keyword, matchesQuery]);
 
   // 문제ZIP 페이지네이션 — 대량(수백) 참여 시 렌더/좋아요 조회 부하를 페이지당으로 제한.
   const problemPageCount = Math.max(1, Math.ceil(filteredProblems.length / PROBLEM_PAGE_SIZE));
