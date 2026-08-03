@@ -38,6 +38,7 @@ type BoardSearch = {
   ppage: number;
   psort: "recent" | "likes";
   parea: string;
+  q: string;
 };
 
 
@@ -49,6 +50,7 @@ export const Route = createFileRoute("/_main/board/$slug/")({
     ppage: toPage(search.ppage),
     psort: search.psort === "likes" ? "likes" : "recent",
     parea: typeof search.parea === "string" ? search.parea : "",
+    q: typeof search.q === "string" ? search.q : "",
   }),
   loader: async ({ context, params }) => {
     const categories = await context.queryClient.ensureQueryData(
