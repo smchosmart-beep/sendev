@@ -235,10 +235,40 @@ function BoardInner({
   const { data: readIds = [] } = useQuery(readPostIdsQueryOptions(readerName));
   const readSet = useMemo(() => new Set(readIds), [readIds]);
   const hasReader = readerName.trim().length > 0;
-  const isUnread = (id: string) => hasReader && !readSet.has(id);
+
+  const noSearchResult =
+    keyword.length > 0 &&
+    notices.length === 0 &&
+    generals.length === 0 &&
+    projects.length === 0 &&
+    linkItems.length === 0 &&
+    filteredProblems.length === 0;
 
   return (
     <div className="space-y-6">
+      <BoardSearchBox
+        value={q}
+        onChange={(next) =>
+          navigate({
+            search: (prev: BoardSearch) => ({
+              ...prev,
+              q: next,
+              gpage: 1,
+              ppage: 1,
+            }),
+            replace: true,
+          })
+        }
+      />
+
+      {noSearchResult && (
+        <EmptyState
+          icon={Search}
+          title={`'${q.trim()}'에 대한 검색 결과가 없어요.`}
+          description="제목 또는 작성자에 포함된 단어로 다시 검색해보세요."
+        />
+      )}
+
       {category.enablePost && notices.length > 0 && (
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
