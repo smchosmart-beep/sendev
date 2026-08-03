@@ -114,7 +114,8 @@ function BoardInner({
   const generals = searched.filter((p) => p.type === "post" && !p.pinned);
   const projects = searched.filter((p) => p.type === "project");
   const links = searched.filter((p) => p.type === "link");
-  const problems = searched.filter((p) => p.type === "problem");
+  // 문제ZIP은 정렬/영역 집계를 전체 기준으로 유지하고, 검색은 마지막에 적용한다.
+  const problems = posts.filter((p) => p.type === "problem");
   const linkItems = groupLinksBySeries(links);
 
   const generalPageCount = Math.max(1, Math.ceil(generals.length / PAGE_SIZE));
