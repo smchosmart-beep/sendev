@@ -27,6 +27,51 @@ import { LikeButton } from "@/components/LikeButton";
 const PAGE_SIZE = 10;
 const PROBLEM_PAGE_SIZE = 9;
 
+// 게시판 내 검색창 — 입력을 디바운스해 URL 검색어(q)에 반영한다.
+function BoardSearchBox({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  const [input, setInput] = useState(value);
+
+  useEffect(() => {
+    setInput(value);
+  }, [value]);
+
+  useEffect(() => {
+    if (input === value) return;
+    const t = setTimeout(() => onChange(input), 250);
+    return () => clearTimeout(t);
+  }, [input]);
+
+  return (
+    <div className="relative">
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <input
+        type="text"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder="이 게시판에서 검색 (제목·작성자)"
+        aria-label="게시판 내 검색"
+        className="w-full min-w-0 rounded-xl border border-border bg-card py-2.5 pl-9 pr-9 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+      />
+      {input.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setInput("")}
+          aria-label="검색어 지우기"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-muted-foreground transition-colors hover:text-foreground active:scale-95"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 function toPage(value: unknown): number {
   const n = Number(value);
   return Number.isInteger(n) && n >= 1 ? n : 1;
