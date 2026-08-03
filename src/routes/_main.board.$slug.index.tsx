@@ -93,13 +93,28 @@ function BoardInner({
 }) {
   const { data: posts } = useSuspenseQuery(postsQueryOptions(category.id, getBoardPassword(slug)));
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
-  const { qpage, gpage, ppage, psort, parea } = Route.useSearch();
+  const { qpage, gpage, ppage, psort, parea, q } = Route.useSearch();
   const navigate = useNavigate({ from: "/board/$slug" });
-  const notices = posts.filter((p) => p.type === "post" && p.pinned);
-  const generals = posts.filter((p) => p.type === "post" && !p.pinned);
-  const projects = posts.filter((p) => p.type === "project");
-  const links = posts.filter((p) => p.type === "link");
-  const problems = posts.filter((p) => p.type === "problem");
+
+  // 검색어 필터 — 이미 불러온 목록을 클라이언트에서 거른다(추가 서버 호출 없음).
+  const keyword = q.trim().toLowerCase();
+  const matchesQuery = useMemo(() => {
+    if (!keyword) return () => true;
+    return (p: PostDTO) =>
+      p.title.toLowerCase().includes(keyword) ||
+      p.author.toLowerCase().includes(keyword);
+  }, [keyword]);
+
+  const searched = useMemo(
+    () => (keyword ? posts.filter(matchesQuery) : posts),
+    [posts, keyword, matchesQuery],
+  );
+
+  const notices = searched.filter((p) => p.type === "post" && p.pinned);
+  const generals = searched.filter((p) => p.type === "post" && !p.pinned);
+  const projects = searched.filter((p) => p.type === "project");
+  const links = searched.filter((p) => p.type === "link");
+  const problems = searched.filter((p) => p.type === "problem");
   const linkItems = groupLinksBySeries(links);
 
   const generalPageCount = Math.max(1, Math.ceil(generals.length / PAGE_SIZE));
