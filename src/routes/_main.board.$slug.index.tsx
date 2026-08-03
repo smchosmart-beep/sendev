@@ -32,6 +32,16 @@ function toPage(value: unknown): number {
   return Number.isInteger(n) && n >= 1 ? n : 1;
 }
 
+type BoardSearch = {
+  qpage: number;
+  gpage: number;
+  ppage: number;
+  psort: "recent" | "likes";
+  parea: string;
+};
+
+
+
 export const Route = createFileRoute("/_main/board/$slug/")({
   validateSearch: (search: Record<string, unknown>): BoardSearch => ({
     qpage: toPage(search.qpage),
