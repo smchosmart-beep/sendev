@@ -12,6 +12,7 @@ import {
   myReviewedPostIdsQueryOptions,
   profileMapQueryOptions,
   readPostIdsQueryOptions,
+  problemOptionsQueryOptions,
 } from "@/lib/platform.queries";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import { type PostDTO, getLikeState } from "@/lib/platform.functions";
@@ -31,12 +32,23 @@ function toPage(value: unknown): number {
   return Number.isInteger(n) && n >= 1 ? n : 1;
 }
 
+type BoardSearch = {
+  qpage: number;
+  gpage: number;
+  ppage: number;
+  psort: "recent" | "likes";
+  parea: string;
+};
+
+
+
 export const Route = createFileRoute("/_main/board/$slug/")({
-  validateSearch: (search: Record<string, unknown>): { qpage: number; gpage: number; ppage: number; psort: "recent" | "likes" } => ({
+  validateSearch: (search: Record<string, unknown>): BoardSearch => ({
     qpage: toPage(search.qpage),
     gpage: toPage(search.gpage),
     ppage: toPage(search.ppage),
     psort: search.psort === "likes" ? "likes" : "recent",
+    parea: typeof search.parea === "string" ? search.parea : "",
   }),
   loader: async ({ context, params }) => {
     const categories = await context.queryClient.ensureQueryData(
@@ -45,6 +57,9 @@ export const Route = createFileRoute("/_main/board/$slug/")({
     const category = categories.find((c) => c.slug === params.slug);
     context.queryClient.ensureQueryData(profileMapQueryOptions());
     if (category) {
+      if (category.enableProblem) {
+        context.queryClient.ensureQueryData(problemOptionsQueryOptions());
+      }
       await context.queryClient.ensureQueryData(
         postsQueryOptions(category.id, getBoardPassword(params.slug)),
       );
@@ -76,7 +91,7 @@ function BoardInner({
 }) {
   const { data: posts } = useSuspenseQuery(postsQueryOptions(category.id, getBoardPassword(slug)));
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
-  const { qpage, gpage, ppage, psort } = Route.useSearch();
+  const { qpage, gpage, ppage, psort, parea } = Route.useSearch();
   const navigate = useNavigate({ from: "/board/$slug" });
   const notices = posts.filter((p) => p.type === "post" && p.pinned);
   const generals = posts.filter((p) => p.type === "post" && !p.pinned);
@@ -115,6 +130,25 @@ function BoardInner({
     staleTime: 30_000,
   });
 
+  // Q1 영역 필터 — 관리자 설정 목록 + 목록에 없는 값(직접 입력)을 하나로 묶은 그룹.
+  const { data: problemOptions } = useQuery({
+    ...problemOptionsQueryOptions(),
+    enabled: category.enableProblem,
+  });
+  const areaOptions = problemOptions?.areas ?? [];
+  const CUSTOM_AREA_KEY = "__custom__";
+  const areaCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const p of problems) {
+      const key = areaOptions.includes(p.problemArea)
+        ? p.problemArea
+        : CUSTOM_AREA_KEY;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return counts;
+  }, [problems, areaOptions.join("|")]);
+  const hasCustomArea = (areaCounts.get(CUSTOM_AREA_KEY) ?? 0) > 0;
+
   // 정렬 적용 (problems는 이미 최신순). 좋아요순은 count 내림차순, 동점은 최신순 유지.
   const sortedProblems = useMemo(() => {
     if (psort !== "likes") return problems;
@@ -125,10 +159,19 @@ function BoardInner({
     });
   }, [problems, psort, allLikeMap]);
 
+  // 정렬 뒤에 영역 필터를 적용 (좋아요 배치 조회 키가 필터에 흔들리지 않도록).
+  const filteredProblems = useMemo(() => {
+    if (!parea) return sortedProblems;
+    if (parea === CUSTOM_AREA_KEY) {
+      return sortedProblems.filter((p) => !areaOptions.includes(p.problemArea));
+    }
+    return sortedProblems.filter((p) => p.problemArea === parea);
+  }, [sortedProblems, parea, areaOptions.join("|")]);
+
   // 문제ZIP 페이지네이션 — 대량(수백) 참여 시 렌더/좋아요 조회 부하를 페이지당으로 제한.
-  const problemPageCount = Math.max(1, Math.ceil(sortedProblems.length / PROBLEM_PAGE_SIZE));
+  const problemPageCount = Math.max(1, Math.ceil(filteredProblems.length / PROBLEM_PAGE_SIZE));
   const currentPPage = Math.min(ppage, problemPageCount);
-  const pagedProblems = sortedProblems.slice(
+  const pagedProblems = filteredProblems.slice(
     (currentPPage - 1) * PROBLEM_PAGE_SIZE,
     currentPPage * PROBLEM_PAGE_SIZE,
   );
@@ -385,6 +428,48 @@ function BoardInner({
             />
           ) : (
             <>
+              <div className="flex flex-wrap items-center gap-2">
+                {[
+                  { key: "", label: "전체", count: problems.length },
+                  ...areaOptions.map((a) => ({
+                    key: a,
+                    label: a,
+                    count: areaCounts.get(a) ?? 0,
+                  })),
+                  ...(hasCustomArea
+                    ? [
+                        {
+                          key: CUSTOM_AREA_KEY,
+                          label: "직접 입력",
+                          count: areaCounts.get(CUSTOM_AREA_KEY) ?? 0,
+                        },
+                      ]
+                    : []),
+                ].map((opt) => (
+                  <button
+                    key={opt.key || "all"}
+                    type="button"
+                    aria-pressed={parea === opt.key}
+                    onClick={() =>
+                      navigate({
+                        search: (prev: BoardSearch) => ({
+                          ...prev,
+                          parea: opt.key,
+                          ppage: 1,
+                        }),
+                      })
+                    }
+                    className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors active:scale-95 ${
+                      parea === opt.key
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-input bg-card text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                    }`}
+                  >
+                    {opt.label}
+                    <span className="ml-1.5 text-xs opacity-70">{opt.count}</span>
+                  </button>
+                ))}
+              </div>
               <div className="flex items-center gap-1 rounded-xl bg-muted p-1 w-fit">
                 {([
                   { key: "recent", label: "최신순" },
@@ -396,7 +481,7 @@ function BoardInner({
                     aria-pressed={psort === opt.key}
                     onClick={() =>
                       navigate({
-                        search: (prev: { qpage: number; gpage: number; ppage: number; psort: "recent" | "likes" }) => ({
+                        search: (prev: BoardSearch) => ({
                           ...prev,
                           psort: opt.key,
                           ppage: 1,
@@ -413,27 +498,37 @@ function BoardInner({
                   </button>
                 ))}
               </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {pagedProblems.map((post) => {
-                  const like = problemLikeMap?.[post.id];
-                  return (
-                    <ProblemCard
-                      key={post.id}
-                      post={post}
-                      slug={slug}
-                      likeCount={like?.count ?? 0}
-                      liked={like?.liked ?? false}
-                    />
-                  );
-                })}
-              </div>
-              <BoardPagination
-                page={currentPPage}
-                pageCount={problemPageCount}
-                onChange={(p) =>
-                  navigate({ search: (prev: { qpage: number; gpage: number; ppage: number; psort: "recent" | "likes" }) => ({ ...prev, ppage: p }) })
-                }
-              />
+              {filteredProblems.length === 0 ? (
+                <EmptyState
+                  icon={PackageOpen}
+                  title="해당 영역의 문제가 아직 없어요."
+                  description="다른 영역을 선택하거나 새 문제를 제보해 주세요."
+                />
+              ) : (
+                <>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {pagedProblems.map((post) => {
+                      const like = problemLikeMap?.[post.id];
+                      return (
+                        <ProblemCard
+                          key={post.id}
+                          post={post}
+                          slug={slug}
+                          likeCount={like?.count ?? 0}
+                          liked={like?.liked ?? false}
+                        />
+                      );
+                    })}
+                  </div>
+                  <BoardPagination
+                    page={currentPPage}
+                    pageCount={problemPageCount}
+                    onChange={(p) =>
+                      navigate({ search: (prev: BoardSearch) => ({ ...prev, ppage: p }) })
+                    }
+                  />
+                </>
+              )}
             </>
           )}
         </section>
