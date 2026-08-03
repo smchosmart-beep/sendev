@@ -508,7 +508,7 @@ function BoardInner({
         </section>
       )}
 
-      {category.enableProblem && (
+      {category.enableProblem && (!keyword || filteredProblems.length > 0) && (
         <section className="space-y-3">
           <div className="flex items-center justify-end">
             <Button asChild className="rounded-xl active:scale-95">
