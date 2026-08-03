@@ -130,6 +130,25 @@ function BoardInner({
     staleTime: 30_000,
   });
 
+  // Q1 영역 필터 — 관리자 설정 목록 + 목록에 없는 값(직접 입력)을 하나로 묶은 그룹.
+  const { data: problemOptions } = useQuery({
+    ...problemOptionsQueryOptions(),
+    enabled: category.enableProblem,
+  });
+  const areaOptions = problemOptions?.areas ?? [];
+  const CUSTOM_AREA_KEY = "__custom__";
+  const areaCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const p of problems) {
+      const key = areaOptions.includes(p.problemArea)
+        ? p.problemArea
+        : CUSTOM_AREA_KEY;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return counts;
+  }, [problems, areaOptions.join("|")]);
+  const hasCustomArea = (areaCounts.get(CUSTOM_AREA_KEY) ?? 0) > 0;
+
   // 정렬 적용 (problems는 이미 최신순). 좋아요순은 count 내림차순, 동점은 최신순 유지.
   const sortedProblems = useMemo(() => {
     if (psort !== "likes") return problems;
@@ -140,10 +159,19 @@ function BoardInner({
     });
   }, [problems, psort, allLikeMap]);
 
+  // 정렬 뒤에 영역 필터를 적용 (좋아요 배치 조회 키가 필터에 흔들리지 않도록).
+  const filteredProblems = useMemo(() => {
+    if (!parea) return sortedProblems;
+    if (parea === CUSTOM_AREA_KEY) {
+      return sortedProblems.filter((p) => !areaOptions.includes(p.problemArea));
+    }
+    return sortedProblems.filter((p) => p.problemArea === parea);
+  }, [sortedProblems, parea, areaOptions.join("|")]);
+
   // 문제ZIP 페이지네이션 — 대량(수백) 참여 시 렌더/좋아요 조회 부하를 페이지당으로 제한.
-  const problemPageCount = Math.max(1, Math.ceil(sortedProblems.length / PROBLEM_PAGE_SIZE));
+  const problemPageCount = Math.max(1, Math.ceil(filteredProblems.length / PROBLEM_PAGE_SIZE));
   const currentPPage = Math.min(ppage, problemPageCount);
-  const pagedProblems = sortedProblems.slice(
+  const pagedProblems = filteredProblems.slice(
     (currentPPage - 1) * PROBLEM_PAGE_SIZE,
     currentPPage * PROBLEM_PAGE_SIZE,
   );
