@@ -4,7 +4,7 @@
 
 ## 동작
 
-- 검색어는 **제목 + 작성자**를 대상으로 하며, 문제ZIP은 **한 줄 제보 내용**도 함께 검색합니다.
+- 검색어는 **제목 + 작성자**를 대상으로 합니다. 문제ZIP의 한 줄 제보는 제목으로 저장되므로 별도 처리 없이 함께 검색됩니다.
 - 대소문자 구분 없이 부분 일치, 앞뒤 공백은 무시합니다.
 - 검색어를 입력하면 그 게시판의 모든 섹션(고정 게시글, 일반게시판, 산출물, 링크, 문제ZIP)이 동시에 걸러집니다.
 - 결과가 하나도 없는 섹션은 숨기고, 모든 섹션이 비면 "검색 결과가 없어요" 안내를 보여줍니다.
@@ -21,7 +21,7 @@
 
 - `src/routes/_main.board.$slug.index.tsx`
   - `BoardSearch`에 `q: string` 추가, `validateSearch`에서 문자열 검증.
-  - 검색창은 `카테고리 정보 카드` 바로 아래 배치. 로컬 `useState`로 입력값을 다루고 디바운스(약 250ms) 후 `navigate({ search: prev => ({ ...prev, q, qpage: 1, gpage: 1, ppage: 1 }) , replace: true })`로 반영.
+  - 검색창은 `카테고리 정보 카드` 바로 아래 배치. 로컬 `useState`로 입력값을 다루고 디바운스(약 250ms) 후 `navigate({ search: prev => ({ ...prev, q, gpage: 1, ppage: 1 }) , replace: true })`로 반영(이 라우트에 존재하는 페이지 파라미터만 초기화).
   - `matchesQuery(post)` 헬퍼를 만들어 각 섹션 배열(`notices`, `generals`, `projects`, `linkItems`, 문제 목록)에 `useMemo`로 적용. 링크는 시리즈 그룹핑 이전 원본에 필터를 적용한 뒤 그룹핑.
   - 좋아요 배치 조회는 현재와 동일하게 정렬 기준 목록에 대해서만 수행하여 호출량 변화 없음.
 - `src/routes/_main.guide.tsx`: 게시판 섹션에 검색창 사용법(검색 대상, URL 유지) 안내 추가.
