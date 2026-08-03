@@ -33,11 +33,12 @@ function toPage(value: unknown): number {
 }
 
 export const Route = createFileRoute("/_main/board/$slug/")({
-  validateSearch: (search: Record<string, unknown>): { qpage: number; gpage: number; ppage: number; psort: "recent" | "likes" } => ({
+  validateSearch: (search: Record<string, unknown>): BoardSearch => ({
     qpage: toPage(search.qpage),
     gpage: toPage(search.gpage),
     ppage: toPage(search.ppage),
     psort: search.psort === "likes" ? "likes" : "recent",
+    parea: typeof search.parea === "string" ? search.parea : "",
   }),
   loader: async ({ context, params }) => {
     const categories = await context.queryClient.ensureQueryData(
@@ -46,6 +47,9 @@ export const Route = createFileRoute("/_main/board/$slug/")({
     const category = categories.find((c) => c.slug === params.slug);
     context.queryClient.ensureQueryData(profileMapQueryOptions());
     if (category) {
+      if (category.enableProblem) {
+        context.queryClient.ensureQueryData(problemOptionsQueryOptions());
+      }
       await context.queryClient.ensureQueryData(
         postsQueryOptions(category.id, getBoardPassword(params.slug)),
       );
