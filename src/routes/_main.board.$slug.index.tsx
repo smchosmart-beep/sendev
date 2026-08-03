@@ -2,7 +2,7 @@ import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-r
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers, CheckCircle2, ChevronLeft, ChevronRight, Eye, PackageOpen } from "lucide-react";
+import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers, CheckCircle2, ChevronLeft, ChevronRight, Eye, PackageOpen, Search, X } from "lucide-react";
 
 import {
   postsQueryOptions,
@@ -27,6 +27,51 @@ import { LikeButton } from "@/components/LikeButton";
 const PAGE_SIZE = 10;
 const PROBLEM_PAGE_SIZE = 9;
 
+// 게시판 내 검색창 — 입력을 디바운스해 URL 검색어(q)에 반영한다.
+function BoardSearchBox({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  const [input, setInput] = useState(value);
+
+  useEffect(() => {
+    setInput(value);
+  }, [value]);
+
+  useEffect(() => {
+    if (input === value) return;
+    const t = setTimeout(() => onChange(input), 250);
+    return () => clearTimeout(t);
+  }, [input]);
+
+  return (
+    <div className="relative">
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <input
+        type="text"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder="이 게시판에서 검색 (제목·작성자)"
+        aria-label="게시판 내 검색"
+        className="w-full min-w-0 rounded-xl border border-border bg-card py-2.5 pl-9 pr-9 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+      />
+      {input.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setInput("")}
+          aria-label="검색어 지우기"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-muted-foreground transition-colors hover:text-foreground active:scale-95"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 function toPage(value: unknown): number {
   const n = Number(value);
   return Number.isInteger(n) && n >= 1 ? n : 1;
@@ -38,6 +83,7 @@ type BoardSearch = {
   ppage: number;
   psort: "recent" | "likes";
   parea: string;
+  q: string;
 };
 
 
@@ -49,6 +95,7 @@ export const Route = createFileRoute("/_main/board/$slug/")({
     ppage: toPage(search.ppage),
     psort: search.psort === "likes" ? "likes" : "recent",
     parea: typeof search.parea === "string" ? search.parea : "",
+    q: typeof search.q === "string" ? search.q : "",
   }),
   loader: async ({ context, params }) => {
     const categories = await context.queryClient.ensureQueryData(
@@ -91,12 +138,28 @@ function BoardInner({
 }) {
   const { data: posts } = useSuspenseQuery(postsQueryOptions(category.id, getBoardPassword(slug)));
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
-  const { qpage, gpage, ppage, psort, parea } = Route.useSearch();
+  const { qpage, gpage, ppage, psort, parea, q } = Route.useSearch();
   const navigate = useNavigate({ from: "/board/$slug" });
-  const notices = posts.filter((p) => p.type === "post" && p.pinned);
-  const generals = posts.filter((p) => p.type === "post" && !p.pinned);
-  const projects = posts.filter((p) => p.type === "project");
-  const links = posts.filter((p) => p.type === "link");
+
+  // 검색어 필터 — 이미 불러온 목록을 클라이언트에서 거른다(추가 서버 호출 없음).
+  const keyword = q.trim().toLowerCase();
+  const matchesQuery = useMemo(() => {
+    if (!keyword) return () => true;
+    return (p: PostDTO) =>
+      p.title.toLowerCase().includes(keyword) ||
+      p.author.toLowerCase().includes(keyword);
+  }, [keyword]);
+
+  const searched = useMemo(
+    () => (keyword ? posts.filter(matchesQuery) : posts),
+    [posts, keyword, matchesQuery],
+  );
+
+  const notices = searched.filter((p) => p.type === "post" && p.pinned);
+  const generals = searched.filter((p) => p.type === "post" && !p.pinned);
+  const projects = searched.filter((p) => p.type === "project");
+  const links = searched.filter((p) => p.type === "link");
+  // 문제ZIP은 정렬/영역 집계를 전체 기준으로 유지하고, 검색은 마지막에 적용한다.
   const problems = posts.filter((p) => p.type === "problem");
   const linkItems = groupLinksBySeries(links);
 
@@ -159,14 +222,17 @@ function BoardInner({
     });
   }, [problems, psort, allLikeMap]);
 
-  // 정렬 뒤에 영역 필터를 적용 (좋아요 배치 조회 키가 필터에 흔들리지 않도록).
+  // 정렬 → 영역 필터 → 검색어 필터 순서 (좋아요 배치 조회 키가 필터에 흔들리지 않도록).
   const filteredProblems = useMemo(() => {
-    if (!parea) return sortedProblems;
+    let list = sortedProblems;
     if (parea === CUSTOM_AREA_KEY) {
-      return sortedProblems.filter((p) => !areaOptions.includes(p.problemArea));
+      list = list.filter((p) => !areaOptions.includes(p.problemArea));
+    } else if (parea) {
+      list = list.filter((p) => p.problemArea === parea);
     }
-    return sortedProblems.filter((p) => p.problemArea === parea);
-  }, [sortedProblems, parea, areaOptions.join("|")]);
+    if (keyword) list = list.filter(matchesQuery);
+    return list;
+  }, [sortedProblems, parea, areaOptions.join("|"), keyword, matchesQuery]);
 
   // 문제ZIP 페이지네이션 — 대량(수백) 참여 시 렌더/좋아요 조회 부하를 페이지당으로 제한.
   const problemPageCount = Math.max(1, Math.ceil(filteredProblems.length / PROBLEM_PAGE_SIZE));
@@ -216,8 +282,42 @@ function BoardInner({
   const hasReader = readerName.trim().length > 0;
   const isUnread = (id: string) => hasReader && !readSet.has(id);
 
+
+
+
+  const noSearchResult =
+    keyword.length > 0 &&
+    notices.length === 0 &&
+    generals.length === 0 &&
+    projects.length === 0 &&
+    linkItems.length === 0 &&
+    filteredProblems.length === 0;
+
   return (
     <div className="space-y-6">
+      <BoardSearchBox
+        value={q}
+        onChange={(next) =>
+          navigate({
+            search: (prev: BoardSearch) => ({
+              ...prev,
+              q: next,
+              gpage: 1,
+              ppage: 1,
+            }),
+            replace: true,
+          })
+        }
+      />
+
+      {noSearchResult && (
+        <EmptyState
+          icon={Search}
+          title={`'${q.trim()}'에 대한 검색 결과가 없어요.`}
+          description="제목 또는 작성자에 포함된 단어로 다시 검색해보세요."
+        />
+      )}
+
       {category.enablePost && notices.length > 0 && (
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
@@ -262,7 +362,7 @@ function BoardInner({
         </section>
       )}
 
-      {category.enablePost && (
+      {category.enablePost && (!keyword || generals.length > 0) && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
@@ -332,7 +432,7 @@ function BoardInner({
         </section>
       )}
 
-      {category.enableProject && (
+      {category.enableProject && (!keyword || projects.length > 0) && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
@@ -368,7 +468,7 @@ function BoardInner({
         </section>
       )}
 
-      {category.enableLink && (
+      {category.enableLink && (!keyword || linkItems.length > 0) && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
@@ -408,7 +508,7 @@ function BoardInner({
         </section>
       )}
 
-      {category.enableProblem && (
+      {category.enableProblem && (!keyword || filteredProblems.length > 0) && (
         <section className="space-y-3">
           <div className="flex items-center justify-end">
             <Button asChild className="rounded-xl active:scale-95">
