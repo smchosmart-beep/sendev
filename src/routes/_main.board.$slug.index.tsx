@@ -234,7 +234,9 @@ function BoardInner({
   const readerName = identity?.author ?? "";
   const { data: readIds = [] } = useQuery(readPostIdsQueryOptions(readerName));
   const readSet = useMemo(() => new Set(readIds), [readIds]);
-  const hasReader = readerName.trim().length > 0;
+  const isUnread = (id: string) => hasReader && !readSet.has(id);
+
+
 
   const noSearchResult =
     keyword.length > 0 &&
