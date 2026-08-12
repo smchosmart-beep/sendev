@@ -349,7 +349,7 @@ function BoardInner({
                   </span>
                 )}
                 <span className="flex flex-col items-end gap-0.5 sm:flex-row sm:items-center sm:gap-1">
-                  <span className="flex items-center gap-1 whitespace-nowrap">
+                  <span className="flex items-center gap-1 whitespace-nowrap" title={n.author}>
                     <User className="h-3.5 w-3.5" />
                     {n.author}
                     <AuthorBadge author={n.author} profileMap={profileMap} only="level" />
@@ -410,7 +410,7 @@ function BoardInner({
                       </span>
                     )}
                     <span className="flex flex-col items-end gap-0.5 sm:flex-row sm:items-center sm:gap-1">
-                      <span className="flex items-center gap-1 whitespace-nowrap">
+                      <span className="flex items-center gap-1 whitespace-nowrap" title={g.author}>
                         <User className="h-3.5 w-3.5" />
                         {g.author}
                         <AuthorBadge author={g.author} profileMap={profileMap} only="level" />
@@ -663,7 +663,7 @@ function ProblemCard({ post, slug, likeCount, liked }: { post: PostDTO; slug: st
         </p>
       </Link>
       <div className="flex items-center justify-between">
-        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground" title={post.author}>
           <User className="h-3.5 w-3.5" />
           <AuthorBadge author={post.author} profileMap={profileMap} />
         </span>
@@ -862,7 +862,7 @@ function LinkCard({ post, slug }: { post: PostDTO; slug: string }) {
       <div className="p-5">
         <h3 className="font-semibold text-foreground">{post.title}</h3>
         <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1" title={post.author}>
             <User className="h-3.5 w-3.5" />
             {post.author}
             <AuthorBadge author={post.author} profileMap={profileMap} />
@@ -929,7 +929,7 @@ function ProjectCard({
       <div className="p-5">
         <h3 className="font-semibold text-foreground">{post.title}</h3>
         <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1" title={post.author}>
             <User className="h-3.5 w-3.5" />
             {post.author}
             <AuthorBadge author={post.author} profileMap={profileMap} />
