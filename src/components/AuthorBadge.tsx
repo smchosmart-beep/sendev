@@ -25,6 +25,8 @@ interface AuthorBadgeProps {
   className?: string;
   // Controls which badge parts render: level only, award badges only, or both.
   only?: "level" | "awards" | "all";
+  // When the badges own a dedicated row, show every award instead of "+N".
+  expand?: boolean;
 }
 
 // Renders level / hackathon-award badges next to an author name when the
@@ -37,6 +39,7 @@ export function AuthorBadge({
   size = "sm",
   className,
   only = "all",
+  expand = false,
 }: AuthorBadgeProps) {
   const [open, setOpen] = useState(false);
   const { data: awardIcon } = useQuery(awardIconQueryOptions());
