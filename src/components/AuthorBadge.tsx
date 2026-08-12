@@ -25,6 +25,8 @@ interface AuthorBadgeProps {
   className?: string;
   // Controls which badge parts render: level only, award badges only, or both.
   only?: "level" | "awards" | "all";
+  // When the badges own a dedicated row, show every award instead of "+N".
+  expand?: boolean;
 }
 
 // Renders level / hackathon-award badges next to an author name when the
@@ -37,6 +39,7 @@ export function AuthorBadge({
   size = "sm",
   className,
   only = "all",
+  expand = false,
 }: AuthorBadgeProps) {
   const [open, setOpen] = useState(false);
   const { data: awardIcon } = useQuery(awardIconQueryOptions());
@@ -84,7 +87,23 @@ export function AuthorBadge({
           Lv.{profile.level}
         </span>
       )}
-      {hasAward && extraCount > 0 ? (
+      {hasAward && expand ? (
+        awards.map((name, i) => {
+          const Icon = iconFor(name);
+          return (
+            <span
+              key={`${name}-${i}`}
+              className={cn(
+                "inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-secondary font-medium leading-none text-secondary-foreground shadow-sm",
+                padding,
+              )}
+            >
+              <Icon className="h-3 w-3 shrink-0" />
+              {name}
+            </span>
+          );
+        })
+      ) : hasAward && extraCount > 0 ? (
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <button
