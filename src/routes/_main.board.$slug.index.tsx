@@ -344,7 +344,7 @@ function BoardInner({
                     {n.author}
                     <AuthorBadge author={n.author} profileMap={profileMap} only="level" />
                   </span>
-                  <AuthorBadge author={n.author} profileMap={profileMap} only="awards" />
+                  <AuthorBadge author={n.author} profileMap={profileMap} only="awards" expand />
                 </span>
               </span>
             </Link>
@@ -405,7 +405,7 @@ function BoardInner({
                         {g.author}
                         <AuthorBadge author={g.author} profileMap={profileMap} only="level" />
                       </span>
-                      <AuthorBadge author={g.author} profileMap={profileMap} only="awards" />
+                      <AuthorBadge author={g.author} profileMap={profileMap} only="awards" expand />
                     </span>
                   </span>
                 </Link>
@@ -871,6 +871,7 @@ function LinkCard({ post, slug }: { post: PostDTO; slug: string }) {
             author={post.author}
             profileMap={profileMap}
             only="awards"
+            expand
           />
         </div>
 
@@ -950,6 +951,7 @@ function ProjectCard({
             author={post.author}
             profileMap={profileMap}
             only="awards"
+            expand
           />
         </div>
 
