@@ -77,26 +77,17 @@ function toPage(value: unknown): number {
   return Number.isInteger(n) && n >= 1 ? n : 1;
 }
 
-type BoardSearch = {
-  qpage: number;
-  gpage: number;
-  ppage: number;
-  psort: "recent" | "likes";
-  parea: string;
-  q: string;
-};
-
-
+const boardSearchSchema = z.object({
+  qpage: fallback(z.number(), 1).default(1),
+  gpage: fallback(z.number(), 1).default(1),
+  ppage: fallback(z.number(), 1).default(1),
+  psort: fallback(z.string(), "recent").default("recent"),
+  parea: fallback(z.string(), "").default(""),
+  q: fallback(z.string(), "").default(""),
+});
 
 export const Route = createFileRoute("/_main/board/$slug/")({
-  validateSearch: (search: Record<string, unknown>): BoardSearch => ({
-    qpage: toPage(search.qpage),
-    gpage: toPage(search.gpage),
-    ppage: toPage(search.ppage),
-    psort: search.psort === "likes" ? "likes" : "recent",
-    parea: typeof search.parea === "string" ? search.parea : "",
-    q: typeof search.q === "string" ? search.q : "",
-  }),
+  validateSearch: zodValidator(boardSearchSchema),
   loader: async ({ context, params }) => {
     const categories = await context.queryClient.ensureQueryData(
       categoriesQueryOptions(),
