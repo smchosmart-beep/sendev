@@ -74,11 +74,6 @@ function BoardSearchBox({
   );
 }
 
-function toPage(value: unknown): number {
-  const n = Number(value);
-  return Number.isInteger(n) && n >= 1 ? n : 1;
-}
-
 const boardSearchSchema = z.object({
   qpage: fallback(z.number(), 1).default(1),
   gpage: fallback(z.number(), 1).default(1),

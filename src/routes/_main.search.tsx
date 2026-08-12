@@ -1,3 +1,5 @@
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -25,12 +27,12 @@ function normalizeMode(value: unknown): SearchMode {
 }
 
 export const Route = createFileRoute("/_main/search")({
-  validateSearch: (
-    search: Record<string, unknown>,
-  ): { q: string; mode: SearchMode } => ({
-    q: typeof search.q === "string" ? search.q : "",
-    mode: normalizeMode(search.mode),
-  }),
+  validateSearch: zodValidator(
+    z.object({
+      q: fallback(z.string(), "").default(""),
+      mode: fallback(z.string(), "all").default("all"),
+    }),
+  ),
   head: () => ({
     meta: [
       { title: "검색 — SEN DEV CONNECT" },
