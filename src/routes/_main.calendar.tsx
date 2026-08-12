@@ -32,7 +32,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_main/calendar")({
-  validateSearch: (search: Partial<Record<string, unknown>>) => {
+  validateSearch: (search: Partial<Record<string, unknown>>): { date?: string } => {
     const date =
       typeof search.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search.date)
         ? search.date
