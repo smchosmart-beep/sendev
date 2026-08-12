@@ -930,19 +930,28 @@ function ProjectCard({
 
       <div className="p-5">
         <h3 className="font-semibold text-foreground">{post.title}</h3>
-        <p className="mt-1 flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
-          <span className="flex min-w-0 items-center gap-1" title={post.author}>
+        <div className="mt-1 space-y-1 text-sm text-muted-foreground">
+          <p className="flex min-w-0 items-center gap-1.5">
             <User className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{post.author}</span>
-            <span className="shrink-0">
-              <AuthorBadge author={post.author} profileMap={profileMap} />
+            <span className="min-w-0 truncate" title={post.author}>
+              {post.author}
             </span>
-          </span>
-          <span className="flex shrink-0 items-center gap-1">
-            <Eye className="h-3.5 w-3.5" />
-            {post.viewCount}
-          </span>
-        </p>
+            <AuthorBadge
+              author={post.author}
+              profileMap={profileMap}
+              only="level"
+            />
+            <span className="ml-auto flex shrink-0 items-center gap-1">
+              <Eye className="h-3.5 w-3.5" />
+              {post.viewCount}
+            </span>
+          </p>
+          <AuthorBadge
+            author={post.author}
+            profileMap={profileMap}
+            only="awards"
+          />
+        </div>
 
       </div>
     </Link>
