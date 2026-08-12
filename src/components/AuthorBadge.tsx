@@ -87,7 +87,23 @@ export function AuthorBadge({
           Lv.{profile.level}
         </span>
       )}
-      {hasAward && extraCount > 0 ? (
+      {hasAward && expand ? (
+        awards.map((name, i) => {
+          const Icon = iconFor(name);
+          return (
+            <span
+              key={`${name}-${i}`}
+              className={cn(
+                "inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-secondary font-medium leading-none text-secondary-foreground shadow-sm",
+                padding,
+              )}
+            >
+              <Icon className="h-3 w-3 shrink-0" />
+              {name}
+            </span>
+          );
+        })
+      ) : hasAward && extraCount > 0 ? (
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <button
