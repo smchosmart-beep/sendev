@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -51,9 +53,9 @@ function normalizeTab(value: unknown): TabGroup {
 }
 
 export const Route = createFileRoute("/_main/board/")({
-  validateSearch: (search: Record<string, unknown>): { tab: TabGroup } => ({
-    tab: normalizeTab(search.tab),
-  }),
+  validateSearch: zodValidator(
+    z.object({ tab: fallback(z.string(), "hackathon").default("hackathon") }),
+  ),
   head: () => ({
     meta: [
       { title: "카테고리 — 교사 개발자 플랫폼" },

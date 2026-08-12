@@ -28,7 +28,7 @@ import { useNicknameIdentity, useNicknameClaimed } from "@/hooks/useNicknameIden
 
 
 export const Route = createFileRoute("/_main/board/$slug/new-general")({
-  validateSearch: (search: Record<string, unknown>) => {
+  validateSearch: (search: Partial<Record<string, unknown>>): { parent?: number } => {
     const raw = Number(search.parent);
     return { parent: Number.isFinite(raw) && raw > 0 ? raw : undefined };
   },
