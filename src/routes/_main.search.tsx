@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_main/search")({
   validateSearch: zodValidator(
     z.object({
       q: fallback(z.string(), "").default(""),
-      mode: fallback(z.string(), "all").default("all"),
+      mode: fallback(z.string(), "title").default("title"),
     }),
   ),
   head: () => ({
@@ -48,7 +48,8 @@ export const Route = createFileRoute("/_main/search")({
 });
 
 function SearchPage() {
-  const { q, mode } = Route.useSearch();
+  const { q, mode: rawMode } = Route.useSearch();
+  const mode = normalizeMode(rawMode);
   const navigate = useNavigate({ from: "/search" });
 
   const [input, setInput] = useState(q);
