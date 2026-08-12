@@ -1,4 +1,6 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
@@ -85,6 +87,8 @@ const boardSearchSchema = z.object({
   parea: fallback(z.string(), "").default(""),
   q: fallback(z.string(), "").default(""),
 });
+
+type BoardSearch = z.infer<typeof boardSearchSchema>;
 
 export const Route = createFileRoute("/_main/board/$slug/")({
   validateSearch: zodValidator(boardSearchSchema),
