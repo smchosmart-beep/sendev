@@ -45,7 +45,7 @@ export function VoteSection({
   Pagination,
 }: Props) {
   const queryClient = useQueryClient();
-  const { confirm, dialog } = useConfirm();
+  const { confirm, confirmDialog } = useConfirm();
   const { identity } = useStoredIdentity();
   const nickname = identity?.author ?? "";
   const nicknamePassword = identity?.nicknamePassword ?? "";
@@ -115,7 +115,7 @@ export function VoteSection({
 
   return (
     <section className="space-y-4">
-      {dialog}
+      {confirmDialog}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
           <Vote className="h-5 w-5 text-primary" />
