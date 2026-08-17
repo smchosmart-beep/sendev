@@ -111,10 +111,21 @@ export function generateReadme(data: ReadmeData): string {
     lines.push("");
   }
 
-  if (data.usage.trim()) {
+  const steps = (data.usageSteps ?? [])
+    .map((s) => sanitizeMermaidLabel(s))
+    .filter((s) => s.length > 0);
+  if (steps.length > 0) {
     lines.push("## 📖 사용법 (How to Use)");
     lines.push("");
-    lines.push(data.usage.trim());
+    lines.push("```mermaid");
+    lines.push("flowchart TD");
+    steps.forEach((step, i) => {
+      lines.push(`    S${i + 1}["${i + 1}. ${step}"]`);
+    });
+    for (let i = 0; i < steps.length - 1; i++) {
+      lines.push(`    S${i + 1} --> S${i + 2}`);
+    }
+    lines.push("```");
     lines.push("");
     lines.push("<br/>");
     lines.push("");
