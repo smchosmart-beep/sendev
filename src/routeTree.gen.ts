@@ -21,6 +21,7 @@ import { Route as AdminCriteriaRouteImport } from './routes/admin.criteria'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
 import { Route as MainSearchRouteImport } from './routes/_main.search'
+import { Route as MainReadmeRouteImport } from './routes/_main.readme'
 import { Route as MainMypageRouteImport } from './routes/_main.mypage'
 import { Route as MainHomeRouteImport } from './routes/_main.home'
 import { Route as MainGuideRouteImport } from './routes/_main.guide'
@@ -93,6 +94,11 @@ const AdminCalendarRoute = AdminCalendarRouteImport.update({
 const MainSearchRoute = MainSearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => MainRoute,
+} as any)
+const MainReadmeRoute = MainReadmeRouteImport.update({
+  id: '/readme',
+  path: '/readme',
   getParentRoute: () => MainRoute,
 } as any)
 const MainMypageRoute = MainMypageRouteImport.update({
@@ -175,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/guide': typeof MainGuideRoute
   '/home': typeof MainHomeRoute
   '/mypage': typeof MainMypageRoute
+  '/readme': typeof MainReadmeRoute
   '/search': typeof MainSearchRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
@@ -201,6 +208,7 @@ export interface FileRoutesByTo {
   '/guide': typeof MainGuideRoute
   '/home': typeof MainHomeRoute
   '/mypage': typeof MainMypageRoute
+  '/readme': typeof MainReadmeRoute
   '/search': typeof MainSearchRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
@@ -229,6 +237,7 @@ export interface FileRoutesById {
   '/_main/guide': typeof MainGuideRoute
   '/_main/home': typeof MainHomeRoute
   '/_main/mypage': typeof MainMypageRoute
+  '/_main/readme': typeof MainReadmeRoute
   '/_main/search': typeof MainSearchRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/categories': typeof AdminCategoriesRoute
@@ -258,6 +267,7 @@ export interface FileRouteTypes {
     | '/guide'
     | '/home'
     | '/mypage'
+    | '/readme'
     | '/search'
     | '/admin/calendar'
     | '/admin/categories'
@@ -284,6 +294,7 @@ export interface FileRouteTypes {
     | '/guide'
     | '/home'
     | '/mypage'
+    | '/readme'
     | '/search'
     | '/admin/calendar'
     | '/admin/categories'
@@ -311,6 +322,7 @@ export interface FileRouteTypes {
     | '/_main/guide'
     | '/_main/home'
     | '/_main/mypage'
+    | '/_main/readme'
     | '/_main/search'
     | '/admin/calendar'
     | '/admin/categories'
@@ -422,6 +434,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof MainSearchRouteImport
+      parentRoute: typeof MainRoute
+    }
+    '/_main/readme': {
+      id: '/_main/readme'
+      path: '/readme'
+      fullPath: '/readme'
+      preLoaderRoute: typeof MainReadmeRouteImport
       parentRoute: typeof MainRoute
     }
     '/_main/mypage': {
@@ -556,6 +575,7 @@ interface MainRouteChildren {
   MainGuideRoute: typeof MainGuideRoute
   MainHomeRoute: typeof MainHomeRoute
   MainMypageRoute: typeof MainMypageRoute
+  MainReadmeRoute: typeof MainReadmeRoute
   MainSearchRoute: typeof MainSearchRoute
   MainBoardSlugRoute: typeof MainBoardSlugRouteWithChildren
   MainBoardIndexRoute: typeof MainBoardIndexRoute
@@ -566,6 +586,7 @@ const MainRouteChildren: MainRouteChildren = {
   MainGuideRoute: MainGuideRoute,
   MainHomeRoute: MainHomeRoute,
   MainMypageRoute: MainMypageRoute,
+  MainReadmeRoute: MainReadmeRoute,
   MainSearchRoute: MainSearchRoute,
   MainBoardSlugRoute: MainBoardSlugRouteWithChildren,
   MainBoardIndexRoute: MainBoardIndexRoute,

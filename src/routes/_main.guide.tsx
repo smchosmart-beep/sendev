@@ -20,6 +20,7 @@ import {
   ChevronDown,
   StickyNote,
   X,
+  FileText,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_main/guide")({
@@ -51,6 +52,7 @@ const sections = [
   { id: "security", label: "보안 안전성" },
   { id: "menus", label: "메뉴 안내" },
   { id: "hackathon-reviews", label: "해커톤 후기카드" },
+  { id: "readme", label: "README 작성" },
   { id: "posting", label: "글쓰기와 공지" },
   { id: "copyright", label: "저작권 및 게시물 이용 안내" },
   { id: "unread", label: "읽지 않은 글 표시" },
@@ -503,7 +505,44 @@ function GuidePage() {
         </ul>
       </Section>
 
-
+      <Section id="readme" icon={FileText} title="README 작성">
+        <p>
+          <strong>해커톤</strong> 탭 상단의 <strong>"README 작성"</strong> 버튼을 누르면 프로젝트 README.md를
+          만들 수 있는 페이지로 이동합니다. 후기 작성 버튼 바로 왼쪽에 있어요.
+        </p>
+        <p className="mt-3">
+          입력 항목은 다음과 같습니다.
+        </p>
+        <ul className="ml-5 mt-3 list-disc space-y-2">
+          <li>
+            <strong>프로젝트명</strong>과 <strong>한 줄 소개</strong>를 입력하면 README 제목과 설명으로 들어갑니다.
+          </li>
+          <li>
+            <strong>스크린샷 이미지 주소</strong>와 <strong>대체 텍스트</strong>를 입력하면 미리보기 섹션이 생깁니다. 주소를
+            비우면 해당 섹션은 자동으로 생략됩니다.
+          </li>
+          <li>
+            <strong>주요 기능</strong>은 제목과 설명을 한 쌍으로 입력하고, 필요하면 행을 추가하거나 삭제할 수 있습니다.
+          </li>
+          <li>
+            <strong>기술 스택</strong>은 Frontend / Backend & DB / Deployment 세 칸에 각각 입력합니다.
+          </li>
+          <li>
+            <strong>설치 및 실행</strong>은 GitHub 저장소 주소와 레포지토리 폴더명을 입력하면 클론 명령어가 자동으로
+            만들어집니다. 폴더명을 비워도 기본값으로 채워집니다.
+          </li>
+          <li>
+            <strong>추가 설명</strong>은 선택 입력란입니다. 마크다운 문법을 지원하며, 프로젝트 구조·팀 소개·라이선스 등을
+            자유롭게 추가할 수 있습니다.
+          </li>
+        </ul>
+        <p className="mt-3">
+          화면 왼쪽(모바일에서는 위)에 입력 폼, 오른쪽(아래)에 실시간으로 생성된 마크다운 미리보기가 표시됩니다. 입력값은
+          브라우저 <strong>localStorage</strong>에 자동 저장되어 새로고침해도 유지됩니다. 완성 후 하단의
+          <strong> README.md 다운로드</strong> 버튼으로 파일을 받거나, <strong>클립보드에 복사</strong>해서 붙여넣을 수
+          있습니다. <strong>초기화</strong> 버튼으로 모든 입력을 지울 수 있습니다.
+        </p>
+      </Section>
 
       <Section id="posting" icon={LayoutGrid} title="글쓰기와 공지">
         <p>

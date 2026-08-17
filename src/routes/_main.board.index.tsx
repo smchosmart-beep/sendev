@@ -10,6 +10,7 @@ import {
   Folder,
   FolderOpen,
   ChevronRight,
+  FileText,
 } from "lucide-react";
 
 import {
@@ -307,13 +308,20 @@ function BoardListPage() {
       {isHackathon && <HackathonReviewSideColumns onEdit={openEditReview} />}
 
 
-      <div className="flex items-start justify-between gap-3">
+      <div className="grid items-start gap-3 sm:flex sm:flex-wrap sm:justify-between">
         <div className="min-w-0 space-y-1">
           <h1 className="text-2xl font-bold text-foreground">{TAB_LABELS[activeTab]}</h1>
           <p className="text-sm text-muted-foreground">{TAB_DESCRIPTIONS[activeTab]}</p>
         </div>
         {isHackathon && (
-          <div className="shrink-0">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <Link
+              to="/readme"
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-secondary px-3 text-sm font-semibold text-secondary-foreground shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+            >
+              <FileText className="h-4 w-4" />
+              README 작성
+            </Link>
             <HackathonReviewButton onClick={openCreateReview} />
           </div>
         )}
