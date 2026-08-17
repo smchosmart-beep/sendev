@@ -13,7 +13,8 @@ export interface ReadmeData {
   backend: string;
   deployment: string;
   repoUrl: string;
-  folderName: string;
+  liveUrl: string;
+  usage: string;
   additional: string;
 }
 
@@ -31,7 +32,8 @@ export const DEFAULT_README_DATA: ReadmeData = {
   backend: "",
   deployment: "",
   repoUrl: "",
-  folderName: "",
+  liveUrl: "",
+  usage: "",
   additional: "",
 };
 
