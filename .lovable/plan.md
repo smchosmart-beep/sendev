@@ -1,0 +1,39 @@
+# README 작성 기능 추가
+
+해커톤 탭의 [후기 작성] 버튼 왼쪽에 [README 작성] 버튼을 추가하고, 항목을 채워 README.md 파일을 만들어 내려받을 수 있는 페이지를 만듭니다.
+
+## 1. 버튼
+
+- 위치: 해커톤 탭 헤더 우측, [후기 작성] 버튼 바로 왼쪽 (모바일에서는 두 버튼이 자연스럽게 줄바꿈되도록 처리)
+- 스타일: 후기 작성 버튼과 같은 높이/모양, 색만 구분 (문서 아이콘 + "README 작성")
+- 동작: 새 페이지 `/readme` 로 이동
+
+## 2. README 생성 페이지 (`/readme`)
+
+업로드해 주신 양식 그대로를 입력 폼으로 변환합니다.
+
+입력 항목:
+- 프로젝트명
+- 한 줄 소개
+- 스크린샷 이미지 주소 + 대체 텍스트 (비우면 해당 섹션 생략)
+- 주요 기능: 항목별 "제목 / 설명" 입력, 행 추가·삭제 가능 (기본 3개)
+- 기술 스택: Frontend / Backend & DB / Deployment (자유 입력)
+- 설치 및 실행: GitHub 저장소 주소, 레포지토리 폴더명 → 클론 명령어 자동 생성
+- 추가 설명(선택): 자유 markdown 입력란
+
+화면 구성:
+- 좌측(모바일에선 위) 입력 폼, 우측(아래) 실시간 생성된 마크다운 원문 미리보기
+- 하단 버튼: [README.md 다운로드], [클립보드에 복사], [초기화]
+- 입력값은 브라우저 localStorage에 자동 저장되어 새로고침해도 유지
+
+다운로드 방식: 브라우저에서 문자열을 Blob으로 만들어 `README.md`로 저장 — 서버·DB 호출 없음.
+
+## 3. 사용자 가이드 갱신
+
+`/guide` 문서에 "README 작성" 항목을 추가해 버튼 위치, 입력 항목, 다운로드 방법을 설명합니다.
+
+## 기술 메모
+
+- 새 파일: `src/routes/_main.readme.tsx` (createFileRoute("/_main/readme"), 자체 head() 메타), 마크다운 생성 로직은 `src/lib/readme-template.ts`로 분리
+- 버튼 추가: `src/components/HackathonReviews.tsx`의 `HackathonReviewButton` 옆에 새 `ReadmeWriteButton` 또는 `src/routes/_main.board.index.tsx` 헤더에서 `<Link to="/readme">` 로 직접 배치
+- 순수 클라이언트 기능(서버 함수·테이블 추가 없음), 기존 게시판/후기 로직은 변경하지 않음
