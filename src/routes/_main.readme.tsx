@@ -323,16 +323,49 @@ function ReadmePage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="usage">사용법</Label>
-                <Textarea
-                  id="usage"
-                  value={data.usage}
-                  onChange={(e) => updateField("usage", e.target.value)}
-                  placeholder={"접속 후 무엇을 어떻게 하면 되는지 단계별로 적어보세요.\n1. 사이트에 접속합니다.\n2. 학급 이름을 입력합니다."}
-                  rows={5}
-                />
+                <Label>사용법 (단계별 흐름도)</Label>
+                <div className="space-y-2">
+                  {data.usageSteps.map((step, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <span className="w-5 shrink-0 text-sm text-muted-foreground">
+                        {index + 1}.
+                      </span>
+                      <Input
+                        value={step}
+                        onChange={(e) => updateStep(index, e.target.value)}
+                        placeholder={
+                          index === 0
+                            ? "사이트에 접속합니다"
+                            : "다음 단계를 입력하세요"
+                        }
+                        maxLength={60}
+                        aria-label={`사용법 ${index + 1}단계`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeStep(index)}
+                        disabled={data.usageSteps.length <= 1}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"
+                        aria-label={`사용법 ${index + 1}단계 삭제`}
+                        title="삭제"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addStep}
+                    className="rounded-xl"
+                  >
+                    <Plus className="h-4 w-4" />
+                    단계 추가
+                  </Button>
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  비워 두면 해당 섹션이 생략돼요.
+                  입력한 단계가 흐름도로 자동 변환돼요. 모두 비우면 해당 섹션이 생략됩니다.
                 </p>
               </div>
             </div>
