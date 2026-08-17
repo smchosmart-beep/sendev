@@ -33,7 +33,7 @@ export const DEFAULT_README_DATA: ReadmeData = {
   deployment: "",
   repoUrl: "",
   liveUrl: "",
-  usage: "",
+  usageSteps: ["", "", ""],
   additional: "",
 };
 
