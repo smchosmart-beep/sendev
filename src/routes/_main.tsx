@@ -114,6 +114,7 @@ function MainLayout() {
   const isGuide = pathname.startsWith("/guide");
   const isHome = pathname.startsWith("/home");
   const isCalendar = pathname.startsWith("/calendar");
+  const isReadme = pathname.startsWith("/readme");
 
   const onBoardList = pathname === "/board";
   const activeGroup = (location.search as { tab?: TabGroup })?.tab ?? "hackathon";
