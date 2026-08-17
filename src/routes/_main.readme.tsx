@@ -27,7 +27,29 @@ import {
   type ReadmeFeature,
 } from "@/lib/readme-template";
 
+import { MermaidBlock } from "@/components/MermaidBlock";
+
 const STORAGE_KEY = "readme-generator-data";
+
+const markdownComponents = {
+  code({
+    className,
+    children,
+    ...props
+  }: {
+    className?: string;
+    children?: React.ReactNode;
+  }) {
+    if (className?.includes("language-mermaid")) {
+      return <MermaidBlock code={String(children ?? "").trim()} />;
+    }
+    return (
+      <code className={className} {...props}>
+        {children}
+      </code>
+    );
+  },
+};
 
 export const Route = createFileRoute("/_main/readme")({
   head: () => ({
