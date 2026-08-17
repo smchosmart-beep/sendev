@@ -387,11 +387,7 @@ function ReadmePage() {
                 "prose-a:text-primary",
               )}
             >
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw]}
-                allowDangerousHtml
-              >
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                 {markdown}
               </ReactMarkdown>
             </div>
