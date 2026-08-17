@@ -168,7 +168,7 @@ function ReadmePage() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
         <div className="space-y-6">
           <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
             <h2 className="mb-4 text-base font-semibold text-foreground">기본 정보</h2>
