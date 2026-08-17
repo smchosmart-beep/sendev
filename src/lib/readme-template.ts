@@ -14,7 +14,7 @@ export interface ReadmeData {
   deployment: string;
   repoUrl: string;
   liveUrl: string;
-  usage: string;
+  usageSteps: string[];
   additional: string;
 }
 
@@ -33,13 +33,23 @@ export const DEFAULT_README_DATA: ReadmeData = {
   deployment: "",
   repoUrl: "",
   liveUrl: "",
-  usage: "",
+  usageSteps: ["", "", ""],
   additional: "",
 };
 
 function escapeMd(text: string): string {
   return text.replace(/([*_`{}\[\]<>])/g, "\\$1");
 }
+// Mermaid node labels: quotes/brackets/newlines break the diagram syntax.
+export function sanitizeMermaidLabel(text: string): string {
+  return text
+    .replace(/[\r\n]+/g, " ")
+    .replace(/"/g, "'")
+    .replace(/[[\]{}()<>|]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 
 // Escape only for table cells (pipe is the cell delimiter).
 function escapeTableCell(text: string): string {
@@ -111,10 +121,21 @@ export function generateReadme(data: ReadmeData): string {
     lines.push("");
   }
 
-  if (data.usage.trim()) {
+  const steps = (data.usageSteps ?? [])
+    .map((s) => sanitizeMermaidLabel(s))
+    .filter((s) => s.length > 0);
+  if (steps.length > 0) {
     lines.push("## 📖 사용법 (How to Use)");
     lines.push("");
-    lines.push(data.usage.trim());
+    lines.push("```mermaid");
+    lines.push("flowchart TD");
+    steps.forEach((step, i) => {
+      lines.push(`    S${i + 1}["${i + 1}. ${step}"]`);
+    });
+    for (let i = 0; i < steps.length - 1; i++) {
+      lines.push(`    S${i + 1} --> S${i + 2}`);
+    }
+    lines.push("```");
     lines.push("");
     lines.push("<br/>");
     lines.push("");

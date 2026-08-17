@@ -27,7 +27,29 @@ import {
   type ReadmeFeature,
 } from "@/lib/readme-template";
 
+import { MermaidBlock } from "@/components/MermaidBlock";
+
 const STORAGE_KEY = "readme-generator-data";
+
+const markdownComponents = {
+  code({
+    className,
+    children,
+    ...props
+  }: {
+    className?: string;
+    children?: React.ReactNode;
+  }) {
+    if (className?.includes("language-mermaid")) {
+      return <MermaidBlock code={String(children ?? "").trim()} />;
+    }
+    return (
+      <code className={className} {...props}>
+        {children}
+      </code>
+    );
+  },
+};
 
 export const Route = createFileRoute("/_main/readme")({
   head: () => ({
@@ -72,8 +94,22 @@ function ReadmePage() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved) as Partial<ReadmeData>;
-        setData((prev) => ({ ...prev, ...parsed }));
+        const parsed = JSON.parse(saved) as Partial<ReadmeData> & {
+          usage?: string;
+        };
+        setData((prev) => {
+          const merged = { ...prev, ...parsed };
+          if (!Array.isArray(merged.usageSteps)) {
+            const legacy = typeof parsed.usage === "string" ? parsed.usage : "";
+            const steps = legacy
+              .split("\n")
+              .map((line) => line.replace(/^\s*\d+[.)]\s*/, "").trim())
+              .filter((line) => line.length > 0);
+            merged.usageSteps = steps.length > 0 ? steps : ["", "", ""];
+          }
+          delete (merged as { usage?: string }).usage;
+          return merged;
+        });
       }
     } catch {
       /* ignore */
@@ -121,6 +157,26 @@ function ReadmePage() {
       features: prev.features.filter((_, i) => i !== index),
     }));
   };
+
+  const updateStep = (index: number, value: string) => {
+    setData((prev) => {
+      const next = [...prev.usageSteps];
+      next[index] = value;
+      return { ...prev, usageSteps: next };
+    });
+  };
+
+  const addStep = () => {
+    setData((prev) => ({ ...prev, usageSteps: [...prev.usageSteps, ""] }));
+  };
+
+  const removeStep = (index: number) => {
+    setData((prev) => ({
+      ...prev,
+      usageSteps: prev.usageSteps.filter((_, i) => i !== index),
+    }));
+  };
+
 
   const reset = () => {
     if (confirm("입력한 내용을 모두 지울까요? 저장된 내용도 함께 삭제됩니다.")) {
@@ -323,16 +379,49 @@ function ReadmePage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="usage">사용법</Label>
-                <Textarea
-                  id="usage"
-                  value={data.usage}
-                  onChange={(e) => updateField("usage", e.target.value)}
-                  placeholder={"접속 후 무엇을 어떻게 하면 되는지 단계별로 적어보세요.\n1. 사이트에 접속합니다.\n2. 학급 이름을 입력합니다."}
-                  rows={5}
-                />
+                <Label>사용법 (단계별 흐름도)</Label>
+                <div className="space-y-2">
+                  {data.usageSteps.map((step, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <span className="w-5 shrink-0 text-sm text-muted-foreground">
+                        {index + 1}.
+                      </span>
+                      <Input
+                        value={step}
+                        onChange={(e) => updateStep(index, e.target.value)}
+                        placeholder={
+                          index === 0
+                            ? "사이트에 접속합니다"
+                            : "다음 단계를 입력하세요"
+                        }
+                        maxLength={60}
+                        aria-label={`사용법 ${index + 1}단계`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeStep(index)}
+                        disabled={data.usageSteps.length <= 1}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"
+                        aria-label={`사용법 ${index + 1}단계 삭제`}
+                        title="삭제"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addStep}
+                    className="rounded-xl"
+                  >
+                    <Plus className="h-4 w-4" />
+                    단계 추가
+                  </Button>
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  비워 두면 해당 섹션이 생략돼요.
+                  입력한 단계가 흐름도로 자동 변환돼요. 모두 비우면 해당 섹션이 생략됩니다.
                 </p>
               </div>
             </div>
@@ -403,7 +492,11 @@ function ReadmePage() {
                 "prose-a:text-primary",
               )}
             >
-              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+                components={markdownComponents}
+              >
                 {markdown}
               </ReactMarkdown>
             </div>
