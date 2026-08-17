@@ -160,6 +160,8 @@ export const getNicknameStatus = createServerFn({ method: "GET" })
 
 export type TabGroup = "hackathon" | "resources" | "devground" | "helloworld";
 
+export type VoteStatus = "idle" | "open" | "closed";
+
 export interface CategoryDTO {
   id: string;
   slug: string;
@@ -174,10 +176,14 @@ export interface CategoryDTO {
   enableProject: boolean;
   enableLink: boolean;
   enableProblem: boolean;
+  enableVote: boolean;
   generalName: string;
   projectName: string;
   linkName: string;
   problemName: string;
+  voteName: string;
+  voteStatus: VoteStatus;
+  voteMaxChoices: number;
   tabGroup: TabGroup;
   evalOpen: boolean;
   evalSeed: number;
@@ -235,7 +241,7 @@ export interface PostDTO {
   id: string;
   categoryId: string;
   postNo: number;
-  type: "post" | "project" | "link" | "problem";
+  type: "post" | "project" | "link" | "problem" | "vote";
   pinned: boolean;
   title: string;
   content: string;
@@ -282,7 +288,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const { data, error } = await db
       .from("categories")
       .select(
-        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, enable_problem, general_name, project_name, link_name, problem_name, tab_group, eval_open, eval_seed, review_allowlist_only, hidden",
+        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, enable_problem, enable_vote, general_name, project_name, link_name, problem_name, vote_name, vote_status, vote_max_choices, tab_group, eval_open, eval_seed, review_allowlist_only, hidden",
       )
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
@@ -300,10 +306,14 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       enableProject: c.enable_project ?? true,
       enableLink: c.enable_link ?? false,
       enableProblem: c.enable_problem ?? false,
+      enableVote: c.enable_vote ?? false,
       generalName: c.general_name ?? "일반게시판",
       projectName: c.project_name ?? "산출물",
       linkName: c.link_name ?? "링크",
       problemName: c.problem_name ?? "문제ZIP",
+      voteName: c.vote_name ?? "투표",
+      voteStatus: (c.vote_status ?? "idle") as VoteStatus,
+      voteMaxChoices: Number(c.vote_max_choices ?? 1),
       tabGroup: (c.tab_group ?? "hackathon") as TabGroup,
       evalOpen: !!c.eval_open,
       evalSeed: Number(c.eval_seed ?? 0),
@@ -365,10 +375,12 @@ export const createCategory = createServerFn({ method: "POST" })
         enableProject: z.boolean().default(true),
         enableLink: z.boolean().default(false),
         enableProblem: z.boolean().default(false),
+        enableVote: z.boolean().default(false),
         generalName: z.string().trim().max(100).default("일반게시판"),
         projectName: z.string().trim().max(100).default("산출물"),
         linkName: z.string().trim().max(100).default("링크"),
         problemName: z.string().trim().max(100).default("문제ZIP"),
+        voteName: z.string().trim().max(100).default("투표"),
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .default("hackathon"),
@@ -400,10 +412,12 @@ export const createCategory = createServerFn({ method: "POST" })
       enable_project: data.enableProject,
       enable_link: data.enableLink,
       enable_problem: data.enableProblem,
+      enable_vote: data.enableVote,
       general_name: data.generalName || "일반게시판",
       project_name: data.projectName || "산출물",
       link_name: data.linkName || "링크",
       problem_name: data.problemName || "문제ZIP",
+      vote_name: data.voteName || "투표",
       tab_group: data.tabGroup,
       hidden: data.hidden,
       sort_order: nextOrder,
@@ -429,10 +443,12 @@ export const updateCategory = createServerFn({ method: "POST" })
         enableProject: z.boolean().optional(),
         enableLink: z.boolean().optional(),
         enableProblem: z.boolean().optional(),
+        enableVote: z.boolean().optional(),
         generalName: z.string().trim().max(100).optional(),
         projectName: z.string().trim().max(100).optional(),
         linkName: z.string().trim().max(100).optional(),
         problemName: z.string().trim().max(100).optional(),
+        voteName: z.string().trim().max(100).optional(),
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .optional(),
@@ -465,6 +481,7 @@ export const updateCategory = createServerFn({ method: "POST" })
       patch.enable_project = data.enableProject;
     if (data.enableLink !== undefined) patch.enable_link = data.enableLink;
     if (data.enableProblem !== undefined) patch.enable_problem = data.enableProblem;
+    if (data.enableVote !== undefined) patch.enable_vote = data.enableVote;
     if (data.generalName !== undefined)
       patch.general_name = data.generalName || "일반게시판";
     if (data.projectName !== undefined)
@@ -473,6 +490,7 @@ export const updateCategory = createServerFn({ method: "POST" })
       patch.link_name = data.linkName || "링크";
     if (data.problemName !== undefined)
       patch.problem_name = data.problemName || "문제ZIP";
+    if (data.voteName !== undefined) patch.vote_name = data.voteName || "투표";
     if (data.tabGroup !== undefined) patch.tab_group = data.tabGroup;
     if (data.hidden !== undefined) patch.hidden = data.hidden;
     const { error } = await db.from("categories").update(patch).eq("id", data.id);
@@ -1002,7 +1020,7 @@ export const createPost = createServerFn({ method: "POST" })
     z
       .object({
         categoryId: z.string().uuid(),
-        type: z.enum(["post", "project", "link", "problem"]).default("post"),
+        type: z.enum(["post", "project", "link", "problem", "vote"]).default("post"),
         pinned: z.boolean().default(false),
         title: z.string().trim().min(1).max(200),
         problemArea: z.string().trim().max(100).default(""),
