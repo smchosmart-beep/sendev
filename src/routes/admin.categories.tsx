@@ -570,6 +570,21 @@ function CategoriesPage() {
                 </p>
               </div>
             )}
+            {enableVote && (
+              <div className="space-y-2 pt-1">
+                <Label htmlFor="add-vote-name">투표 게시판 이름</Label>
+                <Input
+                  id="add-vote-name"
+                  value={voteName}
+                  onChange={(e) => setVoteName(e.target.value)}
+                  placeholder="예: 투표, 인기상 투표"
+                  className="rounded-xl bg-background"
+                />
+                <p className="text-xs text-muted-foreground">
+                  보드형(격자)으로 표시되고, 한 명당 글 1개만 올릴 수 있어요.
+                </p>
+              </div>
+            )}
           </div>
           <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 p-4 sm:col-span-2">
             <div className="space-y-0.5">
@@ -695,6 +710,9 @@ function CategoriesPage() {
                     )}
                     {!c.isGroup && c.enableProject && (
                       <SectionBadge label={c.projectName || "산출물"} />
+                    )}
+                    {!c.isGroup && c.enableVote && (
+                      <SectionBadge label={c.voteName || "투표"} />
                     )}
                     {!c.isGroup && c.enableProblem && (
                       <SectionBadge label={c.problemName || "문제ZIP"} />
@@ -949,6 +967,18 @@ function CategoriesPage() {
                     value={editProblemName}
                     onChange={(e) => setEditProblemName(e.target.value)}
                     placeholder="예: 문제ZIP, 현장 제보"
+                    className="rounded-xl bg-background"
+                  />
+                </div>
+              )}
+              {editEnableVote && (
+                <div className="space-y-2 pt-1">
+                  <Label htmlFor="edit-vote-name">투표 게시판 이름</Label>
+                  <Input
+                    id="edit-vote-name"
+                    value={editVoteName}
+                    onChange={(e) => setEditVoteName(e.target.value)}
+                    placeholder="예: 투표, 인기상 투표"
                     className="rounded-xl bg-background"
                   />
                 </div>
