@@ -377,7 +377,7 @@ function MainLayout() {
       <main
         className={cn(
           "mx-auto px-6 sm:px-12",
-          isCalendar || isReadme ? "max-w-[1800px] py-4" : "max-w-5xl py-8",
+          isCalendar ? "max-w-[1800px] py-4" : isReadme ? "max-w-[1400px] py-8" : "max-w-5xl py-8",
         )}
       >
         <Outlet />
