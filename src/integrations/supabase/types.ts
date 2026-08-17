@@ -52,6 +52,7 @@ export type Database = {
           enable_problem: boolean
           enable_project: boolean
           enable_question: boolean
+          enable_vote: boolean
           eval_open: boolean
           eval_seed: number
           general_name: string
@@ -69,6 +70,9 @@ export type Database = {
           slug: string
           sort_order: number
           tab_group: string
+          vote_max_choices: number
+          vote_name: string
+          vote_status: string
         }
         Insert: {
           created_at?: string
@@ -80,6 +84,7 @@ export type Database = {
           enable_problem?: boolean
           enable_project?: boolean
           enable_question?: boolean
+          enable_vote?: boolean
           eval_open?: boolean
           eval_seed?: number
           general_name?: string
@@ -97,6 +102,9 @@ export type Database = {
           slug: string
           sort_order?: number
           tab_group?: string
+          vote_max_choices?: number
+          vote_name?: string
+          vote_status?: string
         }
         Update: {
           created_at?: string
@@ -108,6 +116,7 @@ export type Database = {
           enable_problem?: boolean
           enable_project?: boolean
           enable_question?: boolean
+          enable_vote?: boolean
           eval_open?: boolean
           eval_seed?: number
           general_name?: string
@@ -125,6 +134,9 @@ export type Database = {
           slug?: string
           sort_order?: number
           tab_group?: string
+          vote_max_choices?: number
+          vote_name?: string
+          vote_status?: string
         }
         Relationships: [
           {
@@ -586,6 +598,48 @@ export type Database = {
           username_key?: string
         }
         Relationships: []
+      }
+      votes: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          post_id: string
+          voter_key: string
+          voter_name: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          post_id: string
+          voter_key: string
+          voter_name?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          voter_key?: string
+          voter_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votes_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
