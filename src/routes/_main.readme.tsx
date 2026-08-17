@@ -300,28 +300,44 @@ function ReadmePage() {
           </section>
 
           <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-            <h2 className="mb-4 text-base font-semibold text-foreground">설치 및 실행</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="repo-url">GitHub 저장소 주소</Label>
-                <Input
-                  id="repo-url"
-                  value={data.repoUrl}
-                  onChange={(e) => updateField("repoUrl", e.target.value)}
-                  placeholder="https://github.com/사용자명/레포지토리명.git"
-                />
+            <h2 className="mb-4 text-base font-semibold text-foreground">배포 주소 및 사용법</h2>
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="live-url">배포 주소</Label>
+                  <Input
+                    id="live-url"
+                    value={data.liveUrl}
+                    onChange={(e) => updateField("liveUrl", e.target.value)}
+                    placeholder="https://myproject.lovable.app"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="repo-url">GitHub 저장소 주소 (선택)</Label>
+                  <Input
+                    id="repo-url"
+                    value={data.repoUrl}
+                    onChange={(e) => updateField("repoUrl", e.target.value)}
+                    placeholder="https://github.com/사용자명/레포지토리명"
+                  />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="folder-name">레포지토리 폴더명</Label>
-                <Input
-                  id="folder-name"
-                  value={data.folderName}
-                  onChange={(e) => updateField("folderName", e.target.value)}
-                  placeholder="레포지토리명"
+                <Label htmlFor="usage">사용법</Label>
+                <Textarea
+                  id="usage"
+                  value={data.usage}
+                  onChange={(e) => updateField("usage", e.target.value)}
+                  placeholder={"접속 후 무엇을 어떻게 하면 되는지 단계별로 적어보세요.\n1. 사이트에 접속합니다.\n2. 학급 이름을 입력합니다."}
+                  rows={5}
                 />
+                <p className="text-xs text-muted-foreground">
+                  비워 두면 해당 섹션이 생략돼요.
+                </p>
               </div>
             </div>
           </section>
+
 
           <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
             <h2 className="mb-4 text-base font-semibold text-foreground">추가 설명 (선택)</h2>
