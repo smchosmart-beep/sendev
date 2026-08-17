@@ -1052,6 +1052,19 @@ export const createPost = createServerFn({ method: "POST" })
     const author = data.author;
     // Verify the author owns this nickname (or claim it on first use).
     await ensureNicknameOwnership(db, author, data.nicknamePassword, false);
+    // 투표 게시판은 닉네임당 1개의 글만 등록할 수 있다. 사전 조회로 안내하고,
+    // 동시 제출 경합은 부분 유니크 인덱스(posts_vote_one_per_author)가 막는다.
+    if (data.type === "vote") {
+      const { data: mine } = await db
+        .from("posts")
+        .select("id, author")
+        .eq("category_id", data.categoryId)
+        .eq("type", "vote");
+      const key = normalizeName(author);
+      if ((mine ?? []).some((r: any) => normalizeName(r.author ?? "") === key)) {
+        throw new Error("이미 등록한 글이 있어요. 투표 게시판은 한 명당 한 개만 올릴 수 있어요.");
+      }
+    }
     // Validate the optional parent (reply chain): it must exist and live in the
     // same category. Cross-category chains would break next/prev navigation.
     let parentPostId: string | null = null;
@@ -1102,6 +1115,10 @@ export const createPost = createServerFn({ method: "POST" })
         parent_post_id: parentPostId,
       });
       if (!error) return { ok: true, postNo: nextNo };
+      // 투표 게시판 1인 1글 제약 위반은 재시도 대상이 아니다.
+      if (String(error.message ?? "").includes("posts_vote_one_per_author")) {
+        throw new Error("이미 등록한 글이 있어요. 투표 게시판은 한 명당 한 개만 올릴 수 있어요.");
+      }
       // Retry on unique violation (concurrent insert); otherwise fail.
       if (!String(error.message ?? "").toLowerCase().includes("duplicate")) {
         throw new Error(error.message);
@@ -3946,4 +3963,221 @@ export const deleteHackathonReview = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+
+/* -------------------------------- Votes -------------------------------- */
+
+export interface VoteStateDTO {
+  status: VoteStatus;
+  maxChoices: number;
+}
+
+export interface VoteResultsDTO {
+  status: VoteStatus;
+  counts: Record<string, number>;
+  voters: Record<string, string[]>; // 관리자에게만 채워진다
+}
+
+// 관리자 전용: 투표 시작/종료. 시작할 때 1인당 최대 선택 수를 함께 지정한다.
+export const setVoteStatus = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        status: z.enum(["idle", "open", "closed"]),
+        maxChoices: z.number().int().min(1).max(100).default(1),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
+    const db = await getAdmin();
+    const patch: Record<string, unknown> = { vote_status: data.status };
+    if (data.status === "open") patch.vote_max_choices = data.maxChoices;
+    const { error } = await db
+      .from("categories")
+      .update(patch)
+      .eq("id", data.categoryId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// 관리자 전용: 해당 게시판의 표를 모두 삭제한다(되돌릴 수 없음).
+export const resetVotes = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
+    const db = await getAdmin();
+    const { error } = await db
+      .from("votes")
+      .delete()
+      .eq("category_id", data.categoryId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// 상태만 담은 경량 조회. categories 캐시와 분리해 폴링해도 다른 화면에
+// 영향이 없다.
+export const getVoteState = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z.object({ categoryId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data }): Promise<VoteStateDTO> => {
+    const db = await getAdmin();
+    const { data: row, error } = await db
+      .from("categories")
+      .select("vote_status, vote_max_choices")
+      .eq("id", data.categoryId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return {
+      status: (row?.vote_status ?? "idle") as VoteStatus,
+      maxChoices: Number(row?.vote_max_choices ?? 1),
+    };
+  });
+
+// 내가 고른 게시글 id 목록. 본인 것만 돌려주므로 진행 중 비공개가 유지된다.
+export const getMyVotes = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        nickname: z.string().trim().max(100).default(""),
+        boardPassword: z.string().max(100).optional(),
+        adminPassword: z.string().max(200).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<string[]> => {
+    const key = normalizeName(data.nickname);
+    if (!key) return [];
+    const db = await getAdmin();
+    if (
+      !(await boardAccessOk(db, data.categoryId, data.boardPassword, data.adminPassword))
+    ) {
+      return [];
+    }
+    const { data: rows, error } = await db
+      .from("votes")
+      .select("post_id")
+      .eq("category_id", data.categoryId)
+      .eq("voter_key", key);
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map((r: any) => String(r.post_id));
+  });
+
+// 투표 토글. 게시판 비밀번호 + 닉네임 소유권을 서버에서 다시 검증한다.
+export const castVote = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        postId: z.string().uuid(),
+        nickname: z.string().trim().min(1).max(100),
+        nicknamePassword: z.string().trim().max(100).default(""),
+        boardPassword: z.string().max(100).optional(),
+        adminPassword: z.string().max(200).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    if (
+      !(await boardAccessOk(db, data.categoryId, data.boardPassword, data.adminPassword))
+    ) {
+      throw new Error("이 게시판에 접근할 수 없어요.");
+    }
+    const { data: cat, error: cErr } = await db
+      .from("categories")
+      .select("vote_status, vote_max_choices")
+      .eq("id", data.categoryId)
+      .maybeSingle();
+    if (cErr) throw new Error(cErr.message);
+    if ((cat?.vote_status ?? "idle") !== "open") {
+      throw new Error("지금은 투표할 수 없어요.");
+    }
+    await ensureNicknameOwnership(db, data.nickname, data.nicknamePassword, false);
+    const key = normalizeName(data.nickname);
+    if (!key || key === "익명") throw new Error("닉네임이 필요해요.");
+
+    const { data: mine, error: mErr } = await db
+      .from("votes")
+      .select("id, post_id")
+      .eq("category_id", data.categoryId)
+      .eq("voter_key", key);
+    if (mErr) throw new Error(mErr.message);
+    const existing = (mine ?? []).find(
+      (r: any) => String(r.post_id) === data.postId,
+    );
+    if (existing) {
+      const { error } = await db.from("votes").delete().eq("id", existing.id);
+      if (error) throw new Error(error.message);
+      return { ok: true, voted: false };
+    }
+    const max = Number(cat?.vote_max_choices ?? 1);
+    if ((mine ?? []).length >= max) {
+      throw new Error(`최대 ${max}개까지 투표할 수 있어요.`);
+    }
+    const { error } = await db.from("votes").insert({
+      category_id: data.categoryId,
+      post_id: data.postId,
+      voter_key: key,
+      voter_name: data.nickname.trim(),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true, voted: true };
+  });
+
+// 결과 조회: 종료 상태에서만 집계를 돌려주고, 명단은 관리자에게만 준다.
+export const getVoteResults = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        boardPassword: z.string().max(100).optional(),
+        adminPassword: z.string().max(200).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<VoteResultsDTO> => {
+    const db = await getAdmin();
+    const isAdmin = isAdminPassword(data.adminPassword);
+    const empty: VoteResultsDTO = { status: "idle", counts: {}, voters: {} };
+    if (
+      !(await boardAccessOk(db, data.categoryId, data.boardPassword, data.adminPassword))
+    ) {
+      return empty;
+    }
+    const { data: cat } = await db
+      .from("categories")
+      .select("vote_status")
+      .eq("id", data.categoryId)
+      .maybeSingle();
+    const status = (cat?.vote_status ?? "idle") as VoteStatus;
+    if (status !== "closed") return { status, counts: {}, voters: {} };
+
+    const { data: rows, error } = await db
+      .from("votes")
+      .select("post_id, voter_name")
+      .eq("category_id", data.categoryId);
+    if (error) throw new Error(error.message);
+    const counts: Record<string, number> = {};
+    const voters: Record<string, string[]> = {};
+    for (const r of rows ?? []) {
+      const pid = String((r as any).post_id);
+      counts[pid] = (counts[pid] ?? 0) + 1;
+      if (isAdmin) {
+        (voters[pid] ??= []).push(String((r as any).voter_name ?? ""));
+      }
+    }
+    return { status, counts, voters };
   });
