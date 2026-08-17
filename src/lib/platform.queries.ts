@@ -31,6 +31,9 @@ import {
   getProblemOptions,
   listAwardIconRules,
   listHackathonReviews,
+  getVoteState,
+  getMyVotes,
+  getVoteResults,
 } from "./platform.functions";
 
 export const searchPostsQueryOptions = (
@@ -289,4 +292,42 @@ export const hackathonReviewsQueryOptions = () =>
     queryKey: ["hackathon-reviews"],
     queryFn: () => listHackathonReviews(),
     staleTime: 60 * 1000,
+  });
+
+/* -------------------------------- Votes -------------------------------- */
+
+// 상태만 담은 경량 폴링 쿼리(1분). 다른 캐시와 분리해 두어 결과 공개 시점만
+// 빠르게 반영된다.
+export const voteStateQueryOptions = (categoryId: string) =>
+  queryOptions({
+    queryKey: ["vote-state", categoryId],
+    queryFn: () => getVoteState({ data: { categoryId } }),
+    refetchInterval: 60 * 1000,
+    staleTime: 30 * 1000,
+  });
+
+export const myVotesQueryOptions = (
+  categoryId: string,
+  nickname: string,
+  boardPassword = "",
+  adminPassword = "",
+) =>
+  queryOptions({
+    queryKey: ["my-votes", categoryId, nickname, boardPassword, adminPassword],
+    queryFn: () =>
+      getMyVotes({
+        data: { categoryId, nickname, boardPassword, adminPassword },
+      }),
+    enabled: nickname.trim().length > 0,
+  });
+
+export const voteResultsQueryOptions = (
+  categoryId: string,
+  boardPassword = "",
+  adminPassword = "",
+) =>
+  queryOptions({
+    queryKey: ["vote-results", categoryId, boardPassword, adminPassword],
+    queryFn: () =>
+      getVoteResults({ data: { categoryId, boardPassword, adminPassword } }),
   });
