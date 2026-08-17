@@ -20,6 +20,7 @@ import {
   ChevronDown,
   StickyNote,
   X,
+  FileText,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_main/guide")({
