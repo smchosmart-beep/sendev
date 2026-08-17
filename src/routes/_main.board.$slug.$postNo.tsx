@@ -469,7 +469,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
 
       <PostNavSection post={post} slug={slug} />
 
-      {(isBoardPost || post.type === "problem") && <CommentsSection postId={post.id} />}
+      {(isBoardPost || post.type === "problem" || post.type === "vote") && <CommentsSection postId={post.id} />}
     </div>
   );
 }

@@ -137,6 +137,8 @@ function CategoriesPage() {
   const [projectName, setProjectName] = useState("산출물");
   const [linkName, setLinkName] = useState("링크");
   const [problemName, setProblemName] = useState("문제ZIP");
+  const [enableVote, setEnableVote] = useState(false);
+  const [voteName, setVoteName] = useState("투표");
   const [tabGroup, setTabGroup] = useState<TabGroup>("hackathon");
   const [isGroup, setIsGroup] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -156,6 +158,8 @@ function CategoriesPage() {
   const [editProjectName, setEditProjectName] = useState("산출물");
   const [editLinkName, setEditLinkName] = useState("링크");
   const [editProblemName, setEditProblemName] = useState("문제ZIP");
+  const [editEnableVote, setEditEnableVote] = useState(false);
+  const [editVoteName, setEditVoteName] = useState("투표");
   const [editTabGroup, setEditTabGroup] = useState<TabGroup>("hackathon");
   const [editIsGroup, setEditIsGroup] = useState(false);
   const [editHidden, setEditHidden] = useState(false);
@@ -214,6 +218,8 @@ function CategoriesPage() {
           projectName: projectName.trim(),
           linkName: linkName.trim(),
           problemName: problemName.trim(),
+          enableVote,
+          voteName: voteName.trim(),
           tabGroup,
           isGroup,
           hidden,
@@ -234,6 +240,8 @@ function CategoriesPage() {
       setGeneralName("일반게시판");
       setProjectName("산출물");
       setLinkName("링크");
+      setEnableVote(false);
+      setVoteName("투표");
       setTabGroup("hackathon");
       setIsGroup(false);
       setHidden(false);
@@ -263,6 +271,8 @@ function CategoriesPage() {
           projectName: editProjectName.trim(),
           linkName: editLinkName.trim(),
           problemName: editProblemName.trim(),
+          enableVote: editEnableVote,
+          voteName: editVoteName.trim(),
           tabGroup: editTabGroup,
           isGroup: editIsGroup,
           hidden: editHidden,
@@ -354,6 +364,8 @@ function CategoriesPage() {
     setEditProjectName(c.projectName);
     setEditLinkName(c.linkName);
     setEditProblemName(c.problemName);
+    setEditEnableVote(c.enableVote);
+    setEditVoteName(c.voteName || "투표");
     setEditTabGroup(c.tabGroup ?? "hackathon");
     setEditIsGroup(c.isGroup);
     setEditHidden(c.hidden);
@@ -502,6 +514,7 @@ function CategoriesPage() {
               <SectionToggle id="add-sec-project" label="산출물 게시판" checked={enableProject} onChange={setEnableProject} />
               <SectionToggle id="add-sec-link" label="링크 게시판" checked={enableLink} onChange={setEnableLink} />
               <SectionToggle id="add-sec-problem" label="문제ZIP 게시판" checked={enableProblem} onChange={setEnableProblem} />
+              <SectionToggle id="add-sec-vote" label="투표 게시판" checked={enableVote} onChange={setEnableVote} />
             </div>
             {enablePost && (
               <div className="space-y-2 pt-1">
@@ -554,6 +567,21 @@ function CategoriesPage() {
                 />
                 <p className="text-xs text-muted-foreground">
                   영역·빈도 선택지는 관리자 &gt; 사이트 설정에서 편집해요.
+                </p>
+              </div>
+            )}
+            {enableVote && (
+              <div className="space-y-2 pt-1">
+                <Label htmlFor="add-vote-name">투표 게시판 이름</Label>
+                <Input
+                  id="add-vote-name"
+                  value={voteName}
+                  onChange={(e) => setVoteName(e.target.value)}
+                  placeholder="예: 투표, 인기상 투표"
+                  className="rounded-xl bg-background"
+                />
+                <p className="text-xs text-muted-foreground">
+                  보드형(격자)으로 표시되고, 한 명당 글 1개만 올릴 수 있어요.
                 </p>
               </div>
             )}
@@ -682,6 +710,9 @@ function CategoriesPage() {
                     )}
                     {!c.isGroup && c.enableProject && (
                       <SectionBadge label={c.projectName || "산출물"} />
+                    )}
+                    {!c.isGroup && c.enableVote && (
+                      <SectionBadge label={c.voteName || "투표"} />
                     )}
                     {!c.isGroup && c.enableProblem && (
                       <SectionBadge label={c.problemName || "문제ZIP"} />
@@ -890,6 +921,7 @@ function CategoriesPage() {
                 <SectionToggle id="edit-sec-project" label="산출물 게시판" checked={editEnableProject} onChange={setEditEnableProject} />
                 <SectionToggle id="edit-sec-link" label="링크 게시판" checked={editEnableLink} onChange={setEditEnableLink} />
                 <SectionToggle id="edit-sec-problem" label="문제ZIP 게시판" checked={editEnableProblem} onChange={setEditEnableProblem} />
+                <SectionToggle id="edit-sec-vote" label="투표 게시판" checked={editEnableVote} onChange={setEditEnableVote} />
               </div>
               {editEnablePost && (
                 <div className="space-y-2 pt-1">
@@ -935,6 +967,18 @@ function CategoriesPage() {
                     value={editProblemName}
                     onChange={(e) => setEditProblemName(e.target.value)}
                     placeholder="예: 문제ZIP, 현장 제보"
+                    className="rounded-xl bg-background"
+                  />
+                </div>
+              )}
+              {editEnableVote && (
+                <div className="space-y-2 pt-1">
+                  <Label htmlFor="edit-vote-name">투표 게시판 이름</Label>
+                  <Input
+                    id="edit-vote-name"
+                    value={editVoteName}
+                    onChange={(e) => setEditVoteName(e.target.value)}
+                    placeholder="예: 투표, 인기상 투표"
                     className="rounded-xl bg-background"
                   />
                 </div>

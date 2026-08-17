@@ -25,6 +25,7 @@ import { AuthorBadge } from "@/components/AuthorBadge";
 import { Button } from "@/components/ui/button";
 import { ThumbnailUploadButton } from "@/components/ThumbnailUploadButton";
 import { LikeButton } from "@/components/LikeButton";
+import { VoteSection } from "@/components/VoteSection";
 
 const PAGE_SIZE = 10;
 const PROBLEM_PAGE_SIZE = 9;
@@ -80,6 +81,7 @@ const boardSearchSchema = z.object({
   ppage: fallback(z.number(), 1).default(1),
   psort: fallback(z.string(), "recent").default("recent"),
   parea: fallback(z.string(), "").default(""),
+  vpage: fallback(z.number(), 1).default(1),
   q: fallback(z.string(), "").default(""),
 });
 
@@ -128,7 +130,7 @@ function BoardInner({
 }) {
   const { data: posts } = useSuspenseQuery(postsQueryOptions(category.id, getBoardPassword(slug)));
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
-  const { qpage, gpage, ppage, psort, parea, q } = Route.useSearch();
+  const { qpage, gpage, ppage, psort, parea, q, vpage } = Route.useSearch();
   const navigate = useNavigate({ from: "/board/$slug" });
 
   // 검색어 필터 — 이미 불러온 목록을 클라이언트에서 거른다(추가 서버 호출 없음).
@@ -151,6 +153,7 @@ function BoardInner({
   const links = searched.filter((p) => p.type === "link");
   // 문제ZIP은 정렬/영역 집계를 전체 기준으로 유지하고, 검색은 마지막에 적용한다.
   const problems = posts.filter((p) => p.type === "problem");
+  const votePosts = searched.filter((p) => p.type === "vote");
   const linkItems = groupLinksBySeries(links);
 
   const generalPageCount = Math.max(1, Math.ceil(generals.length / PAGE_SIZE));
@@ -281,7 +284,8 @@ function BoardInner({
     generals.length === 0 &&
     projects.length === 0 &&
     linkItems.length === 0 &&
-    filteredProblems.length === 0;
+    filteredProblems.length === 0 &&
+    votePosts.length === 0;
 
   return (
     <div className="space-y-6">
@@ -622,6 +626,19 @@ function BoardInner({
             </>
           )}
         </section>
+      )}
+
+      {category.enableVote && (!keyword || votePosts.length > 0) && (
+        <VoteSection
+          category={category}
+          slug={slug}
+          posts={votePosts}
+          page={vpage}
+          onPageChange={(p) =>
+            navigate({ search: (prev: BoardSearch) => ({ ...prev, vpage: p }) })
+          }
+          Pagination={BoardPagination}
+        />
       )}
     </div>
   );
