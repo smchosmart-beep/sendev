@@ -122,6 +122,26 @@ function ReadmePage() {
     }));
   };
 
+  const updateStep = (index: number, value: string) => {
+    setData((prev) => {
+      const next = [...prev.usageSteps];
+      next[index] = value;
+      return { ...prev, usageSteps: next };
+    });
+  };
+
+  const addStep = () => {
+    setData((prev) => ({ ...prev, usageSteps: [...prev.usageSteps, ""] }));
+  };
+
+  const removeStep = (index: number) => {
+    setData((prev) => ({
+      ...prev,
+      usageSteps: prev.usageSteps.filter((_, i) => i !== index),
+    }));
+  };
+
+
   const reset = () => {
     if (confirm("입력한 내용을 모두 지울까요? 저장된 내용도 함께 삭제됩니다.")) {
       setData(DEFAULT_README_DATA);
