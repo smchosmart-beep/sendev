@@ -14,7 +14,7 @@ export interface ReadmeData {
   deployment: string;
   repoUrl: string;
   liveUrl: string;
-  usage: string;
+  usageSteps: string[];
   additional: string;
 }
 
