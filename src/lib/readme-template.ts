@@ -99,72 +99,27 @@ export function generateReadme(data: ReadmeData): string {
   lines.push("<br/>");
   lines.push("");
 
-  lines.push("## ⚙️ 설치 및 실행 (Getting Started)");
-  lines.push("");
-  lines.push("로컬 환경에서 프로젝트를 실행하기 위한 방법입니다.");
-  lines.push("");
-  lines.push("### 1. 저장소 클론");
-  lines.push("```bash");
-  if (data.repoUrl.trim()) {
-    lines.push(`git clone ${data.repoUrl.trim()}`);
-  } else {
-    lines.push("git clone https://github.com/사용자명/레포지토리명.git");
+  const liveUrl = data.liveUrl.trim();
+  const repoUrl = data.repoUrl.trim();
+  if (liveUrl || repoUrl) {
+    lines.push("## 🔗 배포 주소 (Live Demo)");
+    lines.push("");
+    if (liveUrl) lines.push(`* **서비스 바로가기:** <${liveUrl}>`);
+    if (repoUrl) lines.push(`* **GitHub 저장소:** <${repoUrl}>`);
+    lines.push("");
+    lines.push("<br/>");
+    lines.push("");
   }
-  if (data.folderName.trim()) {
-    lines.push(`cd ${data.folderName.trim()}`);
-  } else {
-    lines.push("cd 레포지토리명");
+
+  if (data.usage.trim()) {
+    lines.push("## 📖 사용법 (How to Use)");
+    lines.push("");
+    lines.push(data.usage.trim());
+    lines.push("");
+    lines.push("<br/>");
+    lines.push("");
   }
-  lines.push("```");
-  lines.push("");
-  lines.push("### 2. 의존성 설치");
-  lines.push("```bash");
-  lines.push("# npm 사용");
-  lines.push("npm install");
-  lines.push("");
-  lines.push("# 또는 yarn 사용");
-  lines.push("yarn install");
-  lines.push("");
-  lines.push("# 또는 pnpm 사용");
-  lines.push("pnpm install");
-  lines.push("```");
-  lines.push("");
-  lines.push("### 3. 환경 변수 설정");
-  lines.push("프로젝트 루트에 `.env` 파일을 만들고 필요한 환경 변수를 입력합니다.");
-  lines.push("(예: API 주소, 데이터베이스 URL, 외부 서비스 키 등)");
-  lines.push("");
-  lines.push("```env");
-  lines.push("# .env");
-  lines.push("# 예시");
-  lines.push("VITE_API_URL=http://localhost:3000");
-  lines.push("```");
-  lines.push("");
-  lines.push("### 4. 개발 서버 실행");
-  lines.push("```bash");
-  lines.push("# npm 사용");
-  lines.push("npm run dev");
-  lines.push("");
-  lines.push("# 또는 yarn 사용");
-  lines.push("yarn dev");
-  lines.push("");
-  lines.push("# 또는 pnpm 사용");
-  lines.push("pnpm dev");
-  lines.push("```");
-  lines.push("");
-  lines.push("### 5. 프로덕션 빌드");
-  lines.push("```bash");
-  lines.push("# npm 사용");
-  lines.push("npm run build");
-  lines.push("");
-  lines.push("# 또는 yarn 사용");
-  lines.push("yarn build");
-  lines.push("");
-  lines.push("# 또는 pnpm 사용");
-  lines.push("pnpm build");
-  lines.push("```");
-  lines.push("");
-  lines.push("<br/>");
-  lines.push("");
+
 
   if (data.additional.trim()) {
     lines.push("## 📝 추가 설명");
