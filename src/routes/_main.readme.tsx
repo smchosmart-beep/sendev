@@ -72,8 +72,22 @@ function ReadmePage() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved) as Partial<ReadmeData>;
-        setData((prev) => ({ ...prev, ...parsed }));
+        const parsed = JSON.parse(saved) as Partial<ReadmeData> & {
+          usage?: string;
+        };
+        setData((prev) => {
+          const merged = { ...prev, ...parsed };
+          if (!Array.isArray(merged.usageSteps)) {
+            const legacy = typeof parsed.usage === "string" ? parsed.usage : "";
+            const steps = legacy
+              .split("\n")
+              .map((line) => line.replace(/^\s*\d+[.)]\s*/, "").trim())
+              .filter((line) => line.length > 0);
+            merged.usageSteps = steps.length > 0 ? steps : ["", "", ""];
+          }
+          delete (merged as { usage?: string }).usage;
+          return merged;
+        });
       }
     } catch {
       /* ignore */
