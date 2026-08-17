@@ -528,9 +528,12 @@ function GuidePage() {
             <strong>기술 스택</strong>은 Frontend / Backend & DB / Deployment 세 칸에 각각 입력합니다.
           </li>
           <li>
-            <strong>배포 주소 및 사용법</strong>에는 배포된 서비스 주소와 GitHub 저장소 주소(선택), 그리고 접속 후
-            무엇을 어떻게 하면 되는지 단계별 사용법을 직접 적습니다. 비워 두면 해당 섹션은 생략됩니다.
+            <strong>배포 주소 및 사용법</strong>에는 배포된 서비스 주소와 GitHub 저장소 주소(선택)를 적습니다.
+            <strong> 사용법</strong>은 "단계 추가" 버튼으로 한 줄씩 단계를 입력하면 1단계 → 2단계 → 3단계로 이어지는
+            <strong> 흐름도(Mermaid)</strong>가 자동으로 만들어집니다. GitHub에서는 도형 흐름도로 보입니다. 비워 두면
+            해당 섹션은 생략됩니다.
           </li>
+
 
           <li>
             <strong>추가 설명</strong>은 선택 입력란입니다. 마크다운 문법을 지원하며, 프로젝트 구조·팀 소개·라이선스 등을
