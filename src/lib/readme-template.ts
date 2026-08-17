@@ -40,6 +40,16 @@ export const DEFAULT_README_DATA: ReadmeData = {
 function escapeMd(text: string): string {
   return text.replace(/([*_`{}\[\]<>])/g, "\\$1");
 }
+// Mermaid node labels: quotes/brackets/newlines break the diagram syntax.
+export function sanitizeMermaidLabel(text: string): string {
+  return text
+    .replace(/[\r\n]+/g, " ")
+    .replace(/"/g, "'")
+    .replace(/[[\]{}()<>|]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 
 // Escape only for table cells (pipe is the cell delimiter).
 function escapeTableCell(text: string): string {
