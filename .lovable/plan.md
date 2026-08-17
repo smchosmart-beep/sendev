@@ -27,11 +27,23 @@ flowchart TD
 
 ## 미리보기
 
-README 미리보기 영역은 마크다운 렌더러를 쓰고 있어 mermaid 블록은 도형 대신 코드 블록으로 보입니다. 미리보기에서도 도형으로 보이도록 mermaid 렌더링을 붙입니다(코드 블록 요소를 감지해 다이어그램으로 그림). 렌더링 실패 시에는 원래 코드 블록을 그대로 보여줍니다.
+미리보기에서도 도형으로 보이도록 mermaid 렌더링을 붙입니다. 다만 mermaid는 브라우저 전용·용량이 큰 라이브러리라 다음 조건을 지킵니다.
+
+- README 페이지에 들어왔을 때만 로드(다른 페이지 초기 로딩에 영향 없음)
+- 서버 렌더링 단계에서는 실행하지 않음
+- 렌더링에 실패하면 원래 코드 블록을 그대로 표시
+- 타이핑 중에는 약간의 지연(0.3초) 후에 도형을 다시 그려 버벅임 방지
+
+## 안전 장치
+
+- 이미 브라우저에 저장된 기존 입력값(구버전 `사용법` 텍스트)이 있어도 오류 없이 열리도록, 줄 단위로 쪼개 단계 목록으로 1회 변환합니다. 값이 없으면 빈 3칸으로 보정합니다.
+- 서버·데이터베이스 호출은 없고 전부 브라우저 안에서 동작하므로 서버 비용 증가나 다른 기능 영향은 없습니다.
 
 ## 기술 메모
 
-- `src/lib/readme-template.ts`: `usage: string` → `usageSteps: string[]`. 빈 항목 제거 후 `flowchart TD` 블록 생성, 노드 라벨은 `"` → `'`, 개행 제거로 정제.
-- `src/routes/_main.readme.tsx`: Textarea → 단계 카드 입력(추가/삭제). localStorage 병합 시 구버전 `usage` 문자열이 있으면 줄 단위로 쪼개 `usageSteps`로 1회 마이그레이션.
-- 미리보기: `mermaid` 패키지 추가, ReactMarkdown `code` 커스텀 컴포넌트에서 `language-mermaid`를 감지해 `mermaid.render`로 SVG 삽입. 다크모드 테마 연동.
-- `src/routes/_main.guide.tsx`: 사용법 항목 설명을 "단계별 흐름도 자동 생성"으로 갱신.
+- `src/lib/readme-template.ts`: `usage: string` → `usageSteps: string[]`. 빈 항목 제거 후 `flowchart TD` 블록 생성, 노드 라벨은 `"` → `'`, 대괄호·개행 정제.
+- `src/routes/_main.readme.tsx`: Textarea → 단계 카드 입력(추가/삭제). localStorage 병합 후 `Array.isArray(usageSteps)`가 아니면 legacy `usage`를 `split("\n")`으로 마이그레이션, 그것도 없으면 `["","",""]`.
+- 미리보기: `mermaid` 신규 의존성. 정적 import 금지 — 별도 `MermaidBlock` 컴포넌트에서 `useEffect` 안 `await import("mermaid")`로 지연 로드(SSR 미실행). `mermaid.render`는 매번 고유 id(`useId` 기반 카운터) 사용, try/catch 폴백은 `<pre>` 원문. 다이어그램 소스 문자열이 바뀔 때만 300ms 디바운스로 재렌더.
+- ReactMarkdown `components.code`에서 `language-mermaid` 감지해 `MermaidBlock`으로 위임(기존 `rehype-raw`/`remark-gfm` 설정 유지).
+- `src/routes/_main.guide.tsx`: README 안내(약 531~532행) 사용법 문구를 "단계별 흐름도 자동 생성"으로 갱신.
+
