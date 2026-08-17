@@ -10,6 +10,7 @@ import {
   Folder,
   FolderOpen,
   ChevronRight,
+  FileText,
 } from "lucide-react";
 
 import {
