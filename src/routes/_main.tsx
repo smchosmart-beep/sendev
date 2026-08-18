@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, Code2, Settings, Trophy, BookOpen, Rocket, Terminal, Menu, Home, Search, UserRound, HelpCircle } from "lucide-react";
+import { Calendar, Code2, Settings, Trophy, BookOpen, Rocket, Terminal, Menu, Home, Search, UserRound, HelpCircle, ChevronUp, ChevronDown } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -119,6 +119,16 @@ function MainLayout() {
   const onBoardList = pathname === "/board";
   const activeGroup = (location.search as { tab?: TabGroup })?.tab ?? "hackathon";
   const [menuOpen, setMenuOpen] = useState(false);
+  const [navCollapsed, setNavCollapsed] = useState(false);
+
+  useEffect(() => {
+    const raw = localStorage.getItem("sen-header-nav-collapsed");
+    if (raw === "true") setNavCollapsed(true);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("sen-header-nav-collapsed", String(navCollapsed));
+  }, [navCollapsed]);
 
   // 탭별 미열람 글 수 합산: 닉네임이 등록된 경우에만 계산/표시.
   const { identity } = useStoredIdentity();
@@ -165,7 +175,12 @@ function MainLayout() {
             </span>
           </Link>
 
-          <nav className="mx-auto hidden flex-wrap justify-center gap-2 sm:flex sm:gap-7">
+          <nav
+            className={cn(
+              "mx-auto flex-wrap justify-center gap-2 sm:gap-7",
+              navCollapsed ? "hidden" : "hidden sm:flex",
+            )}
+          >
             <Link
               to={guideTab.to}
               className={cn(
@@ -258,6 +273,17 @@ function MainLayout() {
           >
             <Settings className="h-5 w-5" />
           </Link>
+
+          <button
+            type="button"
+            aria-label={navCollapsed ? "메뉴 펼치기" : "메뉴 접기"}
+            title={navCollapsed ? "메뉴 펼치기" : "메뉴 접기"}
+            aria-pressed={navCollapsed}
+            onClick={() => setNavCollapsed((v) => !v)}
+            className="hidden h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:flex"
+          >
+            {navCollapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
+          </button>
 
 
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
