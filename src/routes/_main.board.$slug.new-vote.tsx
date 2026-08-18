@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useNicknameIdentity, useNicknameClaimed } from "@/hooks/useNicknameIdentity";
+import { useApplyPostTemplate } from "@/hooks/usePostTemplate";
 
 export const Route = createFileRoute("/_main/board/$slug/new-vote")({
   loader: ({ context }) =>
@@ -43,6 +44,7 @@ function NewVotePage() {
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  useApplyPostTemplate(category?.id, "vote", content, setContent);
   const [deployUrl, setDeployUrl] = useState("");
   const {
     author,
