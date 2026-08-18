@@ -83,6 +83,38 @@ function downloadMarkdown(filename: string, content: string) {
   URL.revokeObjectURL(url);
 }
 
+// README.md와 대표 이미지를 한 번에 담은 ZIP을 브라우저에서 만든다(서버 호출 없음).
+async function downloadZip(markdown: string, imageUrl: string) {
+  const { default: JSZip } = await import("jszip");
+  const zip = new JSZip();
+  const url = imageUrl.trim();
+  let body = markdown;
+  if (url) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        const blob = await res.blob();
+        const ext = (blob.type.split("/")[1] || "png").replace("jpeg", "jpg");
+        const name = `assets/cover.${ext}`;
+        zip.file(name, blob);
+        body = markdown.split(url).join(`./${name}`);
+      }
+    } catch {
+      /* 이미지를 가져오지 못하면 README만 담는다 */
+    }
+  }
+  zip.file("README.md", body);
+  const out = await zip.generateAsync({ type: "blob" });
+  const href = URL.createObjectURL(out);
+  const a = document.createElement("a");
+  a.href = href;
+  a.download = "readme.zip";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(href);
+}
+
 function ReadmePage() {
   const [data, setData] = useState<ReadmeData>(DEFAULT_README_DATA);
   const [hydrated, setHydrated] = useState(false);
@@ -451,6 +483,18 @@ function ReadmePage() {
             >
               <Download className="h-4 w-4" />
               README.md 다운로드
+            </Button>
+            <Button
+              onClick={() => {
+                void downloadZip(markdown, data.screenshotUrl).catch(() =>
+                  toast.error("ZIP을 만들지 못했어요."),
+                );
+              }}
+              variant="outline"
+              className="rounded-xl"
+            >
+              <Download className="h-4 w-4" />
+              ZIP 다운로드
             </Button>
             <Button onClick={copyToClipboard} variant="outline" className="rounded-xl">
               {copied ? (
