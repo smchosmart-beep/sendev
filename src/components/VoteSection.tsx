@@ -77,8 +77,8 @@ export function VoteSection({
     enabled: status === "closed",
   });
   const counts = results?.counts ?? {};
-  // 닉네임이 투표 판단에 영향을 주지 않도록, 종료 전까지는 작성자를 숨긴다(관리자 제외).
-  const showAuthor = status === "closed" || isAdmin;
+  // 닉네임이 투표 판단에 영향을 주지 않도록, 종료 전까지는 관리자 포함 모두 작성자를 숨긴다.
+  const showAuthor = status === "closed";
 
 
   const vote = useServerFn(castVote);
