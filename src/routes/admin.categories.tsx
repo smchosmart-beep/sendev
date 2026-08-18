@@ -166,6 +166,9 @@ function CategoriesPage() {
   const [editIsGroup, setEditIsGroup] = useState(false);
   const [editHidden, setEditHidden] = useState(false);
   const [editParentId, setEditParentId] = useState<string>("");
+  const [editTemplatePost, setEditTemplatePost] = useState("");
+  const [editTemplateQuestion, setEditTemplateQuestion] = useState("");
+  const [editTemplateVote, setEditTemplateVote] = useState("");
 
   const [deleting, setDeleting] = useState<CategoryDTO | null>(null);
 
