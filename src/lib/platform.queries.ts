@@ -35,6 +35,8 @@ import {
   getVoteState,
   getMyVotes,
   getVoteResults,
+  getVoteRequirement,
+
 } from "./platform.functions";
 
 export const searchPostsQueryOptions = (
@@ -332,6 +334,18 @@ export const voteResultsQueryOptions = (
     queryFn: () =>
       getVoteResults({ data: { categoryId, boardPassword, adminPassword } }),
   });
+
+// 검색 필터와 무관한 "채워야 할 표 수"를 서버에서 받아온다.
+export const voteRequirementQueryOptions = (
+  categoryId: string,
+  nickname: string,
+) =>
+  queryOptions({
+    queryKey: ["vote-requirement", categoryId, nickname],
+    queryFn: () => getVoteRequirement({ data: { categoryId, nickname } }),
+    staleTime: 30 * 1000,
+  });
+
 
 export const postTemplateQueryOptions = (
   categoryId: string,

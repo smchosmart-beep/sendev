@@ -1,15 +1,16 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Lock, Plus, RotateCcw, Trophy, Vote } from "lucide-react";
+import { Check, Lock, Plus, RotateCcw, Save, Trophy, Vote } from "lucide-react";
 import { toast } from "sonner";
 
 import type { CategoryDTO, PostDTO } from "@/lib/platform.functions";
-import { castVote, resetVotes, setVoteStatus } from "@/lib/platform.functions";
+import { normalizeUsername, resetVotes, setVoteStatus, submitVotes } from "@/lib/platform.functions";
 import {
   getBoardPassword,
   myVotesQueryOptions,
+  voteRequirementQueryOptions,
   voteResultsQueryOptions,
   voteStateQueryOptions,
 } from "@/lib/platform.queries";
@@ -29,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
 
 const PAGE_SIZE = 36;
 
@@ -70,7 +72,21 @@ export function VoteSection({
   const { data: myVotes = [] } = useQuery(
     myVotesQueryOptions(category.id, nickname, boardPassword, adminPassword),
   );
-  const mySet = useMemo(() => new Set(myVotes), [myVotes]);
+
+  const { data: requirement } = useQuery({
+    ...voteRequirementQueryOptions(category.id, nickname),
+    enabled: nickname.trim().length > 0,
+  });
+  const required = requirement?.required ?? maxChoices;
+
+  // 서버에 저장된 내 표를 로컬 선택 상태의 기준으로 삼는다.
+  const savedKey = useMemo(() => [...myVotes].sort().join("|"), [myVotes]);
+  const [selected, setSelected] = useState<Set<string>>(() => new Set(myVotes));
+  useEffect(() => {
+    setSelected(new Set(myVotes));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedKey]);
+  const mySet = selected;
 
   const { data: results } = useQuery({
     ...voteResultsQueryOptions(category.id, boardPassword, adminPassword),
@@ -80,23 +96,27 @@ export function VoteSection({
   // 닉네임이 투표 판단에 영향을 주지 않도록, 종료 전까지는 관리자 포함 모두 작성자를 숨긴다.
   const showAuthor = status === "closed";
 
+  const myKey = normalizeUsername(nickname);
+  const isMyPost = (author: string) =>
+    myKey.length > 0 && normalizeUsername(author ?? "") === myKey;
 
-  const vote = useServerFn(castVote);
-  const voteMutation = useMutation({
-    mutationFn: (postId: string) =>
-      vote({
+  const save = useServerFn(submitVotes);
+  const saveMutation = useMutation({
+    mutationFn: (postIds: string[]) =>
+      save({
         data: {
           categoryId: category.id,
-          postId,
+          postIds,
           nickname,
           nicknamePassword,
           boardPassword,
           adminPassword,
         },
       }),
-    onSuccess: (res) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-votes", category.id] });
-      toast.success(res.voted ? "투표했어요!" : "투표를 취소했어요.");
+      queryClient.invalidateQueries({ queryKey: ["vote-requirement", category.id] });
+      toast.success("투표를 저장했어요.");
     },
     onError: (err: unknown) =>
       toast.error(err instanceof Error ? err.message : "투표하지 못했어요."),
@@ -113,7 +133,14 @@ export function VoteSection({
   const current = Math.min(Math.max(1, page), pageCount);
   const paged = ordered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
 
-  const handleVote = (postId: string) => {
+  const savedSet = useMemo(() => new Set(myVotes), [myVotes]);
+  const dirty =
+    selected.size !== savedSet.size ||
+    [...selected].some((id) => !savedSet.has(id));
+  const canSave =
+    status === "open" && required > 0 && selected.size === required && dirty;
+
+  const handleVote = (postId: string, author: string) => {
     if (status !== "open") {
       toast.error("지금은 투표할 수 없어요.");
       return;
@@ -122,8 +149,25 @@ export function VoteSection({
       toast.error("먼저 메뉴에서 닉네임과 비밀번호를 등록해 주세요.");
       return;
     }
-    voteMutation.mutate(postId);
+    if (isMyPost(author)) {
+      toast.error("본인이 쓴 글에는 투표할 수 없어요.");
+      return;
+    }
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(postId)) {
+        next.delete(postId);
+        return next;
+      }
+      if (next.size >= required) {
+        toast.error(`최대 ${required}개까지 선택할 수 있어요.`);
+        return prev;
+      }
+      next.add(postId);
+      return next;
+    });
   };
+
 
   return (
     <section className="space-y-4">
@@ -145,16 +189,40 @@ export function VoteSection({
       <p className="rounded-xl bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
         {status === "open" ? (
           <>
-            투표가 진행 중이에요. 1인당 최대 <b>{maxChoices}표</b>까지 선택할 수
-            있고, 지금은 <b>{myVotes.length}표</b>를 사용했어요. 결과는 투표가
-            종료된 뒤 한 번에 공개됩니다.
+            투표가 진행 중이에요. <b>{required}개</b>를 모두 선택한 뒤 <b>투표
+            저장</b>을 눌러야 반영돼요. 본인이 쓴 글에는 투표할 수 없고, 종료
+            전까지는 선택을 바꿔 다시 저장할 수 있어요. 결과는 투표가 종료된 뒤
+            한 번에 공개됩니다.
           </>
         ) : status === "closed" ? (
           <>투표가 종료되었어요. 아래에서 최종 결과를 확인할 수 있어요.</>
         ) : (
           <>아직 투표가 시작되지 않았어요. 먼저 후보 글을 등록해 주세요.</>
         )}
+
       </p>
+
+      {status === "open" && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3">
+          <p className="text-sm text-foreground">
+            선택 <b className="text-primary">{selected.size}</b> / {required}
+            {savedSet.size > 0 && !dirty && (
+              <span className="ml-2 text-xs text-muted-foreground">저장됨</span>
+            )}
+          </p>
+          <Button
+            type="button"
+            className="rounded-xl active:scale-95"
+            disabled={!canSave || saveMutation.isPending}
+            onClick={() => saveMutation.mutate([...selected])}
+          >
+            <Save className="h-4 w-4" />
+            {saveMutation.isPending ? "저장 중..." : "투표 저장"}
+          </Button>
+        </div>
+      )}
+
+
 
       {isAdmin && (
         <AdminVoteControls
@@ -225,19 +293,26 @@ export function VoteSection({
                       type="button"
                       size="sm"
                       variant={voted ? "default" : "secondary"}
-                      disabled={status !== "open" || voteMutation.isPending}
-                      onClick={() => handleVote(post.id)}
+                      disabled={
+                        status !== "open" ||
+                        saveMutation.isPending ||
+                        isMyPost(post.author)
+                      }
+                      onClick={() => handleVote(post.id, post.author)}
                       className="h-8 rounded-lg px-3 text-sm active:scale-95"
                     >
-                      {voted ? (
+                      {isMyPost(post.author) ? (
+                        "내 글"
+                      ) : voted ? (
                         <>
                           <Check className="h-3 w-3" />
-                          투표함
+                          선택함
                         </>
                       ) : (
-                        "투표"
+                        "선택"
                       )}
                     </Button>
+
                   </div>
                   {isAdmin && status === "closed" && (results?.voters?.[post.id]?.length ?? 0) > 0 && (
                     <p className="text-[11px] leading-snug text-muted-foreground">
