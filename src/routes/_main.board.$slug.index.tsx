@@ -82,7 +82,8 @@ function BoardInner({
     if (!keyword) return () => true;
     return (p: PostDTO) =>
       p.title.toLowerCase().includes(keyword) ||
-      p.author.toLowerCase().includes(keyword);
+      // 투표 후보는 작성자를 숨기므로 작성자 검색 대상에서 제외한다.
+      (p.type !== "vote" && p.author.toLowerCase().includes(keyword));
   }, [keyword]);
 
   const searched = useMemo(
