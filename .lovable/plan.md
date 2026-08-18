@@ -15,3 +15,11 @@
   - 수정 폼 분기(1584행)와 `editMutation` 페이로드(1213행)에 투표 타입 분기 추가: `{ id, password, title, content, author, deployUrl }`.
   - `noun` 계산에 투표 게시판 이름(`category.voteName`) 반영.
 - 서버 함수(`updatePost`)는 이미 content/author/deployUrl을 선택적으로 받으므로 DB·서버 변경은 없습니다.
+
+## 부작용 검토 결과 (실제 코드 확인)
+
+- **주의 1 — 대표 링크 유실**: `updatePost`는 `deployUrl` 기본값이 `""`이고 항상 `deploy_url`/`og_image_url`을 덮어씁니다(`src/lib/platform.functions.ts:1194,1218-1222`). 투표 글 저장 payload에 `deployUrl`을 반드시 포함해야 하며, 빠지면 썸네일이 사라집니다. → 계획 2·3항에 반영됨.
+- **주의 2 — 작성자 변경 시 유니크 위반**: `posts_vote_one_per_author` 유니크 인덱스가 있어(`supabase/migrations/20260817140322_*.sql:11-13`) 이미 글이 있는 닉네임으로 작성자를 바꾸면 DB 오류 원문이 그대로 노출됩니다. → 투표 글 수정 창에서는 **작성자 입력을 읽기 전용으로 두는 것**을 권장(계획 2항 수정). 굳이 편집을 허용하려면 유니크 위반을 "이미 등록한 글이 있어요" 문구로 변환하는 처리를 추가합니다.
+- **안전 확인**: `pinned`는 서버에서 `type='post'`일 때만 반영되므로 투표 글에 영향 없음(`platform.functions.ts:1227-1229`). 댓글은 이미 투표 타입에 열려 있음(`$postNo.tsx:472`). 유효성 검사(`$postNo.tsx:1567`)의 작성자 필수 조건은 그대로 유지됨.
+- **서버 비용**: 추가 조회 없음. `deployUrl`이 실제로 바뀐 경우에만 OG 이미지 1회 재요청(기존 로직 그대로).
+- **회귀 위험 없음**: 변경 조건이 모두 `post.type === "vote"` 분기라 일반글·산출물·링크·문제ZIP 화면은 영향받지 않습니다.
