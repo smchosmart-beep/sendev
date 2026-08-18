@@ -157,7 +157,6 @@ export function VoteSection({
           categoryId={category.id}
           status={status}
           maxChoices={maxChoices}
-          adminPassword={adminPassword}
           confirm={confirm}
           onDone={() => {
             queryClient.invalidateQueries({ queryKey: ["vote-state", category.id] });
