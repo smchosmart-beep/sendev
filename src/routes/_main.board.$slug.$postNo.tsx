@@ -1585,7 +1585,36 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
                 className="rounded-xl"
               />
             </div>
-            {isBoardPost ? (
+            {post.type === "vote" ? (
+              <>
+                <div className="space-y-2">
+                  <Label>내용</Label>
+                  <PostEditor value={content} onChange={setContent} rows={8} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="e-vote-author">작성자</Label>
+                  <Input
+                    id="e-vote-author"
+                    value={author}
+                    readOnly
+                    className="rounded-xl bg-muted text-muted-foreground"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    투표 게시판은 한 명당 한 개만 등록할 수 있어 작성자는 바꿀 수 없어요.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="e-vote-url">대표 링크 (선택)</Label>
+                  <Input
+                    id="e-vote-url"
+                    value={deployUrl}
+                    onChange={(e) => setDeployUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="rounded-xl"
+                  />
+                </div>
+              </>
+            ) : isBoardPost ? (
               <>
                 <div className="space-y-2">
                   <Label>내용</Label>
