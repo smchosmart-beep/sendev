@@ -21,6 +21,8 @@ import { groupLinksBySeries, seededShuffle, getOrderSeed } from "@/lib/series";
 import { getEmbedUrl, getThumbnailUrl, getCanvaPreviewUrl } from "@/lib/embed";
 import { EmptyState } from "@/components/EmptyState";
 import { AuthorBadge } from "@/components/AuthorBadge";
+import { PostListCard } from "@/components/PostListCard";
+
 import { Button } from "@/components/ui/button";
 import { ThumbnailUploadButton } from "@/components/ThumbnailUploadButton";
 import { LikeButton } from "@/components/LikeButton";
@@ -246,40 +248,19 @@ function BoardInner({
             고정 게시글
           </h2>
           {notices.map((n) => (
-            <Link
+            <PostListCard
               key={n.id}
-              to="/board/$slug/$postNo"
-              params={{ slug, postNo: String(n.postNo) }}
-              className="flex items-center justify-between gap-5 rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
-            >
-              <span className="flex flex-1 min-w-0 items-start gap-2">
-                {isUnread(n.id) && (
-                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-pink-500" aria-label="읽지 않음" />
-                )}
-                <span className="min-w-0 line-clamp-2 text-sm font-medium text-foreground">{n.title}</span>
-              </span>
-              <span className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
-                <span className="hidden sm:flex items-center gap-1">
-                  <Eye className="h-3.5 w-3.5" />
-                  {n.viewCount}
-                </span>
-                {n.commentCount > 0 && (
-                  <span className="flex items-center gap-1 text-primary">
-                    <MessageCircle className="h-3.5 w-3.5" />
-                    {n.commentCount}
-                  </span>
-                )}
-                <span className="flex flex-col items-end gap-0.5 sm:flex-row sm:items-center sm:gap-1">
-                  <span className="flex items-center gap-1 whitespace-nowrap" title={n.author}>
-                    <User className="h-3.5 w-3.5" />
-                    {n.author}
-                    <AuthorBadge author={n.author} profileMap={profileMap} only="level" />
-                  </span>
-                  <AuthorBadge author={n.author} profileMap={profileMap} only="awards" expand />
-                </span>
-              </span>
-            </Link>
+              slug={slug}
+              postNo={n.postNo}
+              title={n.title}
+              author={n.author}
+              profileMap={profileMap}
+              viewCount={n.viewCount}
+              commentCount={n.commentCount}
+              unread={isUnread(n.id)}
+            />
           ))}
+
         </section>
       )}
 
