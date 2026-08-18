@@ -218,6 +218,11 @@ function BoardInner({
   const readSet = useMemo(() => new Set(readIds), [readIds]);
   const hasReader = readerName.trim().length > 0;
   const isUnread = (id: string) => hasReader && !readSet.has(id);
+  // 이 게시판의 미열람 글 수(모든 유형 포함) — "이 게시판 읽음 처리" 버튼용.
+  const boardUnreadCount = useMemo(
+    () => (hasReader ? posts.filter((p) => !readSet.has(p.id)).length : 0),
+    [hasReader, posts, readSet],
+  );
 
 
 
@@ -233,6 +238,16 @@ function BoardInner({
 
   return (
     <div className="space-y-6">
+      {hasReader && (
+        <div className="flex justify-end">
+          <MarkAllReadButton
+            categoryId={category.id}
+            unreadCount={boardUnreadCount}
+            label="이 게시판 읽음 처리"
+          />
+        </div>
+      )}
+
 
       {noSearchResult && (
         <EmptyState
