@@ -692,11 +692,10 @@ function GuidePage() {
 
 
       <Section id="search" icon={Search} title="검색 기능">
-        <p>상단의 검색 아이콘으로 게시글을 찾을 수 있으며, 세 가지 검색 방식을 지원합니다.</p>
+        <p>두 가지 검색 방식을 지원합니다.</p>
         <ul className="ml-5 list-disc space-y-1">
-          <li><strong>제목</strong>: 글 제목에서 검색</li>
-          <li><strong>제목+내용</strong>: 제목과 본문 내용을 함께 검색</li>
-          <li><strong>작성자</strong>: 닉네임(작성자)으로 검색</li>
+          <li><strong>상단의 검색 아이콘</strong>: 글 제목, 본문 내용, 작성자 닉네임 중에서 선택해 전체 게시글을 검색</li>
+          <li><strong>게시판 내 검색</strong>: 각 게시판 상단의 카테고리 카드 안에 있는 검색 바에서 제목·작성자로 검색합니다. 검색어는 입력 후 잠시 뒤(0.25초) 자동으로 반영되며, 카테고리 카드 안의 별도 영역으로 표시되어 쉽게 찾을 수 있습니다.</li>
         </ul>
         <p className="mt-3">
           <strong>가이드 페이지 내 검색</strong>: 이 가이드 페이지 상단의 검색창에 단어를 입력하면 문서에서 일치하는 부분이 모두 강조됩니다. 같은 단어가 여러 곳에 있으면 <strong>다음(▼)·이전(▲) 버튼</strong>이나 <strong>Enter(다음)·Shift+Enter(이전)</strong>로 순차 이동할 수 있고, 마지막 위치에서는 처음으로 돌아갑니다.
