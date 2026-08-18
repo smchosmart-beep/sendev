@@ -4198,6 +4198,15 @@ export const castVote = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       return { ok: true, voted: false };
     }
+    // 본인이 쓴 후보 글에는 투표할 수 없다.
+    const { data: target } = await db
+      .from("posts")
+      .select("author")
+      .eq("id", data.postId)
+      .maybeSingle();
+    if (normalizeName(String((target as any)?.author ?? "")) === key) {
+      throw new Error("본인이 쓴 글에는 투표할 수 없어요.");
+    }
     const max = Number(cat?.vote_max_choices ?? 1);
     if ((mine ?? []).length >= max) {
       throw new Error(`최대 ${max}개까지 투표할 수 있어요.`);
@@ -4211,6 +4220,142 @@ export const castVote = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, voted: true };
   });
+
+export interface VoteRequirementDTO {
+  required: number;
+  eligibleCount: number;
+  maxChoices: number;
+}
+
+// 검색 필터와 무관하게, 전체 후보 기준으로 이 사람이 채워야 할 표 수를 계산한다.
+export const getVoteRequirement = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        nickname: z.string().trim().max(100).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<VoteRequirementDTO> => {
+    const db = await getAdmin();
+    const { data: cat } = await db
+      .from("categories")
+      .select("vote_max_choices")
+      .eq("id", data.categoryId)
+      .maybeSingle();
+    const maxChoices = Number((cat as any)?.vote_max_choices ?? 1);
+    const { data: rows, error } = await db
+      .from("posts")
+      .select("id, author")
+      .eq("category_id", data.categoryId)
+      .eq("type", "vote");
+    if (error) throw new Error(error.message);
+    const key = normalizeName(data.nickname);
+    const eligibleCount = (rows ?? []).filter(
+      (r: any) => !key || normalizeName(String(r.author ?? "")) !== key,
+    ).length;
+    return {
+      required: Math.max(0, Math.min(maxChoices, eligibleCount)),
+      eligibleCount,
+      maxChoices,
+    };
+  });
+
+// 선택한 후보 목록을 한 번에 저장한다. 정원을 정확히 채워야 하고,
+// 본인 글은 포함할 수 없다. 기존 표와의 차집합만 처리해 표 유실을 막는다.
+export const submitVotes = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        postIds: z.array(z.string().uuid()).max(100),
+        nickname: z.string().trim().min(1).max(100),
+        nicknamePassword: z.string().trim().max(100).default(""),
+        boardPassword: z.string().max(100).optional(),
+        adminPassword: z.string().max(200).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await getAdmin();
+    if (
+      !(await boardAccessOk(db, data.categoryId, data.boardPassword, data.adminPassword))
+    ) {
+      throw new Error("이 게시판에 접근할 수 없어요.");
+    }
+    const { data: cat, error: cErr } = await db
+      .from("categories")
+      .select("vote_status, vote_max_choices")
+      .eq("id", data.categoryId)
+      .maybeSingle();
+    if (cErr) throw new Error(cErr.message);
+    if (((cat as any)?.vote_status ?? "idle") !== "open") {
+      throw new Error("지금은 투표할 수 없어요.");
+    }
+    await ensureNicknameOwnership(db, data.nickname, data.nicknamePassword, false);
+    const key = normalizeName(data.nickname);
+    if (!key || key === "익명") throw new Error("닉네임이 필요해요.");
+
+    const { data: candidates, error: pErr } = await db
+      .from("posts")
+      .select("id, author")
+      .eq("category_id", data.categoryId)
+      .eq("type", "vote");
+    if (pErr) throw new Error(pErr.message);
+    const eligible = new Set(
+      (candidates ?? [])
+        .filter((r: any) => normalizeName(String(r.author ?? "")) !== key)
+        .map((r: any) => String(r.id)),
+    );
+
+    const wanted = Array.from(new Set(data.postIds));
+    if (wanted.length !== data.postIds.length) {
+      throw new Error("같은 글을 중복해서 선택할 수 없어요.");
+    }
+    for (const id of wanted) {
+      if (!eligible.has(id)) {
+        throw new Error("본인이 쓴 글이거나 선택할 수 없는 글이 포함됐어요.");
+      }
+    }
+    const maxChoices = Number((cat as any)?.vote_max_choices ?? 1);
+    const required = Math.max(0, Math.min(maxChoices, eligible.size));
+    if (wanted.length !== required) {
+      throw new Error(`${required}개를 모두 선택해야 저장할 수 있어요.`);
+    }
+
+    const { data: mine, error: mErr } = await db
+      .from("votes")
+      .select("id, post_id")
+      .eq("category_id", data.categoryId)
+      .eq("voter_key", key);
+    if (mErr) throw new Error(mErr.message);
+    const current = new Map<string, string>();
+    for (const r of mine ?? []) current.set(String((r as any).post_id), String((r as any).id));
+
+    const toAdd = wanted.filter((id) => !current.has(id));
+    const toRemoveIds = Array.from(current.entries())
+      .filter(([pid]) => !wanted.includes(pid))
+      .map(([, rowId]) => rowId);
+
+    if (toAdd.length > 0) {
+      const { error } = await db.from("votes").insert(
+        toAdd.map((pid) => ({
+          category_id: data.categoryId,
+          post_id: pid,
+          voter_key: key,
+          voter_name: data.nickname.trim(),
+        })),
+      );
+      if (error) throw new Error(error.message);
+    }
+    if (toRemoveIds.length > 0) {
+      const { error } = await db.from("votes").delete().in("id", toRemoveIds);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true, saved: wanted.length };
+  });
+
 
 // 결과 조회: 종료 상태에서만 집계를 돌려주고, 명단은 관리자에게만 준다.
 export const getVoteResults = createServerFn({ method: "GET" })
