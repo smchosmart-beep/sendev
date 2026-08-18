@@ -142,6 +142,8 @@ function CategoriesPage() {
   const [problemName, setProblemName] = useState("문제ZIP");
   const [enableVote, setEnableVote] = useState(false);
   const [voteName, setVoteName] = useState("투표");
+  const [enableRecord, setEnableRecord] = useState(false);
+  const [recordName, setRecordName] = useState("활동기록");
   const [tabGroup, setTabGroup] = useState<TabGroup>("hackathon");
   const [isGroup, setIsGroup] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -163,6 +165,8 @@ function CategoriesPage() {
   const [editProblemName, setEditProblemName] = useState("문제ZIP");
   const [editEnableVote, setEditEnableVote] = useState(false);
   const [editVoteName, setEditVoteName] = useState("투표");
+  const [editEnableRecord, setEditEnableRecord] = useState(false);
+  const [editRecordName, setEditRecordName] = useState("활동기록");
   const [editTabGroup, setEditTabGroup] = useState<TabGroup>("hackathon");
   const [editIsGroup, setEditIsGroup] = useState(false);
   const [editHidden, setEditHidden] = useState(false);
@@ -226,6 +230,8 @@ function CategoriesPage() {
           problemName: problemName.trim(),
           enableVote,
           voteName: voteName.trim(),
+          enableRecord,
+          recordName: recordName.trim(),
           tabGroup,
           isGroup,
           hidden,
@@ -248,6 +254,8 @@ function CategoriesPage() {
       setLinkName("링크");
       setEnableVote(false);
       setVoteName("투표");
+      setEnableRecord(false);
+      setRecordName("활동기록");
       setTabGroup("hackathon");
       setIsGroup(false);
       setHidden(false);
@@ -279,6 +287,8 @@ function CategoriesPage() {
           problemName: editProblemName.trim(),
           enableVote: editEnableVote,
           voteName: editVoteName.trim(),
+          enableRecord: editEnableRecord,
+          recordName: editRecordName.trim(),
           tabGroup: editTabGroup,
           isGroup: editIsGroup,
           hidden: editHidden,
@@ -375,6 +385,8 @@ function CategoriesPage() {
     setEditProblemName(c.problemName);
     setEditEnableVote(c.enableVote);
     setEditVoteName(c.voteName || "투표");
+    setEditEnableRecord(c.enableRecord);
+    setEditRecordName(c.recordName || "활동기록");
     setEditTabGroup(c.tabGroup ?? "hackathon");
     setEditIsGroup(c.isGroup);
     setEditHidden(c.hidden);
@@ -534,6 +546,7 @@ function CategoriesPage() {
               <SectionToggle id="add-sec-link" label="링크 게시판" checked={enableLink} onChange={setEnableLink} />
               <SectionToggle id="add-sec-problem" label="문제ZIP 게시판" checked={enableProblem} onChange={setEnableProblem} />
               <SectionToggle id="add-sec-vote" label="투표 게시판" checked={enableVote} onChange={setEnableVote} />
+              <SectionToggle id="add-sec-record" label="활동기록 게시판" checked={enableRecord} onChange={setEnableRecord} />
             </div>
             {enablePost && (
               <div className="space-y-2 pt-1">
@@ -601,6 +614,21 @@ function CategoriesPage() {
                 />
                 <p className="text-xs text-muted-foreground">
                   보드형(격자)으로 표시되고, 한 명당 글 1개만 올릴 수 있어요.
+                </p>
+              </div>
+            )}
+            {enableRecord && (
+              <div className="space-y-2 pt-1">
+                <Label htmlFor="add-record-name">활동기록 게시판 이름</Label>
+                <Input
+                  id="add-record-name"
+                  value={recordName}
+                  onChange={(e) => setRecordName(e.target.value)}
+                  placeholder="예: 활동기록, 팀 기록"
+                  className="rounded-xl bg-background"
+                />
+                <p className="text-xs text-muted-foreground">
+                  팀당 기록 1개이며, 팀원 모두가 같은 기록을 함께 편집해요.
                 </p>
               </div>
             )}
@@ -732,6 +760,9 @@ function CategoriesPage() {
                     )}
                     {!c.isGroup && c.enableVote && (
                       <SectionBadge label={c.voteName || "투표"} />
+                    )}
+                    {!c.isGroup && c.enableRecord && (
+                      <SectionBadge label={c.recordName || "활동기록"} />
                     )}
                     {!c.isGroup && c.enableProblem && (
                       <SectionBadge label={c.problemName || "문제ZIP"} />
@@ -941,6 +972,7 @@ function CategoriesPage() {
                 <SectionToggle id="edit-sec-link" label="링크 게시판" checked={editEnableLink} onChange={setEditEnableLink} />
                 <SectionToggle id="edit-sec-problem" label="문제ZIP 게시판" checked={editEnableProblem} onChange={setEditEnableProblem} />
                 <SectionToggle id="edit-sec-vote" label="투표 게시판" checked={editEnableVote} onChange={setEditEnableVote} />
+                <SectionToggle id="edit-sec-record" label="활동기록 게시판" checked={editEnableRecord} onChange={setEditEnableRecord} />
               </div>
               {editEnablePost && (
                 <div className="space-y-2 pt-1">
@@ -998,6 +1030,18 @@ function CategoriesPage() {
                     value={editVoteName}
                     onChange={(e) => setEditVoteName(e.target.value)}
                     placeholder="예: 투표, 인기상 투표"
+                    className="rounded-xl bg-background"
+                  />
+                </div>
+              )}
+              {editEnableRecord && (
+                <div className="space-y-2 pt-1">
+                  <Label htmlFor="edit-record-name">활동기록 게시판 이름</Label>
+                  <Input
+                    id="edit-record-name"
+                    value={editRecordName}
+                    onChange={(e) => setEditRecordName(e.target.value)}
+                    placeholder="예: 활동기록, 팀 기록"
                     className="rounded-xl bg-background"
                   />
                 </div>
