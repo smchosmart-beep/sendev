@@ -399,7 +399,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
 
 
 
-        {isBoardPost && (
+        {(isBoardPost || post.type === "vote") && (
           <article className="post-content prose prose-sm mt-6 max-w-none break-words border-t border-border pt-6 [&_a]:break-words [&_a]:[overflow-wrap:anywhere] prose-headings:text-foreground prose-p:text-foreground prose-a:text-primary prose-a:no-underline prose-strong:text-foreground prose-code:text-primary prose-li:text-foreground prose-table:text-foreground">
             {post.content.trim() ? (
               <ReactMarkdown
