@@ -22,9 +22,14 @@ categories (해커톤 탭, enable_record = true)
 - 수정 권한: 글 작성자 비밀번호 또는 관리자. 개인 후기는 본인 닉네임 비밀번호.
 - **팀당 활동기록 1개 원칙**: 같은 카테고리에서 팀원은 새 활동기록을 따로 만들 수 없고, 팀원 전원이 하나의 글을 함께 편집합니다.
 
-## 보완 1 — `posts.type` 제약 확장 (필수)
+## 보완 1 — `'record'` 타입 허용 (DB + 서버 함수 양쪽, 필수)
 
-현재 제약은 `['post','project','link','problem','vote']`뿐이라 `'record'` 저장이 즉시 실패합니다. 마이그레이션 첫 문장에서 제약을 다시 만들어 `'record'`를 추가합니다.
+두 곳 모두 막혀 있어서 한쪽만 고치면 저장이 실패합니다.
+
+- **DB**: 현재 제약은 `['post','project','link','problem','vote']`뿐이라 `'record'` 저장이 즉시 실패합니다. 마이그레이션 첫 문장에서 `posts_type_check`를 다시 만들어 `'record'`를 추가합니다.
+- **서버 함수**: `src/lib/platform.functions.ts`의 `createPost` 입력 검증(`type: z.enum([...])`)에도 `'record'`를 추가합니다. 이 enum이 먼저 걸러내므로 DB만 고치면 요청이 DB에 도달조차 못 합니다.
+- 활동기록 생성은 전용 서버 함수(`src/lib/record.functions.ts`)에서 `type: 'record'`를 고정해 수행하되, 기존 `createPost` 경로로도 저장될 수 있으므로 enum 확장은 그대로 적용합니다.
+
 
 ## 보완 2 — 기존 보안 패턴 유지 (필수)
 
