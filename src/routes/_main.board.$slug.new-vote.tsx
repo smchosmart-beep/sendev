@@ -42,10 +42,8 @@ function NewVotePage() {
   const category = categories.find((c) => c.slug === slug);
   const boardName = category?.voteName || "투표";
 
-  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   useApplyPostTemplate(category?.id, "vote", content, setContent);
-  const [deployUrl, setDeployUrl] = useState("");
   const {
     author,
     setAuthor,
@@ -64,14 +62,16 @@ function NewVotePage() {
         data: {
           categoryId: category!.id,
           type: "vote",
-          title,
+          // 제목 입력칸이 없으므로 본문 앞부분에서 자동 생성한다(화면에는 노출되지 않음).
+          title: deriveTitleFromContent(content),
           content,
           author,
           nicknamePassword,
           githubUrl: "",
-          deployUrl: deployUrl.trim(),
+          deployUrl: "",
         },
       }),
+
     onSuccess: (res) => {
       persistIdentity();
       queryClient.invalidateQueries({ queryKey: ["posts", category!.id] });
