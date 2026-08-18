@@ -49,9 +49,8 @@ export interface RecordBundleDTO {
 export const getRecord = createServerFn({ method: "GET" })
   .inputValidator((input) => z.object({ postId: z.string().uuid() }).parse(input))
   .handler(async ({ data }): Promise<RecordBundleDTO | null> => {
-    const { getRecordDb, ensureNickname, normalizeName, requireTeamMember, isAdminPassword, RECORD_ROW_KINDS } = await import("./record.server");
-    void ensureNickname; void normalizeName; void requireTeamMember; void isAdminPassword; void RECORD_ROW_KINDS;
-    const db = await getRecordDb();
+    const R = await import("./record.server");
+    const db = await R.getRecordDb();
     const { data: post } = await db
       .from("posts")
       .select("id, category_id, title, type")
@@ -118,11 +117,10 @@ export const createRecord = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }): Promise<{ postNo: number; existing: boolean }> => {
-    const { getRecordDb, ensureNickname, normalizeName, requireTeamMember, isAdminPassword, RECORD_ROW_KINDS } = await import("./record.server");
-    void ensureNickname; void normalizeName; void requireTeamMember; void isAdminPassword; void RECORD_ROW_KINDS;
-    const db = await getRecordDb();
-    const author = await ensureNickname(db, data.author, data.nicknamePassword);
-    const key = normalizeName(author);
+    const R = await import("./record.server");
+    const db = await R.getRecordDb();
+    const author = await R.ensureNickname(db, data.author, data.nicknamePassword);
+    const key = R.normalizeName(author);
 
     const { data: mine } = await db
       .from("record_members")
@@ -192,17 +190,16 @@ export const addRecordMember = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { getRecordDb, ensureNickname, normalizeName, requireTeamMember, isAdminPassword, RECORD_ROW_KINDS } = await import("./record.server");
-    void ensureNickname; void normalizeName; void requireTeamMember; void isAdminPassword; void RECORD_ROW_KINDS;
-    const db = await getRecordDb();
-    await requireTeamMember(db, data.postId, data.author, data.nicknamePassword, data.adminPassword);
+    const R = await import("./record.server");
+    const db = await R.getRecordDb();
+    await R.requireTeamMember(db, data.postId, data.author, data.nicknamePassword, data.adminPassword);
     const { data: post } = await db
       .from("posts")
       .select("category_id")
       .eq("id", data.postId)
       .maybeSingle();
     if (!post) throw new Error("활동기록을 찾을 수 없어요.");
-    const key = normalizeName(data.member);
+    const key = R.normalizeName(data.member);
     const { data: dup } = await db
       .from("record_members")
       .select("post_id")
@@ -231,10 +228,9 @@ export const removeRecordMember = createServerFn({ method: "POST" })
     z.object({ postId: z.string().uuid(), memberId: z.string().uuid(), ...authFields }).parse(input),
   )
   .handler(async ({ data }) => {
-    const { getRecordDb, ensureNickname, normalizeName, requireTeamMember, isAdminPassword, RECORD_ROW_KINDS } = await import("./record.server");
-    void ensureNickname; void normalizeName; void requireTeamMember; void isAdminPassword; void RECORD_ROW_KINDS;
-    const db = await getRecordDb();
-    await requireTeamMember(db, data.postId, data.author, data.nicknamePassword, data.adminPassword);
+    const R = await import("./record.server");
+    const db = await R.getRecordDb();
+    await R.requireTeamMember(db, data.postId, data.author, data.nicknamePassword, data.adminPassword);
     const { data: rest } = await db
       .from("record_members")
       .select("id")
@@ -277,10 +273,9 @@ export const saveRecordFinal = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }): Promise<{ ok: true; updatedAt: string; updatedBy: string }> => {
-    const { getRecordDb, ensureNickname, normalizeName, requireTeamMember, isAdminPassword, RECORD_ROW_KINDS } = await import("./record.server");
-    void ensureNickname; void normalizeName; void requireTeamMember; void isAdminPassword; void RECORD_ROW_KINDS;
-    const db = await getRecordDb();
-    const who = await requireTeamMember(
+    const R = await import("./record.server");
+    const db = await R.getRecordDb();
+    const who = await R.requireTeamMember(
       db,
       data.postId,
       data.author,
@@ -344,17 +339,16 @@ export const saveRecordRow = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }): Promise<{ id: string; updatedAt: string; updatedBy: string }> => {
-    const { getRecordDb, ensureNickname, normalizeName, requireTeamMember, isAdminPassword, RECORD_ROW_KINDS } = await import("./record.server");
-    void ensureNickname; void normalizeName; void requireTeamMember; void isAdminPassword; void RECORD_ROW_KINDS;
-    const db = await getRecordDb();
-    const who = await requireTeamMember(
+    const R = await import("./record.server");
+    const db = await R.getRecordDb();
+    const who = await R.requireTeamMember(
       db,
       data.postId,
       data.author,
       data.nicknamePassword,
       data.adminPassword,
     );
-    if (!RECORD_ROW_KINDS.includes(data.kind)) throw new Error("잘못된 항목이에요.");
+    if (!R.RECORD_ROW_KINDS.includes(data.kind)) throw new Error("잘못된 항목이에요.");
     const payload = {
       post_id: data.postId,
       kind: data.kind,
@@ -403,10 +397,9 @@ export const deleteRecordRow = createServerFn({ method: "POST" })
     z.object({ postId: z.string().uuid(), id: z.string().uuid(), ...authFields }).parse(input),
   )
   .handler(async ({ data }) => {
-    const { getRecordDb, ensureNickname, normalizeName, requireTeamMember, isAdminPassword, RECORD_ROW_KINDS } = await import("./record.server");
-    void ensureNickname; void normalizeName; void requireTeamMember; void isAdminPassword; void RECORD_ROW_KINDS;
-    const db = await getRecordDb();
-    await requireTeamMember(db, data.postId, data.author, data.nicknamePassword, data.adminPassword);
+    const R = await import("./record.server");
+    const db = await R.getRecordDb();
+    await R.requireTeamMember(db, data.postId, data.author, data.nicknamePassword, data.adminPassword);
     const { error } = await db
       .from("record_rows")
       .delete()
@@ -421,5 +414,5 @@ export const isRecordAdmin = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ adminPassword: z.string().max(200).default("") }).parse(input))
   .handler(async ({ data }) => {
     const { isAdminPassword } = await import("./record.server");
-    return { ok: isAdminPassword(data.adminPassword) };
+    return { ok: R.isAdminPassword(data.adminPassword) };
   });
