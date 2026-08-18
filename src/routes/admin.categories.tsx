@@ -18,6 +18,7 @@ import {
 } from "@/lib/platform.functions";
 import type { CategoryDTO, TabGroup } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
+import { PostEditor } from "@/components/PostEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
