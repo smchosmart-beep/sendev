@@ -1212,7 +1212,9 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
       update({
         data: isBoardPost
           ? { id: postId, password: editPw, title, content, author, pinned }
-          : { id: postId, password: editPw, title, author, githubUrl, deployUrl },
+          : post.type === "vote"
+            ? { id: postId, password: editPw, title, content, author, deployUrl }
+            : { id: postId, password: editPw, title, author, githubUrl, deployUrl },
       }),
     onSuccess: (res) => {
       if (!res.ok) {
