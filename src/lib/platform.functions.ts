@@ -1993,18 +1993,18 @@ export const markAllPostsRead = createServerFn({ method: "POST" })
     if (!usernameKey) return { marked: 0 };
     const db = await getAdmin();
 
-    // 대상 글 id 수집(일반 글만). range로 전량 조회.
+    // 대상 글 id 수집(모든 유형: 일반/산출물/링크/문제/투표). range로 전량 조회.
     const PAGE = 1000;
     const postIds: string[] = [];
     for (let from = 0; ; from += PAGE) {
       let query = db
         .from("posts")
         .select("id")
-        .eq("type", "post")
         .order("id", { ascending: true })
         .range(from, from + PAGE - 1);
       if (data.categoryId) query = query.eq("category_id", data.categoryId);
       const { data: rows, error } = await query;
+
       if (error) throw new Error(error.message);
       const batch = rows ?? [];
       for (const r of batch) postIds.push(String(r.id));
