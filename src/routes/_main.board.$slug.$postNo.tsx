@@ -1236,7 +1236,15 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
         data: isBoardPost
           ? { id: postId, password: editPw, title, content, author, pinned }
           : post.type === "vote"
-            ? { id: postId, password: editPw, title, content, author, deployUrl }
+            ? {
+                id: postId,
+                password: editPw,
+                // 투표 글은 제목 입력이 없으므로 본문에서 다시 생성한다.
+                title: deriveTitleFromContent(content),
+                content,
+                author,
+                deployUrl,
+              }
             : { id: postId, password: editPw, title, author, githubUrl, deployUrl },
       }),
     onSuccess: (res) => {
