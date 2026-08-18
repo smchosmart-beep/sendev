@@ -165,59 +165,65 @@ function MainLayout() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-20 bg-card/90 shadow-sm backdrop-blur">
-        <div className="mx-auto grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-6 py-4 sm:gap-3 sm:px-28">
-          <Link to="/home" className="flex items-center gap-2">
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md">
+        <div className="mx-auto grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-6 py-4 lg:px-10 2xl:px-28 sm:gap-3 2xl:gap-4">
+          <Link to="/home" className="flex shrink-0 items-center gap-2">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md">
               <Code2 className="h-5 w-5" />
             </span>
-            <span className="text-xl font-bold text-foreground sm:text-xl">
+            <span className="whitespace-nowrap text-sm font-bold text-foreground lg:text-base xl:text-xl">
               SEN DEV CONNECT
             </span>
           </Link>
 
           <nav
             className={cn(
-              "min-w-0 flex-nowrap items-center justify-center gap-2 sm:gap-3 2xl:gap-4",
+              "min-w-0 flex-nowrap items-center justify-center gap-2 overflow-hidden sm:gap-3 2xl:gap-4",
               navCollapsed ? "hidden" : "hidden sm:flex",
             )}
           >
             <Link
               to={guideTab.to}
               className={cn(
-                "flex items-center gap-2 rounded-2xl px-2 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-3 2xl:px-4",
+                "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-2xl px-2 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-3 2xl:px-4",
                 isGuide
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "text-muted-foreground hover:-translate-y-0.5 hover:text-foreground",
               )}
             >
-              <guideTab.icon className="h-4 w-4" />
-              {guideTab.label}
+              <guideTab.icon className="h-4 w-4 shrink-0" />
+              <span className={cn(isGuide ? "inline" : "hidden xl:inline")}>
+                {guideTab.label}
+              </span>
             </Link>
 
             <Link
               to={homeTab.to}
               className={cn(
-                "flex items-center gap-2 rounded-2xl px-2 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-3 2xl:px-4",
+                "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-2xl px-2 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-3 2xl:px-4",
                 isHome
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "text-muted-foreground hover:-translate-y-0.5 hover:text-foreground",
               )}
             >
-              <homeTab.icon className="h-4 w-4" />
-              {homeTab.label}
+              <homeTab.icon className="h-4 w-4 shrink-0" />
+              <span className={cn(isHome ? "inline" : "hidden xl:inline")}>
+                {homeTab.label}
+              </span>
             </Link>
 
             <Link
               to={calendarTab.to}
               className={cn(
-                "flex items-center gap-2 rounded-2xl px-2 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-3 2xl:px-4",
+                "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-2xl px-2 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-3 2xl:px-4",
                 isCalendar
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "text-muted-foreground hover:-translate-y-0.5 hover:text-foreground",
               )}
             >
-              <calendarTab.icon className="h-4 w-4" />
-              {calendarTab.label}
+              <calendarTab.icon className="h-4 w-4 shrink-0" />
+              <span className={cn(isCalendar ? "inline" : "hidden xl:inline")}>
+                {calendarTab.label}
+              </span>
             </Link>
 
             {boardTabs.map(({ group, label, icon: Icon }) => {
@@ -229,14 +235,14 @@ function MainLayout() {
                   search={{ tab: group }}
                   title={label}
                   className={cn(
-                    "flex items-center gap-2 rounded-2xl px-2 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-3 2xl:px-4",
+                    "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-2xl px-2 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-3 2xl:px-4",
                     active
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "text-muted-foreground hover:-translate-y-0.5 hover:text-foreground",
                   )}
                 >
-                  <Icon className="h-4 w-4" />
-                  <span className={cn(active ? "inline" : "hidden 2xl:inline")}>
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className={cn(active ? "inline" : "hidden xl:inline")}>
                     {label}
                   </span>
                   <TabUnreadBadge count={unreadByTab[group]} active={active} />
