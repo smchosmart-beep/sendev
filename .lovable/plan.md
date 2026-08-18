@@ -20,6 +20,7 @@ categories (해커톤 탭, enable_record = true)
 
 - `event_id` → `posts.category_id`, `team_id` → `posts.id`, `member_id` → `username_key`
 - 수정 권한: 글 작성자 비밀번호 또는 관리자. 개인 후기는 본인 닉네임 비밀번호.
+- **팀당 활동기록 1개 원칙**: 같은 카테고리에서 팀원은 새 활동기록을 따로 만들 수 없고, 팀원 전원이 하나의 글을 함께 편집합니다.
 
 ## 보완 1 — `posts.type` 제약 확장 (필수)
 
