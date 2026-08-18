@@ -202,6 +202,28 @@ export function VoteSection({
 
       </p>
 
+      {status === "open" && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3">
+          <p className="text-sm text-foreground">
+            선택 <b className="text-primary">{selected.size}</b> / {required}
+            {savedSet.size > 0 && !dirty && (
+              <span className="ml-2 text-xs text-muted-foreground">저장됨</span>
+            )}
+          </p>
+          <Button
+            type="button"
+            className="rounded-xl active:scale-95"
+            disabled={!canSave || saveMutation.isPending}
+            onClick={() => saveMutation.mutate([...selected])}
+          >
+            <Save className="h-4 w-4" />
+            {saveMutation.isPending ? "저장 중..." : "투표 저장"}
+          </Button>
+        </div>
+      )}
+
+
+
       {isAdmin && (
         <AdminVoteControls
           categoryId={category.id}
