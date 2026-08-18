@@ -1,15 +1,16 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Lock, Plus, RotateCcw, Trophy, Vote } from "lucide-react";
+import { Check, Lock, Plus, RotateCcw, Save, Trophy, Vote } from "lucide-react";
 import { toast } from "sonner";
 
 import type { CategoryDTO, PostDTO } from "@/lib/platform.functions";
-import { castVote, resetVotes, setVoteStatus } from "@/lib/platform.functions";
+import { normalizeUsername, resetVotes, setVoteStatus, submitVotes } from "@/lib/platform.functions";
 import {
   getBoardPassword,
   myVotesQueryOptions,
+  voteRequirementQueryOptions,
   voteResultsQueryOptions,
   voteStateQueryOptions,
 } from "@/lib/platform.queries";
@@ -29,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
 
 const PAGE_SIZE = 36;
 
