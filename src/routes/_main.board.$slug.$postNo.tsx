@@ -399,7 +399,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
 
 
 
-        {isBoardPost && (
+        {(isBoardPost || post.type === "vote") && (
           <article className="post-content prose prose-sm mt-6 max-w-none break-words border-t border-border pt-6 [&_a]:break-words [&_a]:[overflow-wrap:anywhere] prose-headings:text-foreground prose-p:text-foreground prose-a:text-primary prose-a:no-underline prose-strong:text-foreground prose-code:text-primary prose-li:text-foreground prose-table:text-foreground">
             {post.content.trim() ? (
               <ReactMarkdown
@@ -1150,7 +1150,9 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
       : "글"
     : post.type === "link"
       ? linkName
-      : projectName;
+      : post.type === "vote"
+        ? category?.voteName || "투표"
+        : projectName;
 
   const [editGateOpen, setEditGateOpen] = useState(false);
   const [editGatePw, setEditGatePw] = useState("");
@@ -1212,7 +1214,9 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
       update({
         data: isBoardPost
           ? { id: postId, password: editPw, title, content, author, pinned }
-          : { id: postId, password: editPw, title, author, githubUrl, deployUrl },
+          : post.type === "vote"
+            ? { id: postId, password: editPw, title, content, author, deployUrl }
+            : { id: postId, password: editPw, title, author, githubUrl, deployUrl },
       }),
     onSuccess: (res) => {
       if (!res.ok) {
@@ -1581,7 +1585,36 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
                 className="rounded-xl"
               />
             </div>
-            {isBoardPost ? (
+            {post.type === "vote" ? (
+              <>
+                <div className="space-y-2">
+                  <Label>내용</Label>
+                  <PostEditor value={content} onChange={setContent} rows={8} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="e-vote-author">작성자</Label>
+                  <Input
+                    id="e-vote-author"
+                    value={author}
+                    readOnly
+                    className="rounded-xl bg-muted text-muted-foreground"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    투표 게시판은 한 명당 한 개만 등록할 수 있어 작성자는 바꿀 수 없어요.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="e-vote-url">대표 링크 (선택)</Label>
+                  <Input
+                    id="e-vote-url"
+                    value={deployUrl}
+                    onChange={(e) => setDeployUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="rounded-xl"
+                  />
+                </div>
+              </>
+            ) : isBoardPost ? (
               <>
                 <div className="space-y-2">
                   <Label>내용</Label>
