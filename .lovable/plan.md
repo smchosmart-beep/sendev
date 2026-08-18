@@ -21,16 +21,19 @@
   - 새 서버 함수 `submitVotes`: `{ categoryId, postIds[], nickname, nicknamePassword, boardPassword, adminPassword }`.
     - 게시판 접근 확인 → `vote_status === "open"` 확인 → 닉네임 소유권 확인(`ensureNicknameOwnership`).
     - 해당 카테고리의 `type = 'vote'` 글을 조회해 `postIds` 유효성 검증, `normalizeName(author) === voterKey` 인 글이 포함되면 거부.
-    - 필요 표 수 `required = min(vote_max_choices, 본인 글 제외 후보 수)`; `postIds.length !== required` 또는 중복 id면 거부.
-    - 기존 표 전체 삭제 후 새 목록 일괄 insert(원자적 재저장).
-  - 기존 `castVote`는 남겨두되 UI에서는 사용하지 않습니다(단건 토글 경로에서도 본인 글 차단 조건 추가).
-- `src/lib/platform.queries.ts`: 변경 없음(저장 후 `my-votes` 무효화만 재사용).
+    - 필요 표 수 `required = min(vote_max_choices, 본인 글 제외 전체 후보 수)`; `postIds.length !== required` 또는 중복 id면 거부.
+    - **표 유실 방지**: 전량 삭제 후 재삽입하지 않고, 기존 표와의 차집합만 처리한다. 추가분을 먼저 insert → 성공 후 제거분을 delete.
+  - 새 서버 함수 `getVoteRequirement`(경량 GET): `{ categoryId, nickname }` → `{ required, eligibleCount }`. 검색 필터와 무관한 전체 후보 기준 값을 서버가 계산해 내려준다.
+  - 기존 `castVote`는 남겨두되 UI에서는 사용하지 않습니다(단건 토글 경로에도 본인 글 차단 조건 추가).
+- `src/lib/platform.queries.ts`: `voteRequirementQueryOptions(categoryId, nickname)` 추가(캐시 키 `["vote-requirement", categoryId, nickname]`). 저장 성공 시 `my-votes`와 함께 무효화.
 - `src/components/VoteSection.tsx`
   - `selected: Set<string>` 로컬 상태를 `myVotes`로 초기화/동기화.
   - 카드 버튼: 선택 토글, 본인 글이면 `disabled` + “내 글” 표시, 정원 초과 선택 시 토스트 안내.
-  - 헤더 영역에 `선택 n / N` 카운터와 저장 버튼(`useServerFn(submitVotes)` + `useMutation`), 저장 성공 시 `my-votes` 무효화.
-  - 본인 글 판별은 저장된 닉네임과 `post.author`를 정규화 비교(자기 글 여부만 노출되므로 익명성 유지).
+  - 헤더 영역에 `선택 n / N` 카운터와 저장 버튼(`useServerFn(submitVotes)` + `useMutation`).
+  - **검색 중 불일치 방지**: 카운터·저장 활성 조건의 분모는 화면에 보이는 `posts`(검색 필터 결과)가 아니라 서버가 준 `required` 값을 사용한다. 선택 상태도 필터와 무관하게 유지된다.
+  - 본인 글 판별은 저장된 닉네임과 `post.author`를 `normalizeUsername`(공개 export)으로 정규화 비교. 서버 최종 검증은 기존 `normalizeName`을 그대로 사용한다.
 - `src/routes/_main.guide.tsx`: 투표 게시판 문단 문구 보강.
+
 
 ## 영향 범위
 
