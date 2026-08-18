@@ -1949,7 +1949,7 @@ export const listPostStubs = createServerFn({ method: "GET" }).handler(
 );
 
 // 특정 닉네임이 읽은 모든 게시글 id 목록.
-// 주의: 1000행 제한 — 한 사용자가 1000개 이상 읽으면 범위 처리가 필요함.
+// PostgREST 기본 1000행 제한을 넘길 수 있으므로 range 페이지네이션으로 전부 읽는다.
 export const listReadPostIds = createServerFn({ method: "GET" })
   .inputValidator((input) =>
     z.object({ author: z.string().trim().min(1).max(50) }).parse(input),
@@ -1958,18 +1958,76 @@ export const listReadPostIds = createServerFn({ method: "GET" })
     const usernameKey = normalizeUsername(data.author);
     if (!usernameKey) return [];
     const db = await getAdmin();
-    const { data: rows, error } = await db
-      .from("post_reads")
-      .select("post_id")
-      .eq("username_key", usernameKey)
-      .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
-    const ids: string[] = Array.from(
-      new Set((rows ?? []).map((r: any) => String(r.post_id))),
-    );
+    const PAGE = 1000;
+    const all: string[] = [];
+    for (let from = 0; ; from += PAGE) {
+      const { data: rows, error } = await db
+        .from("post_reads")
+        .select("post_id")
+        .eq("username_key", usernameKey)
+        .order("post_id", { ascending: true })
+        .range(from, from + PAGE - 1);
+      if (error) throw new Error(error.message);
+      const batch = rows ?? [];
+      for (const r of batch) all.push(String(r.post_id));
+      if (batch.length < PAGE) break;
+    }
+    const ids: string[] = Array.from(new Set(all));
     ids.sort();
     return ids;
   });
+
+// 특정 닉네임 기준으로 (전체 또는 한 게시판의) 모든 글을 읽음 처리한다.
+// 닉네임을 새로 등록한 사용자가 쌓인 미열람 표시를 한 번에 정리하기 위한 기능.
+export const markAllPostsRead = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        author: z.string().trim().min(1).max(50),
+        categoryId: z.string().uuid().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ marked: number }> => {
+    const usernameKey = normalizeUsername(data.author);
+    if (!usernameKey) return { marked: 0 };
+    const db = await getAdmin();
+
+    // 대상 글 id 수집(모든 유형: 일반/산출물/링크/문제/투표). range로 전량 조회.
+    const PAGE = 1000;
+    const postIds: string[] = [];
+    for (let from = 0; ; from += PAGE) {
+      let query = db
+        .from("posts")
+        .select("id")
+        .order("id", { ascending: true })
+        .range(from, from + PAGE - 1);
+      if (data.categoryId) query = query.eq("category_id", data.categoryId);
+      const { data: rows, error } = await query;
+
+      if (error) throw new Error(error.message);
+      const batch = rows ?? [];
+      for (const r of batch) postIds.push(String(r.id));
+      if (batch.length < PAGE) break;
+    }
+    if (postIds.length === 0) return { marked: 0 };
+
+    const CHUNK = 500;
+    for (let i = 0; i < postIds.length; i += CHUNK) {
+      const rows = postIds
+        .slice(i, i + CHUNK)
+        .map((id) => ({ username_key: usernameKey, post_id: id }));
+      const { error } = await db
+        .from("post_reads")
+        .upsert(rows, {
+          onConflict: "username_key,post_id",
+          ignoreDuplicates: true,
+        });
+      if (error) throw new Error(error.message);
+    }
+    return { marked: postIds.length };
+  });
+
 
 // 글을 읽음으로 기록(닉네임 정규화 키 + post_id, 중복은 무시).
 // 검증 실패 시 조용히 무시 — 읽음은 비핵심 기능이라 에러로 흐름을 막지 않음.
