@@ -1150,7 +1150,9 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
       : "글"
     : post.type === "link"
       ? linkName
-      : projectName;
+      : post.type === "vote"
+        ? category?.voteName || "투표"
+        : projectName;
 
   const [editGateOpen, setEditGateOpen] = useState(false);
   const [editGatePw, setEditGatePw] = useState("");
