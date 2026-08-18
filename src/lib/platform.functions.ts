@@ -508,6 +508,9 @@ export const updateCategory = createServerFn({ method: "POST" })
         linkName: z.string().trim().max(100).optional(),
         problemName: z.string().trim().max(100).optional(),
         voteName: z.string().trim().max(100).optional(),
+        templatePost: z.string().max(8000).optional(),
+        templateQuestion: z.string().max(8000).optional(),
+        templateVote: z.string().max(8000).optional(),
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .optional(),
