@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useNicknameIdentity, useNicknameClaimed } from "@/hooks/useNicknameIdentity";
 import { useApplyPostTemplate } from "@/hooks/usePostTemplate";
+import { deriveTitleFromContent, htmlToPlainText } from "@/lib/post-text";
 
 export const Route = createFileRoute("/_main/board/$slug/new-vote")({
   loader: ({ context }) =>
