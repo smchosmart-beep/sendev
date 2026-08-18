@@ -11,7 +11,6 @@ import {
   removeRecordMember,
   saveRecordFinal,
   saveRecordRow,
-  type RecordBundleDTO,
   type RecordRowDTO,
 } from "@/lib/record.functions";
 import { getAdminPassword } from "@/lib/admin-auth";
@@ -61,8 +60,20 @@ const ROW_SECTIONS: {
   },
 ];
 
+type FinalKey =
+  | "serviceName"
+  | "oneLiner"
+  | "targetUser"
+  | "problem"
+  | "solution"
+  | "heroImageUrl"
+  | "deployUrl"
+  | "githubUrl"
+  | "techStack"
+  | "envNames";
+
 const FINAL_FIELDS: {
-  key: keyof RecordBundleDTO["final"] & string;
+  key: FinalKey;
   label: string;
   placeholder: string;
   multiline?: boolean;
@@ -81,19 +92,7 @@ const FINAL_FIELDS: {
     label: "환경변수 이름만",
     placeholder: "예: API_KEY (값은 절대 적지 마세요)",
   },
-] as never;
-
-type FinalKey =
-  | "serviceName"
-  | "oneLiner"
-  | "targetUser"
-  | "problem"
-  | "solution"
-  | "heroImageUrl"
-  | "deployUrl"
-  | "githubUrl"
-  | "techStack"
-  | "envNames";
+];
 
 export function RecordEditor({ postId }: { postId: string }) {
   const queryClient = useQueryClient();
@@ -304,8 +303,8 @@ export function RecordEditor({ postId }: { postId: string }) {
               {f.multiline ? (
                 <Textarea
                   id={`rec-${f.key}`}
-                  value={final[f.key as FinalKey]}
-                  onChange={(e) => onFinalChange(f.key as FinalKey, e.target.value)}
+                  value={final[f.key]}
+                  onChange={(e) => onFinalChange(f.key, e.target.value)}
                   placeholder={f.placeholder}
                   rows={4}
                   disabled={!canEdit}
@@ -314,8 +313,8 @@ export function RecordEditor({ postId }: { postId: string }) {
               ) : (
                 <Input
                   id={`rec-${f.key}`}
-                  value={final[f.key as FinalKey]}
-                  onChange={(e) => onFinalChange(f.key as FinalKey, e.target.value)}
+                  value={final[f.key]}
+                  onChange={(e) => onFinalChange(f.key, e.target.value)}
                   placeholder={f.placeholder}
                   disabled={!canEdit}
                   className="rounded-xl"
