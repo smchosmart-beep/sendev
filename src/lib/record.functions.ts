@@ -225,7 +225,7 @@ export const addRecordMember = createServerFn({ method: "POST" })
 
 export const removeRecordMember = createServerFn({ method: "POST" })
   .inputValidator((input) =>
-    z.object({ postId: z.string().uuid(), memberId: z.string().uuid(), ...authFields }).parse(input),
+    z.object({ postId: z.string().uuid(), memberId: z.string().uuid(), author: z.string().trim().max(100).default(""), nicknamePassword: z.string().trim().max(100).default(""), adminPassword: z.string().max(200).default("") }).parse(input),
   )
   .handler(async ({ data }) => {
     const R = await import("./record.server");
@@ -394,7 +394,7 @@ export const saveRecordRow = createServerFn({ method: "POST" })
 
 export const deleteRecordRow = createServerFn({ method: "POST" })
   .inputValidator((input) =>
-    z.object({ postId: z.string().uuid(), id: z.string().uuid(), ...authFields }).parse(input),
+    z.object({ postId: z.string().uuid(), id: z.string().uuid(), author: z.string().trim().max(100).default(""), nicknamePassword: z.string().trim().max(100).default(""), adminPassword: z.string().max(200).default("") }).parse(input),
   )
   .handler(async ({ data }) => {
     const R = await import("./record.server");
@@ -414,5 +414,5 @@ export const isRecordAdmin = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ adminPassword: z.string().max(200).default("") }).parse(input))
   .handler(async ({ data }) => {
     const { isAdminPassword } = await import("./record.server");
-    return { ok: R.isAdminPassword(data.adminPassword) };
+    return { ok: isAdminPassword(data.adminPassword) };
   });
