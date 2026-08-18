@@ -15,6 +15,14 @@ export function htmlToPlainText(input: string): string {
     .replace(/&quot;/gi, '"')
     .replace(/&#39;/gi, "'")
     .replace(/[*_`>#-]{1,}\s/g, " ")
+    // 템플릿/마크다운에서 입력된 리터럴 이스케이프 문자를 평문으로 정리한다.
+    .replace(/\\\[/g, "[")
+    .replace(/\\\]/g, "]")
+    .replace(/\\n/g, " ")
+    .replace(/\\\n/g, " ")
+    .replace(/\\\r/g, " ")
+    .replace(/\\\t/g, " ")
+    .replace(/\\\\/g, "\\")
     .replace(/\s+/g, " ")
     .trim();
 }
