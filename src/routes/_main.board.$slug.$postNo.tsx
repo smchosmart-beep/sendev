@@ -1589,7 +1589,12 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (!title.trim() || (!isBoardPost && !author.trim())) {
+              if (post.type === "vote") {
+                if (!content.trim()) {
+                  toast.error("내용을 입력해주세요.");
+                  return;
+                }
+              } else if (!title.trim() || (!isBoardPost && !author.trim())) {
                 toast.error("제목과 작성자를 입력해주세요.");
                 return;
               }
@@ -1597,15 +1602,17 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
             }}
             className="min-w-0 space-y-4 py-2"
           >
-            <div className="space-y-2">
-              <Label htmlFor="e-title">제목</Label>
-              <Input
-                id="e-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="rounded-xl"
-              />
-            </div>
+            {post.type !== "vote" && (
+              <div className="space-y-2">
+                <Label htmlFor="e-title">제목</Label>
+                <Input
+                  id="e-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="rounded-xl"
+                />
+              </div>
+            )}
             {post.type === "vote" ? (
               <>
                 <div className="space-y-2">
@@ -1622,20 +1629,12 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
                   />
                   <p className="text-xs text-muted-foreground">
                     투표 게시판은 한 명당 한 개만 등록할 수 있어 작성자는 바꿀 수 없어요.
+                    투표가 끝나기 전까지 작성자는 다른 사람에게 보이지 않아요.
                   </p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="e-vote-url">대표 링크 (선택)</Label>
-                  <Input
-                    id="e-vote-url"
-                    value={deployUrl}
-                    onChange={(e) => setDeployUrl(e.target.value)}
-                    placeholder="https://..."
-                    className="rounded-xl"
-                  />
                 </div>
               </>
             ) : isBoardPost ? (
+
               <>
                 <div className="space-y-2">
                   <Label>내용</Label>
