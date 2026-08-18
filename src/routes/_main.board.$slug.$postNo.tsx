@@ -331,8 +331,10 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
   const isLink = post.type === "link";
   const isVote = post.type === "vote";
   // 투표 글은 제목 없이 본문만 작성하며, 종료 전까지 작성자를 숨긴다(관리자 제외).
+  const postCategory = allCategories.find((c) => c.id === post.categoryId);
   const voteAdmin = typeof window !== "undefined" && getAdminPassword().length > 0;
-  const hideVoteAuthor = isVote && category?.voteStatus !== "closed" && !voteAdmin;
+  const hideVoteAuthor =
+    isVote && postCategory?.voteStatus !== "closed" && !voteAdmin;
   const embedUrl = isLink ? getEmbedUrl(post.deployUrl) : null;
 
   return (
@@ -342,7 +344,8 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
       <div className="rounded-2xl bg-card p-6 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           {isVote ? (
-            <span className="sr-only">{noun}</span>
+            <h1 className="sr-only">{postCategory?.voteName || "투표"} 후보</h1>
+
           ) : (
             <h1 className="text-xl font-bold text-foreground break-words sm:text-2xl">{post.title}</h1>
           )}
