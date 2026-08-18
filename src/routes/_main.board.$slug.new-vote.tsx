@@ -112,8 +112,8 @@ function NewVotePage() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (!title.trim() || !author.trim()) {
-              toast.error("제목과 작성자를 입력해주세요.");
+            if (!htmlToPlainText(content) || !author.trim()) {
+              toast.error("내용과 작성자를 입력해주세요.");
               return;
             }
             if (needsConfirm && nicknamePassword.trim() !== nicknamePasswordConfirm.trim()) {
@@ -124,28 +124,7 @@ function NewVotePage() {
           }}
           className="mt-6 space-y-4"
         >
-          <div className="space-y-2">
-            <Label htmlFor="v-title">제목</Label>
-            <Input
-              id="v-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="rounded-xl"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="v-url">대표 링크 (선택)</Label>
-            <Input
-              id="v-url"
-              value={deployUrl}
-              onChange={(e) => setDeployUrl(e.target.value)}
-              placeholder="https://..."
-              className="rounded-xl"
-            />
-            <p className="text-xs text-muted-foreground">
-              입력하면 카드에 미리보기 썸네일이 표시돼요.
-            </p>
-          </div>
+
           <div className="space-y-2">
             <Label>내용</Label>
             <PostEditor
