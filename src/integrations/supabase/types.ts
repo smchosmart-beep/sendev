@@ -70,6 +70,9 @@ export type Database = {
           slug: string
           sort_order: number
           tab_group: string
+          template_post: string
+          template_question: string
+          template_vote: string
           vote_max_choices: number
           vote_name: string
           vote_status: string
@@ -102,6 +105,9 @@ export type Database = {
           slug: string
           sort_order?: number
           tab_group?: string
+          template_post?: string
+          template_question?: string
+          template_vote?: string
           vote_max_choices?: number
           vote_name?: string
           vote_status?: string
@@ -134,6 +140,9 @@ export type Database = {
           slug?: string
           sort_order?: number
           tab_group?: string
+          template_post?: string
+          template_question?: string
+          template_vote?: string
           vote_max_choices?: number
           vote_name?: string
           vote_status?: string

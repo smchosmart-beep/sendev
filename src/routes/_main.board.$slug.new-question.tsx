@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useNicknameIdentity, useNicknameClaimed } from "@/hooks/useNicknameIdentity";
+import { useApplyPostTemplate } from "@/hooks/usePostTemplate";
 
 export const Route = createFileRoute("/_main/board/$slug/new-question")({
   loader: ({ context }) =>
@@ -43,6 +44,7 @@ function NewQuestionPage() {
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  useApplyPostTemplate(category?.id, "question", content, setContent);
   const [pinned, setPinned] = useState(false);
   const {
     author,

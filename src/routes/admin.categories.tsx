@@ -12,11 +12,13 @@ import {
   updateCategory,
   deleteCategory,
   getCategoryPassword,
+  getCategoryTemplates,
   swapCategoryOrder,
   listCategoryAuthors,
 } from "@/lib/platform.functions";
 import type { CategoryDTO, TabGroup } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
+import { PostEditor } from "@/components/PostEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -79,6 +81,7 @@ function CategoriesPage() {
   const updateFn = useServerFn(updateCategory);
   const deleteFn = useServerFn(deleteCategory);
   const getPasswordFn = useServerFn(getCategoryPassword);
+  const getTemplatesFn = useServerFn(getCategoryTemplates);
   const swapOrderFn = useServerFn(swapCategoryOrder);
   const listAuthorsFn = useServerFn(listCategoryAuthors);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -164,6 +167,9 @@ function CategoriesPage() {
   const [editIsGroup, setEditIsGroup] = useState(false);
   const [editHidden, setEditHidden] = useState(false);
   const [editParentId, setEditParentId] = useState<string>("");
+  const [editTemplatePost, setEditTemplatePost] = useState("");
+  const [editTemplateQuestion, setEditTemplateQuestion] = useState("");
+  const [editTemplateVote, setEditTemplateVote] = useState("");
 
   const [deleting, setDeleting] = useState<CategoryDTO | null>(null);
 
@@ -277,6 +283,9 @@ function CategoriesPage() {
           isGroup: editIsGroup,
           hidden: editHidden,
           parentId: editParentId || null,
+          templatePost: editTemplatePost,
+          templateQuestion: editTemplateQuestion,
+          templateVote: editTemplateVote,
 
         },
       }),
@@ -370,6 +379,16 @@ function CategoriesPage() {
     setEditIsGroup(c.isGroup);
     setEditHidden(c.hidden);
     setEditParentId(c.parentId ?? "");
+    setEditTemplatePost("");
+    setEditTemplateQuestion("");
+    setEditTemplateVote("");
+    getTemplatesFn({ data: { id: c.id, adminPassword: getAdminPassword() } })
+      .then((res) => {
+        setEditTemplatePost(res.post);
+        setEditTemplateQuestion(res.question);
+        setEditTemplateVote(res.vote);
+      })
+      .catch(() => toast.error("작성 템플릿을 불러오지 못했어요."));
     if (c.hasPassword) {
       getPasswordFn({ data: { id: c.id, adminPassword: getAdminPassword() } })
         .then((res) => setEditPassword(res.password))
@@ -983,7 +1002,52 @@ function CategoriesPage() {
                   />
                 </div>
               )}
+
+              {/* 글 작성 템플릿 */}
+              <details className="rounded-xl border border-border bg-background p-3">
+                <summary className="cursor-pointer text-sm font-medium text-foreground">
+                  글 작성 템플릿
+                </summary>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  등록해 두면 해당 게시판에서 글쓰기를 시작할 때 본문에 미리
+                  채워집니다. 비워두면 빈 본문으로 시작해요.
+                </p>
+                <div className="mt-3 space-y-4">
+                  {editEnablePost && (
+                    <div className="space-y-2">
+                      <Label>{editGeneralName || "일반게시판"} 템플릿</Label>
+                      <PostEditor
+                        value={editTemplatePost}
+                        onChange={setEditTemplatePost}
+                        placeholder="예: [누구] 은/는 ..."
+                        rows={6}
+                      />
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <Label>질문 템플릿</Label>
+                    <PostEditor
+                      value={editTemplateQuestion}
+                      onChange={setEditTemplateQuestion}
+                      placeholder="질문 글 작성 양식을 입력하세요."
+                      rows={6}
+                    />
+                  </div>
+                  {editEnableVote && (
+                    <div className="space-y-2">
+                      <Label>{editVoteName || "투표"} 템플릿</Label>
+                      <PostEditor
+                        value={editTemplateVote}
+                        onChange={setEditTemplateVote}
+                        placeholder="예: [누구] 은/는 ..."
+                        rows={6}
+                      />
+                    </div>
+                  )}
+                </div>
+              </details>
             </div>
+
           </div>
           <DialogFooter>
             <Button

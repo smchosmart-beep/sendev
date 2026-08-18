@@ -342,6 +342,65 @@ export const getCategoryPassword = createServerFn({ method: "POST" })
     return { password: row?.password ?? "" };
   });
 
+// Returns the admin-authored writing template for one board + post type.
+// Kept out of listCategories so the site-wide category payload stays small.
+export const getPostTemplate = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        type: z.enum(["post", "question", "vote"]),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ template: string }> => {
+    const column =
+      data.type === "post"
+        ? "template_post"
+        : data.type === "question"
+          ? "template_question"
+          : "template_vote";
+    const db = await getAdmin();
+    const { data: row, error } = await db
+      .from("categories")
+      .select(column)
+      .eq("id", data.categoryId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return { template: ((row as any)?.[column] as string) ?? "" };
+  });
+
+// Admin edit modal: all three templates for one board at once.
+export const getCategoryTemplates = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(
+    async ({
+      data,
+    }): Promise<{ post: string; question: string; vote: string }> => {
+      requireAdmin(data.adminPassword);
+      const db = await getAdmin();
+      const { data: row, error } = await db
+        .from("categories")
+        .select("template_post, template_question, template_vote")
+        .eq("id", data.id)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return {
+        post: (row as any)?.template_post ?? "",
+        question: (row as any)?.template_question ?? "",
+        vote: (row as any)?.template_vote ?? "",
+      };
+    },
+  );
+
+
 // Returns a slug unique across categories, deriving from `base` and appending a
 // numeric suffix on collisions. `excludeId` lets an update keep its own slug.
 async function ensureUniqueSlug(
@@ -449,6 +508,9 @@ export const updateCategory = createServerFn({ method: "POST" })
         linkName: z.string().trim().max(100).optional(),
         problemName: z.string().trim().max(100).optional(),
         voteName: z.string().trim().max(100).optional(),
+        templatePost: z.string().max(8000).optional(),
+        templateQuestion: z.string().max(8000).optional(),
+        templateVote: z.string().max(8000).optional(),
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .optional(),
@@ -491,6 +553,10 @@ export const updateCategory = createServerFn({ method: "POST" })
     if (data.problemName !== undefined)
       patch.problem_name = data.problemName || "문제ZIP";
     if (data.voteName !== undefined) patch.vote_name = data.voteName || "투표";
+    if (data.templatePost !== undefined) patch.template_post = data.templatePost;
+    if (data.templateQuestion !== undefined)
+      patch.template_question = data.templateQuestion;
+    if (data.templateVote !== undefined) patch.template_vote = data.templateVote;
     if (data.tabGroup !== undefined) patch.tab_group = data.tabGroup;
     if (data.hidden !== undefined) patch.hidden = data.hidden;
     const { error } = await db.from("categories").update(patch).eq("id", data.id);
