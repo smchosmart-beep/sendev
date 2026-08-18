@@ -15,11 +15,11 @@
    `grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6` → `grid-cols-2 gap-3 sm:grid-cols-4`  
    → 모바일 2개, 그 외 화면(태블릿/중간 화면/데스크탑) 모두 4개로 줄여 카드 폭을 넓힙니다.
 
-2. **카드 내부 크기 확대**  
-   - 패딩: `p-3` → `p-4`
-   - 제목: `text-sm` → `text-base`, `line-clamp-2` 유지
-   - 작성자: `text-xs` → `text-sm`
-   - 투표 버튼: `h-7 px-2 text-xs` → `h-8 px-3 text-sm`
+2. **제목 가독성을 최우선으로 확대**  
+   - 제목: `text-sm` → `text-base`, `line-clamp-2` → `line-clamp-3`  
+   - 패딩: `p-3` → `p-4`  
+   - 작성자: `text-xs` → `text-sm`  
+   - 투표 버튼: `h-7 px-2 text-xs` → `h-8 px-3 text-sm`  
    - 등수 뱃지/비공개 문구 크기도 약간 키움
 
 3. **페이지 크기 및 페이지네이션 유지**  
