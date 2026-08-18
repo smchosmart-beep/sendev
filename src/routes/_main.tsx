@@ -165,7 +165,7 @@ function MainLayout() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-20 bg-card/90 shadow-sm backdrop-blur">
-        <div className="mx-auto flex w-full items-center gap-3 px-6 py-4 sm:gap-10 sm:px-28">
+        <div className="mx-auto grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-6 py-4 sm:gap-3 sm:px-28">
           <Link to="/home" className="flex items-center gap-2">
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md">
               <Code2 className="h-5 w-5" />
@@ -177,14 +177,14 @@ function MainLayout() {
 
           <nav
             className={cn(
-              "mx-auto flex-wrap justify-center gap-2 sm:gap-7",
+              "min-w-0 flex-nowrap items-center justify-center gap-2 sm:gap-3 2xl:gap-4",
               navCollapsed ? "hidden" : "hidden sm:flex",
             )}
           >
             <Link
               to={guideTab.to}
               className={cn(
-                "flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95",
+                "flex items-center gap-2 rounded-2xl px-2 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-3 2xl:px-4",
                 isGuide
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "text-muted-foreground hover:-translate-y-0.5 hover:text-foreground",
@@ -197,7 +197,7 @@ function MainLayout() {
             <Link
               to={homeTab.to}
               className={cn(
-                "flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95",
+                "flex items-center gap-2 rounded-2xl px-2 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-3 2xl:px-4",
                 isHome
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "text-muted-foreground hover:-translate-y-0.5 hover:text-foreground",
@@ -209,9 +209,8 @@ function MainLayout() {
 
             <Link
               to={calendarTab.to}
-
               className={cn(
-                "flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95",
+                "flex items-center gap-2 rounded-2xl px-2 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-3 2xl:px-4",
                 isCalendar
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "text-muted-foreground hover:-translate-y-0.5 hover:text-foreground",
@@ -228,173 +227,168 @@ function MainLayout() {
                   key={group}
                   to="/board"
                   search={{ tab: group }}
+                  title={label}
                   className={cn(
-                    "flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95",
+                    "flex items-center gap-2 rounded-2xl px-2 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-3 2xl:px-4",
                     active
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "text-muted-foreground hover:-translate-y-0.5 hover:text-foreground",
                   )}
                 >
                   <Icon className="h-4 w-4" />
-                  {label}
+                  <span className={cn(active ? "inline" : "hidden 2xl:inline")}>
+                    {label}
+                  </span>
                   <TabUnreadBadge count={unreadByTab[group]} active={active} />
-
                 </Link>
               );
             })}
           </nav>
 
-          <Link
-            to="/search"
-            search={{ q: "", mode: "title" }}
-            aria-label="검색"
-            className="hidden h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:flex"
-          >
-            <Search className="h-5 w-5" />
-          </Link>
-
-
-          <Link
-            to="/mypage"
-            aria-label="내 페이지"
-            className="hidden h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:flex"
-          >
-            <span className="relative inline-flex">
-              <UserRound className="h-5 w-5" />
-              <span className="pointer-events-none absolute -bottom-1 -right-1.5 rounded-full bg-primary px-1 text-[8px] font-bold leading-[1.4] text-primary-foreground">my</span>
-            </span>
-          </Link>
-
-
-          <Link
-            to="/admin/categories"
-            aria-label="관리자"
-            className="hidden h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:flex"
-          >
-            <Settings className="h-5 w-5" />
-          </Link>
-
-          <button
-            type="button"
-            aria-label={navCollapsed ? "메뉴 펼치기" : "메뉴 접기"}
-            title={navCollapsed ? "메뉴 펼치기" : "메뉴 접기"}
-            aria-pressed={navCollapsed}
-            onClick={() => setNavCollapsed((v) => !v)}
-            className="hidden h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:flex"
-          >
-            {navCollapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
-          </button>
-
-
-          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-            <SheetTrigger
-              aria-label="메뉴 열기"
-              className="ml-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm active:scale-95 sm:hidden"
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              to="/search"
+              search={{ q: "", mode: "title" }}
+              aria-label="검색"
+              className="hidden h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:flex"
             >
-              <Menu className="h-5 w-5" />
-            </SheetTrigger>
-            <SheetContent side="right" className="w-72">
-              <SheetHeader>
-                <SheetTitle>메뉴</SheetTitle>
-              </SheetHeader>
-              <nav className="mt-6 flex flex-col gap-2">
-                <Link
-                  to={guideTab.to}
-                  onClick={() => setMenuOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors",
-                    isGuide
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
-                >
-                  <guideTab.icon className="h-5 w-5" />
-                  {guideTab.label}
-                </Link>
+              <Search className="h-5 w-5" />
+            </Link>
 
-                <Link
-                  to={homeTab.to}
-                  onClick={() => setMenuOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors",
-                    isHome
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
-                >
-                  <homeTab.icon className="h-5 w-5" />
-                  {homeTab.label}
-                </Link>
+            <Link
+              to="/mypage"
+              aria-label="내 페이지"
+              className="hidden h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:flex"
+            >
+              <span className="relative inline-flex">
+                <UserRound className="h-5 w-5" />
+                <span className="pointer-events-none absolute -bottom-1 -right-1.5 rounded-full bg-primary px-1 text-[8px] font-bold leading-[1.4] text-primary-foreground">my</span>
+              </span>
+            </Link>
 
-                <Link
-                  to={calendarTab.to}
+            <Link
+              to="/admin/categories"
+              aria-label="관리자"
+              className="hidden h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:flex"
+            >
+              <Settings className="h-5 w-5" />
+            </Link>
 
-                  onClick={() => setMenuOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors",
-                    isCalendar
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
-                >
-                  <calendarTab.icon className="h-5 w-5" />
-                  {calendarTab.label}
-                </Link>
+            <button
+              type="button"
+              aria-label={navCollapsed ? "메뉴 펼치기" : "메뉴 접기"}
+              title={navCollapsed ? "메뉴 펼치기" : "메뉴 접기"}
+              aria-pressed={navCollapsed}
+              onClick={() => setNavCollapsed((v) => !v)}
+              className="hidden h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95 sm:flex"
+            >
+              {navCollapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
+            </button>
 
-                {boardTabs.map(({ group, label, icon: Icon }) => {
-                  const active = onBoardList && activeGroup === group;
-                  return (
-                    <Link
-                      key={group}
-                      to="/board"
-                      search={{ tab: group }}
-                      onClick={() => setMenuOpen(false)}
-                      className={cn(
-                        "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors",
-                        active
-                          ? "bg-primary text-primary-foreground shadow-md"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                      )}
-                    >
-                      <Icon className="h-5 w-5" />
-                      {label}
-                      <TabUnreadBadge count={unreadByTab[group]} active={active} />
+            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+              <SheetTrigger
+                aria-label="메뉴 열기"
+                className="flex h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm active:scale-95 sm:hidden"
+              >
+                <Menu className="h-5 w-5" />
+              </SheetTrigger>
+              <SheetContent side="right" className="w-72">
+                <SheetHeader>
+                  <SheetTitle>메뉴</SheetTitle>
+                </SheetHeader>
+                <nav className="mt-6 flex flex-col gap-2">
+                  <Link
+                    to={guideTab.to}
+                    onClick={() => setMenuOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors",
+                      isGuide
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    <guideTab.icon className="h-5 w-5" />
+                    {guideTab.label}
+                  </Link>
 
-                    </Link>
-                  );
-                })}
+                  <Link
+                    to={homeTab.to}
+                    onClick={() => setMenuOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors",
+                      isHome
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    <homeTab.icon className="h-5 w-5" />
+                    {homeTab.label}
+                  </Link>
 
-                <div className="mt-2">
-                  <MenuSearchBox onSubmitted={() => setMenuOpen(false)} />
-                </div>
+                  <Link
+                    to={calendarTab.to}
+                    onClick={() => setMenuOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors",
+                      isCalendar
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    <calendarTab.icon className="h-5 w-5" />
+                    {calendarTab.label}
+                  </Link>
 
-                <Link
-                  to="/mypage"
-                  onClick={() => setMenuOpen(false)}
-                  className="mt-2 flex items-center gap-3 rounded-2xl border border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  <span className="relative inline-flex">
-                    <UserRound className="h-5 w-5" />
-                    <span className="pointer-events-none absolute -bottom-1 -right-1.5 rounded-full bg-primary px-1 text-[8px] font-bold leading-[1.4] text-primary-foreground">my</span>
-                  </span>
-                  내 페이지
-                </Link>
+                  {boardTabs.map(({ group, label, icon: Icon }) => {
+                    const active = onBoardList && activeGroup === group;
+                    return (
+                      <Link
+                        key={group}
+                        to="/board"
+                        search={{ tab: group }}
+                        onClick={() => setMenuOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors",
+                          active
+                            ? "bg-primary text-primary-foreground shadow-md"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                        )}
+                      >
+                        <Icon className="h-5 w-5" />
+                        {label}
+                        <TabUnreadBadge count={unreadByTab[group]} active={active} />
+                      </Link>
+                    );
+                  })}
 
+                  <div className="mt-2">
+                    <MenuSearchBox onSubmitted={() => setMenuOpen(false)} />
+                  </div>
 
+                  <Link
+                    to="/mypage"
+                    onClick={() => setMenuOpen(false)}
+                    className="mt-2 flex items-center gap-3 rounded-2xl border border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <span className="relative inline-flex">
+                      <UserRound className="h-5 w-5" />
+                      <span className="pointer-events-none absolute -bottom-1 -right-1.5 rounded-full bg-primary px-1 text-[8px] font-bold leading-[1.4] text-primary-foreground">my</span>
+                    </span>
+                    내 페이지
+                  </Link>
 
-
-                <Link
-                  to="/admin/categories"
-                  onClick={() => setMenuOpen(false)}
-                  className="mt-2 flex items-center gap-3 rounded-2xl border border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  <Settings className="h-5 w-5" />
-                  관리자
-                </Link>
-
-              </nav>
-            </SheetContent>
-          </Sheet>
+                  <Link
+                    to="/admin/categories"
+                    onClick={() => setMenuOpen(false)}
+                    className="mt-2 flex items-center gap-3 rounded-2xl border border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <Settings className="h-5 w-5" />
+                    관리자
+                  </Link>
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </header>
 
