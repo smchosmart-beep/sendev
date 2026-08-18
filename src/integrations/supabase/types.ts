@@ -52,6 +52,7 @@ export type Database = {
           enable_problem: boolean
           enable_project: boolean
           enable_question: boolean
+          enable_record: boolean
           enable_vote: boolean
           eval_open: boolean
           eval_seed: number
@@ -66,6 +67,7 @@ export type Database = {
           password: string
           problem_name: string
           project_name: string
+          record_name: string
           review_allowlist_only: boolean
           slug: string
           sort_order: number
@@ -87,6 +89,7 @@ export type Database = {
           enable_problem?: boolean
           enable_project?: boolean
           enable_question?: boolean
+          enable_record?: boolean
           enable_vote?: boolean
           eval_open?: boolean
           eval_seed?: number
@@ -101,6 +104,7 @@ export type Database = {
           password?: string
           problem_name?: string
           project_name?: string
+          record_name?: string
           review_allowlist_only?: boolean
           slug: string
           sort_order?: number
@@ -122,6 +126,7 @@ export type Database = {
           enable_problem?: boolean
           enable_project?: boolean
           enable_question?: boolean
+          enable_record?: boolean
           enable_vote?: boolean
           eval_open?: boolean
           eval_seed?: number
@@ -136,6 +141,7 @@ export type Database = {
           password?: string
           problem_name?: string
           project_name?: string
+          record_name?: string
           review_allowlist_only?: boolean
           slug?: string
           sort_order?: number
@@ -415,6 +421,154 @@ export type Database = {
           {
             foreignKeyName: "posts_parent_post_id_fkey"
             columns: ["parent_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      record_final: {
+        Row: {
+          created_at: string
+          deploy_url: string
+          env_names: string
+          github_url: string
+          hero_image_url: string
+          one_liner: string
+          post_id: string
+          problem: string
+          service_name: string
+          solution: string
+          target_user: string
+          tech_stack: string
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          created_at?: string
+          deploy_url?: string
+          env_names?: string
+          github_url?: string
+          hero_image_url?: string
+          one_liner?: string
+          post_id: string
+          problem?: string
+          service_name?: string
+          solution?: string
+          target_user?: string
+          tech_stack?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Update: {
+          created_at?: string
+          deploy_url?: string
+          env_names?: string
+          github_url?: string
+          hero_image_url?: string
+          one_liner?: string
+          post_id?: string
+          problem?: string
+          service_name?: string
+          solution?: string
+          target_user?: string
+          tech_stack?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_final_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: true
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      record_members: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          post_id: string
+          username: string
+          username_key: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          post_id: string
+          username: string
+          username_key: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          username?: string
+          username_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_members_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "record_members_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      record_rows: {
+        Row: {
+          col1: string
+          col2: string
+          col3: string
+          created_at: string
+          id: string
+          kind: string
+          post_id: string
+          sort_order: number
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          col1?: string
+          col2?: string
+          col3?: string
+          created_at?: string
+          id?: string
+          kind: string
+          post_id: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string
+        }
+        Update: {
+          col1?: string
+          col2?: string
+          col3?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          post_id?: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_rows_post_id_fkey"
+            columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "posts"
             referencedColumns: ["id"]
