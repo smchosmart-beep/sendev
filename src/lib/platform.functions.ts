@@ -1042,14 +1042,15 @@ export const searchPosts = createServerFn({ method: "GET" })
 
     let query = db
       .from("posts")
-      .select(`${POST_COLUMNS}, categories!inner(slug, name)`)
+      .select(`${POST_COLUMNS}, categories!inner(slug, name, vote_status)`)
       .order("created_at", { ascending: false })
       .limit(100);
 
     if (data.mode === "title") {
       query = query.ilike("title", pattern);
     } else if (data.mode === "author") {
-      query = query.ilike("author", pattern);
+      // 투표 후보 글은 종료 전까지 작성자를 숨기므로 작성자 검색에서 제외한다.
+      query = query.ilike("author", pattern).neq("type", "vote");
     } else {
       query = query.or(`title.ilike.${pattern},content.ilike.${pattern}`);
     }
@@ -1073,11 +1074,19 @@ export const searchPosts = createServerFn({ method: "GET" })
       }
     }
 
-    return posts.map((p: any) => ({
-      ...mapPost(p, counts[String(p.id)] ?? 0),
-      categorySlug: p.categories?.slug ?? "",
-      categoryName: p.categories?.name ?? "",
-    }));
+    return posts.map((p: any) => {
+      const mapped = mapPost(p, counts[String(p.id)] ?? 0);
+      // 투표가 종료되지 않은 게시판의 후보 글은 작성자를 마스킹한다.
+      const maskAuthor =
+        p.type === "vote" && (p.categories?.vote_status ?? "idle") !== "closed";
+      return {
+        ...mapped,
+        author: maskAuthor ? "" : mapped.author,
+        categorySlug: p.categories?.slug ?? "",
+        categoryName: p.categories?.name ?? "",
+      };
+    });
+
   });
 
 
