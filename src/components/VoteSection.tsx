@@ -17,6 +17,7 @@ import { getAdminPassword } from "@/lib/admin-auth";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import { useConfirm } from "@/hooks/useConfirm";
 import { EmptyState } from "@/components/EmptyState";
+import { voteCardText } from "@/lib/post-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
