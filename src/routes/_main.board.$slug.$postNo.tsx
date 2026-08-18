@@ -102,6 +102,8 @@ import { PostEditor } from "@/components/PostEditor";
 import { useNicknameIdentity, useStoredIdentity, useNicknameClaimed } from "@/hooks/useNicknameIdentity";
 import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
+import { getAdminPassword } from "@/lib/admin-auth";
+import { deriveTitleFromContent } from "@/lib/post-text";
 
 const NUMERIC_RE = /^\d+$/;
 
@@ -239,6 +241,7 @@ function LegacyPostRedirect({ slug, postId }: { slug: string; postId: string }) 
 function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
   const { data: post } = useSuspenseQuery(postByNoQueryOptions(slug, postNo, getBoardPassword(slug)));
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
+  const { data: allCategories } = useSuspenseQuery(categoriesQueryOptions());
 
   // 모바일 좌우 스와이프 / PC 좌우 방향키로 다음글(←)/이전글(→) 이동.
   const navigate = useNavigate();
@@ -326,6 +329,12 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
 
   const isBoardPost = post.type === "post";
   const isLink = post.type === "link";
+  const isVote = post.type === "vote";
+  // 투표 글은 제목 없이 본문만 작성하며, 종료 전까지 작성자를 숨긴다(관리자 제외).
+  const postCategory = allCategories.find((c) => c.id === post.categoryId);
+  const voteAdmin = typeof window !== "undefined" && getAdminPassword().length > 0;
+  const hideVoteAuthor =
+    isVote && postCategory?.voteStatus !== "closed" && !voteAdmin;
   const embedUrl = isLink ? getEmbedUrl(post.deployUrl) : null;
 
   return (
@@ -334,15 +343,27 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
 
       <div className="rounded-2xl bg-card p-6 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-          <h1 className="text-xl font-bold text-foreground break-words sm:text-2xl">{post.title}</h1>
+          {isVote ? (
+            <h1 className="sr-only">{postCategory?.voteName || "투표"} 후보</h1>
+
+          ) : (
+            <h1 className="text-xl font-bold text-foreground break-words sm:text-2xl">{post.title}</h1>
+          )}
           <ManagePost post={post} slug={slug} />
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <User className="h-4 w-4" />
-            {post.author}
-            <AuthorBadge author={post.author} profileMap={profileMap} size="md" />
+            {hideVoteAuthor ? (
+              "익명"
+            ) : (
+              <>
+                {post.author}
+                <AuthorBadge author={post.author} profileMap={profileMap} size="md" />
+              </>
+            )}
           </span>
+
           <span>
             {new Date(post.createdAt).toLocaleString("ko-KR", {
               year: "numeric",
@@ -1215,7 +1236,15 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
         data: isBoardPost
           ? { id: postId, password: editPw, title, content, author, pinned }
           : post.type === "vote"
-            ? { id: postId, password: editPw, title, content, author, deployUrl }
+            ? {
+                id: postId,
+                password: editPw,
+                // 투표 글은 제목 입력이 없으므로 본문에서 다시 생성한다.
+                title: deriveTitleFromContent(content),
+                content,
+                author,
+                deployUrl,
+              }
             : { id: postId, password: editPw, title, author, githubUrl, deployUrl },
       }),
     onSuccess: (res) => {
@@ -1568,7 +1597,12 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (!title.trim() || (!isBoardPost && !author.trim())) {
+              if (post.type === "vote") {
+                if (!content.trim()) {
+                  toast.error("내용을 입력해주세요.");
+                  return;
+                }
+              } else if (!title.trim() || (!isBoardPost && !author.trim())) {
                 toast.error("제목과 작성자를 입력해주세요.");
                 return;
               }
@@ -1576,15 +1610,17 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
             }}
             className="min-w-0 space-y-4 py-2"
           >
-            <div className="space-y-2">
-              <Label htmlFor="e-title">제목</Label>
-              <Input
-                id="e-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="rounded-xl"
-              />
-            </div>
+            {post.type !== "vote" && (
+              <div className="space-y-2">
+                <Label htmlFor="e-title">제목</Label>
+                <Input
+                  id="e-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="rounded-xl"
+                />
+              </div>
+            )}
             {post.type === "vote" ? (
               <>
                 <div className="space-y-2">
@@ -1601,20 +1637,12 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
                   />
                   <p className="text-xs text-muted-foreground">
                     투표 게시판은 한 명당 한 개만 등록할 수 있어 작성자는 바꿀 수 없어요.
+                    투표가 끝나기 전까지 작성자는 다른 사람에게 보이지 않아요.
                   </p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="e-vote-url">대표 링크 (선택)</Label>
-                  <Input
-                    id="e-vote-url"
-                    value={deployUrl}
-                    onChange={(e) => setDeployUrl(e.target.value)}
-                    placeholder="https://..."
-                    className="rounded-xl"
-                  />
                 </div>
               </>
             ) : isBoardPost ? (
+
               <>
                 <div className="space-y-2">
                   <Label>내용</Label>

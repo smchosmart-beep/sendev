@@ -17,6 +17,7 @@ import { getAdminPassword } from "@/lib/admin-auth";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import { useConfirm } from "@/hooks/useConfirm";
 import { EmptyState } from "@/components/EmptyState";
+import { voteCardText } from "@/lib/post-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -76,6 +77,9 @@ export function VoteSection({
     enabled: status === "closed",
   });
   const counts = results?.counts ?? {};
+  // 닉네임이 투표 판단에 영향을 주지 않도록, 종료 전까지는 작성자를 숨긴다(관리자 제외).
+  const showAuthor = status === "closed" || isAdmin;
+
 
   const vote = useServerFn(castVote);
   const voteMutation = useMutation({
@@ -198,13 +202,14 @@ export function VoteSection({
                         {rank}위
                       </span>
                     )}
-                    <p className="line-clamp-3 text-base font-semibold leading-snug text-foreground">
-                      {post.title}
+                    <p className="line-clamp-5 whitespace-pre-line text-sm font-medium leading-relaxed text-foreground">
+                      {voteCardText(post.content, post.title)}
                     </p>
-                    <p className="truncate text-sm text-muted-foreground" title={post.author}>
-                      {post.author}
+                    <p className="truncate text-sm text-muted-foreground">
+                      {showAuthor ? post.author : "익명"}
                     </p>
                   </Link>
+
                   <div className="flex items-center justify-between gap-2">
                     {status === "closed" ? (
                       <span className="text-sm font-semibold text-primary">

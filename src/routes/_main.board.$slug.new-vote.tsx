@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useNicknameIdentity, useNicknameClaimed } from "@/hooks/useNicknameIdentity";
 import { useApplyPostTemplate } from "@/hooks/usePostTemplate";
+import { deriveTitleFromContent, htmlToPlainText } from "@/lib/post-text";
 
 export const Route = createFileRoute("/_main/board/$slug/new-vote")({
   loader: ({ context }) =>
@@ -42,10 +43,8 @@ function NewVotePage() {
   const category = categories.find((c) => c.slug === slug);
   const boardName = category?.voteName || "투표";
 
-  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   useApplyPostTemplate(category?.id, "vote", content, setContent);
-  const [deployUrl, setDeployUrl] = useState("");
   const {
     author,
     setAuthor,
@@ -64,14 +63,16 @@ function NewVotePage() {
         data: {
           categoryId: category!.id,
           type: "vote",
-          title,
+          // 제목 입력칸이 없으므로 본문 앞부분에서 자동 생성한다(화면에는 노출되지 않음).
+          title: deriveTitleFromContent(content),
           content,
           author,
           nicknamePassword,
           githubUrl: "",
-          deployUrl: deployUrl.trim(),
+          deployUrl: "",
         },
       }),
+
     onSuccess: (res) => {
       persistIdentity();
       queryClient.invalidateQueries({ queryKey: ["posts", category!.id] });
@@ -112,8 +113,8 @@ function NewVotePage() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (!title.trim() || !author.trim()) {
-              toast.error("제목과 작성자를 입력해주세요.");
+            if (!htmlToPlainText(content) || !author.trim()) {
+              toast.error("내용과 작성자를 입력해주세요.");
               return;
             }
             if (needsConfirm && nicknamePassword.trim() !== nicknamePasswordConfirm.trim()) {
@@ -124,28 +125,7 @@ function NewVotePage() {
           }}
           className="mt-6 space-y-4"
         >
-          <div className="space-y-2">
-            <Label htmlFor="v-title">제목</Label>
-            <Input
-              id="v-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="rounded-xl"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="v-url">대표 링크 (선택)</Label>
-            <Input
-              id="v-url"
-              value={deployUrl}
-              onChange={(e) => setDeployUrl(e.target.value)}
-              placeholder="https://..."
-              className="rounded-xl"
-            />
-            <p className="text-xs text-muted-foreground">
-              입력하면 카드에 미리보기 썸네일이 표시돼요.
-            </p>
-          </div>
+
           <div className="space-y-2">
             <Label>내용</Label>
             <PostEditor

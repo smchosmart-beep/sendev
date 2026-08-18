@@ -147,7 +147,7 @@ function SearchPage() {
                 </span>
                 <span className="flex items-center gap-1">
                   <User className="h-3.5 w-3.5" />
-                  {post.author}
+                  {post.author || "익명"}
                 </span>
                 {post.commentCount > 0 && (
                   <span className="flex items-center gap-1 text-primary">
