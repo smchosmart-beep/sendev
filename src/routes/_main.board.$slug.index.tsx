@@ -307,40 +307,19 @@ function BoardInner({
           ) : (
             <>
               {pagedGenerals.map((g) => (
-                <Link
+                <PostListCard
                   key={g.id}
-                  to="/board/$slug/$postNo"
-                  params={{ slug, postNo: String(g.postNo) }}
-                  className="flex items-center justify-between gap-5 rounded-2xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
-                >
-                  <span className="flex flex-1 min-w-0 items-start gap-2">
-                    {isUnread(g.id) && (
-                      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-pink-500" aria-label="읽지 않음" />
-                    )}
-                    <span className="min-w-0 line-clamp-2 text-sm font-medium text-foreground">{g.title}</span>
-                  </span>
-                  <span className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
-                    <span className="hidden sm:flex items-center gap-1">
-                      <Eye className="h-3.5 w-3.5" />
-                      {g.viewCount}
-                    </span>
-                    {g.commentCount > 0 && (
-                      <span className="flex items-center gap-1 text-primary">
-                        <MessageCircle className="h-3.5 w-3.5" />
-                        {g.commentCount}
-                      </span>
-                    )}
-                    <span className="flex flex-col items-end gap-0.5 sm:flex-row sm:items-center sm:gap-1">
-                      <span className="flex items-center gap-1 whitespace-nowrap" title={g.author}>
-                        <User className="h-3.5 w-3.5" />
-                        {g.author}
-                        <AuthorBadge author={g.author} profileMap={profileMap} only="level" />
-                      </span>
-                      <AuthorBadge author={g.author} profileMap={profileMap} only="awards" expand />
-                    </span>
-                  </span>
-                </Link>
+                  slug={slug}
+                  postNo={g.postNo}
+                  title={g.title}
+                  author={g.author}
+                  profileMap={profileMap}
+                  viewCount={g.viewCount}
+                  commentCount={g.commentCount}
+                  unread={isUnread(g.id)}
+                />
               ))}
+
               <BoardPagination
                 page={currentGPage}
                 pageCount={generalPageCount}
