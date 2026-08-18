@@ -102,6 +102,8 @@ import { PostEditor } from "@/components/PostEditor";
 import { useNicknameIdentity, useStoredIdentity, useNicknameClaimed } from "@/hooks/useNicknameIdentity";
 import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
+import { getAdminPassword } from "@/lib/admin-auth";
+import { deriveTitleFromContent } from "@/lib/post-text";
 
 const NUMERIC_RE = /^\d+$/;
 
