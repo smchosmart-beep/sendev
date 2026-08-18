@@ -198,13 +198,14 @@ export function VoteSection({
                         {rank}위
                       </span>
                     )}
-                    <p className="line-clamp-3 text-base font-semibold leading-snug text-foreground">
-                      {post.title}
+                    <p className="line-clamp-5 whitespace-pre-line text-sm font-medium leading-relaxed text-foreground">
+                      {voteCardText(post.content, post.title)}
                     </p>
-                    <p className="truncate text-sm text-muted-foreground" title={post.author}>
-                      {post.author}
+                    <p className="truncate text-sm text-muted-foreground">
+                      {showAuthor ? post.author : "익명"}
                     </p>
                   </Link>
+
                   <div className="flex items-center justify-between gap-2">
                     {status === "closed" ? (
                       <span className="text-sm font-semibold text-primary">
