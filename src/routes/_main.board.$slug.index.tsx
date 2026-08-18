@@ -230,20 +230,6 @@ function BoardInner({
 
   return (
     <div className="space-y-6">
-      <BoardSearchBox
-        value={q}
-        onChange={(next) =>
-          navigate({
-            search: (prev: BoardSearch) => ({
-              ...prev,
-              q: next,
-              gpage: 1,
-              ppage: 1,
-            }),
-            replace: true,
-          })
-        }
-      />
 
       {noSearchResult && (
         <EmptyState
