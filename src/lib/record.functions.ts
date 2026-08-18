@@ -1,15 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import {
-  RECORD_ROW_KINDS,
-  ensureNickname,
-  getRecordDb,
-  isAdminPassword,
-  normalizeName,
-  requireTeamMember,
-  type RecordRowKind,
-} from "./record.server";
+import type { RecordRowKind } from "./record.server";
 
 export interface RecordMemberDTO {
   id: string;
@@ -57,6 +49,8 @@ export interface RecordBundleDTO {
 export const getRecord = createServerFn({ method: "GET" })
   .inputValidator((input) => z.object({ postId: z.string().uuid() }).parse(input))
   .handler(async ({ data }): Promise<RecordBundleDTO | null> => {
+    const { getRecordDb, ensureNickname, normalizeName, requireTeamMember, isAdminPassword, RECORD_ROW_KINDS } = await import("./record.server");
+    void ensureNickname; void normalizeName; void requireTeamMember; void isAdminPassword; void RECORD_ROW_KINDS;
     const db = await getRecordDb();
     const { data: post } = await db
       .from("posts")
@@ -124,6 +118,8 @@ export const createRecord = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }): Promise<{ postNo: number; existing: boolean }> => {
+    const { getRecordDb, ensureNickname, normalizeName, requireTeamMember, isAdminPassword, RECORD_ROW_KINDS } = await import("./record.server");
+    void ensureNickname; void normalizeName; void requireTeamMember; void isAdminPassword; void RECORD_ROW_KINDS;
     const db = await getRecordDb();
     const author = await ensureNickname(db, data.author, data.nicknamePassword);
     const key = normalizeName(author);
@@ -182,12 +178,6 @@ export const createRecord = createServerFn({ method: "POST" })
     throw new Error("게시글 번호를 부여하지 못했어요. 다시 시도해주세요.");
   });
 
-const authFields = {
-  author: z.string().trim().max(100).default(""),
-  nicknamePassword: z.string().trim().max(100).default(""),
-  adminPassword: z.string().max(200).default(""),
-};
-
 // 팀원 추가 — 한 게시판에서 한 사람은 한 팀에만 속할 수 있다.
 export const addRecordMember = createServerFn({ method: "POST" })
   .inputValidator((input) =>
@@ -195,11 +185,15 @@ export const addRecordMember = createServerFn({ method: "POST" })
       .object({
         postId: z.string().uuid(),
         member: z.string().trim().min(1).max(100),
-        ...authFields,
+        author: z.string().trim().max(100).default(""),
+        nicknamePassword: z.string().trim().max(100).default(""),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    const { getRecordDb, ensureNickname, normalizeName, requireTeamMember, isAdminPassword, RECORD_ROW_KINDS } = await import("./record.server");
+    void ensureNickname; void normalizeName; void requireTeamMember; void isAdminPassword; void RECORD_ROW_KINDS;
     const db = await getRecordDb();
     await requireTeamMember(db, data.postId, data.author, data.nicknamePassword, data.adminPassword);
     const { data: post } = await db
@@ -237,6 +231,8 @@ export const removeRecordMember = createServerFn({ method: "POST" })
     z.object({ postId: z.string().uuid(), memberId: z.string().uuid(), ...authFields }).parse(input),
   )
   .handler(async ({ data }) => {
+    const { getRecordDb, ensureNickname, normalizeName, requireTeamMember, isAdminPassword, RECORD_ROW_KINDS } = await import("./record.server");
+    void ensureNickname; void normalizeName; void requireTeamMember; void isAdminPassword; void RECORD_ROW_KINDS;
     const db = await getRecordDb();
     await requireTeamMember(db, data.postId, data.author, data.nicknamePassword, data.adminPassword);
     const { data: rest } = await db
@@ -274,11 +270,15 @@ export const saveRecordFinal = createServerFn({ method: "POST" })
             envNames: z.string().max(1000).optional(),
           })
           .default({}),
-        ...authFields,
+        author: z.string().trim().max(100).default(""),
+        nicknamePassword: z.string().trim().max(100).default(""),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }): Promise<{ ok: true; updatedAt: string; updatedBy: string }> => {
+    const { getRecordDb, ensureNickname, normalizeName, requireTeamMember, isAdminPassword, RECORD_ROW_KINDS } = await import("./record.server");
+    void ensureNickname; void normalizeName; void requireTeamMember; void isAdminPassword; void RECORD_ROW_KINDS;
     const db = await getRecordDb();
     const who = await requireTeamMember(
       db,
@@ -337,11 +337,15 @@ export const saveRecordRow = createServerFn({ method: "POST" })
         col2: z.string().max(1000).default(""),
         col3: z.string().max(1000).default(""),
         knownUpdatedAt: z.string().max(40).default(""),
-        ...authFields,
+        author: z.string().trim().max(100).default(""),
+        nicknamePassword: z.string().trim().max(100).default(""),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
   .handler(async ({ data }): Promise<{ id: string; updatedAt: string; updatedBy: string }> => {
+    const { getRecordDb, ensureNickname, normalizeName, requireTeamMember, isAdminPassword, RECORD_ROW_KINDS } = await import("./record.server");
+    void ensureNickname; void normalizeName; void requireTeamMember; void isAdminPassword; void RECORD_ROW_KINDS;
     const db = await getRecordDb();
     const who = await requireTeamMember(
       db,
@@ -399,6 +403,8 @@ export const deleteRecordRow = createServerFn({ method: "POST" })
     z.object({ postId: z.string().uuid(), id: z.string().uuid(), ...authFields }).parse(input),
   )
   .handler(async ({ data }) => {
+    const { getRecordDb, ensureNickname, normalizeName, requireTeamMember, isAdminPassword, RECORD_ROW_KINDS } = await import("./record.server");
+    void ensureNickname; void normalizeName; void requireTeamMember; void isAdminPassword; void RECORD_ROW_KINDS;
     const db = await getRecordDb();
     await requireTeamMember(db, data.postId, data.author, data.nicknamePassword, data.adminPassword);
     const { error } = await db
@@ -413,4 +419,7 @@ export const deleteRecordRow = createServerFn({ method: "POST" })
 // 관리자 전용: 활동기록 글 삭제는 기존 게시글 삭제 경로를 쓰지 않고 별도로 막아둔다.
 export const isRecordAdmin = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ adminPassword: z.string().max(200).default("") }).parse(input))
-  .handler(async ({ data }) => ({ ok: isAdminPassword(data.adminPassword) }));
+  .handler(async ({ data }) => {
+    const { isAdminPassword } = await import("./record.server");
+    return { ok: isAdminPassword(data.adminPassword) };
+  });
