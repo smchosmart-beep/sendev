@@ -236,7 +236,9 @@ function MainLayout() {
                   )}
                 >
                   <Icon className="h-4 w-4" />
-                  <span className="hidden 2xl:inline">{label}</span>
+                  <span className={cn(active ? "inline" : "hidden 2xl:inline")}>
+                    {label}
+                  </span>
                   <TabUnreadBadge count={unreadByTab[group]} active={active} />
                 </Link>
               );
