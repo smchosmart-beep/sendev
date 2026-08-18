@@ -83,11 +83,13 @@ function BoardLayout() {
       <BackLink tab={category.tabGroup} />
 
 
-      <div className="rounded-2xl bg-card p-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-foreground">{category.name}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {category.description || "설명이 없습니다."}
-        </p>
+      <div className="rounded-2xl bg-card p-4 shadow-sm">
+        <h1 className="text-xl font-bold text-foreground">{category.name}</h1>
+        {category.description && (
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            {category.description}
+          </p>
+        )}
       </div>
 
       {!mounted ? null : needsGate ? (
