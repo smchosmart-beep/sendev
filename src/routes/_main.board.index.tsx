@@ -295,6 +295,12 @@ function BoardListPage() {
     return map;
   }, [author, stubs, readIds]);
 
+  // 사이트 전체 미열람 수(모든 탭 합산) — "모두 읽음 처리" 버튼용.
+  const totalUnread = useMemo(
+    () => Object.values(unreadMap).reduce((a, b) => a + b, 0),
+    [unreadMap],
+  );
+
   const visibleIds = new Set(visible.map((c) => c.id));
   // Roots: items without a parent, or whose parent is not in this tab.
   const roots = visible.filter(
@@ -313,19 +319,23 @@ function BoardListPage() {
           <h1 className="text-2xl font-bold text-foreground">{TAB_LABELS[activeTab]}</h1>
           <p className="text-sm text-muted-foreground">{TAB_DESCRIPTIONS[activeTab]}</p>
         </div>
-        {isHackathon && (
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <Link
-              to="/readme"
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-secondary px-3 text-sm font-semibold text-secondary-foreground shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
-            >
-              <FileText className="h-4 w-4" />
-              README 작성
-            </Link>
-            <HackathonReviewButton onClick={openCreateReview} />
-          </div>
-        )}
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <MarkAllReadButton unreadCount={totalUnread} label="전체 읽음 처리" />
+          {isHackathon && (
+            <>
+              <Link
+                to="/readme"
+                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-secondary px-3 text-sm font-semibold text-secondary-foreground shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+              >
+                <FileText className="h-4 w-4" />
+                README 작성
+              </Link>
+              <HackathonReviewButton onClick={openCreateReview} />
+            </>
+          )}
+        </div>
       </div>
+
 
       {isHackathon && <HackathonReviewStripMobile onEdit={openEditReview} />}
 
