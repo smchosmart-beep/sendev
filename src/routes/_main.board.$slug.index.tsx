@@ -45,21 +45,6 @@ export const Route = createFileRoute("/_main/board/$slug/")({
       );
     }
   },
-  loader: async ({ context, params }) => {
-    const categories = await context.queryClient.ensureQueryData(
-      categoriesQueryOptions(),
-    );
-    const category = categories.find((c) => c.slug === params.slug);
-    context.queryClient.ensureQueryData(profileMapQueryOptions());
-    if (category) {
-      if (category.enableProblem) {
-        context.queryClient.ensureQueryData(problemOptionsQueryOptions());
-      }
-      await context.queryClient.ensureQueryData(
-        postsQueryOptions(category.id, getBoardPassword(params.slug)),
-      );
-    }
-  },
   errorComponent: ({ error }) => (
     <div role="alert" className="p-6 text-sm text-destructive">
       산출물을 불러오지 못했어요: {error.message}
