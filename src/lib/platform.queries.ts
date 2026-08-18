@@ -35,6 +35,8 @@ import {
   getVoteState,
   getMyVotes,
   getVoteResults,
+  getVoteRequirement,
+
 } from "./platform.functions";
 
 export const searchPostsQueryOptions = (
