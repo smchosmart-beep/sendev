@@ -202,7 +202,7 @@ export function VoteSection({
                         {rank}위
                       </span>
                     )}
-                    <p className="line-clamp-5 whitespace-pre-line text-sm font-medium leading-relaxed text-foreground">
+                    <p className="line-clamp-5 text-sm font-medium leading-relaxed text-foreground">
                       {voteCardText(post.content, post.title)}
                     </p>
                     <p className="truncate text-sm text-muted-foreground">
