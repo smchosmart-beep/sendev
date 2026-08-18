@@ -22,6 +22,8 @@ import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import { cn } from "@/lib/utils";
 import type { CategoryDTO, TabGroup } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
+import { MarkAllReadButton } from "@/components/MarkAllReadButton";
+
 import {
   HackathonReviewButton,
   HackathonReviewDialog,
