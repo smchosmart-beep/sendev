@@ -326,6 +326,10 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
 
   const isBoardPost = post.type === "post";
   const isLink = post.type === "link";
+  const isVote = post.type === "vote";
+  // 투표 글은 제목 없이 본문만 작성하며, 종료 전까지 작성자를 숨긴다(관리자 제외).
+  const voteAdmin = typeof window !== "undefined" && getAdminPassword().length > 0;
+  const hideVoteAuthor = isVote && category?.voteStatus !== "closed" && !voteAdmin;
   const embedUrl = isLink ? getEmbedUrl(post.deployUrl) : null;
 
   return (
@@ -334,15 +338,26 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
 
       <div className="rounded-2xl bg-card p-6 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-          <h1 className="text-xl font-bold text-foreground break-words sm:text-2xl">{post.title}</h1>
+          {isVote ? (
+            <span className="sr-only">{noun}</span>
+          ) : (
+            <h1 className="text-xl font-bold text-foreground break-words sm:text-2xl">{post.title}</h1>
+          )}
           <ManagePost post={post} slug={slug} />
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <User className="h-4 w-4" />
-            {post.author}
-            <AuthorBadge author={post.author} profileMap={profileMap} size="md" />
+            {hideVoteAuthor ? (
+              "익명"
+            ) : (
+              <>
+                {post.author}
+                <AuthorBadge author={post.author} profileMap={profileMap} size="md" />
+              </>
+            )}
           </span>
+
           <span>
             {new Date(post.createdAt).toLocaleString("ko-KR", {
               year: "numeric",
