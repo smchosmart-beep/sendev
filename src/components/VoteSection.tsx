@@ -168,7 +168,7 @@ export function VoteSection({
         />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {paged.map((post, idx) => {
               const voted = mySet.has(post.id);
               const count = counts[post.id] ?? 0;
@@ -176,7 +176,7 @@ export function VoteSection({
               return (
                 <div
                   key={post.id}
-                  className={`flex flex-col justify-between gap-2 rounded-2xl border p-3 shadow-sm transition-shadow hover:shadow-md ${
+                  className={`flex flex-col justify-between gap-3 rounded-2xl border p-4 shadow-sm transition-shadow hover:shadow-md ${
                     voted ? "border-primary bg-accent/50" : "border-border bg-card"
                   }`}
                 >
@@ -186,26 +186,26 @@ export function VoteSection({
                     className="space-y-1"
                   >
                     {status === "closed" && rank <= 3 && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                        <Trophy className="h-3 w-3" />
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                        <Trophy className="h-3.5 w-3.5" />
                         {rank}위
                       </span>
                     )}
-                    <p className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
+                    <p className="line-clamp-3 text-base font-semibold leading-snug text-foreground">
                       {post.title}
                     </p>
-                    <p className="truncate text-xs text-muted-foreground" title={post.author}>
+                    <p className="truncate text-sm text-muted-foreground" title={post.author}>
                       {post.author}
                     </p>
                   </Link>
                   <div className="flex items-center justify-between gap-2">
                     {status === "closed" ? (
-                      <span className="text-xs font-semibold text-primary">
+                      <span className="text-sm font-semibold text-primary">
                         {count}표
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                        <Lock className="h-3 w-3" />
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <Lock className="h-3.5 w-3.5" />
                         비공개
                       </span>
                     )}
@@ -215,7 +215,7 @@ export function VoteSection({
                       variant={voted ? "default" : "secondary"}
                       disabled={status !== "open" || voteMutation.isPending}
                       onClick={() => handleVote(post.id)}
-                      className="h-7 rounded-lg px-2 text-xs active:scale-95"
+                      className="h-8 rounded-lg px-3 text-sm active:scale-95"
                     >
                       {voted ? (
                         <>
