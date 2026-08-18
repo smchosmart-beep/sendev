@@ -12,8 +12,8 @@
 ## 수정 내용
 
 1. **그리드 컬럼 수 조정**  
-   `grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6` → `grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5`  
-   → 데스크탑에서 5개, 중간 화면에서 4개, 태블릿 3개, 모바일 2개로 줄여 카드 폭을 넓힙니다.
+   `grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6` → `grid-cols-2 gap-3 sm:grid-cols-4`  
+   → 모바일 2개, 그 외 화면(태블릿/중간 화면/데스크탑) 모두 4개로 줄여 카드 폭을 넓힙니다.
 
 2. **카드 내부 크기 확대**  
    - 패딩: `p-3` → `p-4`
