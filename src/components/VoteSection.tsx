@@ -72,7 +72,21 @@ export function VoteSection({
   const { data: myVotes = [] } = useQuery(
     myVotesQueryOptions(category.id, nickname, boardPassword, adminPassword),
   );
-  const mySet = useMemo(() => new Set(myVotes), [myVotes]);
+
+  const { data: requirement } = useQuery({
+    ...voteRequirementQueryOptions(category.id, nickname),
+    enabled: nickname.trim().length > 0,
+  });
+  const required = requirement?.required ?? maxChoices;
+
+  // 서버에 저장된 내 표를 로컬 선택 상태의 기준으로 삼는다.
+  const savedKey = useMemo(() => [...myVotes].sort().join("|"), [myVotes]);
+  const [selected, setSelected] = useState<Set<string>>(() => new Set(myVotes));
+  useEffect(() => {
+    setSelected(new Set(myVotes));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedKey]);
+  const mySet = selected;
 
   const { data: results } = useQuery({
     ...voteResultsQueryOptions(category.id, boardPassword, adminPassword),
@@ -82,23 +96,27 @@ export function VoteSection({
   // 닉네임이 투표 판단에 영향을 주지 않도록, 종료 전까지는 관리자 포함 모두 작성자를 숨긴다.
   const showAuthor = status === "closed";
 
+  const myKey = normalizeUsername(nickname);
+  const isMyPost = (author: string) =>
+    myKey.length > 0 && normalizeUsername(author ?? "") === myKey;
 
-  const vote = useServerFn(castVote);
-  const voteMutation = useMutation({
-    mutationFn: (postId: string) =>
-      vote({
+  const save = useServerFn(submitVotes);
+  const saveMutation = useMutation({
+    mutationFn: (postIds: string[]) =>
+      save({
         data: {
           categoryId: category.id,
-          postId,
+          postIds,
           nickname,
           nicknamePassword,
           boardPassword,
           adminPassword,
         },
       }),
-    onSuccess: (res) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-votes", category.id] });
-      toast.success(res.voted ? "투표했어요!" : "투표를 취소했어요.");
+      queryClient.invalidateQueries({ queryKey: ["vote-requirement", category.id] });
+      toast.success("투표를 저장했어요.");
     },
     onError: (err: unknown) =>
       toast.error(err instanceof Error ? err.message : "투표하지 못했어요."),
@@ -115,7 +133,14 @@ export function VoteSection({
   const current = Math.min(Math.max(1, page), pageCount);
   const paged = ordered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
 
-  const handleVote = (postId: string) => {
+  const savedSet = useMemo(() => new Set(myVotes), [myVotes]);
+  const dirty =
+    selected.size !== savedSet.size ||
+    [...selected].some((id) => !savedSet.has(id));
+  const canSave =
+    status === "open" && required > 0 && selected.size === required && dirty;
+
+  const handleVote = (postId: string, author: string) => {
     if (status !== "open") {
       toast.error("지금은 투표할 수 없어요.");
       return;
@@ -124,8 +149,25 @@ export function VoteSection({
       toast.error("먼저 메뉴에서 닉네임과 비밀번호를 등록해 주세요.");
       return;
     }
-    voteMutation.mutate(postId);
+    if (isMyPost(author)) {
+      toast.error("본인이 쓴 글에는 투표할 수 없어요.");
+      return;
+    }
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(postId)) {
+        next.delete(postId);
+        return next;
+      }
+      if (next.size >= required) {
+        toast.error(`최대 ${required}개까지 선택할 수 있어요.`);
+        return prev;
+      }
+      next.add(postId);
+      return next;
+    });
   };
+
 
   return (
     <section className="space-y-4">
