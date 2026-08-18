@@ -269,19 +269,26 @@ export function VoteSection({
                       type="button"
                       size="sm"
                       variant={voted ? "default" : "secondary"}
-                      disabled={status !== "open" || voteMutation.isPending}
-                      onClick={() => handleVote(post.id)}
+                      disabled={
+                        status !== "open" ||
+                        saveMutation.isPending ||
+                        isMyPost(post.author)
+                      }
+                      onClick={() => handleVote(post.id, post.author)}
                       className="h-8 rounded-lg px-3 text-sm active:scale-95"
                     >
-                      {voted ? (
+                      {isMyPost(post.author) ? (
+                        "내 글"
+                      ) : voted ? (
                         <>
                           <Check className="h-3 w-3" />
-                          투표함
+                          선택함
                         </>
                       ) : (
-                        "투표"
+                        "선택"
                       )}
                     </Button>
+
                   </div>
                   {isAdmin && status === "closed" && (results?.voters?.[post.id]?.length ?? 0) > 0 && (
                     <p className="text-[11px] leading-snug text-muted-foreground">
