@@ -12,6 +12,7 @@ import {
   updateCategory,
   deleteCategory,
   getCategoryPassword,
+  getCategoryTemplates,
   swapCategoryOrder,
   listCategoryAuthors,
 } from "@/lib/platform.functions";
@@ -79,6 +80,7 @@ function CategoriesPage() {
   const updateFn = useServerFn(updateCategory);
   const deleteFn = useServerFn(deleteCategory);
   const getPasswordFn = useServerFn(getCategoryPassword);
+  const getTemplatesFn = useServerFn(getCategoryTemplates);
   const swapOrderFn = useServerFn(swapCategoryOrder);
   const listAuthorsFn = useServerFn(listCategoryAuthors);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -277,6 +279,9 @@ function CategoriesPage() {
           isGroup: editIsGroup,
           hidden: editHidden,
           parentId: editParentId || null,
+          templatePost: editTemplatePost,
+          templateQuestion: editTemplateQuestion,
+          templateVote: editTemplateVote,
 
         },
       }),
@@ -370,6 +375,16 @@ function CategoriesPage() {
     setEditIsGroup(c.isGroup);
     setEditHidden(c.hidden);
     setEditParentId(c.parentId ?? "");
+    setEditTemplatePost("");
+    setEditTemplateQuestion("");
+    setEditTemplateVote("");
+    getTemplatesFn({ data: { id: c.id, adminPassword: getAdminPassword() } })
+      .then((res) => {
+        setEditTemplatePost(res.post);
+        setEditTemplateQuestion(res.question);
+        setEditTemplateVote(res.vote);
+      })
+      .catch(() => toast.error("작성 템플릿을 불러오지 못했어요."));
     if (c.hasPassword) {
       getPasswordFn({ data: { id: c.id, adminPassword: getAdminPassword() } })
         .then((res) => setEditPassword(res.password))
