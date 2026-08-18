@@ -330,11 +330,9 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
   const isBoardPost = post.type === "post";
   const isLink = post.type === "link";
   const isVote = post.type === "vote";
-  // 투표 글은 제목 없이 본문만 작성하며, 종료 전까지 작성자를 숨긴다(관리자 제외).
+  // 투표 글은 제목 없이 본문만 작성하며, 종료 전까지는 관리자 포함 모두 작성자를 숨긴다.
   const postCategory = allCategories.find((c) => c.id === post.categoryId);
-  const voteAdmin = typeof window !== "undefined" && getAdminPassword().length > 0;
-  const hideVoteAuthor =
-    isVote && postCategory?.voteStatus !== "closed" && !voteAdmin;
+  const hideVoteAuthor = isVote && postCategory?.voteStatus !== "closed";
   const embedUrl = isLink ? getEmbedUrl(post.deployUrl) : null;
 
   return (
