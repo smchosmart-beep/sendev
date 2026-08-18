@@ -30,6 +30,7 @@ import { Route as MainBoardIndexRouteImport } from './routes/_main.board.index'
 import { Route as MainBoardSlugRouteImport } from './routes/_main.board.$slug'
 import { Route as MainBoardSlugIndexRouteImport } from './routes/_main.board.$slug.index'
 import { Route as MainBoardSlugNewVoteRouteImport } from './routes/_main.board.$slug.new-vote'
+import { Route as MainBoardSlugNewRecordRouteImport } from './routes/_main.board.$slug.new-record'
 import { Route as MainBoardSlugNewQuestionRouteImport } from './routes/_main.board.$slug.new-question'
 import { Route as MainBoardSlugNewProjectRouteImport } from './routes/_main.board.$slug.new-project'
 import { Route as MainBoardSlugNewProblemRouteImport } from './routes/_main.board.$slug.new-problem'
@@ -142,6 +143,11 @@ const MainBoardSlugNewVoteRoute = MainBoardSlugNewVoteRouteImport.update({
   path: '/new-vote',
   getParentRoute: () => MainBoardSlugRoute,
 } as any)
+const MainBoardSlugNewRecordRoute = MainBoardSlugNewRecordRouteImport.update({
+  id: '/new-record',
+  path: '/new-record',
+  getParentRoute: () => MainBoardSlugRoute,
+} as any)
 const MainBoardSlugNewQuestionRoute =
   MainBoardSlugNewQuestionRouteImport.update({
     id: '/new-question',
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/board/$slug/new-problem': typeof MainBoardSlugNewProblemRoute
   '/board/$slug/new-project': typeof MainBoardSlugNewProjectRoute
   '/board/$slug/new-question': typeof MainBoardSlugNewQuestionRoute
+  '/board/$slug/new-record': typeof MainBoardSlugNewRecordRoute
   '/board/$slug/new-vote': typeof MainBoardSlugNewVoteRoute
   '/board/$slug/': typeof MainBoardSlugIndexRoute
   '/board/$slug/series/$series': typeof MainBoardSlugSeriesSeriesRoute
@@ -232,6 +239,7 @@ export interface FileRoutesByTo {
   '/board/$slug/new-problem': typeof MainBoardSlugNewProblemRoute
   '/board/$slug/new-project': typeof MainBoardSlugNewProjectRoute
   '/board/$slug/new-question': typeof MainBoardSlugNewQuestionRoute
+  '/board/$slug/new-record': typeof MainBoardSlugNewRecordRoute
   '/board/$slug/new-vote': typeof MainBoardSlugNewVoteRoute
   '/board/$slug': typeof MainBoardSlugIndexRoute
   '/board/$slug/series/$series': typeof MainBoardSlugSeriesSeriesRoute
@@ -263,6 +271,7 @@ export interface FileRoutesById {
   '/_main/board/$slug/new-problem': typeof MainBoardSlugNewProblemRoute
   '/_main/board/$slug/new-project': typeof MainBoardSlugNewProjectRoute
   '/_main/board/$slug/new-question': typeof MainBoardSlugNewQuestionRoute
+  '/_main/board/$slug/new-record': typeof MainBoardSlugNewRecordRoute
   '/_main/board/$slug/new-vote': typeof MainBoardSlugNewVoteRoute
   '/_main/board/$slug/': typeof MainBoardSlugIndexRoute
   '/_main/board/$slug/series/$series': typeof MainBoardSlugSeriesSeriesRoute
@@ -294,6 +303,7 @@ export interface FileRouteTypes {
     | '/board/$slug/new-problem'
     | '/board/$slug/new-project'
     | '/board/$slug/new-question'
+    | '/board/$slug/new-record'
     | '/board/$slug/new-vote'
     | '/board/$slug/'
     | '/board/$slug/series/$series'
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/board/$slug/new-problem'
     | '/board/$slug/new-project'
     | '/board/$slug/new-question'
+    | '/board/$slug/new-record'
     | '/board/$slug/new-vote'
     | '/board/$slug'
     | '/board/$slug/series/$series'
@@ -351,6 +362,7 @@ export interface FileRouteTypes {
     | '/_main/board/$slug/new-problem'
     | '/_main/board/$slug/new-project'
     | '/_main/board/$slug/new-question'
+    | '/_main/board/$slug/new-record'
     | '/_main/board/$slug/new-vote'
     | '/_main/board/$slug/'
     | '/_main/board/$slug/series/$series'
@@ -511,6 +523,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainBoardSlugNewVoteRouteImport
       parentRoute: typeof MainBoardSlugRoute
     }
+    '/_main/board/$slug/new-record': {
+      id: '/_main/board/$slug/new-record'
+      path: '/new-record'
+      fullPath: '/board/$slug/new-record'
+      preLoaderRoute: typeof MainBoardSlugNewRecordRouteImport
+      parentRoute: typeof MainBoardSlugRoute
+    }
     '/_main/board/$slug/new-question': {
       id: '/_main/board/$slug/new-question'
       path: '/new-question'
@@ -570,6 +589,7 @@ interface MainBoardSlugRouteChildren {
   MainBoardSlugNewProblemRoute: typeof MainBoardSlugNewProblemRoute
   MainBoardSlugNewProjectRoute: typeof MainBoardSlugNewProjectRoute
   MainBoardSlugNewQuestionRoute: typeof MainBoardSlugNewQuestionRoute
+  MainBoardSlugNewRecordRoute: typeof MainBoardSlugNewRecordRoute
   MainBoardSlugNewVoteRoute: typeof MainBoardSlugNewVoteRoute
   MainBoardSlugIndexRoute: typeof MainBoardSlugIndexRoute
   MainBoardSlugSeriesSeriesRoute: typeof MainBoardSlugSeriesSeriesRoute
@@ -582,6 +602,7 @@ const MainBoardSlugRouteChildren: MainBoardSlugRouteChildren = {
   MainBoardSlugNewProblemRoute: MainBoardSlugNewProblemRoute,
   MainBoardSlugNewProjectRoute: MainBoardSlugNewProjectRoute,
   MainBoardSlugNewQuestionRoute: MainBoardSlugNewQuestionRoute,
+  MainBoardSlugNewRecordRoute: MainBoardSlugNewRecordRoute,
   MainBoardSlugNewVoteRoute: MainBoardSlugNewVoteRoute,
   MainBoardSlugIndexRoute: MainBoardSlugIndexRoute,
   MainBoardSlugSeriesSeriesRoute: MainBoardSlugSeriesSeriesRoute,

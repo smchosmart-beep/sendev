@@ -78,6 +78,7 @@ import {
   type TabGroup,
 } from "@/lib/platform.functions";
 import { EmptyState } from "@/components/EmptyState";
+import { RecordEditor } from "@/components/RecordEditor";
 import { AuthorBadge } from "@/components/AuthorBadge";
 import { CommentImagePicker } from "@/components/CommentImagePicker";
 import { getEmbedUrl } from "@/lib/embed";
@@ -483,6 +484,8 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
           <EvaluationSection categoryId={post.categoryId} postId={post.id} slug={slug} />
         </>
       )}
+
+      {post.type === "record" && <RecordEditor postId={post.id} />}
 
       {isBoardPost && <SeriesChainSection post={post} slug={slug} />}
 

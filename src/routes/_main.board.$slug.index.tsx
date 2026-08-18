@@ -100,6 +100,7 @@ function BoardInner({
   // 문제ZIP은 정렬/영역 집계를 전체 기준으로 유지하고, 검색은 마지막에 적용한다.
   const problems = posts.filter((p) => p.type === "problem");
   const votePosts = searched.filter((p) => p.type === "vote");
+  const recordPosts = searched.filter((p) => p.type === "record");
   const linkItems = groupLinksBySeries(links);
 
   const generalPageCount = Math.max(1, Math.ceil(generals.length / PAGE_SIZE));
@@ -236,7 +237,8 @@ function BoardInner({
     projects.length === 0 &&
     linkItems.length === 0 &&
     filteredProblems.length === 0 &&
-    votePosts.length === 0;
+    votePosts.length === 0 &&
+    recordPosts.length === 0;
 
   return (
     <div className="space-y-6">
@@ -529,6 +531,50 @@ function BoardInner({
                 </>
               )}
             </>
+          )}
+        </section>
+      )}
+
+      {category.enableRecord && (!keyword || recordPosts.length > 0) && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold text-foreground">
+              {category.recordName || "활동기록"}
+            </h2>
+            <Button asChild className="rounded-xl active:scale-95">
+              <Link to="/board/$slug/new-record" params={{ slug }}>
+                <Plus className="h-4 w-4" />
+                {category.recordName || "활동기록"} 시작하기
+              </Link>
+            </Button>
+          </div>
+          {recordPosts.length === 0 ? (
+            <EmptyState
+              icon={FileText}
+              title={`아직 등록된 ${category.recordName || "활동기록"}이 없어요.`}
+              description="팀별로 하나의 기록을 만들어 함께 채워보세요."
+            />
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {recordPosts.map((post) => (
+                <Link
+                  key={post.id}
+                  to="/board/$slug/$postNo"
+                  params={{ slug, postNo: String(post.postNo) }}
+                  className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md"
+                >
+                  <span className="flex items-center gap-2">
+                    {hasReader && !readSet.has(post.id) && (
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-primary" aria-label="읽지 않음" />
+                    )}
+                    <span className="font-semibold text-foreground break-words">{post.title}</span>
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    대표 작성자 {post.author}
+                  </span>
+                </Link>
+              ))}
+            </div>
           )}
         </section>
       )}
