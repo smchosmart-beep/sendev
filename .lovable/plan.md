@@ -1,21 +1,33 @@
-# 투표·문제ZIP 카드에 읽지 않은 글 표시 추가
+# 읽지 않은 글 한번에 읽음 처리
 
-## 문제
-게시판 목록의 일반 글 카드(`PostListCard`)에는 읽지 않은 글 분홍 점이 표시되지만,
-투표 게시판 카드(`VoteSection`)와 문제ZIP 카드(`ProblemCard`)에는 표시가 없습니다.
-탭·게시판 배지 숫자는 전체 글 기준으로 세기 때문에 "숫자 1은 뜨는데 어느 글인지 알 수 없는" 상태가 됩니다.
+닉네임을 처음 등록하면 기존 글이 전부 "읽지 않음"으로 잡혀 빨간 점과 숫자가 과도하게 표시됩니다. 이를 버튼 한 번으로 정리할 수 있게 합니다.
 
-## 변경 내용
-1. `src/routes/_main.board.$slug.index.tsx`
-   - 이미 계산된 `isUnread(id)` 결과를 `ProblemCard`와 `VoteSection`에 전달.
-2. `src/components/VoteSection.tsx`
-   - `unreadIds?: Set<string>` (또는 `isUnread` 함수) prop 추가.
-   - 후보 카드 좌측 상단에 기존과 동일한 분홍 점 표시.
-   - 익명성에는 영향 없음(작성자 정보는 그대로 숨김 유지).
-3. `ProblemCard`(같은 파일 내)
-   - `unread` prop을 받아 카드 상단에 동일한 분홍 점 표시.
+## 만들 것
 
-## 기술 메모
-- 새로운 쿼리·서버 호출 없음. 이미 로드된 `readPostIdsQueryOptions` 결과를 재사용하므로 서버 부하 증가 없음.
-- 닉네임이 등록되지 않은 사용자에게는 기존과 동일하게 점이 표시되지 않음.
-- 점 스타일은 `PostListCard`의 표시와 동일하게 맞춰 일관성 유지.
+1. **전체 읽음 처리 버튼**
+   - 위치: 게시판 목록 상단(탭 아래, 제목 우측 영역).
+   - 문구: "모두 읽음 처리". 닉네임이 등록된 경우에만 표시하고, 읽지 않은 글이 0이면 비활성.
+   - 누르면 확인 다이얼로그("현재 등록되지 않은 모든 글을 읽음으로 표시합니다. 되돌릴 수 없습니다.") → 확인 시 사이트 전체 글을 읽음 처리.
+
+2. **게시판별 읽음 처리 버튼**
+   - 위치: 각 게시판(카테고리) 상세 목록 페이지 상단.
+   - 해당 게시판의 글만 읽음 처리. 읽지 않은 글이 없으면 비활성.
+
+3. 처리 후 상단 탭 배지, 게시판 목록 숫자, 카드의 분홍 점이 즉시 사라지도록 캐시 갱신.
+
+4. 자동 처리는 하지 않습니다. 닉네임 최초 등록 시에도 사용자가 버튼을 누를 때만 반영됩니다.
+
+## 기술 사항
+
+- `src/lib/platform.functions.ts`에 `markAllPostsRead` 서버 함수 추가
+  - 입력: `{ author, categoryId? }` (categoryId 없으면 전체)
+  - 처리: 관리자 클라이언트로 `posts`에서 `type = 'post'` 인 id 목록 조회(카테고리 지정 시 필터) → `post_reads`에 `upsert(onConflict: username_key,post_id, ignoreDuplicates: true)`로 일괄 삽입. 500건 단위 청크로 나눠 요청 1~2회로 끝냅니다(현재 전체 글 273건).
+  - 반환: `{ inserted: number }`
+- `src/lib/platform.queries.ts`의 `readPostIdsQueryOptions` 캐시를 mutation `onSuccess`에서 `invalidateQueries(["read-post-ids"])`로 무효화. `post-stubs`는 그대로 재사용하므로 추가 부하 없음.
+- 버튼 UI는 기존 shadcn `Button` + `AlertDialog` 사용. 진행 중 스피너/비활성 처리.
+- 읽음 목록 조회(`listReadPostIds`)는 기본 1000행 제한이 있습니다. 전체 읽음 처리 후 한 사용자 기록이 273건 수준이라 당장 문제는 없지만, 안전하게 range 페이지네이션을 추가해 1000건을 넘어도 정확히 집계되도록 보완합니다.
+- 새 테이블/스키마 변경 없음. RLS 정책 변경 없음(기존과 동일하게 서버 함수 + service role 경로).
+
+## 가이드 업데이트
+
+`/guide` 페이지의 읽음 표시 관련 설명에 "모두 읽음 처리" 버튼(전체/게시판별) 사용법과 되돌릴 수 없다는 점을 추가합니다.
