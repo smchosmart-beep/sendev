@@ -240,15 +240,6 @@ function BoardInner({
 
   return (
     <div className="space-y-6">
-      {hasReader && (
-        <div className="flex justify-end">
-          <MarkAllReadButton
-            categoryId={category.id}
-            unreadCount={boardUnreadCount}
-            label="이 게시판 읽음 처리"
-          />
-        </div>
-      )}
 
 
       {noSearchResult && (
