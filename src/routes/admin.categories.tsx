@@ -1001,7 +1001,52 @@ function CategoriesPage() {
                   />
                 </div>
               )}
+
+              {/* 글 작성 템플릿 */}
+              <details className="rounded-xl border border-border bg-background p-3">
+                <summary className="cursor-pointer text-sm font-medium text-foreground">
+                  글 작성 템플릿
+                </summary>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  등록해 두면 해당 게시판에서 글쓰기를 시작할 때 본문에 미리
+                  채워집니다. 비워두면 빈 본문으로 시작해요.
+                </p>
+                <div className="mt-3 space-y-4">
+                  {editEnablePost && (
+                    <div className="space-y-2">
+                      <Label>{editGeneralName || "일반게시판"} 템플릿</Label>
+                      <PostEditor
+                        value={editTemplatePost}
+                        onChange={setEditTemplatePost}
+                        placeholder="예: [누구] 은/는 ..."
+                        rows={6}
+                      />
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <Label>질문 템플릿</Label>
+                    <PostEditor
+                      value={editTemplateQuestion}
+                      onChange={setEditTemplateQuestion}
+                      placeholder="질문 글 작성 양식을 입력하세요."
+                      rows={6}
+                    />
+                  </div>
+                  {editEnableVote && (
+                    <div className="space-y-2">
+                      <Label>{editVoteName || "투표"} 템플릿</Label>
+                      <PostEditor
+                        value={editTemplateVote}
+                        onChange={setEditTemplateVote}
+                        placeholder="예: [누구] 은/는 ..."
+                        rows={6}
+                      />
+                    </div>
+                  )}
+                </div>
+              </details>
             </div>
+
           </div>
           <DialogFooter>
             <Button
