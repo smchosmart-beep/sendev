@@ -553,6 +553,10 @@ export const updateCategory = createServerFn({ method: "POST" })
     if (data.problemName !== undefined)
       patch.problem_name = data.problemName || "문제ZIP";
     if (data.voteName !== undefined) patch.vote_name = data.voteName || "투표";
+    if (data.templatePost !== undefined) patch.template_post = data.templatePost;
+    if (data.templateQuestion !== undefined)
+      patch.template_question = data.templateQuestion;
+    if (data.templateVote !== undefined) patch.template_vote = data.templateVote;
     if (data.tabGroup !== undefined) patch.tab_group = data.tabGroup;
     if (data.hidden !== undefined) patch.hidden = data.hidden;
     const { error } = await db.from("categories").update(patch).eq("id", data.id);
