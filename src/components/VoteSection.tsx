@@ -20,6 +20,14 @@ import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const PAGE_SIZE = 36;
 
@@ -149,7 +157,6 @@ export function VoteSection({
           categoryId={category.id}
           status={status}
           maxChoices={maxChoices}
-          adminPassword={adminPassword}
           confirm={confirm}
           onDone={() => {
             queryClient.invalidateQueries({ queryKey: ["vote-state", category.id] });
@@ -261,109 +268,211 @@ function AdminVoteControls({
   categoryId,
   status,
   maxChoices,
-  adminPassword,
   confirm,
   onDone,
 }: {
   categoryId: string;
   status: string;
   maxChoices: number;
-  adminPassword: string;
   confirm: (opts: { title?: string; description: string; destructive?: boolean }) => Promise<boolean>;
   onDone: () => void;
 }) {
-  const [limit, setLimit] = useState(String(maxChoices || 1));
+  const [dialog, setDialog] = useState<
+    | null
+    | {
+        mode: "start" | "stop" | "reset";
+        password: string;
+        limit: string;
+        error: string;
+        submitting: boolean;
+      }
+  >(null);
+
   const setStatus = useServerFn(setVoteStatus);
   const reset = useServerFn(resetVotes);
 
-  const statusMutation = useMutation({
-    mutationFn: (next: "idle" | "open" | "closed") =>
-      setStatus({
-        data: {
-          categoryId,
-          status: next,
-          maxChoices: Math.max(1, Number(limit) || 1),
-          adminPassword,
-        },
-      }),
-    onSuccess: () => {
-      onDone();
-      toast.success("투표 상태를 변경했어요.");
-    },
-    onError: (err: unknown) =>
-      toast.error(err instanceof Error ? err.message : "변경하지 못했어요."),
-  });
+  const openDialog = (mode: "start" | "stop" | "reset") => {
+    setDialog({
+      mode,
+      password: "",
+      limit: String(maxChoices || 1),
+      error: "",
+      submitting: false,
+    });
+  };
 
-  const resetMutation = useMutation({
-    mutationFn: () => reset({ data: { categoryId, adminPassword } }),
-    onSuccess: () => {
+  const closeDialog = () => setDialog(null);
+
+  const handleSubmit = async () => {
+    if (!dialog) return;
+    setDialog({ ...dialog, error: "", submitting: true });
+    try {
+      if (dialog.mode === "start") {
+        await setStatus({
+          data: {
+            categoryId,
+            status: "open",
+            maxChoices: Math.max(1, Number(dialog.limit) || 1),
+            adminPassword: dialog.password,
+          },
+        });
+      } else if (dialog.mode === "stop") {
+        await setStatus({
+          data: { categoryId, status: "closed", maxChoices: 1, adminPassword: dialog.password },
+        });
+      } else if (dialog.mode === "reset") {
+        await reset({ data: { categoryId, adminPassword: dialog.password } });
+        await setStatus({
+          data: { categoryId, status: "idle", maxChoices: 1, adminPassword: dialog.password },
+        });
+      }
+      closeDialog();
       onDone();
-      toast.success("투표 기록을 초기화했어요.");
-    },
-    onError: (err: unknown) =>
-      toast.error(err instanceof Error ? err.message : "초기화하지 못했어요."),
-  });
+      toast.success(
+        dialog.mode === "start"
+          ? "투표를 시작했어요."
+          : dialog.mode === "stop"
+            ? "투표를 종료했어요."
+            : "투표 기록을 초기화했어요.",
+      );
+    } catch (err) {
+      setDialog({
+        ...dialog,
+        submitting: false,
+        error: err instanceof Error ? err.message : "처리하지 못했어요.",
+      });
+    }
+  };
 
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-dashed border-primary/40 bg-card p-4">
-      <div className="space-y-1">
-        <Label htmlFor="vote-limit" className="text-xs">1인당 최대 투표 수</Label>
-        <Input
-          id="vote-limit"
-          type="number"
-          min={1}
-          max={100}
-          value={limit}
-          onChange={(e) => setLimit(e.target.value)}
-          disabled={status === "open"}
-          className="h-9 w-28 rounded-xl"
-        />
-      </div>
-      {status !== "open" ? (
+    <>
+      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-dashed border-primary/40 bg-card p-4">
+        <div className="space-y-1">
+          <Label className="text-xs">1인당 최대 투표 수</Label>
+          <p className="h-9 w-28 rounded-xl border border-border bg-muted/50 px-3 py-2 text-sm text-foreground">
+            {maxChoices || 1}표
+          </p>
+        </div>
+        {status !== "open" ? (
+          <Button
+            type="button"
+            className="rounded-xl active:scale-95"
+            onClick={() => openDialog("start")}
+          >
+            투표 시작
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            className="rounded-xl active:scale-95"
+            onClick={() => openDialog("stop")}
+          >
+            투표 종료
+          </Button>
+        )}
         <Button
           type="button"
+          variant="secondary"
           className="rounded-xl active:scale-95"
-          disabled={statusMutation.isPending}
-          onClick={() => statusMutation.mutate("open")}
-        >
-          투표 시작
-        </Button>
-      ) : (
-        <Button
-          type="button"
-          className="rounded-xl active:scale-95"
-          disabled={statusMutation.isPending}
           onClick={async () => {
             const ok = await confirm({
-              title: "투표 종료",
-              description: "지금 종료하면 모든 참여자에게 결과가 공개돼요.",
+              title: "투표 초기화",
+              description: "이 게시판의 모든 표가 삭제돼요. 되돌릴 수 없어요.",
+              destructive: true,
             });
-            if (ok) statusMutation.mutate("closed");
+            if (ok) openDialog("reset");
           }}
         >
-          투표 종료
+          <RotateCcw className="h-4 w-4" />
+          초기화
         </Button>
-      )}
-      <Button
-        type="button"
-        variant="secondary"
-        className="rounded-xl active:scale-95"
-        disabled={resetMutation.isPending}
-        onClick={async () => {
-          const ok = await confirm({
-            title: "투표 초기화",
-            description: "이 게시판의 모든 표가 삭제돼요. 되돌릴 수 없어요.",
-            destructive: true,
-          });
-          if (ok) {
-            resetMutation.mutate();
-            statusMutation.mutate("idle");
-          }
-        }}
-      >
-        <RotateCcw className="h-4 w-4" />
-        초기화
-      </Button>
-    </div>
+      </div>
+
+      <Dialog open={!!dialog} onOpenChange={(open) => !open && closeDialog()}>
+        <DialogContent className="rounded-2xl sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {dialog?.mode === "start"
+                ? "투표 시작"
+                : dialog?.mode === "stop"
+                  ? "투표 종료"
+                  : "투표 초기화"}
+            </DialogTitle>
+            <DialogDescription>
+              {dialog?.mode === "start"
+                ? "관리자 비밀번호를 입력하고 1인당 최대 투표 수를 확인해 주세요."
+                : dialog?.mode === "stop"
+                  ? "관리자 비밀번호를 입력하면 투표가 종료되고 결과가 공개됩니다."
+                  : "관리자 비밀번호를 입력하면 모든 투표 기록이 삭제됩니다."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleSubmit();
+            }}
+            className="space-y-4"
+          >
+            {dialog?.mode === "start" && (
+              <div className="space-y-1">
+                <Label htmlFor="vote-limit" className="text-xs">
+                  1인당 최대 투표 수
+                </Label>
+                <Input
+                  id="vote-limit"
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={dialog.limit}
+                  onChange={(e) => setDialog({ ...dialog, limit: e.target.value })}
+                  className="h-10 rounded-xl"
+                />
+              </div>
+            )}
+            <div className="space-y-1">
+              <Label htmlFor="admin-password" className="text-xs">
+                관리자 비밀번호
+              </Label>
+              <Input
+                id="admin-password"
+                type="password"
+                autoFocus
+                value={dialog?.password ?? ""}
+                onChange={(e) =>
+                  setDialog((d) =>
+                    d ? { ...d, password: e.target.value, error: "" } : null,
+                  )
+                }
+                className="h-10 rounded-xl"
+              />
+            </div>
+            {dialog?.error && (
+              <p className="text-sm text-destructive">{dialog.error}</p>
+            )}
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="secondary"
+                className="rounded-xl"
+                onClick={closeDialog}
+                disabled={dialog?.submitting}
+              >
+                취소
+              </Button>
+              <Button
+                type="submit"
+                className="rounded-xl"
+                disabled={
+                  !dialog?.password.trim() || dialog?.submitting
+                }
+              >
+                {dialog?.submitting ? "처리 중..." : "확인"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
