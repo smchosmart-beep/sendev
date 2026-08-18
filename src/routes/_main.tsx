@@ -165,7 +165,7 @@ function MainLayout() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-20 bg-card/90 shadow-sm backdrop-blur">
-        <div className="mx-auto grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-6 py-4 sm:gap-4 sm:px-28">
+        <div className="mx-auto grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-6 py-4 sm:gap-3 sm:px-28">
           <Link to="/home" className="flex items-center gap-2">
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md">
               <Code2 className="h-5 w-5" />
@@ -177,14 +177,14 @@ function MainLayout() {
 
           <nav
             className={cn(
-              "min-w-0 flex-nowrap items-center justify-center gap-2 sm:gap-4",
+              "min-w-0 flex-nowrap items-center justify-center gap-2 sm:gap-3 2xl:gap-4",
               navCollapsed ? "hidden" : "hidden sm:flex",
             )}
           >
             <Link
               to={guideTab.to}
               className={cn(
-                "flex items-center gap-2 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-4",
+                "flex items-center gap-2 rounded-2xl px-2 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-3 2xl:px-4",
                 isGuide
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "text-muted-foreground hover:-translate-y-0.5 hover:text-foreground",
@@ -197,7 +197,7 @@ function MainLayout() {
             <Link
               to={homeTab.to}
               className={cn(
-                "flex items-center gap-2 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-4",
+                "flex items-center gap-2 rounded-2xl px-2 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-3 2xl:px-4",
                 isHome
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "text-muted-foreground hover:-translate-y-0.5 hover:text-foreground",
@@ -210,7 +210,7 @@ function MainLayout() {
             <Link
               to={calendarTab.to}
               className={cn(
-                "flex items-center gap-2 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-4",
+                "flex items-center gap-2 rounded-2xl px-2 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-3 2xl:px-4",
                 isCalendar
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "text-muted-foreground hover:-translate-y-0.5 hover:text-foreground",
@@ -227,15 +227,16 @@ function MainLayout() {
                   key={group}
                   to="/board"
                   search={{ tab: group }}
+                  title={label}
                   className={cn(
-                    "flex items-center gap-2 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-4",
+                    "flex items-center gap-2 rounded-2xl px-2 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 sm:px-3 2xl:px-4",
                     active
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "text-muted-foreground hover:-translate-y-0.5 hover:text-foreground",
                   )}
                 >
                   <Icon className="h-4 w-4" />
-                  {label}
+                  <span className="hidden 2xl:inline">{label}</span>
                   <TabUnreadBadge count={unreadByTab[group]} active={active} />
                 </Link>
               );
