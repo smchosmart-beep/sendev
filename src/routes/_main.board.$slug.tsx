@@ -5,10 +5,14 @@ import {
   Navigate,
   Outlet,
   useParams,
+  useRouterState,
+  useNavigate,
 } from "@tanstack/react-router";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { useSuspenseQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, FolderGit2, Lock } from "lucide-react";
+import { ArrowLeft, FolderGit2, Lock, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { categoriesQueryOptions } from "@/lib/platform.queries";
@@ -21,7 +25,20 @@ import { PasswordInput } from "@/components/PasswordInput";
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export const boardSearchSchema = z.object({
+  qpage: fallback(z.number(), 1).default(1),
+  gpage: fallback(z.number(), 1).default(1),
+  ppage: fallback(z.number(), 1).default(1),
+  psort: fallback(z.string(), "recent").default("recent"),
+  parea: fallback(z.string(), "").default(""),
+  vpage: fallback(z.number(), 1).default(1),
+  q: fallback(z.string(), "").default(""),
+});
+
+export type BoardSearch = z.infer<typeof boardSearchSchema>;
+
 export const Route = createFileRoute("/_main/board/$slug")({
+  validateSearch: zodValidator(boardSearchSchema),
   loader: ({ context }) =>
     context.queryClient.ensureQueryData(categoriesQueryOptions()),
   errorComponent: ({ error }) => (
@@ -32,15 +49,62 @@ export const Route = createFileRoute("/_main/board/$slug")({
   component: BoardLayout,
 });
 
+function BoardSearchBox({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  const [input, setInput] = useState(value);
+
+  useEffect(() => {
+    setInput(value);
+  }, [value]);
+
+  useEffect(() => {
+    if (input === value) return;
+    const t = setTimeout(() => onChange(input), 250);
+    return () => clearTimeout(t);
+  }, [input]);
+
+  return (
+    <div className="relative">
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <input
+        type="text"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder="이 게시판에서 검색 (제목·작성자)"
+        aria-label="게시판 내 검색"
+        className="w-full min-w-0 rounded-xl border border-border bg-background py-2.5 pl-9 pr-9 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+      />
+      {input.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setInput("")}
+          aria-label="검색어 지우기"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-muted-foreground transition-colors hover:text-foreground active:scale-95"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 function unlockKey(slug: string) {
   return `board-pw-${slug}`;
 }
-
 
 function BoardLayout() {
   const { slug } = useParams({ from: "/_main/board/$slug" });
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
   const category = categories.find((c) => c.slug === slug);
+  const navigate = useNavigate({ from: "/board/$slug" });
+  const { q } = Route.useSearch();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isIndex = pathname === `/board/${slug}/` || pathname === `/board/${slug}`;
 
   const [mounted, setMounted] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
@@ -82,13 +146,32 @@ function BoardLayout() {
     <div className="space-y-6">
       <BackLink tab={category.tabGroup} />
 
-
       <div className="rounded-2xl bg-card p-4 shadow-sm">
         <h1 className="text-xl font-bold text-foreground">{category.name}</h1>
         {category.description && (
           <p className="mt-0.5 text-sm text-muted-foreground">
             {category.description}
           </p>
+        )}
+        {isIndex && (
+          <div className="mt-3 border-t border-border pt-3">
+            <div className="rounded-xl bg-muted/50 p-2">
+              <BoardSearchBox
+                value={q}
+                onChange={(next) =>
+                  navigate({
+                    search: (prev: BoardSearch) => ({
+                      ...prev,
+                      q: next,
+                      gpage: 1,
+                      ppage: 1,
+                    }),
+                    replace: true,
+                  })
+                }
+              />
+            </div>
+          </div>
         )}
       </div>
 

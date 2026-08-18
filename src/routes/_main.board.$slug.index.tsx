@@ -1,10 +1,9 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
-import { zodValidator, fallback } from "@tanstack/zod-adapter";
-import { z } from "zod";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers, CheckCircle2, ChevronLeft, ChevronRight, Eye, PackageOpen, Search, X } from "lucide-react";
+import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers, CheckCircle2, ChevronLeft, ChevronRight, Eye, PackageOpen, Search } from "lucide-react";
+import { type BoardSearch } from "./_main.board.$slug";
 
 import {
   postsQueryOptions,
@@ -30,65 +29,7 @@ import { VoteSection } from "@/components/VoteSection";
 const PAGE_SIZE = 10;
 const PROBLEM_PAGE_SIZE = 9;
 
-// 게시판 내 검색창 — 입력을 디바운스해 URL 검색어(q)에 반영한다.
-function BoardSearchBox({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (next: string) => void;
-}) {
-  const [input, setInput] = useState(value);
-
-  useEffect(() => {
-    setInput(value);
-  }, [value]);
-
-  useEffect(() => {
-    if (input === value) return;
-    const t = setTimeout(() => onChange(input), 250);
-    return () => clearTimeout(t);
-  }, [input]);
-
-  return (
-    <div className="relative">
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-      <input
-        type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="이 게시판에서 검색 (제목·작성자)"
-        aria-label="게시판 내 검색"
-        className="w-full min-w-0 rounded-xl border border-border bg-card py-2.5 pl-9 pr-9 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-      />
-      {input.length > 0 && (
-        <button
-          type="button"
-          onClick={() => setInput("")}
-          aria-label="검색어 지우기"
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-muted-foreground transition-colors hover:text-foreground active:scale-95"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      )}
-    </div>
-  );
-}
-
-const boardSearchSchema = z.object({
-  qpage: fallback(z.number(), 1).default(1),
-  gpage: fallback(z.number(), 1).default(1),
-  ppage: fallback(z.number(), 1).default(1),
-  psort: fallback(z.string(), "recent").default("recent"),
-  parea: fallback(z.string(), "").default(""),
-  vpage: fallback(z.number(), 1).default(1),
-  q: fallback(z.string(), "").default(""),
-});
-
-type BoardSearch = z.infer<typeof boardSearchSchema>;
-
 export const Route = createFileRoute("/_main/board/$slug/")({
-  validateSearch: zodValidator(boardSearchSchema),
   loader: async ({ context, params }) => {
     const categories = await context.queryClient.ensureQueryData(
       categoriesQueryOptions(),
@@ -289,20 +230,6 @@ function BoardInner({
 
   return (
     <div className="space-y-6">
-      <BoardSearchBox
-        value={q}
-        onChange={(next) =>
-          navigate({
-            search: (prev: BoardSearch) => ({
-              ...prev,
-              q: next,
-              gpage: 1,
-              ppage: 1,
-            }),
-            replace: true,
-          })
-        }
-      />
 
       {noSearchResult && (
         <EmptyState
