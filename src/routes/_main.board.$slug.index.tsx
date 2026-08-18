@@ -280,12 +280,21 @@ function BoardInner({
               <MessageCircle className="h-5 w-5 text-primary" />
               {category.generalName || "일반게시판"}
             </h2>
-            <Button asChild variant="secondary" className="rounded-xl active:scale-95">
-              <Link to="/board/$slug/new-general" params={{ slug }}>
-                <Plus className="h-4 w-4" />
-                글 등록
-              </Link>
-            </Button>
+            <div className="flex items-center gap-2">
+              {hasReader && (
+                <MarkAllReadButton
+                  categoryId={category.id}
+                  unreadCount={boardUnreadCount}
+                  label="이 게시판 읽음 처리"
+                />
+              )}
+              <Button asChild variant="secondary" className="rounded-xl active:scale-95">
+                <Link to="/board/$slug/new-general" params={{ slug }}>
+                  <Plus className="h-4 w-4" />
+                  글 등록
+                </Link>
+              </Button>
+            </div>
           </div>
 
           {generals.length === 0 ? (
