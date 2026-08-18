@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 
 import {
   listCategories,
+  getPostTemplate,
   listEvents,
   listPosts,
   listPostNav,
@@ -330,4 +331,15 @@ export const voteResultsQueryOptions = (
     queryKey: ["vote-results", categoryId, boardPassword, adminPassword],
     queryFn: () =>
       getVoteResults({ data: { categoryId, boardPassword, adminPassword } }),
+  });
+
+export const postTemplateQueryOptions = (
+  categoryId: string,
+  type: "post" | "question" | "vote",
+) =>
+  queryOptions({
+    queryKey: ["post-template", categoryId, type],
+    queryFn: () => getPostTemplate({ data: { categoryId, type } }),
+    staleTime: 5 * 60 * 1000,
+    enabled: categoryId.length > 0,
   });
