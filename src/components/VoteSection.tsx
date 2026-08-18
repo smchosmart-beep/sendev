@@ -189,15 +189,17 @@ export function VoteSection({
       <p className="rounded-xl bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
         {status === "open" ? (
           <>
-            투표가 진행 중이에요. 1인당 최대 <b>{maxChoices}표</b>까지 선택할 수
-            있고, 지금은 <b>{myVotes.length}표</b>를 사용했어요. 결과는 투표가
-            종료된 뒤 한 번에 공개됩니다.
+            투표가 진행 중이에요. <b>{required}개</b>를 모두 선택한 뒤 <b>투표
+            저장</b>을 눌러야 반영돼요. 본인이 쓴 글에는 투표할 수 없고, 종료
+            전까지는 선택을 바꿔 다시 저장할 수 있어요. 결과는 투표가 종료된 뒤
+            한 번에 공개됩니다.
           </>
         ) : status === "closed" ? (
           <>투표가 종료되었어요. 아래에서 최종 결과를 확인할 수 있어요.</>
         ) : (
           <>아직 투표가 시작되지 않았어요. 먼저 후보 글을 등록해 주세요.</>
         )}
+
       </p>
 
       {isAdmin && (
