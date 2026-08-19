@@ -51,36 +51,30 @@ const ROW_SECTIONS: {
   title: string;
   short: string;
 }[] = [
+  { kind: "process", title: "문제 정의", short: "문제정의" },
   { kind: "feature", title: "핵심 기능", short: "핵심" },
   { kind: "flow", title: "사용 흐름", short: "흐름" },
   { kind: "limit", title: "지금의 한계", short: "한계" },
   { kind: "plan", title: "다음 계획", short: "계획" },
   { kind: "maker", title: "제작자", short: "제작자" },
-  { kind: "process", title: "문제 정의", short: "문제정의" },
   { kind: "devlog", title: "개발 과정", short: "개발" },
-  { kind: "check", title: "교육적 점검", short: "점검" },
+  { kind: "decision", title: "바꾼 판단", short: "판단" },
+  { kind: "stuck", title: "막혔던 순간", short: "막힘" },
+  { kind: "ai_use", title: "AI 활용", short: "AI활용" },
+  { kind: "ai_error", title: "AI 실수", short: "AI실수" },
+  { kind: "privacy", title: "정보 항목", short: "정보" },
 ] as const;
 
 type RecordOverviewRowKind = RecordOverviewTeam["rows"][number]["kind"];
 
-const FINAL_FIELDS_COUNT = 10;
-const CHECK_ITEMS_COUNT = 8;
+const FINAL_FIELDS_COUNT = RECORD_FINAL_KEYS.length;
+const CHECK_ITEMS_COUNT = STANCE_QUESTIONS.length;
 
 function finalFilledCount(final: RecordOverviewTeam["final"]): number {
   if (!final) return 0;
-  const fields = [
-    final.serviceName,
-    final.oneLiner,
-    final.targetUser,
-    final.problem,
-    final.solution,
-    final.heroImageUrl,
-    final.deployUrl,
-    final.githubUrl,
-    final.techStack,
-    final.envNames,
-  ];
-  return fields.filter((v) => (v ?? "").trim().length > 0).length;
+  return RECORD_FINAL_KEYS.filter(
+    (k) => ((final as Record<string, string>)[k] ?? "").trim().length > 0,
+  ).length;
 }
 
 function rowCountByKind(team: RecordOverviewTeam, kind: RecordOverviewRowKind): number {
@@ -89,9 +83,10 @@ function rowCountByKind(team: RecordOverviewTeam, kind: RecordOverviewRowKind): 
 
 function checkFilledCount(team: RecordOverviewTeam): number {
   return team.rows.filter(
-    (r) => r.kind === "check" && (r.col2 ?? "").trim().length > 0,
+    (r) => r.kind === "stance" && (r.col1 ?? "").trim().length > 0,
   ).length;
 }
+
 
 function reflectionStatus(team: RecordOverviewTeam) {
   const count = team.reflections.length;
