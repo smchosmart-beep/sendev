@@ -905,6 +905,7 @@ function RowSection({
   hint,
   cols,
   longCols,
+  placeholders,
   subtypes,
 }: {
   def: RowSectionDef;
@@ -916,10 +917,12 @@ function RowSection({
   hint?: string;
   cols?: string[];
   longCols?: number[];
+  placeholders?: string[];
   subtypes?: string[];
 }) {
   const labels = cols ?? def.cols;
   const longs = longCols ?? def.longCols ?? [];
+  const hints = placeholders ?? def.placeholders;
   return (
     <section className="rounded-2xl bg-card p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-foreground">{title ?? def.title}</h2>
@@ -934,6 +937,7 @@ function RowSection({
             row={row}
             labels={labels}
             longs={longs}
+            placeholders={hints}
             subtypes={subtypes}
             canEdit={canEdit}
             onSave={onSave}
@@ -960,6 +964,7 @@ function RowItem({
   row,
   labels,
   longs,
+  placeholders,
   subtypes,
   canEdit,
   onSave,
@@ -968,11 +973,13 @@ function RowItem({
   row: RecordRowDTO;
   labels: string[];
   longs: number[];
+  placeholders?: string[];
   subtypes?: string[];
   canEdit: boolean;
   onSave: (vars: SaveRowVars) => void;
   onDelete: (id: string) => void;
 }) {
+
   const initial = [row.col1, row.col2, row.col3, row.col4, row.col5, row.col6];
   const [values, setValues] = useState(initial);
   const [subtype, setSubtype] = useState(row.subtype);
