@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, ChevronLeft, ChevronRight, Loader2, Plus, Trash2, Users } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, ImagePlus, Loader2, Plus, Trash2, Users, X } from "lucide-react";
 import { toast } from "sonner";
+
+import { uploadCommentImage } from "@/lib/image-upload";
 
 import {
   addRecordMember,
@@ -80,7 +82,7 @@ type FinalInput = {
   key: RecordFinalKey;
   label: string;
   hint?: string;
-  type: "text" | "textarea" | "select";
+  type: "text" | "textarea" | "select" | "image";
   options?: string[];
   full?: boolean;
 };
@@ -113,7 +115,13 @@ const FINAL_GROUPS: { title: string; hint?: string; fields: FinalInput[] }[] = [
       { key: "deployUrl", label: "배포 주소", type: "text" },
       { key: "githubUrl", label: "GitHub 주소", type: "text" },
       { key: "demoVideoUrl", label: "시연 영상 주소", type: "text" },
-      { key: "heroImageUrl", label: "대표 이미지 주소", type: "text" },
+      {
+        key: "heroImageUrl",
+        label: "대표 이미지",
+        hint: "이미지 파일을 올리면 자동으로 등록돼요.",
+        type: "image",
+        full: true,
+      },
       {
         key: "usageCondition",
         label: "사용 조건",
@@ -560,6 +568,12 @@ function FinalField({
             </Button>
           ))}
         </div>
+      ) : field.type === "image" ? (
+        <HeroImageInput
+          value={value}
+          canEdit={canEdit}
+          onChange={(v) => onChange(field.key, v)}
+        />
       ) : (
         <Input
           id={id}
@@ -568,6 +582,84 @@ function FinalField({
           onChange={(e) => onChange(field.key, e.target.value)}
           className="rounded-xl"
         />
+      )}
+    </div>
+  );
+}
+
+function HeroImageInput({
+  value,
+  canEdit,
+  onChange,
+}: {
+  value: string;
+  canEdit: boolean;
+  onChange: (value: string) => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFile = async (file: File | undefined) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadCommentImage(file);
+      onChange(url);
+      toast.success("대표 이미지를 등록했어요.");
+    } catch (err) {
+      console.error("hero image upload failed", err);
+      toast.error(err instanceof Error ? err.message : "이미지 업로드에 실패했어요.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          handleFile(e.target.files?.[0]);
+          e.target.value = "";
+        }}
+      />
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={!canEdit || uploading}
+          onClick={() => fileRef.current?.click()}
+          className="rounded-xl active:scale-95"
+        >
+          {uploading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <ImagePlus className="h-4 w-4" />
+          )}
+          {value ? "이미지 교체" : "이미지 선택"}
+        </Button>
+        {value && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={!canEdit || uploading}
+            onClick={() => onChange("")}
+            className="rounded-xl active:scale-95"
+          >
+            <X className="h-4 w-4" />
+            제거
+          </Button>
+        )}
+      </div>
+      {value && (
+        <div className="overflow-hidden rounded-xl border border-border">
+          <img src={value} alt="대표 이미지 미리보기" className="max-h-64 w-full object-contain" />
+        </div>
       )}
     </div>
   );
