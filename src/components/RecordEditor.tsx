@@ -6,11 +6,14 @@ import { toast } from "sonner";
 
 import {
   addRecordMember,
+  deleteRecordReflection,
   deleteRecordRow,
   getRecord,
   removeRecordMember,
   saveRecordFinal,
+  saveRecordReflection,
   saveRecordRow,
+  type RecordReflectionDTO,
   type RecordRowDTO,
 } from "@/lib/record.functions";
 import { getAdminPassword } from "@/lib/admin-auth";
@@ -27,6 +30,7 @@ const ROW_SECTIONS: {
   title: string;
   hint: string;
   cols: string[];
+  long?: boolean;
 }[] = [
   {
     kind: "feature",
@@ -58,7 +62,36 @@ const ROW_SECTIONS: {
     hint: "누가 무엇을 맡았는지 적어요.",
     cols: ["이름", "맡은 일", ""],
   },
+  {
+    kind: "process",
+    title: "문제 정의 과정 기록",
+    hint: "아이디어를 좁혀 간 과정을 단계별로 남겨요.",
+    cols: ["단계/날짜", "우리가 나눈 이야기", "그래서 정한 것"],
+    long: true,
+  },
+  {
+    kind: "devlog",
+    title: "개발 과정 자유기록",
+    hint: "개발하며 겪은 일과 해결 방법을 자유롭게 쌓아요.",
+    cols: ["날짜", "무슨 일이 있었나", "어떻게 해결했나"],
+    long: true,
+  },
 ];
+
+const LONG_MAX = 2000;
+
+const CHECK_ITEMS = [
+  "우리가 풀려는 문제를 스스로 설명할 수 있다",
+  "사용자를 구체적으로 정했다",
+  "아이디어를 여러 개 내보고 비교했다",
+  "만들다 막혔을 때 스스로 방법을 찾아봤다",
+  "AI에게 물을 때 무엇을 원하는지 분명히 말했다",
+  "AI가 준 결과를 그대로 쓰지 않고 확인했다",
+  "팀원과 역할을 나누고 서로 도왔다",
+  "다른 사람의 자료를 쓸 때 출처를 밝혔다",
+];
+
+const CHECK_CHOICES = ["잘함", "보통", "아직"];
 
 type FinalKey =
   | "serviceName"
@@ -338,7 +371,309 @@ export function RecordEditor({ postId }: { postId: string }) {
           onDelete={(id) => deleteMutation.mutate(id)}
         />
       ))}
+
+      <CheckSection
+        rows={bundle.rows.filter((r) => r.kind === "check")}
+        canEdit={canEdit}
+        onSave={(vars) => rowMutation.mutate(vars)}
+      />
+
+      <ReflectionSection
+        postId={postId}
+        reflections={bundle.reflections}
+        members={bundle.members}
+        myKey={(identity?.author ?? "").trim().toLowerCase()}
+        isMember={isMember}
+        isAdmin={!!auth.adminPassword}
+      />
     </div>
+  );
+}
+
+// 교육적 점검 8항목 — 문항은 고정, 선택/메모만 저장한다.
+function CheckSection({
+  rows,
+  canEdit,
+  onSave,
+}: {
+  rows: RecordRowDTO[];
+  canEdit: boolean;
+  onSave: (vars: {
+    id: string | null;
+    kind: RowKind;
+    sortOrder: number;
+    col1: string;
+    col2: string;
+    col3: string;
+    knownUpdatedAt: string;
+  }) => void;
+}) {
+  const byOrder = new Map(rows.map((r) => [r.sortOrder, r]));
+  return (
+    <section className="rounded-2xl bg-card p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-foreground">교육적 점검 8항목</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        팀이 함께 이야기하며 솔직하게 골라요. 메모는 한 줄이면 충분해요.
+      </p>
+      <div className="mt-4 space-y-3">
+        {CHECK_ITEMS.map((question, index) => (
+          <CheckItem
+            key={question}
+            index={index}
+            question={question}
+            row={byOrder.get(index) ?? null}
+            canEdit={canEdit}
+            onSave={onSave}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CheckItem({
+  index,
+  question,
+  row,
+  canEdit,
+  onSave,
+}: {
+  index: number;
+  question: string;
+  row: RecordRowDTO | null;
+  canEdit: boolean;
+  onSave: (vars: {
+    id: string | null;
+    kind: RowKind;
+    sortOrder: number;
+    col1: string;
+    col2: string;
+    col3: string;
+    knownUpdatedAt: string;
+  }) => void;
+}) {
+  const [memo, setMemo] = useState(row?.col3 ?? "");
+  useEffect(() => setMemo(row?.col3 ?? ""), [row?.col3]);
+  const choice = row?.col2 ?? "";
+
+  const save = (nextChoice: string, nextMemo: string) =>
+    onSave({
+      id: row?.id ?? null,
+      kind: "check",
+      sortOrder: index,
+      col1: question,
+      col2: nextChoice,
+      col3: nextMemo,
+      knownUpdatedAt: row?.updatedAt ?? "",
+    });
+
+  return (
+    <div className="rounded-xl bg-muted/40 p-3">
+      <p className="text-sm font-medium text-foreground">
+        {index + 1}. {question}
+      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {CHECK_CHOICES.map((c) => (
+          <Button
+            key={c}
+            type="button"
+            size="sm"
+            variant={choice === c ? "default" : "outline"}
+            disabled={!canEdit}
+            className="rounded-full active:scale-95"
+            onClick={() => save(c, memo)}
+          >
+            {c}
+          </Button>
+        ))}
+      </div>
+      <div className="mt-2 flex gap-2">
+        <Input
+          value={memo}
+          onChange={(e) => setMemo(e.target.value)}
+          placeholder="한 줄 메모 (선택)"
+          disabled={!canEdit}
+          className="rounded-xl bg-background"
+        />
+        {canEdit && (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            disabled={memo === (row?.col3 ?? "")}
+            className="shrink-0 rounded-xl active:scale-95"
+            onClick={() => save(choice, memo)}
+          >
+            저장
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// 개인 후기와 약속 — 본인 것만 쓰고 고칠 수 있다.
+function ReflectionSection({
+  postId,
+  reflections,
+  members,
+  myKey,
+  isMember,
+  isAdmin,
+}: {
+  postId: string;
+  reflections: RecordReflectionDTO[];
+  members: { id: string; username: string; usernameKey: string }[];
+  myKey: string;
+  isMember: boolean;
+  isAdmin: boolean;
+}) {
+  const queryClient = useQueryClient();
+  const saveFn = useServerFn(saveRecordReflection);
+  const deleteFn = useServerFn(deleteRecordReflection);
+  const { identity } = useStoredIdentity();
+
+  const mine = reflections.find((r) => r.usernameKey === myKey) ?? null;
+  const others = reflections.filter((r) => r.usernameKey !== myKey);
+
+  const [content, setContent] = useState(mine?.content ?? "");
+  const [promise, setPromise] = useState(mine?.promise ?? "");
+  useEffect(() => {
+    setContent(mine?.content ?? "");
+    setPromise(mine?.promise ?? "");
+  }, [mine?.content, mine?.promise]);
+
+  const save = useMutation({
+    mutationFn: () =>
+      saveFn({
+        data: {
+          postId,
+          content,
+          promise,
+          knownUpdatedAt: mine?.updatedAt ?? "",
+          author: identity?.author ?? "",
+          nicknamePassword: identity?.nicknamePassword ?? "",
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["record", postId] });
+      toast.success("후기를 저장했어요.");
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "저장하지 못했어요."),
+  });
+
+  const remove = useMutation({
+    mutationFn: (id: string) =>
+      deleteFn({
+        data: {
+          postId,
+          id,
+          author: identity?.author ?? "",
+          nicknamePassword: identity?.nicknamePassword ?? "",
+          adminPassword: getAdminPassword(),
+        },
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["record", postId] }),
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "삭제하지 못했어요."),
+  });
+
+  const notWritten = members.filter(
+    (m) => !reflections.some((r) => r.usernameKey === m.usernameKey),
+  );
+
+  return (
+    <section className="rounded-2xl bg-card p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-foreground">개인 후기와 약속</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        팀원 각자 하나씩 남겨요. 내 후기는 나만 고칠 수 있어요.
+      </p>
+
+      {isMember ? (
+        <div className="mt-4 space-y-3 rounded-xl bg-muted/40 p-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="rec-reflection">내 후기</Label>
+            <Textarea
+              id="rec-reflection"
+              value={content}
+              onChange={(e) => setContent(e.target.value.slice(0, 2000))}
+              rows={4}
+              placeholder="이번 활동에서 배운 것, 어려웠던 것"
+              className="rounded-xl bg-background"
+            />
+            <p className="text-right text-xs text-muted-foreground">{content.length}/2000</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="rec-promise">다음에 지킬 약속</Label>
+            <Input
+              id="rec-promise"
+              value={promise}
+              onChange={(e) => setPromise(e.target.value.slice(0, 1000))}
+              placeholder="예: 막히면 먼저 스스로 찾아본 뒤 물어보기"
+              className="rounded-xl bg-background"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              className="rounded-xl active:scale-95"
+              disabled={save.isPending}
+              onClick={() => save.mutate()}
+            >
+              저장
+            </Button>
+            {mine && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="rounded-xl text-muted-foreground hover:text-destructive"
+                onClick={() => remove.mutate(mine.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <p className="mt-4 text-sm text-muted-foreground">
+          팀원 닉네임으로 내 정보를 저장하면 후기를 남길 수 있어요.
+        </p>
+      )}
+
+      <div className="mt-4 space-y-3">
+        {others.map((r) => (
+          <div key={r.id} className="rounded-xl bg-muted/40 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-medium text-foreground">{r.username}</p>
+              {isAdmin && (
+                <button
+                  type="button"
+                  aria-label={`${r.username} 후기 삭제`}
+                  className="text-muted-foreground transition-colors hover:text-destructive"
+                  onClick={() => remove.mutate(r.id)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+            {r.content && (
+              <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{r.content}</p>
+            )}
+            {r.promise && (
+              <p className="mt-1 text-sm text-muted-foreground">약속: {r.promise}</p>
+            )}
+          </div>
+        ))}
+        {notWritten.length > 0 && (
+          <p className="text-xs text-muted-foreground">
+            아직 안 쓴 팀원: {notWritten.map((m) => m.username).join(", ")}
+          </p>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -377,6 +712,7 @@ function RowSection({
             key={row.id}
             row={row}
             cols={cols}
+            long={!!section.long}
             canEdit={canEdit}
             onSave={onSave}
             onDelete={onDelete}
@@ -410,12 +746,14 @@ function RowSection({
 function RowItem({
   row,
   cols,
+  long,
   canEdit,
   onSave,
   onDelete,
 }: {
   row: RecordRowDTO;
   cols: string[];
+  long?: boolean;
   canEdit: boolean;
   onSave: (vars: {
     id: string | null;
@@ -436,21 +774,38 @@ function RowItem({
   const dirty =
     values[0] !== row.col1 || values[1] !== row.col2 || values[2] !== row.col3;
 
+  const update = (i: number, next: string) =>
+    setValues((prev) => prev.map((v, idx) => (idx === i ? next : v)));
+
   return (
     <div className="grid gap-2 rounded-xl bg-muted/40 p-3 sm:grid-cols-[1fr_auto]">
       <div className="grid gap-2 sm:grid-cols-3">
-        {cols.map((label, i) => (
-          <Input
-            key={label}
-            value={values[i] ?? ""}
-            onChange={(e) =>
-              setValues((prev) => prev.map((v, idx) => (idx === i ? e.target.value : v)))
-            }
-            placeholder={label}
-            disabled={!canEdit}
-            className="rounded-xl bg-background"
-          />
-        ))}
+        {cols.map((label, i) =>
+          long && i > 0 ? (
+            <div key={label} className="space-y-1">
+              <Textarea
+                value={values[i] ?? ""}
+                onChange={(e) => update(i, e.target.value.slice(0, LONG_MAX))}
+                placeholder={label}
+                rows={4}
+                disabled={!canEdit}
+                className="rounded-xl bg-background"
+              />
+              <p className="text-right text-xs text-muted-foreground">
+                {(values[i] ?? "").length}/{LONG_MAX}
+              </p>
+            </div>
+          ) : (
+            <Input
+              key={label}
+              value={values[i] ?? ""}
+              onChange={(e) => update(i, e.target.value)}
+              placeholder={label}
+              disabled={!canEdit}
+              className="rounded-xl bg-background"
+            />
+          ),
+        )}
       </div>
       {canEdit && (
         <div className="flex items-center gap-2">

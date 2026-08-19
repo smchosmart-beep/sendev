@@ -4,7 +4,15 @@
 // authenticated with their nickname password (or the admin password).
 import bcrypt from "bcryptjs";
 
-export type RecordRowKind = "feature" | "flow" | "limit" | "plan" | "maker";
+export type RecordRowKind =
+  | "feature"
+  | "flow"
+  | "limit"
+  | "plan"
+  | "maker"
+  | "process"
+  | "devlog"
+  | "check";
 
 export const RECORD_ROW_KINDS: RecordRowKind[] = [
   "feature",
@@ -12,6 +20,9 @@ export const RECORD_ROW_KINDS: RecordRowKind[] = [
   "limit",
   "plan",
   "maker",
+  "process",
+  "devlog",
+  "check",
 ];
 
 export interface RecordDb {
