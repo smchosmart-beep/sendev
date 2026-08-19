@@ -1,7 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import type { RecordRowKind } from "./record.server";
+import type {
+  RecordRowKind,
+  RecordOverviewMember,
+  RecordOverviewFinal,
+  RecordOverviewRow,
+  RecordOverviewReflection,
+  RecordOverviewTeam,
+  RecordOverviewResult,
+} from "./record.server";
 
 export type {
   RecordOverviewMember,
