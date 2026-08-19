@@ -1206,57 +1206,133 @@ function RowItem({
       )}
 
       <div className="grid gap-2 sm:grid-cols-2">
-        {labels.map((label, i) => (
-          <div
-            key={label}
-            className={cn("space-y-1", longs.includes(i) && "sm:col-span-2")}
-          >
-            <Label className="text-xs text-muted-foreground">{label}</Label>
-            {longs.includes(i) ? (
-              <Textarea
-                value={values[i] ?? ""}
-                onChange={(e) => update(i, e.target.value.slice(0, 3000))}
-                rows={3}
-                placeholder={placeholders?.[i]}
-                disabled={!canEdit}
-                className="rounded-xl bg-background"
-              />
-            ) : (
-              <Input
-                value={values[i] ?? ""}
-                onChange={(e) => update(i, e.target.value.slice(0, 3000))}
-                placeholder={placeholders?.[i]}
-                disabled={!canEdit}
-                className="rounded-xl bg-background"
-              />
+        {labels.map((label, i) => {
+          if (i === fileCol) return null;
+          const isLink = i === linkCol;
+          return (
+            <div
+              key={label}
+              className={cn("space-y-1", (longs.includes(i) || isLink) && "sm:col-span-2")}
+            >
+              <Label className="text-xs text-muted-foreground">{label}</Label>
+              {longs.includes(i) ? (
+                <Textarea
+                  value={values[i] ?? ""}
+                  onChange={(e) => update(i, e.target.value.slice(0, 3000))}
+                  rows={3}
+                  placeholder={placeholders?.[i]}
+                  disabled={!canEdit}
+                  className="rounded-xl bg-background"
+                />
+              ) : (
+                <Input
+                  value={values[i] ?? ""}
+                  onChange={(e) => update(i, e.target.value.slice(0, 3000))}
+                  placeholder={placeholders?.[i]}
+                  disabled={!canEdit}
+                  className="rounded-xl bg-background"
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {fileCol !== undefined && (
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">
+            {labels[fileCol] ?? "관련 파일"}{" "}
+            <span className="text-[11px]">(최대 3개, 개당 3MB)</span>
+          </Label>
+          <div className="flex flex-wrap items-center gap-2">
+            {attachments.map((f) => {
+              const Icon = getFileIcon(f.name);
+              return (
+                <span
+                  key={f.url}
+                  className="inline-flex items-center gap-1 rounded-full bg-background px-2.5 py-1 text-xs"
+                >
+                  <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                  <button
+                    type="button"
+                    className="max-w-[12rem] truncate hover:underline"
+                    onClick={() => downloadFile(f.url, f.name)}
+                  >
+                    {f.name}
+                  </button>
+                  {canEdit && (
+                    <button
+                      type="button"
+                      aria-label={`${f.name} 첨부 제거`}
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={() =>
+                        setAttachments(attachments.filter((a) => a.url !== f.url))
+                      }
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </span>
+              );
+            })}
+            {canEdit && (
+              <>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  className="hidden"
+                  onChange={handleFilePick}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={uploading || attachments.length >= 3}
+                  className="rounded-xl active:scale-95"
+                  onClick={() => fileRef.current?.click()}
+                >
+                  {uploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                  파일 첨부
+                </Button>
+              </>
             )}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
       {canEdit && (
         <div className="flex items-center gap-2">
           <Button
             type="button"
             size="sm"
-            disabled={!dirty}
+            disabled={!dirty || uploading}
             className="rounded-xl active:scale-95"
-            onClick={() =>
+            onClick={() => {
+              const vals = normalizedValues();
+              if (fileCol !== undefined && (vals[fileCol] ?? "").length > 2900) {
+                toast.error("첨부가 너무 많아요. 파일 수를 줄여 주세요.");
+                return;
+              }
               onSave({
                 id: row.id,
                 kind: row.kind,
                 subtype,
                 rowAuthor: author,
                 sortOrder: row.sortOrder,
-                col1: values[0] ?? "",
-                col2: values[1] ?? "",
-                col3: values[2] ?? "",
-                col4: values[3] ?? "",
-                col5: values[4] ?? "",
-                col6: values[5] ?? "",
+                col1: vals[0] ?? "",
+                col2: vals[1] ?? "",
+                col3: vals[2] ?? "",
+                col4: vals[3] ?? "",
+                col5: vals[4] ?? "",
+                col6: vals[5] ?? "",
                 knownUpdatedAt: row.updatedAt,
-              })
-            }
+              });
+            }}
           >
+
             저장
           </Button>
           <Button
