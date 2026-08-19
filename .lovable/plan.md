@@ -15,4 +15,5 @@
 - 업로드는 이미 쓰고 있는 `src/lib/image-upload.ts`의 `uploadCommentImage`(post-images 버킷 + 압축 + 장기 서명 URL)를 재사용합니다.
 - `src/components/RecordEditor.tsx`의 `FinalInput` 타입에 `type: "image"`를 추가하고, `heroImageUrl` 항목만 이 타입으로 바꿉니다. 렌더러(`FinalField`)에 이미지 입력 분기를 추가합니다.
 - README 출력(`record-readme.ts`)은 이미 `heroImageUrl`을 이미지 주소로 쓰므로 수정 불필요.
-- 가이드(`/guide`) 활동기록 03단계 설명에서 "대표 이미지 주소" 문구를 "대표 이미지 파일 업로드"로 갱신합니다.
+- 기존에 `heroImageUrl`에 외부 URL이나 직접 입력된 주소가 남아 있으면 그 값을 미리보기로 그대로 보여주고, [제거] 버튼으로 비울 수 있게 유지합니다. 데이터 마이그레이션은 하지 않습니다.
+- 가이드(`/guide`) 활동기록 03단계 설명에 "대표 이미지는 파일 업로드로 등록합니다"라는 한 문장을 추가합니다. (기존 문구를 치환하는 것이 아님)
