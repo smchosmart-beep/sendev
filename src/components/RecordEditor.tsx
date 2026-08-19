@@ -48,6 +48,7 @@ import {
   type RowSectionDef,
 } from "@/lib/record-schema";
 import { RecordOutput } from "@/components/RecordOutput";
+import { CasebookOutput } from "@/components/record/CasebookOutput";
 import { EthicsSection } from "@/components/record/EthicsSection";
 import { StepSidebar } from "@/components/record/StepSidebar";
 import {
