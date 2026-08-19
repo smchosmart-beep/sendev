@@ -822,7 +822,7 @@ function MemberSection({
           <Input
             value={newMember}
             onChange={(e) => setNewMember(e.target.value)}
-            placeholder="추가할 팀원 닉네임"
+            placeholder="예) 김수학"
             className="rounded-xl"
           />
           <Button type="button" onClick={onAdd} className="shrink-0 rounded-xl active:scale-95">
