@@ -528,5 +528,29 @@ export function buildPublicReadme(team: RecordOverviewTeam): string {
   for (const k of licenseKeys) if (v(k)) push(`- **${FINAL_LABELS[k] ?? k}**: ${escapeMd(v(k))}`);
   push("");
 
+  // 10. 교사 개발자 윤리 자가점검
+  push("## 교사 개발자 윤리 자가점검", "");
+  const ethics = team.ethics ?? [];
+  if (ethics.length === 0) push(empty, "");
+  else {
+    push(`- 응답 인원: ${ethics.length}명 / 팀원 ${team.members.length}명`, "");
+    push("| 원칙 | 평균 점수 |", "| --- | --- |");
+    for (const p of ETHICS_PRINCIPLES) {
+      const avg =
+        ethics.reduce((sum, e) => sum + Number((e as any)[p.key] ?? 0), 0) / ethics.length;
+      push(`| ${escapeMd(p.title)} | ${avg.toFixed(1)} / 5.0 |`);
+    }
+    const overall =
+      ethics.reduce((sum, e) => sum + ethicsAverage(e as any), 0) / ethics.length;
+    push(`| **전체 평균** | **${overall.toFixed(1)} / 5.0** |`, "");
+    const promises = ethics.filter((e) => (e.extraPromise ?? "").trim());
+    if (promises.length) {
+      push("### 우리가 더한 약속", "");
+      for (const e of promises) push(`- ${escapeMd(e.username)}: ${escapeMd(e.extraPromise)}`);
+      push("");
+    }
+  }
+
   return L.join("\n").trim() + "\n";
 }
+
