@@ -4,26 +4,16 @@
 // authenticated with their nickname password (or the admin password).
 import bcrypt from "bcryptjs";
 
-export type RecordRowKind =
-  | "feature"
-  | "flow"
-  | "limit"
-  | "plan"
-  | "maker"
-  | "process"
-  | "devlog"
-  | "check";
+import {
+  RECORD_ROW_KINDS as ROW_KINDS,
+  RECORD_FINAL_FIELDS,
+  type RecordRowKindName,
+} from "./record-schema";
 
-export const RECORD_ROW_KINDS: RecordRowKind[] = [
-  "feature",
-  "flow",
-  "limit",
-  "plan",
-  "maker",
-  "process",
-  "devlog",
-  "check",
-];
+export type RecordRowKind = RecordRowKindName;
+
+export const RECORD_ROW_KINDS: RecordRowKind[] = [...ROW_KINDS];
+
 
 export interface RecordDb {
   from: (table: string) => any;
