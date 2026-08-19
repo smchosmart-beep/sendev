@@ -502,14 +502,20 @@ export const saveRecordReflection = createServerFn({ method: "POST" })
     z
       .object({
         postId: z.string().uuid(),
-        content: z.string().max(2000).default(""),
-        promise: z.string().max(1000).default(""),
+        affiliation: z.string().max(200).default(""),
+        role: z.string().max(200).default(""),
+        q1: z.string().max(3000).default(""),
+        q2: z.string().max(3000).default(""),
+        promises: z.array(z.string().max(200)).max(20).default([]),
+        promiseDetail: z.string().max(3000).default(""),
+        spreadPlan: z.string().max(3000).default(""),
         knownUpdatedAt: z.string().max(40).default(""),
         author: z.string().trim().min(1).max(100),
         nicknamePassword: z.string().trim().max(100).default(""),
       })
       .parse(input),
   )
+
   .handler(async ({ data }): Promise<{ id: string; updatedAt: string }> => {
     const R = await import("./record.server");
     const db = await R.getRecordDb();
