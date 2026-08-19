@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Check, Copy, Download, FileText, Printer } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,7 +22,21 @@ const markdownComponents = {
       </code>
     );
   },
+  a({ children, href, ...props }: { href?: string; children?: React.ReactNode }) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className="mr-2 inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 px-3 py-1 text-sm font-medium no-underline hover:bg-muted"
+        {...props}
+      >
+        {children}
+      </a>
+    );
+  },
 };
+
 
 export function RecordOutput({
   team,
@@ -176,7 +191,10 @@ export function RecordOutput({
               data-print-root
               className="prose prose-sm max-w-none rounded-xl border border-border bg-background p-5 dark:prose-invert"
             >
-              <ReactMarkdown components={markdownComponents}>{markdown}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                {markdown}
+              </ReactMarkdown>
+
             </div>
           )}
         </div>
