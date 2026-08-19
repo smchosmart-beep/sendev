@@ -5,6 +5,16 @@ import { Check, ChevronLeft, ChevronRight, ImagePlus, Loader2, Plus, Trash2, Use
 import { toast } from "sonner";
 
 import { uploadCommentImage } from "@/lib/image-upload";
+import {
+  MAX_ATTACHMENT_BYTES,
+  parseAttachments,
+  serializeAttachments,
+  uploadAttachment,
+  type AttachedFile,
+} from "@/lib/file-upload";
+import { getFileIcon } from "@/lib/file-icons";
+import { downloadFile } from "@/lib/download";
+
 
 import {
   addRecordMember,
