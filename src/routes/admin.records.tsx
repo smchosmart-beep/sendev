@@ -372,6 +372,19 @@ function RecordOverviewPage() {
               <FileArchive className="h-4 w-4" />
               ZIP
             </button>
+            <button
+              type="button"
+              onClick={() => setPrintingCasebook(true)}
+              disabled={!overview || overview.teams.length === 0 || printingCasebook}
+              className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+            >
+              {printingCasebook ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Printer className="h-4 w-4" />
+              )}
+              사례집 합본 인쇄
+            </button>
           </div>
         </div>
 
