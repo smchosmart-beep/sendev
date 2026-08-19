@@ -1116,8 +1116,58 @@ function RowItem({
   const update = (i: number, next: string) =>
     setValues((prev) => prev.map((v, idx) => (idx === i ? next : v)));
 
+  // 관련 파일 첨부 (fileCol 열에 JSON 문자열로 저장)
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const attachments = fileCol === undefined ? [] : parseAttachments(values[fileCol]);
+
+  const setAttachments = (next: AttachedFile[]) => {
+    if (fileCol === undefined) return;
+    update(fileCol, serializeAttachments(next));
+  };
+
+  const handleFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (attachments.length >= 3) {
+      toast.error("파일은 최대 3개까지 첨부할 수 있어요.");
+      return;
+    }
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      toast.error("파일 크기는 3MB 이하만 가능해요.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const uploaded = await uploadAttachment(file);
+      const next = [...attachments, uploaded];
+      if (serializeAttachments(next).length > 2900) {
+        toast.error("첨부가 너무 많아요. 파일 수를 줄여 주세요.");
+        return;
+      }
+      setAttachments(next);
+      toast.success("파일을 첨부했어요! 저장을 눌러 주세요.");
+    } catch (err) {
+      console.error("record file upload failed", err);
+      toast.error("파일 업로드에 실패했어요.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // 저장 직전 관련 링크에 프로토콜 보정
+  const normalizedValues = () =>
+    values.map((v, i) => {
+      if (i !== linkCol) return v;
+      const url = v.trim();
+      if (!url) return "";
+      return /^(https?:|mailto:)/i.test(url) ? url : `https://${url}`;
+    });
+
   // 작성자 칸을 쓰지 않는 표에서도 예전에 저장된 이름은 읽기 전용으로 보여 준다.
   const legacyAuthor = !authorEnabled && author.trim() ? author.trim() : "";
+
 
   return (
     <div className="space-y-2 rounded-xl bg-muted/40 p-3">
