@@ -4,26 +4,16 @@
 // authenticated with their nickname password (or the admin password).
 import bcrypt from "bcryptjs";
 
-export type RecordRowKind =
-  | "feature"
-  | "flow"
-  | "limit"
-  | "plan"
-  | "maker"
-  | "process"
-  | "devlog"
-  | "check";
+import {
+  RECORD_ROW_KINDS as ROW_KINDS,
+  RECORD_FINAL_FIELDS,
+  type RecordRowKindName,
+} from "./record-schema";
 
-export const RECORD_ROW_KINDS: RecordRowKind[] = [
-  "feature",
-  "flow",
-  "limit",
-  "plan",
-  "maker",
-  "process",
-  "devlog",
-  "check",
-];
+export type RecordRowKind = RecordRowKindName;
+
+export const RECORD_ROW_KINDS: RecordRowKind[] = [...ROW_KINDS];
+
 
 export interface RecordDb {
   from: (table: string) => any;
@@ -137,29 +127,29 @@ export interface RecordOverviewMember {
   id: string;
   username: string;
   usernameKey: string;
+  affiliation: string;
+  role: string;
 }
 
-export interface RecordOverviewFinal {
-  serviceName: string;
-  oneLiner: string;
-  targetUser: string;
-  problem: string;
-  solution: string;
-  heroImageUrl: string;
-  deployUrl: string;
-  githubUrl: string;
-  techStack: string;
-  envNames: string;
+export type RecordOverviewFinal = Record<
+  (typeof RECORD_FINAL_FIELDS)[number]["key"],
+  string
+> & {
   updatedBy: string;
   updatedAt: string;
-}
+};
 
 export interface RecordOverviewRow {
   kind: RecordRowKind;
   sortOrder: number;
+  subtype: string;
+  author: string;
   col1: string;
   col2: string;
   col3: string;
+  col4: string;
+  col5: string;
+  col6: string;
   updatedBy: string;
   updatedAt: string;
 }
@@ -168,10 +158,16 @@ export interface RecordOverviewReflection {
   id: string;
   username: string;
   usernameKey: string;
-  content: string;
-  promise: string;
+  affiliation: string;
+  role: string;
+  q1: string;
+  q2: string;
+  promises: string[];
+  promiseDetail: string;
+  spreadPlan: string;
   updatedAt: string;
 }
+
 
 export interface RecordOverviewTeam {
   postId: string;
@@ -259,20 +255,13 @@ export async function fetchRecordOverview(
   const teams = (posts ?? []).map((p: any): RecordOverviewTeam => {
     const f = finalByPost.get(p.id);
     const finalDto: RecordOverviewFinal | null = f
-      ? {
-          serviceName: f.service_name ?? "",
-          oneLiner: f.one_liner ?? "",
-          targetUser: f.target_user ?? "",
-          problem: f.problem ?? "",
-          solution: f.solution ?? "",
-          heroImageUrl: f.hero_image_url ?? "",
-          deployUrl: f.deploy_url ?? "",
-          githubUrl: f.github_url ?? "",
-          techStack: f.tech_stack ?? "",
-          envNames: f.env_names ?? "",
+      ? ({
+          ...(Object.fromEntries(
+            RECORD_FINAL_FIELDS.map((field) => [field.key, f[field.column] ?? ""]),
+          ) as Record<(typeof RECORD_FINAL_FIELDS)[number]["key"], string>),
           updatedBy: f.updated_by ?? "",
           updatedAt: f.updated_at ?? "",
-        }
+        } as RecordOverviewFinal)
       : null;
 
     return {
@@ -285,14 +274,21 @@ export async function fetchRecordOverview(
         id: m.id,
         username: m.username,
         usernameKey: m.username_key,
+        affiliation: m.affiliation ?? "",
+        role: m.role ?? "",
       })),
       final: finalDto,
       rows: (rowsByPost.get(p.id) ?? []).map((r: any) => ({
         kind: r.kind as RecordRowKind,
         sortOrder: r.sort_order ?? 0,
+        subtype: r.subtype ?? "",
+        author: r.author ?? "",
         col1: r.col1 ?? "",
         col2: r.col2 ?? "",
         col3: r.col3 ?? "",
+        col4: r.col4 ?? "",
+        col5: r.col5 ?? "",
+        col6: r.col6 ?? "",
         updatedBy: r.updated_by ?? "",
         updatedAt: r.updated_at ?? "",
       })),
@@ -300,12 +296,18 @@ export async function fetchRecordOverview(
         id: r.id,
         username: r.username,
         usernameKey: r.username_key,
-        content: r.content ?? "",
-        promise: r.promise ?? "",
+        affiliation: r.affiliation ?? "",
+        role: r.role ?? "",
+        q1: r.q1 ?? "",
+        q2: r.q2 ?? "",
+        promises: Array.isArray(r.promises) ? r.promises : [],
+        promiseDetail: r.promise_detail ?? "",
+        spreadPlan: r.spread_plan ?? "",
         updatedAt: r.updated_at ?? "",
       })),
     };
   });
+
 
   return { categoryId, slug: category.slug as string, teams };
 }

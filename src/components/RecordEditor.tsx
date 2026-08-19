@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Plus, Trash2, Users } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Loader2, Plus, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -13,118 +13,163 @@ import {
   saveRecordFinal,
   saveRecordReflection,
   saveRecordRow,
+  updateRecordMember,
+  type RecordMemberDTO,
   type RecordReflectionDTO,
   type RecordRowDTO,
 } from "@/lib/record.functions";
+import {
+  AI_USE_TYPES,
+  CHANGE_TYPES,
+  DEPLOY_STATUSES,
+  MAIN_USERS,
+  OUTPUT_TYPES,
+  PRIVACY_STATUSES,
+  PROBLEM_AREAS,
+  PROCESS_SUBTYPES,
+  PROMISE_ITEMS,
+  RECORD_FINAL_FIELDS,
+  ROW_SECTION_DEFS,
+  STANCE_CHOICES,
+  STANCE_QUESTIONS,
+  type RecordFinalKey,
+  type RowSectionDef,
+} from "@/lib/record-schema";
 import { getAdminPassword } from "@/lib/admin-auth";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 type RowKind = RecordRowDTO["kind"];
 
-const ROW_SECTIONS: {
+type SaveRowVars = {
+  id: string | null;
   kind: RowKind;
-  title: string;
-  hint: string;
-  cols: string[];
-  long?: boolean;
-}[] = [
-  {
-    kind: "feature",
-    title: "핵심 기능",
-    hint: "이 서비스가 실제로 해 주는 일을 한 줄씩 적어요.",
-    cols: ["기능 이름", "설명", "비고"],
-  },
-  {
-    kind: "flow",
-    title: "사용 흐름",
-    hint: "사용자가 거치는 단계를 순서대로 적어요.",
-    cols: ["단계", "화면/동작", "결과"],
-  },
-  {
-    kind: "limit",
-    title: "지금의 한계",
-    hint: "아직 못 한 것, 아쉬운 점을 솔직하게 적어요.",
-    cols: ["한계", "이유", ""],
-  },
-  {
-    kind: "plan",
-    title: "다음 계획",
-    hint: "이어서 하고 싶은 일을 적어요.",
-    cols: ["계획", "언제/어떻게", ""],
-  },
-  {
-    kind: "maker",
-    title: "제작자",
-    hint: "누가 무엇을 맡았는지 적어요.",
-    cols: ["이름", "맡은 일", ""],
-  },
-  {
-    kind: "process",
-    title: "문제 정의 과정 기록",
-    hint: "아이디어를 좁혀 간 과정을 단계별로 남겨요.",
-    cols: ["단계/날짜", "우리가 나눈 이야기", "그래서 정한 것"],
-    long: true,
-  },
-  {
-    kind: "devlog",
-    title: "개발 과정 자유기록",
-    hint: "개발하며 겪은 일과 해결 방법을 자유롭게 쌓아요.",
-    cols: ["날짜", "무슨 일이 있었나", "어떻게 해결했나"],
-    long: true,
-  },
-];
+  subtype: string;
+  rowAuthor: string;
+  sortOrder: number;
+  col1: string;
+  col2: string;
+  col3: string;
+  col4: string;
+  col5: string;
+  col6: string;
+  knownUpdatedAt: string;
+};
 
-const LONG_MAX = 2000;
+const emptyRowVars = (kind: RowKind, sortOrder: number): SaveRowVars => ({
+  id: null,
+  kind,
+  subtype: "",
+  rowAuthor: "",
+  sortOrder,
+  col1: "",
+  col2: "",
+  col3: "",
+  col4: "",
+  col5: "",
+  col6: "",
+  knownUpdatedAt: "",
+});
 
-const CHECK_ITEMS = [
-  "우리가 풀려는 문제를 스스로 설명할 수 있다",
-  "사용자를 구체적으로 정했다",
-  "아이디어를 여러 개 내보고 비교했다",
-  "만들다 막혔을 때 스스로 방법을 찾아봤다",
-  "AI에게 물을 때 무엇을 원하는지 분명히 말했다",
-  "AI가 준 결과를 그대로 쓰지 않고 확인했다",
-  "팀원과 역할을 나누고 서로 도왔다",
-  "다른 사람의 자료를 쓸 때 출처를 밝혔다",
-];
-
-const CHECK_CHOICES = ["잘함", "보통", "아직"];
-
-type FinalKey =
-  | "serviceName"
-  | "oneLiner"
-  | "targetUser"
-  | "problem"
-  | "solution"
-  | "heroImageUrl"
-  | "deployUrl"
-  | "githubUrl"
-  | "techStack"
-  | "envNames";
-
-const FINAL_FIELDS: {
-  key: FinalKey;
+type FinalInput = {
+  key: RecordFinalKey;
   label: string;
-  placeholder: string;
-  multiline?: boolean;
-}[] = [
-  { key: "serviceName", label: "서비스 이름", placeholder: "예: 배수판별 연습기" },
-  { key: "oneLiner", label: "한 줄 소개", placeholder: "무엇을 도와주는 서비스인지 한 문장" },
-  { key: "targetUser", label: "누구를 위한 것인가요?", placeholder: "예: 초등 4학년 학생" },
-  { key: "problem", label: "어떤 문제를 풀었나요?", placeholder: "관찰한 문제 상황", multiline: true },
-  { key: "solution", label: "어떻게 풀었나요?", placeholder: "해결 방법", multiline: true },
-  { key: "heroImageUrl", label: "대표 이미지 주소", placeholder: "https://..." },
-  { key: "deployUrl", label: "배포 주소", placeholder: "https://..." },
-  { key: "githubUrl", label: "GitHub 주소", placeholder: "https://..." },
-  { key: "techStack", label: "사용한 도구", placeholder: "예: Lovable, Supabase" },
+  hint?: string;
+  type: "text" | "textarea" | "select";
+  options?: string[];
+  full?: boolean;
+};
+
+const FINAL_GROUPS: { title: string; hint?: string; fields: FinalInput[] }[] = [
   {
-    key: "envNames",
-    label: "환경변수 이름만",
-    placeholder: "예: API_KEY (값은 절대 적지 마세요)",
+    title: "한눈에 보기",
+    fields: [
+      { key: "serviceName", label: "서비스 이름", type: "text" },
+      { key: "oneLiner", label: "한 줄 소개", type: "text", full: true },
+      { key: "problemArea", label: "문제 영역", type: "select", options: PROBLEM_AREAS },
+      { key: "targetUser", label: "주 사용자", type: "select", options: MAIN_USERS },
+      { key: "outputType", label: "결과물 형태", type: "select", options: OUTPUT_TYPES },
+      { key: "tags", label: "태그", hint: "쉼표로 구분", type: "text" },
+      { key: "consent", label: "공개 동의", type: "select", options: ["동의", "미동의"] },
+    ],
   },
+  {
+    title: "문제와 해결",
+    fields: [
+      { key: "problem", label: "어떤 문제를 풀었나요?", type: "textarea", full: true },
+      { key: "solution", label: "어떻게 풀었나요?", type: "textarea", full: true },
+    ],
+  },
+  {
+    title: "사용과 배포",
+    fields: [
+      { key: "deployStatus", label: "배포 상태", type: "select", options: DEPLOY_STATUSES },
+      { key: "usageEnv", label: "사용 환경", hint: "예: PC 웹, 모바일 웹", type: "text" },
+      { key: "deployUrl", label: "배포 주소", type: "text" },
+      { key: "githubUrl", label: "GitHub 주소", type: "text" },
+      { key: "demoVideoUrl", label: "시연 영상 주소", type: "text" },
+      { key: "heroImageUrl", label: "대표 이미지 주소", type: "text" },
+      {
+        key: "usageCondition",
+        label: "사용 조건",
+        hint: "계정 필요 여부, 무료/유료 등",
+        type: "textarea",
+        full: true,
+      },
+    ],
+  },
+  {
+    title: "기술 구성",
+    hint: "환경변수는 이름만 적고 값(비밀키)은 절대 입력하지 마세요.",
+    fields: [
+      { key: "techScreen", label: "화면", type: "text" },
+      { key: "techServer", label: "서버·백엔드", type: "text" },
+      { key: "techAi", label: "AI", type: "text" },
+      { key: "techStorage", label: "저장소", type: "text" },
+      { key: "techDeploy", label: "배포", type: "text" },
+      { key: "dirStructure", label: "폴더 구조", type: "textarea", full: true },
+      { key: "installCmd", label: "설치 명령", type: "text" },
+      { key: "runCmd", label: "실행 명령", type: "text" },
+      { key: "envNames", label: "환경변수 이름만", type: "text", full: true },
+    ],
+  },
+  {
+    title: "라이선스와 출처",
+    fields: [
+      { key: "licenseCode", label: "코드 라이선스", type: "text" },
+      { key: "licenseDocs", label: "문서 라이선스", type: "text" },
+      { key: "licenseExternal", label: "외부 자료 출처", type: "textarea", full: true },
+    ],
+  },
+];
+
+const RISK_GROUP: { title: string; hint?: string; fields: FinalInput[] } = {
+  title: "변화와 위험 점검",
+  hint: "실제로 확인한 것과 기대하는 것을 구분해서 적어요.",
+  fields: [
+    { key: "currentScope", label: "지금까지 확인한 범위", type: "textarea", full: true },
+    { key: "changeType", label: "변화 구분", type: "select", options: CHANGE_TYPES },
+    { key: "changeContent", label: "변화 내용", type: "textarea", full: true },
+    { key: "privacyStatus", label: "개인정보 처리 여부", type: "select", options: PRIVACY_STATUSES },
+    { key: "riskExpected", label: "예상되는 위험", type: "textarea", full: true },
+    { key: "riskMitigation", label: "위험을 줄이려고 한 일", type: "textarea", full: true },
+    { key: "riskStop", label: "멈춤 기준", type: "textarea", full: true },
+    { key: "riskTest", label: "검증 방법", type: "textarea", full: true },
+  ],
+};
+
+const FINAL_MAX = new Map(RECORD_FINAL_FIELDS.map((f) => [f.key as string, f.max]));
+
+const STEPS = [
+  { no: "01", title: "팀 공통정보" },
+  { no: "02", title: "문제 정의 과정" },
+  { no: "03", title: "최종 결과물" },
+  { no: "04", title: "개발·교육적 점검" },
+  { no: "05", title: "개인 후기·소회" },
 ];
 
 export function RecordEditor({ postId }: { postId: string }) {
@@ -135,7 +180,10 @@ export function RecordEditor({ postId }: { postId: string }) {
   const deleteRowFn = useServerFn(deleteRecordRow);
   const addMemberFn = useServerFn(addRecordMember);
   const removeMemberFn = useServerFn(removeRecordMember);
+  const updateMemberFn = useServerFn(updateRecordMember);
   const { identity } = useStoredIdentity();
+
+  const [step, setStep] = useState(0);
 
   const { data: bundle, isLoading } = useQuery({
     queryKey: ["record", postId],
@@ -160,28 +208,19 @@ export function RecordEditor({ postId }: { postId: string }) {
 
   const canEdit = isMember || !!auth.adminPassword;
 
-  const [final, setFinal] = useState<Record<FinalKey, string> | null>(null);
+  const [final, setFinal] = useState<Record<string, string> | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const knownUpdatedAt = useRef("");
-  const pending = useRef<Partial<Record<FinalKey, string>>>({});
+  const pending = useRef<Record<string, string>>({});
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!bundle) return;
-    const f = bundle.final;
+    const f = bundle.final as Record<string, string> | null;
     knownUpdatedAt.current = f?.updatedAt ?? "";
-    setFinal({
-      serviceName: f?.serviceName ?? "",
-      oneLiner: f?.oneLiner ?? "",
-      targetUser: f?.targetUser ?? "",
-      problem: f?.problem ?? "",
-      solution: f?.solution ?? "",
-      heroImageUrl: f?.heroImageUrl ?? "",
-      deployUrl: f?.deployUrl ?? "",
-      githubUrl: f?.githubUrl ?? "",
-      techStack: f?.techStack ?? "",
-      envNames: f?.envNames ?? "",
-    });
+    setFinal(
+      Object.fromEntries(RECORD_FINAL_FIELDS.map((field) => [field.key, f?.[field.key] ?? ""])),
+    );
   }, [bundle]);
 
   const flush = useCallback(async () => {
@@ -202,9 +241,11 @@ export function RecordEditor({ postId }: { postId: string }) {
     }
   }, [auth, postId, queryClient, saveFinalFn]);
 
-  const onFinalChange = (key: FinalKey, value: string) => {
-    setFinal((prev) => (prev ? { ...prev, [key]: value } : prev));
-    pending.current[key] = value;
+  const onFinalChange = (key: string, value: string) => {
+    const max = FINAL_MAX.get(key) ?? 2000;
+    const next = value.slice(0, max);
+    setFinal((prev) => (prev ? { ...prev, [key]: next } : prev));
+    pending.current[key] = next;
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => void flush(), 1000);
   };
@@ -212,25 +253,15 @@ export function RecordEditor({ postId }: { postId: string }) {
   useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
 
   const rowMutation = useMutation({
-    mutationFn: (vars: {
-      id: string | null;
-      kind: RowKind;
-      sortOrder: number;
-      col1: string;
-      col2: string;
-      col3: string;
-      knownUpdatedAt: string;
-    }) => saveRowFn({ data: { postId, ...vars, ...auth } }),
+    mutationFn: (vars: SaveRowVars) => saveRowFn({ data: { postId, ...vars, ...auth } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["record", postId] }),
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "저장하지 못했어요."),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "저장하지 못했어요."),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteRowFn({ data: { postId, id, ...auth } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["record", postId] }),
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "삭제하지 못했어요."),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "삭제하지 못했어요."),
   });
 
   const [newMember, setNewMember] = useState("");
@@ -241,15 +272,21 @@ export function RecordEditor({ postId }: { postId: string }) {
       queryClient.invalidateQueries({ queryKey: ["record", postId] });
       toast.success("팀원을 추가했어요.");
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "추가하지 못했어요."),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "추가하지 못했어요."),
   });
   const removeMember = useMutation({
-    mutationFn: (memberId: string) =>
-      removeMemberFn({ data: { postId, memberId, ...auth } }),
+    mutationFn: (memberId: string) => removeMemberFn({ data: { postId, memberId, ...auth } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["record", postId] }),
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "삭제하지 못했어요."),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "삭제하지 못했어요."),
+  });
+  const saveMember = useMutation({
+    mutationFn: (vars: { memberId: string; affiliation: string; role: string }) =>
+      updateMemberFn({ data: { postId, ...vars, ...auth } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["record", postId] });
+      toast.success("팀원 정보를 저장했어요.");
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "저장하지 못했어요."),
   });
 
   if (isLoading || !bundle || !final) {
@@ -260,164 +297,576 @@ export function RecordEditor({ postId }: { postId: string }) {
     );
   }
 
+  const rowsOf = (kind: RowKind) =>
+    bundle.rows.filter((r) => r.kind === kind).sort((a, b) => a.sortOrder - b.sortOrder);
+
+  const rowSectionProps = {
+    canEdit,
+    onSave: (vars: SaveRowVars) => rowMutation.mutate(vars),
+    onDelete: (id: string) => deleteMutation.mutate(id),
+  };
+
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl bg-card p-6 shadow-sm">
-        <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-primary" />
-          <h2 className="text-lg font-semibold text-foreground">팀원</h2>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {bundle.members.map((m) => (
-            <span
-              key={m.id}
-              className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-sm text-foreground"
-            >
-              {m.username}
-              {canEdit && (
-                <button
-                  type="button"
-                  aria-label={`${m.username} 팀원 삭제`}
-                  onClick={() => removeMember.mutate(m.id)}
-                  className="text-muted-foreground transition-colors hover:text-destructive"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </span>
+      <nav aria-label="작성 단계" className="rounded-2xl bg-card p-3 shadow-sm">
+        <ol className="flex gap-2 overflow-x-auto">
+          {STEPS.map((s, i) => (
+            <li key={s.no} className="min-w-0 flex-1">
+              <button
+                type="button"
+                onClick={() => setStep(i)}
+                className={cn(
+                  "w-full rounded-xl px-3 py-2 text-left transition-colors",
+                  i === step
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted",
+                )}
+              >
+                <span className="block text-[11px] font-semibold opacity-80">{s.no}</span>
+                <span className="block truncate text-xs font-medium sm:text-sm">{s.title}</span>
+              </button>
+            </li>
           ))}
-        </div>
-        {canEdit && (
-          <div className="mt-3 flex gap-2">
-            <Input
-              value={newMember}
-              onChange={(e) => setNewMember(e.target.value)}
-              placeholder="추가할 팀원 닉네임"
-              className="rounded-xl"
-            />
-            <Button
-              type="button"
-              onClick={() => newMember.trim() && addMember.mutate()}
-              disabled={addMember.isPending}
-              className="shrink-0 rounded-xl active:scale-95"
-            >
-              추가
-            </Button>
-          </div>
-        )}
-        {!canEdit && (
-          <p className="mt-3 text-xs text-muted-foreground">
-            팀원 닉네임으로 내 정보를 저장하면 이 기록을 함께 편집할 수 있어요.
-          </p>
-        )}
-      </section>
+        </ol>
+      </nav>
 
-      <section className="rounded-2xl bg-card p-6 shadow-sm">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-foreground">최종 결과물</h2>
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            {status === "saving" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            {status === "saving"
-              ? "저장 중..."
-              : status === "saved"
-                ? "저장됨"
-                : bundle.final?.updatedBy
-                  ? `마지막 저장: ${bundle.final.updatedBy}`
-                  : ""}
-          </span>
-        </div>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          {FINAL_FIELDS.map((f) => (
-            <div
-              key={f.key}
-              className={`space-y-2 ${f.multiline ? "sm:col-span-2" : ""}`}
-            >
-              <Label htmlFor={`rec-${f.key}`}>{f.label}</Label>
-              {f.multiline ? (
-                <Textarea
-                  id={`rec-${f.key}`}
-                  value={final[f.key]}
-                  onChange={(e) => onFinalChange(f.key, e.target.value)}
-                  placeholder={f.placeholder}
-                  rows={4}
-                  disabled={!canEdit}
-                  className="rounded-xl"
-                />
-              ) : (
-                <Input
-                  id={`rec-${f.key}`}
-                  value={final[f.key]}
-                  onChange={(e) => onFinalChange(f.key, e.target.value)}
-                  placeholder={f.placeholder}
-                  disabled={!canEdit}
-                  className="rounded-xl"
-                />
-              )}
-            </div>
-          ))}
-        </div>
-        <p className="mt-3 text-xs text-muted-foreground">
-          환경변수는 이름만 적고 값(비밀키)은 절대 입력하지 마세요.
+      {!canEdit && (
+        <p className="rounded-xl bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+          팀원 닉네임으로 내 정보를 저장하면 이 기록을 함께 편집할 수 있어요.
         </p>
-      </section>
+      )}
 
-      {ROW_SECTIONS.map((section) => (
-        <RowSection
-          key={section.kind}
-          section={section}
-          rows={bundle.rows.filter((r) => r.kind === section.kind)}
+      {step === 0 && (
+        <MemberSection
+          members={bundle.members}
           canEdit={canEdit}
-          onSave={(vars) => rowMutation.mutate(vars)}
-          onDelete={(id) => deleteMutation.mutate(id)}
+          newMember={newMember}
+          setNewMember={setNewMember}
+          onAdd={() => newMember.trim() && addMember.mutate()}
+          onRemove={(id) => removeMember.mutate(id)}
+          onSave={(vars) => saveMember.mutate(vars)}
         />
-      ))}
+      )}
 
-      <CheckSection
-        rows={bundle.rows.filter((r) => r.kind === "check")}
-        canEdit={canEdit}
-        onSave={(vars) => rowMutation.mutate(vars)}
-      />
+      {step === 1 && (
+        <RowSection
+          def={ROW_SECTION_DEFS["process"]!}
+          title="문제 정의 과정 기록"
+          hint="회의·인터뷰 기록을 종류별로 남겨요."
+          subtypes={PROCESS_SUBTYPES}
+          cols={["언제·어디서", "무엇을 나눴나요?", "그래서 정한 것"]}
+          longCols={[1, 2]}
+          rows={rowsOf("process")}
+          {...rowSectionProps}
+        />
+      )}
 
-      <ReflectionSection
-        postId={postId}
-        reflections={bundle.reflections}
-        members={bundle.members}
-        myKey={(identity?.author ?? "").trim().toLowerCase()}
-        isMember={isMember}
-        isAdmin={!!auth.adminPassword}
-      />
+      {step === 2 && (
+        <>
+          <section className="rounded-2xl bg-card p-6 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-foreground">최종 결과물</h2>
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                {status === "saving" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {status === "saving"
+                  ? "저장 중..."
+                  : status === "saved"
+                    ? "저장됨"
+                    : bundle.final?.updatedBy
+                      ? `마지막 저장: ${bundle.final.updatedBy}`
+                      : ""}
+              </span>
+            </div>
+            {FINAL_GROUPS.map((group) => (
+              <div key={group.title} className="mt-6 first:mt-4">
+                <h3 className="text-sm font-semibold text-foreground">{group.title}</h3>
+                {group.hint && (
+                  <p className="mt-1 text-xs text-muted-foreground">{group.hint}</p>
+                )}
+                <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                  {group.fields.map((f) => (
+                    <FinalField
+                      key={f.key}
+                      field={f}
+                      value={final[f.key] ?? ""}
+                      canEdit={canEdit}
+                      onChange={onFinalChange}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </section>
+
+          {(["feature", "flow", "limit", "plan", "maker"] as RowKind[]).map((kind) => (
+            <RowSection
+              key={kind}
+              def={ROW_SECTION_DEFS[kind]!}
+              rows={rowsOf(kind)}
+              {...rowSectionProps}
+            />
+          ))}
+        </>
+      )}
+
+      {step === 3 && (
+        <>
+          <RowSection
+            def={ROW_SECTION_DEFS["devlog"]!}
+            title="개발 과정 자유기록"
+            hint="개발하며 겪은 일과 해결 방법을 자유롭게 쌓아요."
+            cols={["날짜", "무슨 일이 있었나", "어떻게 해결했나"]}
+            longCols={[1, 2]}
+            rows={rowsOf("devlog")}
+            {...rowSectionProps}
+          />
+          {(["decision", "stuck", "ai_use", "ai_error", "privacy"] as RowKind[]).map((kind) => (
+            <RowSection
+              key={kind}
+              def={ROW_SECTION_DEFS[kind]!}
+              subtypes={kind === "ai_use" ? AI_USE_TYPES : undefined}
+              rows={rowsOf(kind)}
+              {...rowSectionProps}
+            />
+          ))}
+
+          <StanceSection
+            rows={rowsOf("stance")}
+            canEdit={canEdit}
+            onSave={(vars) => rowMutation.mutate(vars)}
+          />
+
+          <section className="rounded-2xl bg-card p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-foreground">{RISK_GROUP.title}</h3>
+            {RISK_GROUP.hint && (
+              <p className="mt-1 text-sm text-muted-foreground">{RISK_GROUP.hint}</p>
+            )}
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              {RISK_GROUP.fields.map((f) => (
+                <FinalField
+                  key={f.key}
+                  field={f}
+                  value={final[f.key] ?? ""}
+                  canEdit={canEdit}
+                  onChange={onFinalChange}
+                />
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+
+      {step === 4 && (
+        <ReflectionSection
+          postId={postId}
+          reflections={bundle.reflections}
+          members={bundle.members}
+          myKey={(identity?.author ?? "").trim().toLowerCase()}
+          isMember={isMember}
+          isAdmin={!!auth.adminPassword}
+        />
+      )}
+
+      <div className="flex items-center justify-between gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          className="rounded-xl active:scale-95"
+          disabled={step === 0}
+          onClick={() => setStep((s) => Math.max(0, s - 1))}
+        >
+          <ChevronLeft className="h-4 w-4" />
+          이전 단계
+        </Button>
+        <Button
+          type="button"
+          className="rounded-xl active:scale-95"
+          disabled={step === STEPS.length - 1}
+          onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}
+        >
+          다음 단계
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 }
 
-// 교육적 점검 8항목 — 문항은 고정, 선택/메모만 저장한다.
-function CheckSection({
+function FinalField({
+  field,
+  value,
+  canEdit,
+  onChange,
+}: {
+  field: FinalInput;
+  value: string;
+  canEdit: boolean;
+  onChange: (key: string, value: string) => void;
+}) {
+  const id = `rec-${field.key}`;
+  return (
+    <div className={cn("space-y-2", (field.full || field.type === "textarea") && "sm:col-span-2")}>
+      <Label htmlFor={id}>{field.label}</Label>
+      {field.hint && <p className="text-xs text-muted-foreground">{field.hint}</p>}
+      {field.type === "textarea" ? (
+        <Textarea
+          id={id}
+          value={value}
+          rows={4}
+          disabled={!canEdit}
+          onChange={(e) => onChange(field.key, e.target.value)}
+          className="rounded-xl"
+        />
+      ) : field.type === "select" ? (
+        <div className="flex flex-wrap gap-2">
+          {(field.options ?? []).map((opt) => (
+            <Button
+              key={opt}
+              type="button"
+              size="sm"
+              variant={value === opt ? "default" : "outline"}
+              disabled={!canEdit}
+              className="rounded-full active:scale-95"
+              onClick={() => onChange(field.key, value === opt ? "" : opt)}
+            >
+              {opt}
+            </Button>
+          ))}
+        </div>
+      ) : (
+        <Input
+          id={id}
+          value={value}
+          disabled={!canEdit}
+          onChange={(e) => onChange(field.key, e.target.value)}
+          className="rounded-xl"
+        />
+      )}
+    </div>
+  );
+}
+
+function MemberSection({
+  members,
+  canEdit,
+  newMember,
+  setNewMember,
+  onAdd,
+  onRemove,
+  onSave,
+}: {
+  members: RecordMemberDTO[];
+  canEdit: boolean;
+  newMember: string;
+  setNewMember: (v: string) => void;
+  onAdd: () => void;
+  onRemove: (id: string) => void;
+  onSave: (vars: { memberId: string; affiliation: string; role: string }) => void;
+}) {
+  return (
+    <section className="rounded-2xl bg-card p-6 shadow-sm">
+      <div className="flex items-center gap-2">
+        <Users className="h-4 w-4 text-primary" />
+        <h2 className="text-lg font-semibold text-foreground">팀 공통정보</h2>
+      </div>
+      <p className="mt-1 text-sm text-muted-foreground">
+        팀원과 각자의 소속·역할을 적어요. 이후 단계의 기록에도 함께 표시돼요.
+      </p>
+
+      <div className="mt-4 space-y-3">
+        {members.map((m) => (
+          <MemberRow key={m.id} member={m} canEdit={canEdit} onRemove={onRemove} onSave={onSave} />
+        ))}
+      </div>
+
+      {canEdit && (
+        <div className="mt-4 flex gap-2">
+          <Input
+            value={newMember}
+            onChange={(e) => setNewMember(e.target.value)}
+            placeholder="추가할 팀원 닉네임"
+            className="rounded-xl"
+          />
+          <Button type="button" onClick={onAdd} className="shrink-0 rounded-xl active:scale-95">
+            추가
+          </Button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function MemberRow({
+  member,
+  canEdit,
+  onRemove,
+  onSave,
+}: {
+  member: RecordMemberDTO;
+  canEdit: boolean;
+  onRemove: (id: string) => void;
+  onSave: (vars: { memberId: string; affiliation: string; role: string }) => void;
+}) {
+  const [affiliation, setAffiliation] = useState(member.affiliation);
+  const [role, setRole] = useState(member.role);
+  useEffect(() => {
+    setAffiliation(member.affiliation);
+    setRole(member.role);
+  }, [member.affiliation, member.role]);
+  const dirty = affiliation !== member.affiliation || role !== member.role;
+
+  return (
+    <div className="grid gap-2 rounded-xl bg-muted/40 p-3 sm:grid-cols-[10rem_1fr_1fr_auto]">
+      <p className="self-center text-sm font-medium text-foreground">{member.username}</p>
+      <Input
+        value={affiliation}
+        onChange={(e) => setAffiliation(e.target.value)}
+        placeholder="소속 (예: ○○초등학교)"
+        disabled={!canEdit}
+        className="rounded-xl bg-background"
+      />
+      <Input
+        value={role}
+        onChange={(e) => setRole(e.target.value)}
+        placeholder="팀 내 역할"
+        disabled={!canEdit}
+        className="rounded-xl bg-background"
+      />
+      {canEdit && (
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            size="sm"
+            disabled={!dirty}
+            className="rounded-xl active:scale-95"
+            onClick={() => onSave({ memberId: member.id, affiliation, role })}
+          >
+            저장
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            aria-label={`${member.username} 팀원 삭제`}
+            className="rounded-xl text-muted-foreground hover:text-destructive"
+            onClick={() => onRemove(member.id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RowSection({
+  def,
+  rows,
+  canEdit,
+  onSave,
+  onDelete,
+  title,
+  hint,
+  cols,
+  longCols,
+  subtypes,
+}: {
+  def: RowSectionDef;
+  rows: RecordRowDTO[];
+  canEdit: boolean;
+  onSave: (vars: SaveRowVars) => void;
+  onDelete: (id: string) => void;
+  title?: string;
+  hint?: string;
+  cols?: string[];
+  longCols?: number[];
+  subtypes?: string[];
+}) {
+  const labels = cols ?? def.cols;
+  const longs = longCols ?? def.longCols ?? [];
+  return (
+    <section className="rounded-2xl bg-card p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-foreground">{title ?? def.title}</h2>
+      <p className="mt-1 text-sm text-muted-foreground">{hint ?? def.hint}</p>
+      <div className="mt-4 space-y-3">
+        {rows.length === 0 && (
+          <p className="text-sm text-muted-foreground">아직 등록된 내용이 없어요.</p>
+        )}
+        {rows.map((row) => (
+          <RowItem
+            key={row.id}
+            row={row}
+            labels={labels}
+            longs={longs}
+            subtypes={subtypes}
+            canEdit={canEdit}
+            onSave={onSave}
+            onDelete={onDelete}
+          />
+        ))}
+        {canEdit && (
+          <Button
+            type="button"
+            variant="secondary"
+            className="rounded-xl active:scale-95"
+            onClick={() => onSave(emptyRowVars(def.kind, rows.length))}
+          >
+            <Plus className="h-4 w-4" />
+            {def.addLabel}
+          </Button>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function RowItem({
+  row,
+  labels,
+  longs,
+  subtypes,
+  canEdit,
+  onSave,
+  onDelete,
+}: {
+  row: RecordRowDTO;
+  labels: string[];
+  longs: number[];
+  subtypes?: string[];
+  canEdit: boolean;
+  onSave: (vars: SaveRowVars) => void;
+  onDelete: (id: string) => void;
+}) {
+  const initial = [row.col1, row.col2, row.col3, row.col4, row.col5, row.col6];
+  const [values, setValues] = useState(initial);
+  const [subtype, setSubtype] = useState(row.subtype);
+  const [author, setAuthor] = useState(row.author);
+  useEffect(() => {
+    setValues([row.col1, row.col2, row.col3, row.col4, row.col5, row.col6]);
+    setSubtype(row.subtype);
+    setAuthor(row.author);
+  }, [row.col1, row.col2, row.col3, row.col4, row.col5, row.col6, row.subtype, row.author]);
+
+  const dirty =
+    values.some((v, i) => v !== initial[i]) || subtype !== row.subtype || author !== row.author;
+
+  const update = (i: number, next: string) =>
+    setValues((prev) => prev.map((v, idx) => (idx === i ? next : v)));
+
+  return (
+    <div className="space-y-2 rounded-xl bg-muted/40 p-3">
+      {(subtypes || canEdit) && (
+        <div className="flex flex-wrap items-center gap-2">
+          {subtypes?.map((s) => (
+            <Button
+              key={s}
+              type="button"
+              size="sm"
+              variant={subtype === s ? "default" : "outline"}
+              disabled={!canEdit}
+              className="rounded-full active:scale-95"
+              onClick={() => setSubtype(subtype === s ? "" : s)}
+            >
+              {s}
+            </Button>
+          ))}
+          <Input
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+            placeholder="작성자 (선택)"
+            disabled={!canEdit}
+            className="h-8 w-40 rounded-xl bg-background text-xs"
+          />
+        </div>
+      )}
+      <div className="grid gap-2 sm:grid-cols-2">
+        {labels.map((label, i) => (
+          <div
+            key={label}
+            className={cn("space-y-1", longs.includes(i) && "sm:col-span-2")}
+          >
+            <Label className="text-xs text-muted-foreground">{label}</Label>
+            {longs.includes(i) ? (
+              <Textarea
+                value={values[i] ?? ""}
+                onChange={(e) => update(i, e.target.value.slice(0, 3000))}
+                rows={3}
+                disabled={!canEdit}
+                className="rounded-xl bg-background"
+              />
+            ) : (
+              <Input
+                value={values[i] ?? ""}
+                onChange={(e) => update(i, e.target.value.slice(0, 3000))}
+                disabled={!canEdit}
+                className="rounded-xl bg-background"
+              />
+            )}
+          </div>
+        ))}
+      </div>
+      {canEdit && (
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            disabled={!dirty}
+            className="rounded-xl active:scale-95"
+            onClick={() =>
+              onSave({
+                id: row.id,
+                kind: row.kind,
+                subtype,
+                rowAuthor: author,
+                sortOrder: row.sortOrder,
+                col1: values[0] ?? "",
+                col2: values[1] ?? "",
+                col3: values[2] ?? "",
+                col4: values[3] ?? "",
+                col5: values[4] ?? "",
+                col6: values[5] ?? "",
+                knownUpdatedAt: row.updatedAt,
+              })
+            }
+          >
+            저장
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            aria-label="줄 삭제"
+            className="rounded-xl text-muted-foreground hover:text-destructive"
+            onClick={() => onDelete(row.id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 교육적 태도 점검 4문항 — 문항은 고정, 선택과 설명만 저장한다.
+function StanceSection({
   rows,
   canEdit,
   onSave,
 }: {
   rows: RecordRowDTO[];
   canEdit: boolean;
-  onSave: (vars: {
-    id: string | null;
-    kind: RowKind;
-    sortOrder: number;
-    col1: string;
-    col2: string;
-    col3: string;
-    knownUpdatedAt: string;
-  }) => void;
+  onSave: (vars: SaveRowVars) => void;
 }) {
   const byOrder = new Map(rows.map((r) => [r.sortOrder, r]));
   return (
     <section className="rounded-2xl bg-card p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-foreground">교육적 점검 8항목</h2>
+      <h2 className="text-lg font-semibold text-foreground">교육적 태도 점검</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        팀이 함께 이야기하며 솔직하게 골라요. 메모는 한 줄이면 충분해요.
+        팀이 함께 이야기하며 솔직하게 골라요. 설명은 한 줄이면 충분해요.
       </p>
       <div className="mt-4 space-y-3">
-        {CHECK_ITEMS.map((question, index) => (
-          <CheckItem
+        {STANCE_QUESTIONS.map((question, index) => (
+          <StanceItem
             key={question}
             index={index}
             question={question}
@@ -431,7 +880,7 @@ function CheckSection({
   );
 }
 
-function CheckItem({
+function StanceItem({
   index,
   question,
   row,
@@ -442,28 +891,18 @@ function CheckItem({
   question: string;
   row: RecordRowDTO | null;
   canEdit: boolean;
-  onSave: (vars: {
-    id: string | null;
-    kind: RowKind;
-    sortOrder: number;
-    col1: string;
-    col2: string;
-    col3: string;
-    knownUpdatedAt: string;
-  }) => void;
+  onSave: (vars: SaveRowVars) => void;
 }) {
-  const [memo, setMemo] = useState(row?.col3 ?? "");
-  useEffect(() => setMemo(row?.col3 ?? ""), [row?.col3]);
-  const choice = row?.col2 ?? "";
+  const [memo, setMemo] = useState(row?.col2 ?? "");
+  useEffect(() => setMemo(row?.col2 ?? ""), [row?.col2]);
+  const choice = row?.col1 ?? "";
 
   const save = (nextChoice: string, nextMemo: string) =>
     onSave({
+      ...emptyRowVars("stance", index),
       id: row?.id ?? null,
-      kind: "check",
-      sortOrder: index,
-      col1: question,
-      col2: nextChoice,
-      col3: nextMemo,
+      col1: nextChoice,
+      col2: nextMemo,
       knownUpdatedAt: row?.updatedAt ?? "",
     });
 
@@ -473,7 +912,7 @@ function CheckItem({
         {index + 1}. {question}
       </p>
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        {CHECK_CHOICES.map((c) => (
+        {STANCE_CHOICES.map((c) => (
           <Button
             key={c}
             type="button"
@@ -483,6 +922,7 @@ function CheckItem({
             className="rounded-full active:scale-95"
             onClick={() => save(c, memo)}
           >
+            {choice === c && <Check className="h-3.5 w-3.5" />}
             {c}
           </Button>
         ))}
@@ -491,7 +931,7 @@ function CheckItem({
         <Input
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
-          placeholder="한 줄 메모 (선택)"
+          placeholder="어떻게 했는지 한 줄 설명 (선택)"
           disabled={!canEdit}
           className="rounded-xl bg-background"
         />
@@ -500,7 +940,7 @@ function CheckItem({
             type="button"
             size="sm"
             variant="secondary"
-            disabled={memo === (row?.col3 ?? "")}
+            disabled={memo === (row?.col2 ?? "")}
             className="shrink-0 rounded-xl active:scale-95"
             onClick={() => save(choice, memo)}
           >
@@ -512,7 +952,7 @@ function CheckItem({
   );
 }
 
-// 개인 후기와 약속 — 본인 것만 쓰고 고칠 수 있다.
+// 개인 후기와 소회 — 본인 것만 쓰고 고칠 수 있다.
 function ReflectionSection({
   postId,
   reflections,
@@ -523,7 +963,7 @@ function ReflectionSection({
 }: {
   postId: string;
   reflections: RecordReflectionDTO[];
-  members: { id: string; username: string; usernameKey: string }[];
+  members: RecordMemberDTO[];
   myKey: string;
   isMember: boolean;
   isAdmin: boolean;
@@ -535,21 +975,46 @@ function ReflectionSection({
 
   const mine = reflections.find((r) => r.usernameKey === myKey) ?? null;
   const others = reflections.filter((r) => r.usernameKey !== myKey);
+  const myMember = members.find((m) => m.usernameKey === myKey) ?? null;
 
-  const [content, setContent] = useState(mine?.content ?? "");
-  const [promise, setPromise] = useState(mine?.promise ?? "");
+  const [form, setForm] = useState({
+    affiliation: "",
+    role: "",
+    q1: "",
+    q2: "",
+    promises: [] as string[],
+    promiseDetail: "",
+    spreadPlan: "",
+  });
+
   useEffect(() => {
-    setContent(mine?.content ?? "");
-    setPromise(mine?.promise ?? "");
-  }, [mine?.content, mine?.promise]);
+    setForm({
+      affiliation: mine?.affiliation || myMember?.affiliation || "",
+      role: mine?.role || myMember?.role || "",
+      q1: mine?.q1 ?? "",
+      q2: mine?.q2 ?? "",
+      promises: mine?.promises ?? [],
+      promiseDetail: mine?.promiseDetail ?? "",
+      spreadPlan: mine?.spreadPlan ?? "",
+    });
+  }, [
+    mine?.affiliation,
+    mine?.role,
+    mine?.q1,
+    mine?.q2,
+    mine?.promises,
+    mine?.promiseDetail,
+    mine?.spreadPlan,
+    myMember?.affiliation,
+    myMember?.role,
+  ]);
 
   const save = useMutation({
     mutationFn: () =>
       saveFn({
         data: {
           postId,
-          content,
-          promise,
+          ...form,
           knownUpdatedAt: mine?.updatedAt ?? "",
           author: identity?.author ?? "",
           nicknamePassword: identity?.nicknamePassword ?? "",
@@ -559,8 +1024,7 @@ function ReflectionSection({
       queryClient.invalidateQueries({ queryKey: ["record", postId] });
       toast.success("후기를 저장했어요.");
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "저장하지 못했어요."),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "저장하지 못했어요."),
   });
 
   const remove = useMutation({
@@ -575,45 +1039,119 @@ function ReflectionSection({
         },
       }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["record", postId] }),
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "삭제하지 못했어요."),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "삭제하지 못했어요."),
   });
 
   const notWritten = members.filter(
     (m) => !reflections.some((r) => r.usernameKey === m.usernameKey),
   );
 
+  const togglePromise = (item: string) =>
+    setForm((prev) => ({
+      ...prev,
+      promises: prev.promises.includes(item)
+        ? prev.promises.filter((p) => p !== item)
+        : [...prev.promises, item],
+    }));
+
   return (
     <section className="rounded-2xl bg-card p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-foreground">개인 후기와 약속</h2>
+      <h2 className="text-lg font-semibold text-foreground">개인 후기와 소회</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         팀원 각자 하나씩 남겨요. 내 후기는 나만 고칠 수 있어요.
       </p>
 
       {isMember ? (
-        <div className="mt-4 space-y-3 rounded-xl bg-muted/40 p-3">
+        <div className="mt-4 space-y-4 rounded-xl bg-muted/40 p-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="ref-affiliation">소속</Label>
+              <Input
+                id="ref-affiliation"
+                value={form.affiliation}
+                onChange={(e) => setForm((p) => ({ ...p, affiliation: e.target.value }))}
+                className="rounded-xl bg-background"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ref-role">역할</Label>
+              <Input
+                id="ref-role"
+                value={form.role}
+                onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
+                className="rounded-xl bg-background"
+              />
+            </div>
+          </div>
+
           <div className="space-y-1.5">
-            <Label htmlFor="rec-reflection">내 후기</Label>
+            <Label htmlFor="ref-q1">가장 기억에 남는 순간은 무엇인가요?</Label>
             <Textarea
-              id="rec-reflection"
-              value={content}
-              onChange={(e) => setContent(e.target.value.slice(0, 2000))}
+              id="ref-q1"
+              value={form.q1}
+              onChange={(e) => setForm((p) => ({ ...p, q1: e.target.value.slice(0, 3000) }))}
               rows={4}
-              placeholder="이번 활동에서 배운 것, 어려웠던 것"
               className="rounded-xl bg-background"
             />
-            <p className="text-right text-xs text-muted-foreground">{content.length}/2000</p>
+            <p className="text-right text-xs text-muted-foreground">{form.q1.length}/3000</p>
           </div>
+
           <div className="space-y-1.5">
-            <Label htmlFor="rec-promise">다음에 지킬 약속</Label>
-            <Input
-              id="rec-promise"
-              value={promise}
-              onChange={(e) => setPromise(e.target.value.slice(0, 1000))}
-              placeholder="예: 막히면 먼저 스스로 찾아본 뒤 물어보기"
+            <Label htmlFor="ref-q2">배운 점과 아직 남은 질문은 무엇인가요?</Label>
+            <Textarea
+              id="ref-q2"
+              value={form.q2}
+              onChange={(e) => setForm((p) => ({ ...p, q2: e.target.value.slice(0, 3000) }))}
+              rows={4}
+              className="rounded-xl bg-background"
+            />
+            <p className="text-right text-xs text-muted-foreground">{form.q2.length}/3000</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>내가 지킬 약속</Label>
+            <div className="flex flex-wrap gap-2">
+              {PROMISE_ITEMS.map((item) => (
+                <Button
+                  key={item}
+                  type="button"
+                  size="sm"
+                  variant={form.promises.includes(item) ? "default" : "outline"}
+                  className="rounded-full active:scale-95"
+                  onClick={() => togglePromise(item)}
+                >
+                  {item}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="ref-promise-detail">약속을 어떻게 실천할 건가요?</Label>
+            <Textarea
+              id="ref-promise-detail"
+              value={form.promiseDetail}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, promiseDetail: e.target.value.slice(0, 3000) }))
+              }
+              rows={3}
               className="rounded-xl bg-background"
             />
           </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="ref-spread">학교와 동료에게 어떻게 나눌 계획인가요?</Label>
+            <Textarea
+              id="ref-spread"
+              value={form.spreadPlan}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, spreadPlan: e.target.value.slice(0, 3000) }))
+              }
+              rows={3}
+              className="rounded-xl bg-background"
+            />
+          </div>
+
           <div className="flex items-center gap-2">
             <Button
               type="button"
@@ -647,7 +1185,9 @@ function ReflectionSection({
         {others.map((r) => (
           <div key={r.id} className="rounded-xl bg-muted/40 p-3">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-medium text-foreground">{r.username}</p>
+              <p className="text-sm font-medium text-foreground">
+                {[r.username, r.affiliation, r.role].filter((v) => (v ?? "").trim()).join(" · ")}
+              </p>
               {isAdmin && (
                 <button
                   type="button"
@@ -659,11 +1199,12 @@ function ReflectionSection({
                 </button>
               )}
             </div>
-            {r.content && (
-              <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{r.content}</p>
+            {r.q1 && <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{r.q1}</p>}
+            {r.q2 && (
+              <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{r.q2}</p>
             )}
-            {r.promise && (
-              <p className="mt-1 text-sm text-muted-foreground">약속: {r.promise}</p>
+            {r.promises.length > 0 && (
+              <p className="mt-1 text-xs text-muted-foreground">약속: {r.promises.join(", ")}</p>
             )}
           </div>
         ))}
@@ -674,172 +1215,5 @@ function ReflectionSection({
         )}
       </div>
     </section>
-  );
-}
-
-function RowSection({
-  section,
-  rows,
-  canEdit,
-  onSave,
-  onDelete,
-}: {
-  section: (typeof ROW_SECTIONS)[number];
-  rows: RecordRowDTO[];
-  canEdit: boolean;
-  onSave: (vars: {
-    id: string | null;
-    kind: RowKind;
-    sortOrder: number;
-    col1: string;
-    col2: string;
-    col3: string;
-    knownUpdatedAt: string;
-  }) => void;
-  onDelete: (id: string) => void;
-}) {
-  const cols = section.cols.filter(Boolean);
-  return (
-    <section className="rounded-2xl bg-card p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-foreground">{section.title}</h2>
-      <p className="mt-1 text-sm text-muted-foreground">{section.hint}</p>
-      <div className="mt-4 space-y-3">
-        {rows.length === 0 && (
-          <p className="text-sm text-muted-foreground">아직 등록된 내용이 없어요.</p>
-        )}
-        {rows.map((row) => (
-          <RowItem
-            key={row.id}
-            row={row}
-            cols={cols}
-            long={!!section.long}
-            canEdit={canEdit}
-            onSave={onSave}
-            onDelete={onDelete}
-          />
-        ))}
-        {canEdit && (
-          <Button
-            type="button"
-            variant="secondary"
-            className="rounded-xl active:scale-95"
-            onClick={() =>
-              onSave({
-                id: null,
-                kind: section.kind,
-                sortOrder: rows.length,
-                col1: "",
-                col2: "",
-                col3: "",
-                knownUpdatedAt: "",
-              })
-            }
-          >
-            <Plus className="h-4 w-4" />줄 추가
-          </Button>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function RowItem({
-  row,
-  cols,
-  long,
-  canEdit,
-  onSave,
-  onDelete,
-}: {
-  row: RecordRowDTO;
-  cols: string[];
-  long?: boolean;
-  canEdit: boolean;
-  onSave: (vars: {
-    id: string | null;
-    kind: RowKind;
-    sortOrder: number;
-    col1: string;
-    col2: string;
-    col3: string;
-    knownUpdatedAt: string;
-  }) => void;
-  onDelete: (id: string) => void;
-}) {
-  const [values, setValues] = useState([row.col1, row.col2, row.col3]);
-  useEffect(() => {
-    setValues([row.col1, row.col2, row.col3]);
-  }, [row.col1, row.col2, row.col3]);
-
-  const dirty =
-    values[0] !== row.col1 || values[1] !== row.col2 || values[2] !== row.col3;
-
-  const update = (i: number, next: string) =>
-    setValues((prev) => prev.map((v, idx) => (idx === i ? next : v)));
-
-  return (
-    <div className="grid gap-2 rounded-xl bg-muted/40 p-3 sm:grid-cols-[1fr_auto]">
-      <div className="grid gap-2 sm:grid-cols-3">
-        {cols.map((label, i) =>
-          long && i > 0 ? (
-            <div key={label} className="space-y-1">
-              <Textarea
-                value={values[i] ?? ""}
-                onChange={(e) => update(i, e.target.value.slice(0, LONG_MAX))}
-                placeholder={label}
-                rows={4}
-                disabled={!canEdit}
-                className="rounded-xl bg-background"
-              />
-              <p className="text-right text-xs text-muted-foreground">
-                {(values[i] ?? "").length}/{LONG_MAX}
-              </p>
-            </div>
-          ) : (
-            <Input
-              key={label}
-              value={values[i] ?? ""}
-              onChange={(e) => update(i, e.target.value)}
-              placeholder={label}
-              disabled={!canEdit}
-              className="rounded-xl bg-background"
-            />
-          ),
-        )}
-      </div>
-      {canEdit && (
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            size="sm"
-            disabled={!dirty}
-            className="rounded-xl active:scale-95"
-            onClick={() =>
-              onSave({
-                id: row.id,
-                kind: row.kind,
-                sortOrder: row.sortOrder,
-                col1: values[0] ?? "",
-                col2: values[1] ?? "",
-                col3: values[2] ?? "",
-                knownUpdatedAt: row.updatedAt,
-              })
-            }
-          >
-            저장
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            aria-label="줄 삭제"
-            className="rounded-xl text-muted-foreground hover:text-destructive"
-            onClick={() => onDelete(row.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
-    </div>
   );
 }

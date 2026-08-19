@@ -429,52 +429,133 @@ export type Database = {
       }
       record_final: {
         Row: {
+          change_content: string
+          change_type: string
+          consent: string
           created_at: string
+          current_scope: string
+          demo_video_url: string
+          deploy_status: string
           deploy_url: string
+          dir_structure: string
           env_names: string
           github_url: string
           hero_image_url: string
+          install_cmd: string
+          license_code: string
+          license_docs: string
+          license_external: string
           one_liner: string
+          output_type: string
           post_id: string
+          privacy_status: string
           problem: string
+          problem_area: string
+          risk_expected: string
+          risk_mitigation: string
+          risk_stop: string
+          risk_test: string
+          run_cmd: string
           service_name: string
           solution: string
+          tags: string
           target_user: string
+          tech_ai: string
+          tech_deploy: string
+          tech_screen: string
+          tech_server: string
           tech_stack: string
+          tech_storage: string
           updated_at: string
           updated_by: string
+          usage_condition: string
+          usage_env: string
         }
         Insert: {
+          change_content?: string
+          change_type?: string
+          consent?: string
           created_at?: string
+          current_scope?: string
+          demo_video_url?: string
+          deploy_status?: string
           deploy_url?: string
+          dir_structure?: string
           env_names?: string
           github_url?: string
           hero_image_url?: string
+          install_cmd?: string
+          license_code?: string
+          license_docs?: string
+          license_external?: string
           one_liner?: string
+          output_type?: string
           post_id: string
+          privacy_status?: string
           problem?: string
+          problem_area?: string
+          risk_expected?: string
+          risk_mitigation?: string
+          risk_stop?: string
+          risk_test?: string
+          run_cmd?: string
           service_name?: string
           solution?: string
+          tags?: string
           target_user?: string
+          tech_ai?: string
+          tech_deploy?: string
+          tech_screen?: string
+          tech_server?: string
           tech_stack?: string
+          tech_storage?: string
           updated_at?: string
           updated_by?: string
+          usage_condition?: string
+          usage_env?: string
         }
         Update: {
+          change_content?: string
+          change_type?: string
+          consent?: string
           created_at?: string
+          current_scope?: string
+          demo_video_url?: string
+          deploy_status?: string
           deploy_url?: string
+          dir_structure?: string
           env_names?: string
           github_url?: string
           hero_image_url?: string
+          install_cmd?: string
+          license_code?: string
+          license_docs?: string
+          license_external?: string
           one_liner?: string
+          output_type?: string
           post_id?: string
+          privacy_status?: string
           problem?: string
+          problem_area?: string
+          risk_expected?: string
+          risk_mitigation?: string
+          risk_stop?: string
+          risk_test?: string
+          run_cmd?: string
           service_name?: string
           solution?: string
+          tags?: string
           target_user?: string
+          tech_ai?: string
+          tech_deploy?: string
+          tech_screen?: string
+          tech_server?: string
           tech_stack?: string
+          tech_storage?: string
           updated_at?: string
           updated_by?: string
+          usage_condition?: string
+          usage_env?: string
         }
         Relationships: [
           {
@@ -488,26 +569,32 @@ export type Database = {
       }
       record_members: {
         Row: {
+          affiliation: string
           category_id: string
           created_at: string
           id: string
           post_id: string
+          role: string
           username: string
           username_key: string
         }
         Insert: {
+          affiliation?: string
           category_id: string
           created_at?: string
           id?: string
           post_id: string
+          role?: string
           username: string
           username_key: string
         }
         Update: {
+          affiliation?: string
           category_id?: string
           created_at?: string
           id?: string
           post_id?: string
+          role?: string
           username?: string
           username_key?: string
         }
@@ -530,33 +617,54 @@ export type Database = {
       }
       record_reflections: {
         Row: {
+          affiliation: string
           content: string
           created_at: string
           id: string
           post_id: string
           promise: string
+          promise_detail: string
+          promises: string[]
+          q1: string
+          q2: string
+          role: string
+          spread_plan: string
           updated_at: string
           updated_by: string
           username: string
           username_key: string
         }
         Insert: {
+          affiliation?: string
           content?: string
           created_at?: string
           id?: string
           post_id: string
           promise?: string
+          promise_detail?: string
+          promises?: string[]
+          q1?: string
+          q2?: string
+          role?: string
+          spread_plan?: string
           updated_at?: string
           updated_by?: string
           username: string
           username_key: string
         }
         Update: {
+          affiliation?: string
           content?: string
           created_at?: string
           id?: string
           post_id?: string
           promise?: string
+          promise_detail?: string
+          promises?: string[]
+          q1?: string
+          q2?: string
+          role?: string
+          spread_plan?: string
           updated_at?: string
           updated_by?: string
           username?: string
@@ -574,38 +682,53 @@ export type Database = {
       }
       record_rows: {
         Row: {
+          author: string
           col1: string
           col2: string
           col3: string
+          col4: string
+          col5: string
+          col6: string
           created_at: string
           id: string
           kind: string
           post_id: string
           sort_order: number
+          subtype: string
           updated_at: string
           updated_by: string
         }
         Insert: {
+          author?: string
           col1?: string
           col2?: string
           col3?: string
+          col4?: string
+          col5?: string
+          col6?: string
           created_at?: string
           id?: string
           kind: string
           post_id: string
           sort_order?: number
+          subtype?: string
           updated_at?: string
           updated_by?: string
         }
         Update: {
+          author?: string
           col1?: string
           col2?: string
           col3?: string
+          col4?: string
+          col5?: string
+          col6?: string
           created_at?: string
           id?: string
           kind?: string
           post_id?: string
           sort_order?: number
+          subtype?: string
           updated_at?: string
           updated_by?: string
         }

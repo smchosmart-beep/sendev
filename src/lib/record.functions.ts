@@ -1,6 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+import {
+  RECORD_FINAL_FIELDS,
+  RECORD_FINAL_COLUMN_MAP,
+  RECORD_ROW_KINDS,
+  type RecordFinalKey,
+} from "./record-schema";
+
+
 import type {
   RecordRowKind,
   RecordOverviewMember,
@@ -24,31 +32,28 @@ export interface RecordMemberDTO {
   id: string;
   username: string;
   usernameKey: string;
+  affiliation: string;
+  role: string;
 }
 
-export interface RecordFinalDTO {
+export type RecordFinalDTO = Record<RecordFinalKey, string> & {
   postId: string;
-  serviceName: string;
-  oneLiner: string;
-  targetUser: string;
-  problem: string;
-  solution: string;
-  heroImageUrl: string;
-  deployUrl: string;
-  githubUrl: string;
-  techStack: string;
-  envNames: string;
   updatedBy: string;
   updatedAt: string;
-}
+};
 
 export interface RecordRowDTO {
   id: string;
   kind: RecordRowKind;
   sortOrder: number;
+  subtype: string;
+  author: string;
   col1: string;
   col2: string;
   col3: string;
+  col4: string;
+  col5: string;
+  col6: string;
   updatedBy: string;
   updatedAt: string;
 }
@@ -57,10 +62,16 @@ export interface RecordReflectionDTO {
   id: string;
   username: string;
   usernameKey: string;
-  content: string;
-  promise: string;
+  affiliation: string;
+  role: string;
+  q1: string;
+  q2: string;
+  promises: string[];
+  promiseDetail: string;
+  spreadPlan: string;
   updatedAt: string;
 }
+
 
 export interface RecordBundleDTO {
   postId: string;
@@ -86,7 +97,7 @@ export const getRecord = createServerFn({ method: "GET" })
     if (!post || post.type !== "record") return null;
 
     const [{ data: members }, { data: final }, { data: rows }, { data: reflections }] = await Promise.all([
-      db.from("record_members").select("id, username, username_key").eq("post_id", post.id).order("created_at", { ascending: true }),
+      db.from("record_members").select("*").eq("post_id", post.id).order("created_at", { ascending: true }),
       db.from("record_final").select("*").eq("post_id", post.id).maybeSingle(),
       db.from("record_rows").select("*").eq("post_id", post.id).order("kind", { ascending: true }).order("sort_order", { ascending: true }),
       db.from("record_reflections").select("*").eq("post_id", post.id).order("created_at", { ascending: true }),
@@ -100,31 +111,31 @@ export const getRecord = createServerFn({ method: "GET" })
         id: m.id,
         username: m.username,
         usernameKey: m.username_key,
+        affiliation: m.affiliation ?? "",
+        role: m.role ?? "",
       })),
       final: final
-        ? {
+        ? ({
+            ...(Object.fromEntries(
+              RECORD_FINAL_FIELDS.map((f) => [f.key, (final as any)[f.column] ?? ""]),
+            ) as Record<RecordFinalKey, string>),
             postId: final.post_id,
-            serviceName: final.service_name ?? "",
-            oneLiner: final.one_liner ?? "",
-            targetUser: final.target_user ?? "",
-            problem: final.problem ?? "",
-            solution: final.solution ?? "",
-            heroImageUrl: final.hero_image_url ?? "",
-            deployUrl: final.deploy_url ?? "",
-            githubUrl: final.github_url ?? "",
-            techStack: final.tech_stack ?? "",
-            envNames: final.env_names ?? "",
             updatedBy: final.updated_by ?? "",
             updatedAt: final.updated_at ?? "",
-          }
+          } as RecordFinalDTO)
         : null,
       rows: (rows ?? []).map((r: any) => ({
         id: r.id,
         kind: r.kind as RecordRowKind,
         sortOrder: r.sort_order ?? 0,
+        subtype: r.subtype ?? "",
+        author: r.author ?? "",
         col1: r.col1 ?? "",
         col2: r.col2 ?? "",
         col3: r.col3 ?? "",
+        col4: r.col4 ?? "",
+        col5: r.col5 ?? "",
+        col6: r.col6 ?? "",
         updatedBy: r.updated_by ?? "",
         updatedAt: r.updated_at ?? "",
       })),
@@ -132,11 +143,17 @@ export const getRecord = createServerFn({ method: "GET" })
         id: r.id,
         username: r.username,
         usernameKey: r.username_key,
-        content: r.content ?? "",
-        promise: r.promise ?? "",
+        affiliation: r.affiliation ?? "",
+        role: r.role ?? "",
+        q1: r.q1 ?? "",
+        q2: r.q2 ?? "",
+        promises: Array.isArray(r.promises) ? r.promises : [],
+        promiseDetail: r.promise_detail ?? "",
+        spreadPlan: r.spread_plan ?? "",
         updatedAt: r.updated_at ?? "",
       })),
     };
+
   });
 
 // 관리자용: 한 카테고리의 모든 활동기록 팀별 현황을 한 번에 조회한다.
@@ -306,19 +323,13 @@ export const saveRecordFinal = createServerFn({ method: "POST" })
         postId: z.string().uuid(),
         knownUpdatedAt: z.string().max(40).default(""),
         patch: z
-          .object({
-            serviceName: z.string().max(200).optional(),
-            oneLiner: z.string().max(300).optional(),
-            targetUser: z.string().max(500).optional(),
-            problem: z.string().max(2000).optional(),
-            solution: z.string().max(2000).optional(),
-            heroImageUrl: z.string().max(2000).optional(),
-            deployUrl: z.string().max(500).optional(),
-            githubUrl: z.string().max(500).optional(),
-            techStack: z.string().max(1000).optional(),
-            envNames: z.string().max(1000).optional(),
-          })
+          .object(
+            Object.fromEntries(
+              RECORD_FINAL_FIELDS.map((f) => [f.key, z.string().max(f.max).optional()]),
+            ) as Record<RecordFinalKey, z.ZodOptional<z.ZodString>>,
+          )
           .default({}),
+
         author: z.string().trim().max(100).default(""),
         nicknamePassword: z.string().trim().max(100).default(""),
         adminPassword: z.string().max(200).default(""),
@@ -347,18 +358,8 @@ export const saveRecordFinal = createServerFn({ method: "POST" })
     ) {
       throw new Error("다른 팀원이 먼저 수정했어요. 최신 내용을 불러온 뒤 다시 저장해 주세요.");
     }
-    const map: Record<string, string> = {
-      serviceName: "service_name",
-      oneLiner: "one_liner",
-      targetUser: "target_user",
-      problem: "problem",
-      solution: "solution",
-      heroImageUrl: "hero_image_url",
-      deployUrl: "deploy_url",
-      githubUrl: "github_url",
-      techStack: "tech_stack",
-      envNames: "env_names",
-    };
+    const map = RECORD_FINAL_COLUMN_MAP;
+
     const patch: Record<string, unknown> = { updated_by: who, updated_at: new Date().toISOString() };
     for (const [k, v] of Object.entries(data.patch)) {
       if (v !== undefined && map[k]) patch[map[k]] = v;
@@ -373,48 +374,32 @@ export const saveRecordFinal = createServerFn({ method: "POST" })
   });
 
 // 반복행 저장(행 단위 upsert). id가 없으면 새 행을 만든다.
-// kind='check'는 8개 고정 문항이라 (post_id, sort_order) 부분 유니크 인덱스가 있고,
-// 동시 클릭 시 23505가 나면 다시 조회해 update로 폴백한다.
+// kind='stance'는 4개 고정 문항이라 (post_id, sort_order)로 기존 행을 먼저 찾고,
+// 동시 클릭 시 중복 오류가 나면 다시 조회해 update로 폴백한다.
 export const saveRecordRow = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
       .object({
         postId: z.string().uuid(),
         id: z.string().uuid().nullable().default(null),
-        kind: z.enum([
-          "feature",
-          "flow",
-          "limit",
-          "plan",
-          "maker",
-          "process",
-          "devlog",
-          "check",
-        ]),
+        kind: z.enum(RECORD_ROW_KINDS),
+        subtype: z.string().max(50).default(""),
+        rowAuthor: z.string().max(100).default(""),
         sortOrder: z.number().int().min(0).max(999).default(0),
-        col1: z.string().max(2000).default(""),
-        col2: z.string().max(2000).default(""),
-        col3: z.string().max(2000).default(""),
+        col1: z.string().max(3000).default(""),
+        col2: z.string().max(3000).default(""),
+        col3: z.string().max(3000).default(""),
+        col4: z.string().max(3000).default(""),
+        col5: z.string().max(3000).default(""),
+        col6: z.string().max(3000).default(""),
         knownUpdatedAt: z.string().max(40).default(""),
         author: z.string().trim().max(100).default(""),
         nicknamePassword: z.string().trim().max(100).default(""),
         adminPassword: z.string().max(200).default(""),
       })
-      .superRefine((v, ctx) => {
-        // 1차 섹션은 기존과 동일하게 1000자, 2차(과정기록/개발기록)만 2000자 허용
-        const limit = v.kind === "process" || v.kind === "devlog" ? 2000 : 1000;
-        for (const key of ["col1", "col2", "col3"] as const) {
-          if ((v[key] ?? "").length > limit) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              path: [key],
-              message: `${limit}자까지 입력할 수 있어요.`,
-            });
-          }
-        }
-      })
       .parse(input),
   )
+
   .handler(async ({ data }): Promise<{ id: string; updatedAt: string; updatedBy: string }> => {
     const R = await import("./record.server");
     const db = await R.getRecordDb();
@@ -429,10 +414,15 @@ export const saveRecordRow = createServerFn({ method: "POST" })
     const payload = {
       post_id: data.postId,
       kind: data.kind,
+      subtype: data.subtype,
+      author: data.rowAuthor,
       sort_order: data.sortOrder,
       col1: data.col1,
       col2: data.col2,
       col3: data.col3,
+      col4: data.col4,
+      col5: data.col5,
+      col6: data.col6,
       updated_by: who,
       updated_at: new Date().toISOString(),
     };
@@ -450,15 +440,16 @@ export const saveRecordRow = createServerFn({ method: "POST" })
       return { id: saved.id as string, updatedAt: saved.updated_at as string, updatedBy: who };
     };
 
+    const isFixed = data.kind === "stance";
     let targetId = data.id;
 
     // 고정 문항은 (post_id, sort_order)로 기존 행을 먼저 찾는다.
-    if (!targetId && data.kind === "check") {
+    if (!targetId && isFixed) {
       const { data: existing } = await db
         .from("record_rows")
         .select("id")
         .eq("post_id", data.postId)
-        .eq("kind", "check")
+        .eq("kind", data.kind)
         .eq("sort_order", data.sortOrder)
         .maybeSingle();
       if (existing) targetId = existing.id;
@@ -489,18 +480,19 @@ export const saveRecordRow = createServerFn({ method: "POST" })
       const dup =
         (error as any)?.code === "23505" ||
         String(error.message ?? "").toLowerCase().includes("duplicate");
-      if (data.kind === "check" && dup) {
+      if (isFixed && dup) {
         const { data: again } = await db
           .from("record_rows")
           .select("id")
           .eq("post_id", data.postId)
-          .eq("kind", "check")
+          .eq("kind", data.kind)
           .eq("sort_order", data.sortOrder)
           .maybeSingle();
         if (again) return updateById(again.id);
       }
       throw new Error(error.message);
     }
+
     return { id: saved.id, updatedAt: saved.updated_at, updatedBy: who };
   });
 
@@ -510,14 +502,20 @@ export const saveRecordReflection = createServerFn({ method: "POST" })
     z
       .object({
         postId: z.string().uuid(),
-        content: z.string().max(2000).default(""),
-        promise: z.string().max(1000).default(""),
+        affiliation: z.string().max(200).default(""),
+        role: z.string().max(200).default(""),
+        q1: z.string().max(3000).default(""),
+        q2: z.string().max(3000).default(""),
+        promises: z.array(z.string().max(200)).max(20).default([]),
+        promiseDetail: z.string().max(3000).default(""),
+        spreadPlan: z.string().max(3000).default(""),
         knownUpdatedAt: z.string().max(40).default(""),
         author: z.string().trim().min(1).max(100),
         nicknamePassword: z.string().trim().max(100).default(""),
       })
       .parse(input),
   )
+
   .handler(async ({ data }): Promise<{ id: string; updatedAt: string }> => {
     const R = await import("./record.server");
     const db = await R.getRecordDb();
@@ -549,8 +547,14 @@ export const saveRecordReflection = createServerFn({ method: "POST" })
       post_id: data.postId,
       username: name,
       username_key: key,
-      content: data.content,
-      promise: data.promise,
+      affiliation: data.affiliation,
+      role: data.role,
+      q1: data.q1,
+      q2: data.q2,
+      promises: data.promises,
+      promise_detail: data.promiseDetail,
+      spread_plan: data.spreadPlan,
+
       updated_by: name,
       updated_at: new Date().toISOString(),
     };
@@ -613,4 +617,32 @@ export const isRecordAdmin = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { isAdminPassword } = await import("./record.server");
     return { ok: isAdminPassword(data.adminPassword) };
+  });
+
+// 팀원의 소속·역할 저장 (팀원 또는 관리자)
+export const updateRecordMember = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        postId: z.string().uuid(),
+        memberId: z.string().uuid(),
+        affiliation: z.string().max(200).default(""),
+        role: z.string().max(200).default(""),
+        author: z.string().trim().max(100).default(""),
+        nicknamePassword: z.string().trim().max(100).default(""),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const R = await import("./record.server");
+    const db = await R.getRecordDb();
+    await R.requireTeamMember(db, data.postId, data.author, data.nicknamePassword, data.adminPassword);
+    const { error } = await db
+      .from("record_members")
+      .update({ affiliation: data.affiliation, role: data.role })
+      .eq("id", data.memberId)
+      .eq("post_id", data.postId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
