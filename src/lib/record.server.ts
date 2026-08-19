@@ -169,6 +169,21 @@ export interface RecordOverviewReflection {
 }
 
 
+export interface RecordOverviewEthics {
+  id: string;
+  username: string;
+  usernameKey: string;
+  s1: number;
+  s2: number;
+  s3: number;
+  s4: number;
+  s5: number;
+  s6: number;
+  s7: number;
+  extraPromise: string;
+  updatedAt: string;
+}
+
 export interface RecordOverviewTeam {
   postId: string;
   postNo: number;
@@ -179,6 +194,7 @@ export interface RecordOverviewTeam {
   final: RecordOverviewFinal | null;
   rows: RecordOverviewRow[];
   reflections: RecordOverviewReflection[];
+  ethics: RecordOverviewEthics[];
 }
 
 export interface RecordOverviewResult {
