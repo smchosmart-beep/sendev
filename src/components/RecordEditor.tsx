@@ -1048,6 +1048,9 @@ function RowSection({
             subtypes={subtypes}
             canEdit={canEdit}
             authorEnabled={authorEnabled}
+            linkCol={def.linkCol}
+            fileCol={def.fileCol}
+
             onSave={onSave}
             onDelete={onDelete}
           />
