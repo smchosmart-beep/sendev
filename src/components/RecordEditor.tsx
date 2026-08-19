@@ -712,6 +712,7 @@ function RowSection({
             key={row.id}
             row={row}
             cols={cols}
+            long={!!section.long}
             canEdit={canEdit}
             onSave={onSave}
             onDelete={onDelete}
