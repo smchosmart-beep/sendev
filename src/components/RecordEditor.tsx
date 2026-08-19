@@ -517,9 +517,9 @@ export function RecordEditor({
   return (
     <div className="space-y-6">
       <nav aria-label="작성 단계" className="rounded-2xl bg-card p-3 shadow-sm">
-        <ol className="flex gap-2 overflow-x-auto">
+        <ol className="grid grid-cols-4 gap-2 sm:flex sm:flex-nowrap sm:overflow-x-auto">
           {STEPS.map((s, i) => (
-            <li key={s.no} className="min-w-0 flex-1">
+            <li key={s.no} className="min-w-0 sm:flex-1">
               <button
                 type="button"
                 onClick={() => setStep(i)}
@@ -530,8 +530,8 @@ export function RecordEditor({
                     : "bg-muted/50 text-muted-foreground hover:bg-muted",
                 )}
               >
-                <span className="block text-[10px] font-semibold opacity-80">{s.no}</span>
-                <span className="block text-[10px] font-medium leading-tight break-keep sm:text-[11px]">
+                <span className="block text-[9px] font-semibold opacity-80 sm:text-[10px]">{s.no}</span>
+                <span className="block text-[9px] font-medium leading-tight break-keep sm:text-[11px]">
                   {s.title}
                 </span>
               </button>
