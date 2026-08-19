@@ -23,6 +23,7 @@ import { getAdminPassword } from "@/lib/admin-auth";
 import { cn } from "@/lib/utils";
 import {
   buildRecordReadme,
+  buildPublicReadme,
   buildOverviewReadme,
   sanitizeFolderName,
 } from "@/lib/record-readme";

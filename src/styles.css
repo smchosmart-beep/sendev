@@ -370,3 +370,30 @@
   background-color: var(--primary);
   color: var(--primary-foreground);
 }
+
+/* 활동기록 출력 보기 — 인쇄/PDF 시 README 본문만 A4로 출력 */
+@media print {
+  body:has(.record-output [data-print-root]) * {
+    visibility: hidden;
+  }
+  body:has(.record-output [data-print-root]) .record-output [data-print-root],
+  body:has(.record-output [data-print-root]) .record-output [data-print-root] * {
+    visibility: visible;
+  }
+  body:has(.record-output [data-print-root]) .record-output [data-print-root] {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    border: 0;
+    padding: 0;
+    background: #fff;
+    color: #000;
+  }
+  .record-output-ui {
+    display: none !important;
+  }
+  @page {
+    size: A4;
+    margin: 16mm;
+  }
+}
