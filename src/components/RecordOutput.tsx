@@ -82,8 +82,9 @@ export function RecordOutput({
         <div className="record-output-ui space-y-3">
           <p className="text-sm text-muted-foreground">
             최종 README는 아래 9개 블록으로 만들어져요. 지금까지 {blocks.length}개 중{" "}
-            <strong className="text-foreground">{doneCount}개</strong>가 채워졌습니다. 비어 있는
-            블록을 누르면 작성할 단계로 이동합니다.
+            <strong className="text-foreground">{doneCount}개 작성완료</strong>
+            {partialCount > 0 ? ` (${partialCount}개 작성중)` : ""}입니다. 블록을 누르면 작성할
+            단계로 이동합니다.
           </p>
           <ol className="grid gap-2 sm:grid-cols-2">
             {blocks.map((b) => (
@@ -93,9 +94,11 @@ export function RecordOutput({
                   onClick={() => onGoStep(b.step)}
                   className={cn(
                     "flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors",
-                    b.filled
+                    b.status === "done"
                       ? "border-primary/30 bg-primary/5 hover:bg-primary/10"
-                      : "border-border bg-muted/40 hover:bg-muted",
+                      : b.status === "partial"
+                        ? "border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/10"
+                        : "border-border bg-muted/40 hover:bg-muted",
                   )}
                 >
                   <span className="text-xs font-semibold text-muted-foreground">
@@ -105,12 +108,15 @@ export function RecordOutput({
                   <span
                     className={cn(
                       "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
-                      b.filled
+                      b.status === "done"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted-foreground/15 text-muted-foreground",
+                        : b.status === "partial"
+                          ? "bg-amber-500/20 text-amber-700 dark:text-amber-300"
+                          : "bg-muted-foreground/15 text-muted-foreground",
                     )}
                   >
-                    {b.filled ? "작성됨" : "미작성"}
+                    {b.status === "done" ? "작성완료" : b.status === "partial" ? "작성중" : "미작성"}
+
                   </span>
                 </button>
               </li>
