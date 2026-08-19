@@ -528,6 +528,50 @@ export type Database = {
           },
         ]
       }
+      record_reflections: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          post_id: string
+          promise: string
+          updated_at: string
+          updated_by: string
+          username: string
+          username_key: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          post_id: string
+          promise?: string
+          updated_at?: string
+          updated_by?: string
+          username: string
+          username_key: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          promise?: string
+          updated_at?: string
+          updated_by?: string
+          username?: string
+          username_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_reflections_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       record_rows: {
         Row: {
           col1: string
