@@ -149,6 +149,7 @@ const tabs = [
   { to: "/admin/calendar", label: "캘린더 관리", icon: CalendarDays },
   { to: "/admin/criteria", label: "평가 관리", icon: SlidersHorizontal },
   { to: "/admin/problem-options", label: "문제ZIP 선택지", icon: PackageOpen },
+  { to: "/admin/records", label: "활동기록 현황", icon: ClipboardList },
   { to: "/admin/profiles", label: "사용자 프로필 🔒", icon: UserCog },
 ] as const;
 
