@@ -38,15 +38,16 @@ p8 윤리     윤리 설문 문항별 평균 별점 막대 + 추가 다짐
 - 쪽 단위 조판은 CSS만 사용: `.casebook-page { width: 210mm; min-height: 297mm; break-after: page; }`, 카드/표에 `break-inside: avoid`. 라이브러리 추가 없음 → 서버 비용 0, 한글 폰트 문제 없음.
 - 인쇄 스타일은 `src/styles.css`의 기존 `@media print` 블록 아래에 `body:has(.casebook-root)` 스코프로 별도 규칙 추가. 기존 README 인쇄 규칙(`.record-output [data-print-root]`)은 그대로 두어 07 단계 동작에 영향 없음.
 - `RecordEditor.tsx`의 `step === 7` 자리표시 섹션을 `CasebookDocument` 렌더링으로 교체(07과 동일한 team 객체 전달).
-- 관리자 합본: `admin.records.tsx`에서 이미 불러온 `getRecordOverview` 결과의 `teams`를 순회해 같은 컴포넌트를 반복 렌더링. 추가 조회 없음.
-- 라벨/문구는 `src/lib/record-schema.ts`의 기존 정의를 재사용하고, 값 정리(빈 값 판정·링크 프로토콜 보정)는 `src/lib/record-readme.ts`의 기존 헬퍼를 재사용합니다.
+- 관리자 합본: `admin.records.tsx`에서 이미 불러온 `getRecordOverview` 결과의 `teams`를 순회해 같은 컴포넌트를 렌더링하되, **버튼을 누른 뒤에야 지면을 만드는 지연 렌더링**으로 처리합니다. 평소에는 아무것도 렌더링하지 않고, 클릭 시 상태를 켜 지면을 붙인 다음 이미지 로딩(`img.decode()` 또는 `onload` 집계)이 끝나면 `window.print()`를 호출합니다. 이미지에는 `loading="eager"`를 지정해 인쇄 시점에 빈 칸이 남지 않게 하고, 인쇄 대화상자가 닫히면(`afterprint`) 지면을 다시 내려 평소 화면이 무거워지지 않도록 합니다. 추가 조회는 없습니다.
+- 라벨/문구는 `src/lib/record-schema.ts`의 기존 정의를 재사용하고, 값 정리(빈 값 판정·링크 프로토콜 보정)는 `src/lib/record-readme.ts`의 기존 헬퍼를 재사용합니다. 이때 `record-readme.ts`의 `normalizeUrl`을 `export`로 바꿔 사례집 컴포넌트에서 그대로 씁니다(내부 호출부는 그대로라 기존 README 출력에 영향 없음).
 - 대표 이미지는 이미 업로드된 URL을 그대로 사용하며, 인쇄 시 잘리지 않도록 지면 폭에 맞춰 축소합니다.
 
 ## 부작용 점검
 
 - 서버 함수·쿼리 추가 없음 → 요청량/비용 변화 없음.
 - 08 단계는 지금 빈 자리표시라 기존 동작을 대체해도 회귀 위험 없음. 인쇄 CSS는 새 선택자로 격리.
-- 관리자 페이지는 버튼 1개와 숨겨진 인쇄 영역만 추가(화면 기본 레이아웃 변경 없음).
+- 관리자 페이지는 버튼 1개만 추가(지면은 클릭 후에만 생성 → 평소 렌더링 부담 0, 화면 기본 레이아웃 변경 없음).
+- 팀 수가 많을 때 합본 이미지가 한꺼번에 로드되는 문제는 지연 렌더링 + 로딩 완료 후 인쇄로 해결합니다.
 
 ## 마무리
 
