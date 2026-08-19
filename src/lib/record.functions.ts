@@ -547,8 +547,14 @@ export const saveRecordReflection = createServerFn({ method: "POST" })
       post_id: data.postId,
       username: name,
       username_key: key,
-      content: data.content,
-      promise: data.promise,
+      affiliation: data.affiliation,
+      role: data.role,
+      q1: data.q1,
+      q2: data.q2,
+      promises: data.promises,
+      promise_detail: data.promiseDetail,
+      spread_plan: data.spreadPlan,
+
       updated_by: name,
       updated_at: new Date().toISOString(),
     };
