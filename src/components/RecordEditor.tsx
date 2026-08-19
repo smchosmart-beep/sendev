@@ -1081,6 +1081,8 @@ function RowItem({
   subtypes,
   canEdit,
   authorEnabled,
+  linkCol,
+  fileCol,
   onSave,
   onDelete,
 }: {
@@ -1091,9 +1093,12 @@ function RowItem({
   subtypes?: string[];
   canEdit: boolean;
   authorEnabled?: boolean;
+  linkCol?: number;
+  fileCol?: number;
   onSave: (vars: SaveRowVars) => void;
   onDelete: (id: string) => void;
 }) {
+
 
   const initial = [row.col1, row.col2, row.col3, row.col4, row.col5, row.col6];
   const [values, setValues] = useState(initial);
