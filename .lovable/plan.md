@@ -33,7 +33,7 @@
 
 `src/lib/record.functions.ts`에 **읽기 전용 함수 1개만** 추가합니다.
 
-- `getRecordOverview({ categoryId, adminPassword })`
+- `getRecordOverview({ categoryId, adminPassword })` — `createServerFn({ method: "POST" })`로 구현합니다.
   - `isAdminPassword`로 먼저 검증하고, 아니면 즉시 거부(현황 데이터는 관리자만 볼 수 있습니다).
   - 해당 카테고리의 `type = 'record'` 글을 모두 찾고, `record_members` · `record_final` · `record_rows` · `record_reflections`를 **글 목록에 대한 `in()` 조회 4번**으로 한꺼번에 읽어 팀별로 묶어 돌려줍니다(팀 수만큼 반복 조회하지 않습니다).
   - 기존 `getRecord`는 그대로 두고 재사용하지 않습니다(개별 팀 상세는 기존 화면 담당).
