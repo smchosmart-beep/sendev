@@ -316,7 +316,8 @@ const STEPS = [
   { no: "04", title: "개발·교육적 점검" },
   { no: "05", title: "개인 후기·소회" },
   { no: "06", title: "윤리 설문" },
-  { no: "07", title: "출력 보기" },
+  { no: "07", title: "README 출력" },
+  { no: "08", title: "사례집 출력" },
 ];
 
 export function RecordEditor({
@@ -715,6 +716,17 @@ export function RecordEditor({
           }}
           onGoStep={setStep}
         />
+      )}
+
+      {step === 7 && (
+        <section className="rounded-2xl bg-card p-6 shadow-sm">
+          <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+            <h2 className="text-lg font-semibold text-foreground">08 사례집 출력</h2>
+            <p className="text-sm text-muted-foreground">
+              이 메뉴는 추후 추가될 예정입니다. 지금은 준비 중이에요.
+            </p>
+          </div>
+        </section>
       )}
 
 

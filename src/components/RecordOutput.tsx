@@ -72,7 +72,7 @@ export function RecordOutput({
   return (
     <section className="record-output space-y-4 rounded-2xl bg-card p-5 shadow-sm sm:p-6">
       <div className="record-output-ui flex flex-wrap items-center gap-2">
-        <h2 className="mr-auto text-lg font-semibold text-foreground">출력 보기</h2>
+        <h2 className="mr-auto text-lg font-semibold text-foreground">README 출력</h2>
         <Button
           type="button"
           size="sm"
