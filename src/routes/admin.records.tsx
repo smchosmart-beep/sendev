@@ -679,6 +679,14 @@ function RecordOverviewPage() {
           )}
         </div>
       )}
+
+      {printingCasebook && overview ? (
+        <div ref={casebookRef} className="casebook-root casebook-offscreen" aria-hidden>
+          {overview.teams.map((team) => (
+            <CasebookDocument key={team.postId} team={team} />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
