@@ -227,7 +227,7 @@ export async function fetchRecordOverview(
     return { categoryId, slug: category.slug as string, teams: [] };
   }
 
-  const [{ data: members }, { data: finals }, { data: rows }, { data: reflections }] =
+  const [{ data: members }, { data: finals }, { data: rows }, { data: reflections }, { data: ethics }] =
     await Promise.all([
       db
         .from("record_members")
@@ -244,6 +244,11 @@ export async function fetchRecordOverview(
       db
         .from("record_reflections")
         .select("id, post_id, username, username_key, content, promise, updated_at")
+        .in("post_id", postIds)
+        .order("created_at", { ascending: true }),
+      db
+        .from("record_ethics")
+        .select("*")
         .in("post_id", postIds)
         .order("created_at", { ascending: true }),
     ]);
