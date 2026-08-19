@@ -15,7 +15,7 @@
 - 위치는 한 줄 소개 문장 바로 아래(대표 화면 위)로 이동, 링크는 새 탭에서 열립니다.
 
 ## 기술 사항
-- `src/lib/record-readme.ts`의 `buildPublicReadme`에서 링크 목록을 마크다운 링크(`[🌐 바로 사용하기](url)`)를 ` · `로 이은 한 줄로 생성. URL에 프로토콜이 없으면 `https://` 자동 보정, 괄호/공백은 인코딩해 문법 깨짐 방지.
+- `src/lib/record-readme.ts`의 `buildPublicReadme`에서 링크 목록을 마크다운 링크(`[🌐 바로 사용하기](url)`)를 공백으로 이은 한 줄로 생성. URL에 프로토콜이 없으면 `https://` 자동 보정, 괄호/공백은 인코딩해 문법 깨짐 방지.
 - `src/components/RecordOutput.tsx` 미리보기 렌더러에 `remark-gfm` 연결 + 링크 `target="_blank" rel="noreferrer"` 처리, 링크 줄에 배지 스타일(테두리·배경) 적용.
 - 관리자 ZIP의 `README.md`도 동일 결과(마크다운이라 GitHub에서 정상 렌더링).
 - DB/서버 함수/상태 판정 로직 변경 없음.

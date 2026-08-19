@@ -396,7 +396,7 @@ export function buildPublicReadme(team: RecordOverviewTeam): string {
   if (v("deployUrl")) linkBadges.push(`[🌐 바로 사용하기](${normalizeUrl(v("deployUrl"))})`);
   if (v("githubUrl")) linkBadges.push(`[💻 소스코드](${normalizeUrl(v("githubUrl"))})`);
   if (v("demoVideoUrl")) linkBadges.push(`[▶️ 시연 보기](${normalizeUrl(v("demoVideoUrl"))})`);
-  if (linkBadges.length) push(linkBadges.join(" · "), "");
+  if (linkBadges.length) push(linkBadges.join(" "), "");
 
   push("## 대표 화면과 링크", "");
   if (v("heroImageUrl")) push(`![대표 화면](${v("heroImageUrl")})`, "");
