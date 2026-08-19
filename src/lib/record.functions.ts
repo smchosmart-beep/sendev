@@ -374,48 +374,32 @@ export const saveRecordFinal = createServerFn({ method: "POST" })
   });
 
 // 반복행 저장(행 단위 upsert). id가 없으면 새 행을 만든다.
-// kind='check'는 8개 고정 문항이라 (post_id, sort_order) 부분 유니크 인덱스가 있고,
-// 동시 클릭 시 23505가 나면 다시 조회해 update로 폴백한다.
+// kind='stance'는 4개 고정 문항이라 (post_id, sort_order)로 기존 행을 먼저 찾고,
+// 동시 클릭 시 중복 오류가 나면 다시 조회해 update로 폴백한다.
 export const saveRecordRow = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
       .object({
         postId: z.string().uuid(),
         id: z.string().uuid().nullable().default(null),
-        kind: z.enum([
-          "feature",
-          "flow",
-          "limit",
-          "plan",
-          "maker",
-          "process",
-          "devlog",
-          "check",
-        ]),
+        kind: z.enum(RECORD_ROW_KINDS),
+        subtype: z.string().max(50).default(""),
+        rowAuthor: z.string().max(100).default(""),
         sortOrder: z.number().int().min(0).max(999).default(0),
-        col1: z.string().max(2000).default(""),
-        col2: z.string().max(2000).default(""),
-        col3: z.string().max(2000).default(""),
+        col1: z.string().max(3000).default(""),
+        col2: z.string().max(3000).default(""),
+        col3: z.string().max(3000).default(""),
+        col4: z.string().max(3000).default(""),
+        col5: z.string().max(3000).default(""),
+        col6: z.string().max(3000).default(""),
         knownUpdatedAt: z.string().max(40).default(""),
         author: z.string().trim().max(100).default(""),
         nicknamePassword: z.string().trim().max(100).default(""),
         adminPassword: z.string().max(200).default(""),
       })
-      .superRefine((v, ctx) => {
-        // 1차 섹션은 기존과 동일하게 1000자, 2차(과정기록/개발기록)만 2000자 허용
-        const limit = v.kind === "process" || v.kind === "devlog" ? 2000 : 1000;
-        for (const key of ["col1", "col2", "col3"] as const) {
-          if ((v[key] ?? "").length > limit) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              path: [key],
-              message: `${limit}자까지 입력할 수 있어요.`,
-            });
-          }
-        }
-      })
       .parse(input),
   )
+
   .handler(async ({ data }): Promise<{ id: string; updatedAt: string; updatedBy: string }> => {
     const R = await import("./record.server");
     const db = await R.getRecordDb();
