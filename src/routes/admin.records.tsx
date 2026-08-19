@@ -419,6 +419,10 @@ function RecordOverviewPage() {
                         후기
                       </th>
                       <th className="whitespace-nowrap px-3 py-3 text-center font-semibold text-foreground">
+                        윤리설문
+                      </th>
+
+                      <th className="whitespace-nowrap px-3 py-3 text-center font-semibold text-foreground">
                         수정일
                       </th>
                       <th className="px-3 py-3 text-center font-semibold text-foreground">보기</th>
