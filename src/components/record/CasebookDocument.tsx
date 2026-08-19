@@ -95,7 +95,7 @@ function RowTable({
           const values = [r.col1, r.col2, r.col3, r.col4, r.col5, r.col6];
           const head = [r.subtype, r.author].filter((v) => (v ?? "").trim()).join(" · ");
           return (
-            <li key={r.id ?? idx} className="casebook-card">
+            <li key={idx} className="casebook-card">
               <div className="casebook-card-head">
                 <span className="casebook-card-no">{String(idx + 1).padStart(2, "0")}</span>
                 {head ? <span className="casebook-card-sub">{head}</span> : null}
@@ -317,7 +317,7 @@ export function CasebookDocument({ team }: { team: RecordOverviewTeam }) {
                 </thead>
                 <tbody>
                   {stance.map((r, i) => (
-                    <tr key={r.id ?? i}>
+                    <tr key={i}>
                       <td>
                         {STANCE_QUESTIONS[r.sortOrder] ?? `문항 ${r.sortOrder + 1}`}
                         {r.col2.trim() ? <div className="casebook-note">{r.col2}</div> : null}
