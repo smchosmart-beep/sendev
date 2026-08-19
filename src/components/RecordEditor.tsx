@@ -697,6 +697,7 @@ function FinalField({
           id={id}
           value={value}
           disabled={!canEdit}
+          placeholder={field.placeholder}
           onChange={(e) => onChange(field.key, e.target.value)}
           className="rounded-xl"
         />
