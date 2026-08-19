@@ -147,69 +147,6 @@ export const getRecordOverview = createServerFn({ method: "POST" })
     const db = await R.getRecordDb();
     return R.fetchRecordOverview(db, data.categoryId);
   });
-  .handler(async ({ data }): Promise<RecordBundleDTO | null> => {
-    const R = await import("./record.server");
-    const db = await R.getRecordDb();
-    const { data: post } = await db
-      .from("posts")
-      .select("id, category_id, title, type")
-      .eq("id", data.postId)
-      .maybeSingle();
-    if (!post || post.type !== "record") return null;
-
-    const [{ data: members }, { data: final }, { data: rows }, { data: reflections }] = await Promise.all([
-      db.from("record_members").select("id, username, username_key").eq("post_id", post.id).order("created_at", { ascending: true }),
-      db.from("record_final").select("*").eq("post_id", post.id).maybeSingle(),
-      db.from("record_rows").select("*").eq("post_id", post.id).order("kind", { ascending: true }).order("sort_order", { ascending: true }),
-      db.from("record_reflections").select("*").eq("post_id", post.id).order("created_at", { ascending: true }),
-    ]);
-
-    return {
-      postId: post.id,
-      categoryId: post.category_id,
-      teamName: post.title,
-      members: (members ?? []).map((m: any) => ({
-        id: m.id,
-        username: m.username,
-        usernameKey: m.username_key,
-      })),
-      final: final
-        ? {
-            postId: final.post_id,
-            serviceName: final.service_name ?? "",
-            oneLiner: final.one_liner ?? "",
-            targetUser: final.target_user ?? "",
-            problem: final.problem ?? "",
-            solution: final.solution ?? "",
-            heroImageUrl: final.hero_image_url ?? "",
-            deployUrl: final.deploy_url ?? "",
-            githubUrl: final.github_url ?? "",
-            techStack: final.tech_stack ?? "",
-            envNames: final.env_names ?? "",
-            updatedBy: final.updated_by ?? "",
-            updatedAt: final.updated_at ?? "",
-          }
-        : null,
-      rows: (rows ?? []).map((r: any) => ({
-        id: r.id,
-        kind: r.kind as RecordRowKind,
-        sortOrder: r.sort_order ?? 0,
-        col1: r.col1 ?? "",
-        col2: r.col2 ?? "",
-        col3: r.col3 ?? "",
-        updatedBy: r.updated_by ?? "",
-        updatedAt: r.updated_at ?? "",
-      })),
-      reflections: (reflections ?? []).map((r: any) => ({
-        id: r.id,
-        username: r.username,
-        usernameKey: r.username_key,
-        content: r.content ?? "",
-        promise: r.promise ?? "",
-        updatedAt: r.updated_at ?? "",
-      })),
-    };
-  });
 
 // 팀 활동기록 글을 새로 만든다. 같은 게시판에서 이미 다른 팀에 속해 있으면
 // 새로 만들지 않고 기존 기록으로 안내한다(팀당 활동기록 1개 원칙).
