@@ -112,11 +112,12 @@ export const getRecord = createServerFn({ method: "GET" })
       .maybeSingle();
     if (!post || post.type !== "record") return null;
 
-    const [{ data: members }, { data: final }, { data: rows }, { data: reflections }] = await Promise.all([
+    const [{ data: members }, { data: final }, { data: rows }, { data: reflections }, { data: ethics }] = await Promise.all([
       db.from("record_members").select("*").eq("post_id", post.id).order("created_at", { ascending: true }),
       db.from("record_final").select("*").eq("post_id", post.id).maybeSingle(),
       db.from("record_rows").select("*").eq("post_id", post.id).order("kind", { ascending: true }).order("sort_order", { ascending: true }),
       db.from("record_reflections").select("*").eq("post_id", post.id).order("created_at", { ascending: true }),
+      db.from("record_ethics").select("*").eq("post_id", post.id).order("created_at", { ascending: true }),
     ]);
 
     return {
