@@ -127,29 +127,29 @@ export interface RecordOverviewMember {
   id: string;
   username: string;
   usernameKey: string;
+  affiliation: string;
+  role: string;
 }
 
-export interface RecordOverviewFinal {
-  serviceName: string;
-  oneLiner: string;
-  targetUser: string;
-  problem: string;
-  solution: string;
-  heroImageUrl: string;
-  deployUrl: string;
-  githubUrl: string;
-  techStack: string;
-  envNames: string;
+export type RecordOverviewFinal = Record<
+  (typeof RECORD_FINAL_FIELDS)[number]["key"],
+  string
+> & {
   updatedBy: string;
   updatedAt: string;
-}
+};
 
 export interface RecordOverviewRow {
   kind: RecordRowKind;
   sortOrder: number;
+  subtype: string;
+  author: string;
   col1: string;
   col2: string;
   col3: string;
+  col4: string;
+  col5: string;
+  col6: string;
   updatedBy: string;
   updatedAt: string;
 }
@@ -158,10 +158,16 @@ export interface RecordOverviewReflection {
   id: string;
   username: string;
   usernameKey: string;
-  content: string;
-  promise: string;
+  affiliation: string;
+  role: string;
+  q1: string;
+  q2: string;
+  promises: string[];
+  promiseDetail: string;
+  spreadPlan: string;
   updatedAt: string;
 }
+
 
 export interface RecordOverviewTeam {
   postId: string;
