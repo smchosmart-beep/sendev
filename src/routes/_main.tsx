@@ -177,7 +177,7 @@ function MainLayout() {
 
           <nav
             className={cn(
-              "min-w-0 flex-nowrap items-center justify-center gap-2 overflow-hidden sm:gap-3 2xl:gap-4",
+              "min-w-0 flex-1 flex-nowrap items-center justify-center gap-2 overflow-hidden sm:gap-3 2xl:gap-4",
               navCollapsed ? "hidden" : "hidden sm:flex",
             )}
           >
