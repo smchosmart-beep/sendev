@@ -33,16 +33,20 @@
 ```
 
 - 과정기록·개발기록: 1차 반복행과 완전히 같은 UI(행 추가/삭제, 행 단위 저장, "다른 팀원이 먼저 수정했어요" 안내).
-- 점검 8항목: 8개 행이 고정으로 보이고, 라디오 3택 + 메모 한 줄. 처음 열면 빈 상태로 보이고 고를 때 저장됩니다.
+- 점검 8항목: 8개 행이 고정으로 보이고, 라디오 3택 + 메모 한 줄. 처음 열면 빈 상태로 보이고 고를 때 저장됩니다. 클라이언트는 8개 문항을 미리 렌더링하지만, 서버에서 `(post_id, kind, sort_order)` unique 제약으로 중복 행 생성을 방지합니다.
 - 개인 후기: 내 후기 칸 1개 + 팀원들의 후기 읽기 목록. 본인 닉네임 비밀번호로만 저장·수정하고, 남의 후기는 수정 버튼이 나오지 않습니다. 관리자는 삭제만 가능합니다.
 
 ## 데이터
 
-- 과정기록·개발기록·점검은 **기존 `record_rows` 테이블을 그대로 재사용**합니다. `kind` 값에 `process`, `devlog`, `check` 세 가지를 추가하도록 검증 트리거(`validate_record_row_kind`)만 갱신합니다. 새 테이블 없음 = 정책·권한 추가 부담 없음.
+- 과정기록·개발기록·점검은 **기존 `record_rows` 테이블을 그대로 재사용**합니다. `kind` 값에 `process`, `devlog`, `check` 세 가지를 추가하도록 4개 지점을 동시에 갱신합니다:
+  1. DB 검증 트리거 `validate_record_row_kind`
+  2. `src/lib/record.server.ts`의 `RecordRowKind` 타입
+  3. 같은 파일의 `RECORD_ROW_KINDS` 배열
+  4. `src/lib/record.functions.ts`의 zod enum
 - 개인 후기는 인원별 1건 제한이 필요하므로 새 테이블 `record_reflections`를 만듭니다.
   - `post_id, username, username_key, content, promise, updated_by, created_at, updated_at`
   - `unique (post_id, username_key)`
-  - RLS 활성화 + 공개 읽기 정책 없음(모든 접근은 서버 함수 경유), `GRANT ALL ... TO service_role`만 부여 — 기존 활동기록 테이블과 동일한 보안 모델.
+  - RLS 활성화, 기존 `record_*` 테이블과 동일한 보안 모델: `authenticated`/`anon`에 `GRANT ALL` (또는 필요한 최소 권한) + RLS 정책은 두지 않고 service_role 전용 접근. `record_reflections`에도 동일하게 grant를 부여한 뒤 RLS를 활성화합니다.
 
 ## 서버
 
