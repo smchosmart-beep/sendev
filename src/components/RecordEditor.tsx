@@ -562,7 +562,8 @@ export function RecordEditor({
       )}
 
       {step === 2 && (
-        <>
+        <div className="relative space-y-6">
+          <StepSidebar blocks={step3Blocks} />
           <section className="rounded-2xl bg-card p-6 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-foreground">최종 결과물</h2>
@@ -577,8 +578,8 @@ export function RecordEditor({
                       : ""}
               </span>
             </div>
-            {FINAL_GROUPS.map((group) => (
-              <div key={group.title} className="mt-6 first:mt-4">
+            {FINAL_GROUPS.map((group, i) => (
+              <div key={group.title} id={`s3-g${i}`} className="mt-6 scroll-mt-24 first:mt-4">
                 <h3 className="text-sm font-semibold text-foreground">{group.title}</h3>
                 {group.hint && (
                   <p className="mt-1 text-xs text-muted-foreground">{group.hint}</p>
@@ -598,48 +599,54 @@ export function RecordEditor({
             ))}
           </section>
 
-          {(["feature", "flow", "limit", "plan", "maker"] as RowKind[]).map((kind) => (
-            <RowSection
-              key={kind}
-              def={ROW_SECTION_DEFS[kind]!}
-              rows={rowsOf(kind)}
-              {...rowSectionProps}
-            />
+          {step3Kinds.map((kind) => (
+            <div key={kind} id={`s3-${kind}`} className="scroll-mt-24">
+              <RowSection
+                def={ROW_SECTION_DEFS[kind]!}
+                rows={rowsOf(kind)}
+                {...rowSectionProps}
+              />
+            </div>
           ))}
-        </>
+        </div>
       )}
 
       {step === 3 && (
-        <>
-          <RowSection
-            def={ROW_SECTION_DEFS["devlog"]!}
-            title="개발 과정 자유기록"
-            hint="개발하며 겪은 일과 해결 방법을 자유롭게 쌓아요."
-            cols={["날짜", "무슨 일이 있었나", "어떻게 해결했나"]}
-            longCols={[1, 2]}
-            rows={rowsOf("devlog")}
-            {...rowSectionProps}
-            authorEnabled
-            defaultAuthor={memberAuthor}
-
-          />
-          {(["decision", "stuck", "ai_use", "ai_error", "privacy"] as RowKind[]).map((kind) => (
+        <div className="relative space-y-6">
+          <StepSidebar blocks={step4Blocks} />
+          <div id="s4-devlog" className="scroll-mt-24">
             <RowSection
-              key={kind}
-              def={ROW_SECTION_DEFS[kind]!}
-              subtypes={kind === "ai_use" ? AI_USE_TYPES : undefined}
-              rows={rowsOf(kind)}
+              def={ROW_SECTION_DEFS["devlog"]!}
+              title="개발 과정 자유기록"
+              hint="개발하며 겪은 일과 해결 방법을 자유롭게 쌓아요."
+              cols={["날짜", "무슨 일이 있었나", "어떻게 해결했나"]}
+              longCols={[1, 2]}
+              rows={rowsOf("devlog")}
               {...rowSectionProps}
+              authorEnabled
+              defaultAuthor={memberAuthor}
             />
+          </div>
+          {(["decision", "stuck", "ai_use", "ai_error", "privacy"] as RowKind[]).map((kind) => (
+            <div key={kind} id={`s4-${kind}`} className="scroll-mt-24">
+              <RowSection
+                def={ROW_SECTION_DEFS[kind]!}
+                subtypes={kind === "ai_use" ? AI_USE_TYPES : undefined}
+                rows={rowsOf(kind)}
+                {...rowSectionProps}
+              />
+            </div>
           ))}
 
-          <StanceSection
-            rows={rowsOf("stance")}
-            canEdit={canEdit}
-            onSave={(vars) => rowMutation.mutate(vars)}
-          />
+          <div id="s4-stance" className="scroll-mt-24">
+            <StanceSection
+              rows={rowsOf("stance")}
+              canEdit={canEdit}
+              onSave={(vars) => rowMutation.mutate(vars)}
+            />
+          </div>
 
-          <section className="rounded-2xl bg-card p-6 shadow-sm">
+          <section id="s4-risk" className="scroll-mt-24 rounded-2xl bg-card p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-foreground">{RISK_GROUP.title}</h3>
             {RISK_GROUP.hint && (
               <p className="mt-1 text-sm text-muted-foreground">{RISK_GROUP.hint}</p>
@@ -656,8 +663,9 @@ export function RecordEditor({
               ))}
             </div>
           </section>
-        </>
+        </div>
       )}
+
 
       {step === 4 && (
         <ReflectionSection
