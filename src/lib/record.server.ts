@@ -255,20 +255,13 @@ export async function fetchRecordOverview(
   const teams = (posts ?? []).map((p: any): RecordOverviewTeam => {
     const f = finalByPost.get(p.id);
     const finalDto: RecordOverviewFinal | null = f
-      ? {
-          serviceName: f.service_name ?? "",
-          oneLiner: f.one_liner ?? "",
-          targetUser: f.target_user ?? "",
-          problem: f.problem ?? "",
-          solution: f.solution ?? "",
-          heroImageUrl: f.hero_image_url ?? "",
-          deployUrl: f.deploy_url ?? "",
-          githubUrl: f.github_url ?? "",
-          techStack: f.tech_stack ?? "",
-          envNames: f.env_names ?? "",
+      ? ({
+          ...(Object.fromEntries(
+            RECORD_FINAL_FIELDS.map((field) => [field.key, f[field.column] ?? ""]),
+          ) as Record<(typeof RECORD_FINAL_FIELDS)[number]["key"], string>),
           updatedBy: f.updated_by ?? "",
           updatedAt: f.updated_at ?? "",
-        }
+        } as RecordOverviewFinal)
       : null;
 
     return {
@@ -281,14 +274,21 @@ export async function fetchRecordOverview(
         id: m.id,
         username: m.username,
         usernameKey: m.username_key,
+        affiliation: m.affiliation ?? "",
+        role: m.role ?? "",
       })),
       final: finalDto,
       rows: (rowsByPost.get(p.id) ?? []).map((r: any) => ({
         kind: r.kind as RecordRowKind,
         sortOrder: r.sort_order ?? 0,
+        subtype: r.subtype ?? "",
+        author: r.author ?? "",
         col1: r.col1 ?? "",
         col2: r.col2 ?? "",
         col3: r.col3 ?? "",
+        col4: r.col4 ?? "",
+        col5: r.col5 ?? "",
+        col6: r.col6 ?? "",
         updatedBy: r.updated_by ?? "",
         updatedAt: r.updated_at ?? "",
       })),
@@ -296,12 +296,18 @@ export async function fetchRecordOverview(
         id: r.id,
         username: r.username,
         usernameKey: r.username_key,
-        content: r.content ?? "",
-        promise: r.promise ?? "",
+        affiliation: r.affiliation ?? "",
+        role: r.role ?? "",
+        q1: r.q1 ?? "",
+        q2: r.q2 ?? "",
+        promises: Array.isArray(r.promises) ? r.promises : [],
+        promiseDetail: r.promise_detail ?? "",
+        spreadPlan: r.spread_plan ?? "",
         updatedAt: r.updated_at ?? "",
       })),
     };
   });
+
 
   return { categoryId, slug: category.slug as string, teams };
 }
