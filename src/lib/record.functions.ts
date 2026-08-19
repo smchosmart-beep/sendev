@@ -169,7 +169,22 @@ export const getRecord = createServerFn({ method: "GET" })
         spreadPlan: r.spread_plan ?? "",
         updatedAt: r.updated_at ?? "",
       })),
+      ethics: (ethics ?? []).map((e: any) => ({
+        id: e.id,
+        username: e.username ?? "",
+        usernameKey: e.username_key,
+        s1: Number(e.s1 ?? 0),
+        s2: Number(e.s2 ?? 0),
+        s3: Number(e.s3 ?? 0),
+        s4: Number(e.s4 ?? 0),
+        s5: Number(e.s5 ?? 0),
+        s6: Number(e.s6 ?? 0),
+        s7: Number(e.s7 ?? 0),
+        extraPromise: e.extra_promise ?? "",
+        updatedAt: e.updated_at ?? "",
+      })),
     };
+
 
   });
 
