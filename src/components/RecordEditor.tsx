@@ -85,36 +85,87 @@ type FinalInput = {
   type: "text" | "textarea" | "select" | "image";
   options?: string[];
   full?: boolean;
+  placeholder?: string;
 };
 
 const FINAL_GROUPS: { title: string; hint?: string; fields: FinalInput[] }[] = [
   {
     title: "한눈에 보기",
     fields: [
-      { key: "serviceName", label: "서비스 이름", type: "text" },
-      { key: "oneLiner", label: "한 줄 소개", type: "text", full: true },
+      {
+        key: "serviceName",
+        label: "서비스 이름",
+        type: "text",
+        placeholder: "예) 배수 판별 연습기",
+      },
+      {
+        key: "oneLiner",
+        label: "한 줄 소개",
+        type: "text",
+        full: true,
+        placeholder: "예) 3·4·9의 배수를 스스로 확인해 보는 연습 도구",
+      },
       { key: "problemArea", label: "문제 영역", type: "select", options: PROBLEM_AREAS },
       { key: "targetUser", label: "주 사용자", type: "select", options: MAIN_USERS },
       { key: "outputType", label: "결과물 형태", type: "select", options: OUTPUT_TYPES },
-      { key: "tags", label: "태그", hint: "쉼표로 구분", type: "text" },
+      {
+        key: "tags",
+        label: "태그",
+        hint: "쉼표로 구분",
+        type: "text",
+        placeholder: "예) 초등수학, 배수, 연습",
+      },
       { key: "consent", label: "공개 동의", type: "select", options: ["동의", "미동의"] },
     ],
   },
   {
     title: "문제와 해결",
     fields: [
-      { key: "problem", label: "어떤 문제를 풀었나요?", type: "textarea", full: true },
-      { key: "solution", label: "어떻게 풀었나요?", type: "textarea", full: true },
+      {
+        key: "problem",
+        label: "어떤 문제를 풀었나요?",
+        type: "textarea",
+        full: true,
+        placeholder: "예) 학생들이 배수 판별법을 외우기만 하고 이유를 몰랐어요.",
+      },
+      {
+        key: "solution",
+        label: "어떻게 풀었나요?",
+        type: "textarea",
+        full: true,
+        placeholder: "예) 판별 과정을 단계별로 보여 주고 스스로 확인하게 했어요.",
+      },
     ],
   },
   {
     title: "사용과 배포",
     fields: [
       { key: "deployStatus", label: "배포 상태", type: "select", options: DEPLOY_STATUSES },
-      { key: "usageEnv", label: "사용 환경", hint: "예: PC 웹, 모바일 웹", type: "text" },
-      { key: "deployUrl", label: "배포 주소", type: "text" },
-      { key: "githubUrl", label: "GitHub 주소", type: "text" },
-      { key: "demoVideoUrl", label: "시연 영상 주소", type: "text" },
+      {
+        key: "usageEnv",
+        label: "사용 환경",
+        hint: "예: PC 웹, 모바일 웹",
+        type: "text",
+        placeholder: "예) PC 웹, 모바일 웹",
+      },
+      {
+        key: "deployUrl",
+        label: "배포 주소",
+        type: "text",
+        placeholder: "예) https://내서비스.lovable.app",
+      },
+      {
+        key: "githubUrl",
+        label: "GitHub 주소",
+        type: "text",
+        placeholder: "예) https://github.com/이름/저장소",
+      },
+      {
+        key: "demoVideoUrl",
+        label: "시연 영상 주소",
+        type: "text",
+        placeholder: "예) https://youtu.be/영상주소",
+      },
       {
         key: "heroImageUrl",
         label: "대표 이미지",
@@ -128,6 +179,7 @@ const FINAL_GROUPS: { title: string; hint?: string; fields: FinalInput[] }[] = [
         hint: "계정 필요 여부, 무료/유료 등",
         type: "textarea",
         full: true,
+        placeholder: "예) 계정 없이 무료로 사용할 수 있어요.",
       },
     ],
   },
@@ -135,23 +187,51 @@ const FINAL_GROUPS: { title: string; hint?: string; fields: FinalInput[] }[] = [
     title: "기술 구성",
     hint: "환경변수는 이름만 적고 값(비밀키)은 절대 입력하지 마세요.",
     fields: [
-      { key: "techScreen", label: "화면", type: "text" },
-      { key: "techServer", label: "서버·백엔드", type: "text" },
-      { key: "techAi", label: "AI", type: "text" },
-      { key: "techStorage", label: "저장소", type: "text" },
-      { key: "techDeploy", label: "배포", type: "text" },
-      { key: "dirStructure", label: "폴더 구조", type: "textarea", full: true },
-      { key: "installCmd", label: "설치 명령", type: "text" },
-      { key: "runCmd", label: "실행 명령", type: "text" },
-      { key: "envNames", label: "환경변수 이름만", type: "text", full: true },
+      { key: "techScreen", label: "화면", type: "text", placeholder: "예) React, Tailwind CSS" },
+      {
+        key: "techServer",
+        label: "서버·백엔드",
+        type: "text",
+        placeholder: "예) Lovable Cloud(데이터베이스·인증)",
+      },
+      { key: "techAi", label: "AI", type: "text", placeholder: "예) 사용하지 않음" },
+      {
+        key: "techStorage",
+        label: "저장소",
+        type: "text",
+        placeholder: "예) 브라우저 로컬 저장소",
+      },
+      { key: "techDeploy", label: "배포", type: "text", placeholder: "예) Lovable 배포" },
+      {
+        key: "dirStructure",
+        label: "폴더 구조",
+        type: "textarea",
+        full: true,
+        placeholder: "예)\nsrc/\n  components/\n  routes/",
+      },
+      { key: "installCmd", label: "설치 명령", type: "text", placeholder: "예) npm install" },
+      { key: "runCmd", label: "실행 명령", type: "text", placeholder: "예) npm run dev" },
+      {
+        key: "envNames",
+        label: "환경변수 이름만",
+        type: "text",
+        full: true,
+        placeholder: "예) VITE_API_URL (값은 적지 마세요)",
+      },
     ],
   },
   {
     title: "라이선스와 출처",
     fields: [
-      { key: "licenseCode", label: "코드 라이선스", type: "text" },
-      { key: "licenseDocs", label: "문서 라이선스", type: "text" },
-      { key: "licenseExternal", label: "외부 자료 출처", type: "textarea", full: true },
+      { key: "licenseCode", label: "코드 라이선스", type: "text", placeholder: "예) MIT" },
+      { key: "licenseDocs", label: "문서 라이선스", type: "text", placeholder: "예) CC BY 4.0" },
+      {
+        key: "licenseExternal",
+        label: "외부 자료 출처",
+        type: "textarea",
+        full: true,
+        placeholder: "예) 아이콘: Lucide (ISC 라이선스)",
+      },
     ],
   },
 ];
@@ -160,16 +240,53 @@ const RISK_GROUP: { title: string; hint?: string; fields: FinalInput[] } = {
   title: "변화와 위험 점검",
   hint: "실제로 확인한 것과 기대하는 것을 구분해서 적어요.",
   fields: [
-    { key: "currentScope", label: "지금까지 확인한 범위", type: "textarea", full: true },
+    {
+      key: "currentScope",
+      label: "지금까지 확인한 범위",
+      type: "textarea",
+      full: true,
+      placeholder: "예) 5학년 한 학급 24명이 2차시 동안 사용했어요.",
+    },
     { key: "changeType", label: "변화 구분", type: "select", options: CHANGE_TYPES },
-    { key: "changeContent", label: "변화 내용", type: "textarea", full: true },
+    {
+      key: "changeContent",
+      label: "변화 내용",
+      type: "textarea",
+      full: true,
+      placeholder: "예) 판별 이유를 말로 설명하는 학생이 늘었어요.",
+    },
     { key: "privacyStatus", label: "개인정보 처리 여부", type: "select", options: PRIVACY_STATUSES },
-    { key: "riskExpected", label: "예상되는 위험", type: "textarea", full: true },
-    { key: "riskMitigation", label: "위험을 줄이려고 한 일", type: "textarea", full: true },
-    { key: "riskStop", label: "멈춤 기준", type: "textarea", full: true },
-    { key: "riskTest", label: "검증 방법", type: "textarea", full: true },
+    {
+      key: "riskExpected",
+      label: "예상되는 위험",
+      type: "textarea",
+      full: true,
+      placeholder: "예) 틀린 설명을 학생이 그대로 외울 수 있어요.",
+    },
+    {
+      key: "riskMitigation",
+      label: "위험을 줄이려고 한 일",
+      type: "textarea",
+      full: true,
+      placeholder: "예) 모든 설명을 교사가 미리 검토했어요.",
+    },
+    {
+      key: "riskStop",
+      label: "멈춤 기준",
+      type: "textarea",
+      full: true,
+      placeholder: "예) 잘못된 판별 결과가 한 번이라도 나오면 사용을 멈춰요.",
+    },
+    {
+      key: "riskTest",
+      label: "검증 방법",
+      type: "textarea",
+      full: true,
+      placeholder: "예) 1~200까지 숫자로 판별 결과를 직접 확인했어요.",
+    },
   ],
 };
+
 
 const FINAL_MAX = new Map(RECORD_FINAL_FIELDS.map((f) => [f.key as string, f.max]));
 
@@ -549,6 +666,7 @@ function FinalField({
           value={value}
           rows={4}
           disabled={!canEdit}
+          placeholder={field.placeholder}
           onChange={(e) => onChange(field.key, e.target.value)}
           className="rounded-xl"
         />
@@ -579,6 +697,7 @@ function FinalField({
           id={id}
           value={value}
           disabled={!canEdit}
+          placeholder={field.placeholder}
           onChange={(e) => onChange(field.key, e.target.value)}
           className="rounded-xl"
         />
@@ -703,7 +822,7 @@ function MemberSection({
           <Input
             value={newMember}
             onChange={(e) => setNewMember(e.target.value)}
-            placeholder="추가할 팀원 닉네임"
+            placeholder="예) 김수학"
             className="rounded-xl"
           />
           <Button type="button" onClick={onAdd} className="shrink-0 rounded-xl active:scale-95">
@@ -740,14 +859,14 @@ function MemberRow({
       <Input
         value={affiliation}
         onChange={(e) => setAffiliation(e.target.value)}
-        placeholder="소속 (예: ○○초등학교)"
+        placeholder="예) ○○초등학교 5학년"
         disabled={!canEdit}
         className="rounded-xl bg-background"
       />
       <Input
         value={role}
         onChange={(e) => setRole(e.target.value)}
-        placeholder="팀 내 역할"
+        placeholder="예) 기획·문제 정의"
         disabled={!canEdit}
         className="rounded-xl bg-background"
       />
@@ -788,6 +907,7 @@ function RowSection({
   hint,
   cols,
   longCols,
+  placeholders,
   subtypes,
 }: {
   def: RowSectionDef;
@@ -799,10 +919,12 @@ function RowSection({
   hint?: string;
   cols?: string[];
   longCols?: number[];
+  placeholders?: string[];
   subtypes?: string[];
 }) {
   const labels = cols ?? def.cols;
   const longs = longCols ?? def.longCols ?? [];
+  const hints = placeholders ?? def.placeholders;
   return (
     <section className="rounded-2xl bg-card p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-foreground">{title ?? def.title}</h2>
@@ -817,6 +939,7 @@ function RowSection({
             row={row}
             labels={labels}
             longs={longs}
+            placeholders={hints}
             subtypes={subtypes}
             canEdit={canEdit}
             onSave={onSave}
@@ -843,6 +966,7 @@ function RowItem({
   row,
   labels,
   longs,
+  placeholders,
   subtypes,
   canEdit,
   onSave,
@@ -851,11 +975,13 @@ function RowItem({
   row: RecordRowDTO;
   labels: string[];
   longs: number[];
+  placeholders?: string[];
   subtypes?: string[];
   canEdit: boolean;
   onSave: (vars: SaveRowVars) => void;
   onDelete: (id: string) => void;
 }) {
+
   const initial = [row.col1, row.col2, row.col3, row.col4, row.col5, row.col6];
   const [values, setValues] = useState(initial);
   const [subtype, setSubtype] = useState(row.subtype);
@@ -892,7 +1018,7 @@ function RowItem({
           <Input
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
-            placeholder="작성자 (선택)"
+            placeholder="예) 김수학 (선택)"
             disabled={!canEdit}
             className="h-8 w-40 rounded-xl bg-background text-xs"
           />
@@ -910,6 +1036,7 @@ function RowItem({
                 value={values[i] ?? ""}
                 onChange={(e) => update(i, e.target.value.slice(0, 3000))}
                 rows={3}
+                placeholder={placeholders?.[i]}
                 disabled={!canEdit}
                 className="rounded-xl bg-background"
               />
@@ -917,6 +1044,7 @@ function RowItem({
               <Input
                 value={values[i] ?? ""}
                 onChange={(e) => update(i, e.target.value.slice(0, 3000))}
+                placeholder={placeholders?.[i]}
                 disabled={!canEdit}
                 className="rounded-xl bg-background"
               />
@@ -1050,7 +1178,7 @@ function StanceItem({
         <Input
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
-          placeholder="어떻게 했는지 한 줄 설명 (선택)"
+          placeholder="예) 학생 이름 대신 번호만 쓰도록 바꿨어요. (선택)"
           disabled={!canEdit}
           className="rounded-xl bg-background"
         />
@@ -1188,6 +1316,7 @@ function ReflectionSection({
               <Input
                 id="ref-affiliation"
                 value={form.affiliation}
+                placeholder="예) ○○초등학교 5학년"
                 onChange={(e) => setForm((p) => ({ ...p, affiliation: e.target.value }))}
                 className="rounded-xl bg-background"
               />
@@ -1197,6 +1326,7 @@ function ReflectionSection({
               <Input
                 id="ref-role"
                 value={form.role}
+                placeholder="예) 기획·문제 정의"
                 onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
                 className="rounded-xl bg-background"
               />
@@ -1208,6 +1338,7 @@ function ReflectionSection({
             <Textarea
               id="ref-q1"
               value={form.q1}
+              placeholder="예) 학생이 직접 판별 이유를 설명하던 순간이 기억에 남아요."
               onChange={(e) => setForm((p) => ({ ...p, q1: e.target.value.slice(0, 3000) }))}
               rows={4}
               className="rounded-xl bg-background"
@@ -1220,6 +1351,7 @@ function ReflectionSection({
             <Textarea
               id="ref-q2"
               value={form.q2}
+              placeholder="예) 작은 도구도 수업 흐름을 바꿀 수 있다는 걸 배웠고, 평가와의 연결은 아직 고민이에요."
               onChange={(e) => setForm((p) => ({ ...p, q2: e.target.value.slice(0, 3000) }))}
               rows={4}
               className="rounded-xl bg-background"
@@ -1250,6 +1382,7 @@ function ReflectionSection({
             <Textarea
               id="ref-promise-detail"
               value={form.promiseDetail}
+              placeholder="예) 학생 이름 대신 번호만 입력받도록 설계했어요."
               onChange={(e) =>
                 setForm((p) => ({ ...p, promiseDetail: e.target.value.slice(0, 3000) }))
               }
@@ -1263,6 +1396,7 @@ function ReflectionSection({
             <Textarea
               id="ref-spread"
               value={form.spreadPlan}
+              placeholder="예) 학년 협의회에서 시연하고 사용법 안내지를 공유할 계획이에요."
               onChange={(e) =>
                 setForm((p) => ({ ...p, spreadPlan: e.target.value.slice(0, 3000) }))
               }
