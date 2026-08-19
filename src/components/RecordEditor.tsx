@@ -604,6 +604,17 @@ export function RecordEditor({
       )}
 
       {step === 5 && (
+        <EthicsSection
+          postId={postId}
+          ethics={bundle.ethics}
+          members={bundle.members}
+          myKey={(identity?.author ?? "").trim().toLowerCase()}
+          isMember={isMember}
+          isAdmin={!!auth.adminPassword}
+        />
+      )}
+
+      {step === 6 && (
         <RecordOutput
           team={{
             postId: bundle.postId,
@@ -615,10 +626,12 @@ export function RecordEditor({
             final: bundle.final,
             rows: bundle.rows,
             reflections: bundle.reflections,
+            ethics: bundle.ethics,
           }}
           onGoStep={setStep}
         />
       )}
+
 
       <div className="record-output-ui flex items-center justify-between gap-3">
         <Button
