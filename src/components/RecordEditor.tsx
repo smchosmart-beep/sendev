@@ -859,14 +859,14 @@ function MemberRow({
       <Input
         value={affiliation}
         onChange={(e) => setAffiliation(e.target.value)}
-        placeholder="소속 (예: ○○초등학교)"
+        placeholder="예) ○○초등학교 5학년"
         disabled={!canEdit}
         className="rounded-xl bg-background"
       />
       <Input
         value={role}
         onChange={(e) => setRole(e.target.value)}
-        placeholder="팀 내 역할"
+        placeholder="예) 기획·문제 정의"
         disabled={!canEdit}
         className="rounded-xl bg-background"
       />
@@ -1018,7 +1018,7 @@ function RowItem({
           <Input
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
-            placeholder="작성자 (선택)"
+            placeholder="예) 김수학 (선택)"
             disabled={!canEdit}
             className="h-8 w-40 rounded-xl bg-background text-xs"
           />
@@ -1178,7 +1178,7 @@ function StanceItem({
         <Input
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
-          placeholder="어떻게 했는지 한 줄 설명 (선택)"
+          placeholder="예) 학생 이름 대신 번호만 쓰도록 바꿨어요. (선택)"
           disabled={!canEdit}
           className="rounded-xl bg-background"
         />
@@ -1316,6 +1316,7 @@ function ReflectionSection({
               <Input
                 id="ref-affiliation"
                 value={form.affiliation}
+                placeholder="예) ○○초등학교 5학년"
                 onChange={(e) => setForm((p) => ({ ...p, affiliation: e.target.value }))}
                 className="rounded-xl bg-background"
               />
@@ -1325,6 +1326,7 @@ function ReflectionSection({
               <Input
                 id="ref-role"
                 value={form.role}
+                placeholder="예) 기획·문제 정의"
                 onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
                 className="rounded-xl bg-background"
               />
@@ -1336,6 +1338,7 @@ function ReflectionSection({
             <Textarea
               id="ref-q1"
               value={form.q1}
+              placeholder="예) 학생이 직접 판별 이유를 설명하던 순간이 기억에 남아요."
               onChange={(e) => setForm((p) => ({ ...p, q1: e.target.value.slice(0, 3000) }))}
               rows={4}
               className="rounded-xl bg-background"
@@ -1348,6 +1351,7 @@ function ReflectionSection({
             <Textarea
               id="ref-q2"
               value={form.q2}
+              placeholder="예) 작은 도구도 수업 흐름을 바꿀 수 있다는 걸 배웠고, 평가와의 연결은 아직 고민이에요."
               onChange={(e) => setForm((p) => ({ ...p, q2: e.target.value.slice(0, 3000) }))}
               rows={4}
               className="rounded-xl bg-background"
@@ -1378,6 +1382,7 @@ function ReflectionSection({
             <Textarea
               id="ref-promise-detail"
               value={form.promiseDetail}
+              placeholder="예) 학생 이름 대신 번호만 입력받도록 설계했어요."
               onChange={(e) =>
                 setForm((p) => ({ ...p, promiseDetail: e.target.value.slice(0, 3000) }))
               }
@@ -1391,6 +1396,7 @@ function ReflectionSection({
             <Textarea
               id="ref-spread"
               value={form.spreadPlan}
+              placeholder="예) 학년 협의회에서 시연하고 사용법 안내지를 공유할 계획이에요."
               onChange={(e) =>
                 setForm((p) => ({ ...p, spreadPlan: e.target.value.slice(0, 3000) }))
               }
