@@ -508,6 +508,19 @@ function RecordOverviewPage() {
                                 {reflectionCount}/{memberCount}명
                               </span>
                             </td>
+                            <td className="whitespace-nowrap px-3 py-3 text-center align-middle">
+                              <span
+                                className={cn(
+                                  "inline-flex rounded-full px-2.5 py-1 text-xs font-medium",
+                                  team.ethics.length === memberCount && memberCount > 0
+                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                                    : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+                                )}
+                              >
+                                {team.ethics.length}/{memberCount}명
+                              </span>
+                            </td>
+
                             <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-xs text-muted-foreground">
                               {formatDateTime(team.final?.updatedAt)}
                             </td>
