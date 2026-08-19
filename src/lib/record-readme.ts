@@ -123,6 +123,14 @@ function escapeMd(text: string): string {
   return (text ?? "").replace(/\n/g, "  \n");
 }
 
+function normalizeUrl(raw: string): string {
+  const url = (raw ?? "").trim();
+  if (!url) return "";
+  const withProtocol = /^(https?:|mailto:)/i.test(url) ? url : `https://${url}`;
+  return withProtocol.replace(/ /g, "%20").replace(/\(/g, "%28").replace(/\)/g, "%29");
+}
+
+
 export function sanitizeFolderName(name: string): string {
   return (
     name
