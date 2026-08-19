@@ -46,8 +46,10 @@
 
 ## 기술 메모
 
-- `src/components/RecordEditor.tsx`의 `STEPS` 배열에 `{ no: "06", title: "윤리 설문" }`을 05 뒤에 삽입하고 출력 보기를 `07`로 변경. 렌더 조건 `step === 5` → `EthicsSection`, `step === 6` → `RecordOutput`. `RecordOutput`의 `onGoStep` 호출부(블록 → 단계 이동 매핑)도 새 인덱스로 갱신 필요 — 놓치면 "수정하러 가기"가 엉뚱한 단계로 이동함.
-- `localStorage`에 저장된 현재 단계 값은 이전 구조 기준(5 = 출력 보기)이므로, 읽을 때 `STEPS.length` 범위로 클램프.
+- `src/components/RecordEditor.tsx`의 `STEPS` 배열에 `{ no: "06", title: "윤리 설문" }`을 05 뒤에 삽입하고 출력 보기를 `07`로 변경. 렌더 조건 `step === 5` → `EthicsSection`, `step === 6` → `RecordOutput`. 현재 단계는 `useState(0)`만 쓰고 localStorage 저장이 없으므로 마이그레이션 이슈 없음.
+- `getPublicReadmeBlocks`의 기존 9개 블록은 `step` 값이 2 또는 3뿐이라 번호 변경의 영향을 받지 않습니다(`src/lib/record-readme.ts:341-379`). 새 10번 블록만 `step: 5`로 지정.
+- `RecordOverviewTeam`(`src/lib/record.server.ts:172`)에 `ethics` 배열을 추가하면 이를 만드는 두 지점을 모두 갱신해야 합니다: `fetchRecordOverview`의 팀 매핑(같은 파일 255~)과 `RecordEditor`에서 `RecordOutput`에 넘기는 team 객체(`RecordEditor.tsx:606-617`). 한 곳만 고치면 타입 에러 또는 빈 블록이 됩니다.
+
 - 새 컴포넌트 `src/components/record/EthicsSection.tsx` + 별점 입력 `StarRating`(0.5 단위, 키보드 접근 가능: 화살표로 0.5씩 증감).
 - 요청량 변화: 팀원당 최대 8회 저장(별점 7 + 서술 1, 서술은 디바운스)으로 기존 후기 단계와 동일 수준. 서버 비용 영향 없음.
 
