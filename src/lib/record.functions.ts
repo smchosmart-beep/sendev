@@ -1,7 +1,24 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import type { RecordRowKind } from "./record.server";
+import type {
+  RecordRowKind,
+  RecordOverviewMember,
+  RecordOverviewFinal,
+  RecordOverviewRow,
+  RecordOverviewReflection,
+  RecordOverviewTeam,
+  RecordOverviewResult,
+} from "./record.server";
+
+export type {
+  RecordOverviewMember,
+  RecordOverviewFinal,
+  RecordOverviewRow,
+  RecordOverviewReflection,
+  RecordOverviewTeam,
+  RecordOverviewResult,
+} from "./record.server";
 
 export interface RecordMemberDTO {
   id: string;
@@ -120,6 +137,23 @@ export const getRecord = createServerFn({ method: "GET" })
         updatedAt: r.updated_at ?? "",
       })),
     };
+  });
+
+// 관리자용: 한 카테고리의 모든 활동기록 팀별 현황을 한 번에 조회한다.
+export const getRecordOverview = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<RecordOverviewResult> => {
+    const R = await import("./record.server");
+    if (!R.isAdminPassword(data.adminPassword)) throw new Error("권한이 없습니다.");
+    const db = await R.getRecordDb();
+    return R.fetchRecordOverview(db, data.categoryId);
   });
 
 // 팀 활동기록 글을 새로 만든다. 같은 게시판에서 이미 다른 팀에 속해 있으면
