@@ -27,6 +27,7 @@ const ROW_SECTIONS: {
   title: string;
   hint: string;
   cols: string[];
+  long?: boolean;
 }[] = [
   {
     kind: "feature",
@@ -58,7 +59,36 @@ const ROW_SECTIONS: {
     hint: "누가 무엇을 맡았는지 적어요.",
     cols: ["이름", "맡은 일", ""],
   },
+  {
+    kind: "process",
+    title: "문제 정의 과정 기록",
+    hint: "아이디어를 좁혀 간 과정을 단계별로 남겨요.",
+    cols: ["단계/날짜", "우리가 나눈 이야기", "그래서 정한 것"],
+    long: true,
+  },
+  {
+    kind: "devlog",
+    title: "개발 과정 자유기록",
+    hint: "개발하며 겪은 일과 해결 방법을 자유롭게 쌓아요.",
+    cols: ["날짜", "무슨 일이 있었나", "어떻게 해결했나"],
+    long: true,
+  },
 ];
+
+const LONG_MAX = 2000;
+
+const CHECK_ITEMS = [
+  "우리가 풀려는 문제를 스스로 설명할 수 있다",
+  "사용자를 구체적으로 정했다",
+  "아이디어를 여러 개 내보고 비교했다",
+  "만들다 막혔을 때 스스로 방법을 찾아봤다",
+  "AI에게 물을 때 무엇을 원하는지 분명히 말했다",
+  "AI가 준 결과를 그대로 쓰지 않고 확인했다",
+  "팀원과 역할을 나누고 서로 도왔다",
+  "다른 사람의 자료를 쓸 때 출처를 밝혔다",
+];
+
+const CHECK_CHOICES = ["잘함", "보통", "아직"];
 
 type FinalKey =
   | "serviceName"
