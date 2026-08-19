@@ -32,9 +32,9 @@
 [교육적 점검 8항목] [개인 후기와 약속]                      ← 2차
 ```
 
-- 과정기록·개발기록: 1차 반복행과 완전히 같은 UI(행 추가/삭제, 행 단위 저장, "다른 팀원이 먼저 수정했어요" 안내).
+- 과정기록·개발기록: 1차 반복행과 완전히 같은 UI(행 추가/삭제, 행 단위 저장, "다른 팀원이 먼저 수정했어요" 안내). 개발 과정의 `무슨 일이 있었나`와 `어떻게 해결했나` 열, 문제 정의 과정의 `우리가 나눈 이야기` 열은 1000자 제한을 2000자로 상향하고, 입력창 아래에 실시간 글자수 카운터를 표시합니다.
 - 점검 8항목: 8개 행이 고정으로 보이고, 라디오 3택 + 메모 한 줄. 처음 열면 빈 상태로 보이고 고를 때 저장됩니다. 클라이언트는 8개 문항을 미리 렌더링하지만, 서버에서 `kind = 'check'`인 행에 대해서만 `(post_id, sort_order)` **부분 유니크 인덱스**로 중복 생성을 방지합니다. 이는 기존 1차 섹션의 `sort_order` 재사용과 충돌하지 않습니다.
-- 개인 후기: 내 후기 칸 1개 + 팀원들의 후기 읽기 목록. 본인 닉네임 비밀번호로만 저장·수정하고, 남의 후기는 수정 버튼이 나오지 않습니다. 관리자는 삭제만 가능합니다.
+- 개인 후기: 내 후기 칸 1개 + 팀원들의 후기 읽기 목록. 본인 닉네임 비밀번호로만 저장·수정하고, 남의 후기는 수정 버튼이 나오지 않습니다. 관리자는 삭제만 가능합니다. 후기 저장 시에도 기존 행과 동일하게 `updated_at` 비교를 수행해, 두 기기에서 같은 닉네임으로 동시에 열었을 때 먼저 저장된 내용을 덮지 않도록 안내합니다.
 
 ## 데이터
 
@@ -43,8 +43,9 @@
   2. `src/lib/record.server.ts`의 `RecordRowKind` 타입
   3. 같은 파일의 `RECORD_ROW_KINDS` 배열
   4. `src/lib/record.functions.ts`의 zod enum
+  - `kind = 'devlog'`의 `col2`, `col3`와 `kind = 'process'`의 `col2`는 본문 길이가 1000자를 초과할 수 있으므로, 마이그레이션에서 해당 컬럼의 제한을 2000자로 상향하거나, zod 검증에서 조건부 max(2000)을 적용합니다. 클라이언트 입력창에도 동일한 길이 안내를 표시합니다.
 - 개인 후기는 인원별 1건 제한이 필요하므로 새 테이블 `record_reflections`를 만듭니다.
-  - `post_id, username, username_key, content, promise, updated_by, created_at, updated_at`
+  - `post_id, username, username_key, content, promise, updated_by, updated_at, created_at`
   - `unique (post_id, username_key)`
   - RLS 활성화, 기존 `record_*` 테이블과 동일한 보안 모델: `authenticated`, `anon`, `service_role` 세 롤 모두에 `GRANT ALL`을 부여하고 RLS 정책은 두지 않고 service_role 전용 접근. `record_reflections`에도 동일하게 grant를 부여한 뒤 RLS를 활성화합니다.
 
@@ -52,15 +53,16 @@
 
 `src/lib/record.functions.ts`에 최소한만 추가합니다.
 
-- `saveRecordRow` / `deleteRecordRow`의 `kind` enum에 `process`, `devlog`, `check` 추가 (신규 함수 없음).
+- `saveRecordRow` / `deleteRecordRow`의 `kind` enum에 `process`, `devlog`, `check` 추가 (신규 함수 없음). 저장 시 `knownUpdatedAt`과 DB의 `updated_at`을 비교하는 기존 로직은 그대로 유지됩니다.
 - `getRecord`는 이미 `record_rows` 전체를 읽으므로 그대로 두고, 후기 목록만 조회에 추가.
-- 신규: `saveRecordReflection`, `deleteRecordReflection` — 팀원 여부 확인 후 **본인 `username_key`의 행만** 쓰기 허용, 관리자 비밀번호면 삭제 허용.
+- 신규: `saveRecordReflection`, `deleteRecordReflection` — 팀원 여부 확인 후 **본인 `username_key`의 행만** 쓰기 허용, 관리자 비밀번호면 삭제 허용. `saveRecordReflection`도 기존 행 저장과 동일하게 `knownUpdatedAt`을 받아 동시 수정 충돌을 방지합니다.
 
 ## 부작용 점검
 
 - 새 요청 경로는 후기 저장뿐이고 나머지는 기존 행 저장 함수를 공유하므로 서버 호출량 증가는 미미합니다. 점검 8항목은 라디오 클릭 시 1회 저장(디바운스 없이 즉시 1건), 메모는 기존과 같은 1초 지연 저장.
-- `record_rows`에 `kind`만 늘어나므로 1차 화면은 각 섹션이 `kind`로 필터링하고 있어 영향 없음.
+- `record_rows`에 `kind`만 늘어나므로 1차 화면은 각 섹션이 `kind`로 필터링하고 있어 영향 없음. 일부 열의 길이 제한을 2000자로 상향하는 것은 기존 1차 데이터의 `col1~col3` 저장에 영향을 주지 않습니다.
 - 활동기록 외 게시판·검색·읽음 처리 로직은 건드리지 않습니다.
+- 개인 후기 저장에도 `knownUpdatedAt` 비교를 추가해, 본인이 두 기기에서 동시에 편집할 때 데이터 손실 가능성을 낮춥니다.
 
 ## 마무리
 
