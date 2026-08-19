@@ -19,6 +19,7 @@ import {
 import { categoriesQueryOptions } from "@/lib/platform.queries";
 import { getRecordOverview } from "@/lib/record.functions";
 import type { RecordOverviewTeam } from "@/lib/record.functions";
+import { ETHICS_PRINCIPLES, ethicsAverage } from "@/lib/record-ethics";
 import { getAdminPassword } from "@/lib/admin-auth";
 import { cn } from "@/lib/utils";
 import {
