@@ -1,29 +1,36 @@
-# 활동기록 2단계(문제 정의 과정) 진입 오류 수정
+# 활동기록 — 출력 보기(README 구성 · 최종 README · 인쇄/PDF) 추가
 
-## 증상
-팀원 정보를 저장하고 "다음"을 눌러 02 단계로 넘어가면 화면이 깨지며
-`Cannot read properties of undefined (reading 'addLabel')` 오류가 뜹니다.
+보내주신 HTML 화면 중 오른쪽 영역(출력 보기 · README 구성 · 최종 README · 인쇄·PDF)은 아직 구현하지 않았습니다. 현재는 **관리자 페이지(/admin/records)의 ZIP 다운로드**로만 README가 생성되고, 팀이 자기 활동기록의 README를 직접 보거나 인쇄할 방법이 없습니다.
 
-## 원인 (확인됨)
-편집기 2단계는 `ROW_SECTION_DEFS["process"]`, 4단계는 `ROW_SECTION_DEFS["devlog"]`를
-참조하지만, `src/lib/record-schema.ts`의 `ROW_SECTION_DEFS`에는 이 두 종류의 정의가
-없습니다(feature, flow, limit, plan, maker, decision, stuck, ai_use, ai_error, privacy만 존재).
-그래서 `def`가 `undefined`가 되고 내부에서 `def.addLabel`을 읽다가 오류가 납니다.
+## 무엇을 추가하나
 
-## 수정 내용
-1. `src/lib/record-schema.ts`의 `ROW_SECTION_DEFS`에 두 항목 추가
-   - `process`: 제목 "문제 정의 과정 기록", 열 `["언제·어디서", "무엇을 나눴나요?", "그래서 정한 것"]`,
-     긴 입력 `[1,2]`, 추가 버튼 "과정 기록 추가"
-   - `devlog`: 제목 "개발 과정 자유기록", 열 `["날짜", "무슨 일이 있었나", "어떻게 해결했나"]`,
-     긴 입력 `[1,2]`, 추가 버튼 "개발기록 추가"
-   (편집기에서 title/hint/cols를 덮어쓰고 있으므로 기존 화면 문구는 그대로 유지됩니다.)
-2. `RecordEditor.tsx`의 `RowSection`에 방어 코드 추가 — `def`가 없으면 렌더링을 건너뛰어
-   앞으로 정의 누락이 생겨도 페이지 전체가 죽지 않게 합니다.
+활동기록 편집기(글 상세 안)에 5단계 뒤로 **"출력 보기"** 단계를 하나 더 붙입니다.
 
-## 영향 범위 (plan-check 검증 완료)
-- `ROW_SECTION_DEFS` 사용처는 `RecordEditor.tsx`와 `record-readme.ts` 두 곳뿐입니다.
-- README 빌더(`record-readme.ts:181,191`)는 `def`가 없을 때 열 이름을 "항목 1, 2 …"로
-  출력하고 있었으므로, 정의 추가 시 process/devlog 열 이름이 제대로 나오는 개선만 생깁니다(회귀 없음).
-- DB 스키마·저장 로직·서버 호출량 변화 없음, 파괴적 SQL 없음, 권한/RLS 변경 없음.
-- 기존 저장된 행 데이터에도 영향 없습니다.
+```text
+[01 팀 공통정보] [02 문제 정의] [03 최종 결과물] [04 개발·점검] [05 개인 후기] [출력 보기]
+```
 
+출력 보기 안에는 탭 2개:
+
+1. **README 구성** — 최종 README가 어떤 9개 블록으로 만들어지는지 안내하고, 각 블록마다 `작성됨 / 미작성` 배지를 보여 줍니다. 비어 있는 블록을 클릭하면 해당 단계로 바로 이동합니다.
+   1) 프로젝트명과 한 줄 설명 2) 대표 화면과 배포·GitHub·영상 링크 3) 최종적으로 해결한 문제 4) 핵심 기능 5) 사용 흐름과 사용 방법 6) 기술 스택·디렉터리·설치·실행 7) 작동 범위·기술적 한계·다음 계획 8) 교육 현장에서 사용할 때의 주의사항 9) 제작자와 라이선스
+2. **최종 README** — 지금 입력값으로 만든 README를 그대로 렌더링해 보여 줍니다. 상단에 `Markdown 원본 열기`(원본 텍스트 토글 + 복사), `.md 내려받기`, `인쇄·PDF` 버튼.
+
+`인쇄·PDF`는 브라우저 인쇄 대화상자를 띄우고, 인쇄 시에는 편집기 UI·스텝바·버튼을 숨기고 README 본문만 A4로 나오도록 인쇄 전용 스타일을 적용합니다.
+
+## 기술 메모
+
+- 현재 `src/lib/record-readme.ts`의 `buildRecordReadme`는 관리자 ZIP용 **전체 덤프**(모든 입력 항목 나열) 형식입니다. HTML의 최종 README는 **결과물을 처음 보는 사람이 읽는 9블록 문서**라 목적이 다릅니다. 그래서 같은 파일에 `buildPublicReadme(team)`을 새로 추가하고, 기존 `buildRecordReadme`(관리자 ZIP)는 그대로 둡니다. 관리자 ZIP에는 팀 폴더에 `README.md`(공개용 9블록)와 `RECORD.md`(전체 덤프) 두 개를 넣습니다.
+- 편집기는 이미 `getRecord`로 final/rows/members/reflections를 모두 들고 있으므로, 이 데이터를 `RecordOverviewTeam` 형태로 맞춰 주는 작은 어댑터만 만들면 서버 호출 추가 없이 클라이언트에서 README를 만들 수 있습니다. **신규 서버 함수·DB 변경 없음.**
+- 마크다운 렌더링은 이미 프로젝트에서 쓰는 렌더러를 재사용합니다(신규 의존성 없음). `.md` 다운로드는 기존 `src/lib/download.ts` 사용.
+- 인쇄 스타일은 `src/styles.css`에 `@media print` 블록을 추가하고, README 컨테이너에 `data-print-root` 표시를 둬 그 안만 출력합니다. 다른 페이지 인쇄에는 영향이 없도록 활동기록 화면에만 적용되는 선택자를 씁니다.
+
+## 부작용 점검
+
+- 서버 호출량 증가 없음(기존 `getRecord` 결과 재사용, 저장 로직 무변경).
+- DB·RLS·권한 변경 없음.
+- 기존 관리자 ZIP/엑셀은 `RECORD.md`로 유지되므로 기존 산출물이 사라지지 않습니다.
+
+## 마무리
+
+- 사용자 가이드(`/guide`) 활동기록 섹션에 "출력 보기 단계에서 README 미리보기·내려받기·인쇄 가능"을 추가합니다.
