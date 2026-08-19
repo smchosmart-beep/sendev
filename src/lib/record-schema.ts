@@ -1,0 +1,189 @@
+// 도전형 활동기록 입력 구조(단계·항목 정의). 클라이언트/서버 양쪽에서 함께 쓴다.
+
+export const RECORD_ROW_KINDS = [
+  "process",
+  "devlog",
+  "feature",
+  "flow",
+  "limit",
+  "plan",
+  "maker",
+  "decision",
+  "stuck",
+  "stance",
+  "ai_use",
+  "ai_error",
+  "privacy",
+] as const;
+
+export type RecordRowKindName = (typeof RECORD_ROW_KINDS)[number];
+
+/** 서술형이라 2000자까지 허용하는 종류 */
+export const LONG_ROW_KINDS: RecordRowKindName[] = [
+  "process",
+  "devlog",
+  "decision",
+  "stuck",
+  "stance",
+  "ai_use",
+  "ai_error",
+  "privacy",
+  "limit",
+  "plan",
+];
+
+export const PROBLEM_AREAS = [
+  "수업·평가·피드백",
+  "생활교육·상담",
+  "행정·업무 효율화",
+  "학교 소통·협업",
+];
+
+export const MAIN_USERS = ["교사", "학생", "교사와 학생", "학부모", "학교 구성원"];
+
+export const OUTPUT_TYPES = [
+  "웹앱",
+  "모바일앱",
+  "챗봇·AI 도구",
+  "자동화 도구",
+  "수업자료·콘텐츠",
+];
+
+export const DEPLOY_STATUSES = [
+  "Live — 바로 사용 가능",
+  "Beta — 작동하지만 검증 중",
+  "Demo — 시연용",
+];
+
+export const CHANGE_TYPES = ["관찰 — 실제 확인함", "기대 — 현장 검증 전"];
+
+export const PRIVACY_STATUSES = [
+  "처리하지 않음",
+  "처리함",
+  "판단이 어려워 담당자 확인 필요",
+];
+
+export const PROCESS_SUBTYPES = [
+  "22일 팀빌딩·문제 정의 회의",
+  "인터뷰 기록",
+  "인터뷰 후 문제 구체화 회의",
+  "그 밖의 문제 정의 메모",
+];
+
+export const STANCE_QUESTIONS = [
+  "평가·추천·피드백을 프로그램이 대신 확정하지 않게 했나요?",
+  "학생이나 교사의 생각을 대신하지 않게 했나요?",
+  "저장·전달·제출 전에 사람이 확인할 수 있나요?",
+  "기기·계정·조작 문제로 참여에서 빠지는 사람이 없게 했나요?",
+];
+
+export const STANCE_CHOICES = ["해당함", "해당 없음"];
+
+export const AI_USE_TYPES = ["서비스 기능", "개발 과정"];
+
+export const PROMISE_ITEMS = [
+  "학생 성장 최우선",
+  "개인정보·데이터 보호",
+  "책임과 출처 존중",
+  "안전한 실험과 검증",
+  "역할 경계 인식",
+  "공공성",
+  "투명성 및 설명 가능성",
+];
+
+export interface RowSectionDef {
+  kind: RecordRowKindName;
+  title: string;
+  hint: string;
+  /** 각 열의 라벨. 빈 문자열이면 사용하지 않는 열 */
+  cols: string[];
+  /** 여러 줄 입력으로 보여줄 열 인덱스 */
+  longCols?: number[];
+  addLabel: string;
+}
+
+export const ROW_SECTION_DEFS: Record<string, RowSectionDef> = {
+  feature: {
+    kind: "feature",
+    title: "핵심 기능",
+    hint: "이 결과물이 실제로 해 주는 일을 한 줄씩 적어요.",
+    cols: ["기능명", "한 줄 설명"],
+    addLabel: "기능 행 추가",
+  },
+  flow: {
+    kind: "flow",
+    title: "사용 흐름",
+    hint: "사용자 또는 도구가 하는 일을 단계 순서대로 적어요.",
+    cols: ["사용자 또는 도구가 하는 일"],
+    addLabel: "사용 단계 추가",
+  },
+  limit: {
+    kind: "limit",
+    title: "현재 한계",
+    hint: "아직 못 한 것, 아쉬운 점을 솔직하게 적어요.",
+    cols: ["한계 내용"],
+    longCols: [0],
+    addLabel: "현재 한계 행 추가",
+  },
+  plan: {
+    kind: "plan",
+    title: "다음 계획",
+    hint: "이어서 하고 싶은 일을 적어요.",
+    cols: ["계획 내용"],
+    longCols: [0],
+    addLabel: "다음 계획 행 추가",
+  },
+  maker: {
+    kind: "maker",
+    title: "제작자와 담당",
+    hint: "누가 무엇을 맡았는지 적어요.",
+    cols: ["이름", "역할", "담당한 부분"],
+    addLabel: "제작자 행 추가",
+  },
+  decision: {
+    kind: "decision",
+    title: "구현하며 바꾼 중요한 판단",
+    hint: "처음 생각과 달라진 결정을 남겨요.",
+    cols: ["처음 결정", "바꾼 결정", "바꾼 이유", "바꾼 뒤 결과"],
+    longCols: [2, 3],
+    addLabel: "판단 행 추가",
+  },
+  stuck: {
+    kind: "stuck",
+    title: "막혔던 순간",
+    hint: "막힌 지점과 해결 과정을 적어요.",
+    cols: ["무엇이 막혔나요?", "어떻게 풀었나요?", "무엇을 배웠나요?"],
+    longCols: [0, 1, 2],
+    addLabel: "막혔던 순간 행 추가",
+  },
+  ai_use: {
+    kind: "ai_use",
+    title: "AI 활용과 사람의 확인",
+    hint: "AI에 맡긴 일과 사람이 확인한 것을 나눠 적어요.",
+    cols: ["활용 구분", "사용 도구", "AI에 맡긴 일", "사람이 정하고 확인한 것"],
+    longCols: [2, 3],
+    addLabel: "AI 활용 행 추가",
+  },
+  ai_error: {
+    kind: "ai_error",
+    title: "AI의 실수를 잡은 사례",
+    hint: "틀린 결과를 어떻게 찾고 고쳤는지 적어요.",
+    cols: ["틀리거나 부적절했던 결과", "발견한 방법", "수정한 방법", "재확인 결과"],
+    longCols: [0, 1, 2, 3],
+    addLabel: "실수 사례 행 추가",
+  },
+  privacy: {
+    kind: "privacy",
+    title: "입력·전송·저장 정보",
+    hint: "실제 개인정보 값은 적지 말고 항목 이름만 적어요.",
+    cols: [
+      "정보 이름",
+      "누가 입력하나요?",
+      "외부 전송",
+      "저장 위치·기간",
+      "볼 수 있는 사람",
+      "삭제 방법·시점",
+    ],
+    addLabel: "정보 항목 행 추가",
+  },
+};
