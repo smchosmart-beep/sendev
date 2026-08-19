@@ -414,10 +414,15 @@ export const saveRecordRow = createServerFn({ method: "POST" })
     const payload = {
       post_id: data.postId,
       kind: data.kind,
+      subtype: data.subtype,
+      author: data.rowAuthor,
       sort_order: data.sortOrder,
       col1: data.col1,
       col2: data.col2,
       col3: data.col3,
+      col4: data.col4,
+      col5: data.col5,
+      col6: data.col6,
       updated_by: who,
       updated_at: new Date().toISOString(),
     };
@@ -435,15 +440,16 @@ export const saveRecordRow = createServerFn({ method: "POST" })
       return { id: saved.id as string, updatedAt: saved.updated_at as string, updatedBy: who };
     };
 
+    const isFixed = data.kind === "stance";
     let targetId = data.id;
 
     // 고정 문항은 (post_id, sort_order)로 기존 행을 먼저 찾는다.
-    if (!targetId && data.kind === "check") {
+    if (!targetId && isFixed) {
       const { data: existing } = await db
         .from("record_rows")
         .select("id")
         .eq("post_id", data.postId)
-        .eq("kind", "check")
+        .eq("kind", data.kind)
         .eq("sort_order", data.sortOrder)
         .maybeSingle();
       if (existing) targetId = existing.id;
@@ -474,18 +480,19 @@ export const saveRecordRow = createServerFn({ method: "POST" })
       const dup =
         (error as any)?.code === "23505" ||
         String(error.message ?? "").toLowerCase().includes("duplicate");
-      if (data.kind === "check" && dup) {
+      if (isFixed && dup) {
         const { data: again } = await db
           .from("record_rows")
           .select("id")
           .eq("post_id", data.postId)
-          .eq("kind", "check")
+          .eq("kind", data.kind)
           .eq("sort_order", data.sortOrder)
           .maybeSingle();
         if (again) return updateById(again.id);
       }
       throw new Error(error.message);
     }
+
     return { id: saved.id, updatedAt: saved.updated_at, updatedBy: who };
   });
 
