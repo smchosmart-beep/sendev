@@ -17,6 +17,7 @@ import {
   Printer,
 } from "lucide-react";
 
+import { CasebookDocument } from "@/components/record/CasebookDocument";
 import { categoriesQueryOptions } from "@/lib/platform.queries";
 import { getRecordOverview } from "@/lib/record.functions";
 import type { RecordOverviewTeam } from "@/lib/record.functions";
