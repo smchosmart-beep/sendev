@@ -73,6 +73,21 @@ export interface RecordReflectionDTO {
 }
 
 
+export interface RecordEthicsDTO {
+  id: string;
+  username: string;
+  usernameKey: string;
+  s1: number;
+  s2: number;
+  s3: number;
+  s4: number;
+  s5: number;
+  s6: number;
+  s7: number;
+  extraPromise: string;
+  updatedAt: string;
+}
+
 export interface RecordBundleDTO {
   postId: string;
   categoryId: string;
@@ -81,6 +96,7 @@ export interface RecordBundleDTO {
   final: RecordFinalDTO | null;
   rows: RecordRowDTO[];
   reflections: RecordReflectionDTO[];
+  ethics: RecordEthicsDTO[];
 }
 
 // 활동기록 전체(팀원 + 최종 결과물 + 반복행)를 한 번에 읽는다.
