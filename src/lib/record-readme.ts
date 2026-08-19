@@ -4,6 +4,8 @@ import type {
   RecordOverviewFinal,
 } from "./record.functions";
 import { ETHICS_PRINCIPLES, ethicsAverage } from "./record-ethics";
+import { parseAttachments } from "./file-upload";
+
 import {
   ROW_SECTION_DEFS,
   STANCE_QUESTIONS,
@@ -201,8 +203,26 @@ export function buildRecordReadme(team: RecordOverviewTeam): string {
       const values = [r.col1, r.col2, r.col3, r.col4, r.col5, r.col6];
       values.forEach((v, i) => {
         if (!(v ?? "").trim()) return;
+        // 관련 링크 열: 마크다운 링크로 표기
+        if (def?.linkCol === i) {
+          const url = normalizeUrl(v);
+          lines.push(`- **${cols[i] ?? "관련 링크"}**: [${escapeMd(v)}](${url})`);
+          return;
+        }
+        // 관련 파일 열: JSON을 파싱해 파일명 링크 목록으로. 실패하면 생략(원본 노출 금지)
+        if (def?.fileCol === i) {
+          const files = parseAttachments(v);
+          if (files.length === 0) return;
+          lines.push(
+            `- **${cols[i] ?? "관련 파일"}**: ${files
+              .map((f) => `[${escapeMd(f.name)}](${f.url})`)
+              .join(" ")}`,
+          );
+          return;
+        }
         lines.push(`- **${cols[i] ?? `항목 ${i + 1}`}**: ${escapeMd(v)}`);
       });
+
       lines.push("");
     });
   }

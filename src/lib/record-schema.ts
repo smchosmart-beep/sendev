@@ -101,22 +101,32 @@ export interface RowSectionDef {
   placeholders?: string[];
   /** 여러 줄 입력으로 보여줄 열 인덱스 */
   longCols?: number[];
+  /** 이 열은 텍스트 대신 '관련 링크' 입력으로 렌더링한다 */
+  linkCol?: number;
+  /** 이 열은 텍스트 대신 '관련 파일' 첨부 UI로 렌더링한다 (JSON 저장) */
+  fileCol?: number;
   addLabel: string;
 }
+
 
 export const ROW_SECTION_DEFS: Record<string, RowSectionDef> = {
   process: {
     kind: "process",
     title: "문제 정의 과정 기록",
     hint: "회의·인터뷰 기록을 종류별로 남겨요.",
-    cols: ["언제·어디서", "무엇을 나눴나요?", "그래서 정한 것"],
+    cols: ["언제·어디서", "무엇을 나눴나요?", "그래서 정한 것", "관련 링크", "관련 파일"],
     placeholders: [
       "예) 4/12 방과후 교실",
       "예) 5학년 학생들이 배수 판별에서 자주 틀리는 지점을 이야기했어요.",
       "예) 3의 배수 판별 연습을 먼저 만들기로 했어요.",
+      "예) https://docs.google.com/document/d/... (회의록 링크)",
+      "",
     ],
     longCols: [1, 2],
+    linkCol: 3,
+    fileCol: 4,
     addLabel: "문제 정의 기록 추가",
+
   },
   devlog: {
     kind: "devlog",
