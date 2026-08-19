@@ -97,7 +97,7 @@ export const getRecord = createServerFn({ method: "GET" })
     if (!post || post.type !== "record") return null;
 
     const [{ data: members }, { data: final }, { data: rows }, { data: reflections }] = await Promise.all([
-      db.from("record_members").select("id, username, username_key").eq("post_id", post.id).order("created_at", { ascending: true }),
+      db.from("record_members").select("*").eq("post_id", post.id).order("created_at", { ascending: true }),
       db.from("record_final").select("*").eq("post_id", post.id).maybeSingle(),
       db.from("record_rows").select("*").eq("post_id", post.id).order("kind", { ascending: true }).order("sort_order", { ascending: true }),
       db.from("record_reflections").select("*").eq("post_id", post.id).order("created_at", { ascending: true }),
@@ -111,31 +111,31 @@ export const getRecord = createServerFn({ method: "GET" })
         id: m.id,
         username: m.username,
         usernameKey: m.username_key,
+        affiliation: m.affiliation ?? "",
+        role: m.role ?? "",
       })),
       final: final
-        ? {
+        ? ({
+            ...(Object.fromEntries(
+              RECORD_FINAL_FIELDS.map((f) => [f.key, (final as any)[f.column] ?? ""]),
+            ) as Record<RecordFinalKey, string>),
             postId: final.post_id,
-            serviceName: final.service_name ?? "",
-            oneLiner: final.one_liner ?? "",
-            targetUser: final.target_user ?? "",
-            problem: final.problem ?? "",
-            solution: final.solution ?? "",
-            heroImageUrl: final.hero_image_url ?? "",
-            deployUrl: final.deploy_url ?? "",
-            githubUrl: final.github_url ?? "",
-            techStack: final.tech_stack ?? "",
-            envNames: final.env_names ?? "",
             updatedBy: final.updated_by ?? "",
             updatedAt: final.updated_at ?? "",
-          }
+          } as RecordFinalDTO)
         : null,
       rows: (rows ?? []).map((r: any) => ({
         id: r.id,
         kind: r.kind as RecordRowKind,
         sortOrder: r.sort_order ?? 0,
+        subtype: r.subtype ?? "",
+        author: r.author ?? "",
         col1: r.col1 ?? "",
         col2: r.col2 ?? "",
         col3: r.col3 ?? "",
+        col4: r.col4 ?? "",
+        col5: r.col5 ?? "",
+        col6: r.col6 ?? "",
         updatedBy: r.updated_by ?? "",
         updatedAt: r.updated_at ?? "",
       })),
@@ -143,11 +143,17 @@ export const getRecord = createServerFn({ method: "GET" })
         id: r.id,
         username: r.username,
         usernameKey: r.username_key,
-        content: r.content ?? "",
-        promise: r.promise ?? "",
+        affiliation: r.affiliation ?? "",
+        role: r.role ?? "",
+        q1: r.q1 ?? "",
+        q2: r.q2 ?? "",
+        promises: Array.isArray(r.promises) ? r.promises : [],
+        promiseDetail: r.promise_detail ?? "",
+        spreadPlan: r.spread_plan ?? "",
         updatedAt: r.updated_at ?? "",
       })),
     };
+
   });
 
 // 관리자용: 한 카테고리의 모든 활동기록 팀별 현황을 한 번에 조회한다.
