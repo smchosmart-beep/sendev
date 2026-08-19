@@ -445,6 +445,55 @@ export function RecordEditor({
     onDelete: (id: string) => deleteMutation.mutate(id),
   };
 
+  const step3Kinds: RowKind[] = ["feature", "flow", "limit", "plan", "maker"];
+  const step3Blocks: ProgressBlock[] = [
+    ...FINAL_GROUPS.map((group, i) => ({
+      id: `s3-g${i}`,
+      no: String(i + 1).padStart(2, "0"),
+      title: group.title,
+      ...fieldBlockStatus(group.fields.map((f) => final[f.key] ?? "")),
+    })),
+    ...step3Kinds.map((kind, i) => ({
+      id: `s3-${kind}`,
+      no: String(FINAL_GROUPS.length + i + 1).padStart(2, "0"),
+      title: ROW_SECTION_DEFS[kind]!.title,
+      ...rowBlockStatus(rowsOf(kind).length),
+    })),
+  ];
+
+  const step4RowKinds: RowKind[] = [
+    "devlog",
+    "decision",
+    "stuck",
+    "ai_use",
+    "ai_error",
+    "privacy",
+  ];
+  const step4Blocks: ProgressBlock[] = [
+    ...step4RowKinds.map((kind, i) => ({
+      id: `s4-${kind}`,
+      no: String(i + 1).padStart(2, "0"),
+      title: ROW_SECTION_DEFS[kind]!.title,
+      ...rowBlockStatus(rowsOf(kind).length),
+    })),
+    {
+      id: "s4-stance",
+      no: String(step4RowKinds.length + 1).padStart(2, "0"),
+      title: "교육적 태도 점검",
+      ...answeredBlockStatus(
+        rowsOf("stance").filter((r) => (r.col1 ?? "").trim().length > 0).length,
+        STANCE_QUESTIONS.length,
+      ),
+    },
+    {
+      id: "s4-risk",
+      no: String(step4RowKinds.length + 2).padStart(2, "0"),
+      title: RISK_GROUP.title,
+      ...fieldBlockStatus(RISK_GROUP.fields.map((f) => final[f.key] ?? "")),
+    },
+  ];
+
+
 
   return (
     <div className="space-y-6">
