@@ -7,8 +7,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useStoredIdentity } from "@/hooks/useStoredIdentity";
-import { getAdminPassword } from "@/lib/admin-session";
+import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
+import { getAdminPassword } from "@/lib/admin-auth";
 import {
   ETHICS_EXTRA_MAX,
   ETHICS_EXTRA_QUESTION,
