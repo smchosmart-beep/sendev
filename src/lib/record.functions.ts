@@ -323,19 +323,13 @@ export const saveRecordFinal = createServerFn({ method: "POST" })
         postId: z.string().uuid(),
         knownUpdatedAt: z.string().max(40).default(""),
         patch: z
-          .object({
-            serviceName: z.string().max(200).optional(),
-            oneLiner: z.string().max(300).optional(),
-            targetUser: z.string().max(500).optional(),
-            problem: z.string().max(2000).optional(),
-            solution: z.string().max(2000).optional(),
-            heroImageUrl: z.string().max(2000).optional(),
-            deployUrl: z.string().max(500).optional(),
-            githubUrl: z.string().max(500).optional(),
-            techStack: z.string().max(1000).optional(),
-            envNames: z.string().max(1000).optional(),
-          })
+          .object(
+            Object.fromEntries(
+              RECORD_FINAL_FIELDS.map((f) => [f.key, z.string().max(f.max).optional()]),
+            ) as Record<RecordFinalKey, z.ZodOptional<z.ZodString>>,
+          )
           .default({}),
+
         author: z.string().trim().max(100).default(""),
         nicknamePassword: z.string().trim().max(100).default(""),
         adminPassword: z.string().max(200).default(""),
