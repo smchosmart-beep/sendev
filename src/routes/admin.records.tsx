@@ -16,7 +16,7 @@ import {
   Table2,
 } from "lucide-react";
 
-import { listCategories } from "@/lib/platform.functions";
+import { categoriesQueryOptions } from "@/lib/platform.queries";
 import { getRecordOverview } from "@/lib/record.functions";
 import type { RecordOverviewTeam, RecordOverviewResult } from "@/lib/record.functions";
 import { getAdminPassword } from "@/lib/admin-auth";
@@ -27,6 +27,7 @@ import {
   buildOverviewReadme,
   sanitizeFolderName,
 } from "@/lib/record-readme";
+
 
 export const Route = createFileRoute("/admin/records")({
   head: () => ({
