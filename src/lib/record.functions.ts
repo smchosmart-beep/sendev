@@ -1,6 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+import {
+  RECORD_FINAL_FIELDS,
+  RECORD_FINAL_COLUMN_MAP,
+  RECORD_ROW_KINDS,
+  type RecordFinalKey,
+} from "./record-schema";
+
+
 import type {
   RecordRowKind,
   RecordOverviewMember,
