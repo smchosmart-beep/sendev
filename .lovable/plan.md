@@ -11,10 +11,11 @@
 
 ## 기술 메모
 - `src/components/RecordEditor.tsx`
-  - 행 추가 지점(`emptyRowVars(...)`를 넘겨 `onSave`/`rowMutation.mutate`를 호출하는 곳)에서 `rowAuthor`를 현재 `identity`의 닉네임으로 채웁니다. 닉네임이 없으면 빈 문자열 유지.
+  - `emptyRowVars`의 기본 `rowAuthor: ""`는 그대로 둡니다. `StanceSection` 등 다른 곳에서 이 값을 재사용해도 작성자가 들어가지 않도록 합니다.
+  - **행 추가 버튼(`RowSection`의 “추가” 버튼) 호출부에서만** `emptyRowVars(...)`를 펼친 뒤 `rowAuthor`를 현재 `identity`의 닉네임으로 덮어씁니다. 단, 현재 사용자가 해당 팀의 멤버(`isMember`)일 때만 채우고, 멤버가 아니면 빈 문자열(`""`)을 유지합니다. 닉네임이 없으면 마찬가지로 빈 문자열 유지.
   - `RowItem`에는 자동 주입 `useEffect`를 넣지 않습니다(덮어쓰기 방지).
   - 작성자 `Input` 앞에 `<Label>기록한 사람</Label>` 추가, 플레이스홀더 문구 변경.
-- `src/routes/_main.guide.tsx`: 활동기록 섹션에 한 문장 안내 추가.
+- `src/routes/_main.guide.tsx`: 활동기록 섹션에 “팀 멤버가 행을 추가하면 내 닉네임이 자동 입력되며 수정 가능” 안내를 추가합니다.
 
 ## 영향 없음 확인
 - DB 스키마·RLS·GRANT 변경 없음, 서버 요청 수 변화 없음.
