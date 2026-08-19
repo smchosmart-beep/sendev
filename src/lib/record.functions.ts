@@ -141,7 +141,7 @@ export const getRecordOverview = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data }): Promise<R.fetchRecordOverview> => {
+  .handler(async ({ data }): Promise<RecordOverviewResult> => {
     const R = await import("./record.server");
     if (!R.isAdminPassword(data.adminPassword)) throw new Error("권한이 없습니다.");
     const db = await R.getRecordDb();
