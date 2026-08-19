@@ -1034,6 +1034,7 @@ function RowItem({
                 value={values[i] ?? ""}
                 onChange={(e) => update(i, e.target.value.slice(0, 3000))}
                 rows={3}
+                placeholder={placeholders?.[i]}
                 disabled={!canEdit}
                 className="rounded-xl bg-background"
               />
@@ -1041,6 +1042,7 @@ function RowItem({
               <Input
                 value={values[i] ?? ""}
                 onChange={(e) => update(i, e.target.value.slice(0, 3000))}
+                placeholder={placeholders?.[i]}
                 disabled={!canEdit}
                 className="rounded-xl bg-background"
               />
