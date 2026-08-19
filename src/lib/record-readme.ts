@@ -3,6 +3,7 @@ import type {
   RecordOverviewTeam,
   RecordOverviewFinal,
 } from "./record.functions";
+import { ETHICS_PRINCIPLES, ethicsAverage } from "./record-ethics";
 import {
   ROW_SECTION_DEFS,
   STANCE_QUESTIONS,
