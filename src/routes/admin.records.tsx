@@ -158,6 +158,42 @@ function RecordOverviewPage() {
     enabled: !!categoryId,
   });
 
+  // 사례집 합본 인쇄 — 버튼을 누른 뒤에만 지면을 만든다(지연 렌더링)
+  const [printingCasebook, setPrintingCasebook] = useState(false);
+  const casebookRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!printingCasebook) return;
+    let cancelled = false;
+    const done = () => setPrintingCasebook(false);
+    window.addEventListener("afterprint", done);
+
+    const run = async () => {
+      const root = casebookRef.current;
+      if (root) {
+        const images = Array.from(root.querySelectorAll("img"));
+        await Promise.all(
+          images.map((img) =>
+            img.complete
+              ? Promise.resolve()
+              : new Promise<void>((resolve) => {
+                  img.addEventListener("load", () => resolve(), { once: true });
+                  img.addEventListener("error", () => resolve(), { once: true });
+                }),
+          ),
+        );
+      }
+      if (cancelled) return;
+      window.print();
+    };
+    void run();
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("afterprint", done);
+    };
+  }, [printingCasebook]);
+
   const toggleExpand = (postId: string) => {
     setExpanded((prev) => {
       const next = new Set(prev);
