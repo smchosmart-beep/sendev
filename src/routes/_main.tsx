@@ -165,7 +165,7 @@ function MainLayout() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-20 bg-card/90 shadow-sm backdrop-blur">
-        <div className="mx-auto grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-6 py-4 lg:px-10 2xl:px-28 sm:gap-3 2xl:gap-4">
+        <div className="mx-auto flex w-full items-center justify-between px-6 py-4 lg:px-10 2xl:px-28">
           <Link to="/home" className="flex shrink-0 items-center gap-2">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md">
               <Code2 className="h-5 w-5" />
@@ -177,7 +177,7 @@ function MainLayout() {
 
           <nav
             className={cn(
-              "min-w-0 flex-nowrap items-center justify-center gap-2 overflow-hidden sm:gap-3 2xl:gap-4",
+              "min-w-0 flex-1 flex-nowrap items-center justify-center gap-2 overflow-hidden sm:gap-3 2xl:gap-4",
               navCollapsed ? "hidden" : "hidden sm:flex",
             )}
           >
