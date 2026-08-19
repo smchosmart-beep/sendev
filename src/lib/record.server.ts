@@ -272,6 +272,14 @@ export async function fetchRecordOverview(
     list.push(r);
     reflectionsByPost.set(r.post_id, list);
   }
+  const ethicsByPost = new Map<string, any[]>();
+  for (const e of ethics ?? []) {
+    const list = ethicsByPost.get(e.post_id) ?? [];
+    list.push(e);
+    ethicsByPost.set(e.post_id, list);
+  }
+
+
 
   const teams = (posts ?? []).map((p: any): RecordOverviewTeam => {
     const f = finalByPost.get(p.id);
