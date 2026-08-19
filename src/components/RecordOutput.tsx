@@ -36,7 +36,9 @@ export function RecordOutput({
 
   const markdown = useMemo(() => buildPublicReadme(team), [team]);
   const blocks = useMemo(() => getPublicReadmeBlocks(team), [team]);
-  const doneCount = blocks.filter((b) => b.filled).length;
+  const doneCount = blocks.filter((b) => b.status === "done").length;
+  const partialCount = blocks.filter((b) => b.status === "partial").length;
+
 
   const fileName = `${(team.final?.serviceName || team.teamName || "README").trim()}_README.md`;
 
