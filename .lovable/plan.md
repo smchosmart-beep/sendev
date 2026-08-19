@@ -53,9 +53,9 @@
 
 `src/lib/record.functions.ts`에 최소한만 추가합니다.
 
-- `saveRecordRow` / `deleteRecordRow`의 `kind` enum에 `process`, `devlog`, `check` 추가 (신규 함수 없음).
+- `saveRecordRow` / `deleteRecordRow`의 `kind` enum에 `process`, `devlog`, `check` 추가 (신규 함수 없음). 저장 시 `knownUpdatedAt`과 DB의 `updated_at`을 비교하는 기존 로직은 그대로 유지됩니다.
 - `getRecord`는 이미 `record_rows` 전체를 읽으므로 그대로 두고, 후기 목록만 조회에 추가.
-- 신규: `saveRecordReflection`, `deleteRecordReflection` — 팀원 여부 확인 후 **본인 `username_key`의 행만** 쓰기 허용, 관리자 비밀번호면 삭제 허용.
+- 신규: `saveRecordReflection`, `deleteRecordReflection` — 팀원 여부 확인 후 **본인 `username_key`의 행만** 쓰기 허용, 관리자 비밀번호면 삭제 허용. `saveRecordReflection`도 기존 행 저장과 동일하게 `knownUpdatedAt`을 받아 동시 수정 충돌을 방지합니다.
 
 ## 부작용 점검
 
