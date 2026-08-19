@@ -485,7 +485,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
         </>
       )}
 
-      {post.type === "record" && <RecordEditor postId={post.id} />}
+      {post.type === "record" && <RecordEditor postId={post.id} postNo={post.postNo} slug={slug} />}
 
       {isBoardPost && <SeriesChainSection post={post} slug={slug} />}
 

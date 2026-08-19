@@ -23,6 +23,7 @@ import { getAdminPassword } from "@/lib/admin-auth";
 import { cn } from "@/lib/utils";
 import {
   buildRecordReadme,
+  buildPublicReadme,
   buildOverviewReadme,
   sanitizeFolderName,
 } from "@/lib/record-readme";
@@ -258,7 +259,8 @@ function RecordOverviewPage() {
     for (const team of overview.teams) {
       const folder = zip.folder(sanitizeFolderName(team.teamName));
       if (folder) {
-        folder.file("README.md", buildRecordReadme(team));
+        folder.file("README.md", buildPublicReadme(team));
+        folder.file("RECORD.md", buildRecordReadme(team));
       }
     }
 
