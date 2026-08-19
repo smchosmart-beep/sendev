@@ -378,6 +378,13 @@ export function getPublicReadmeBlocks(team: RecordOverviewTeam): PublicReadmeBlo
       Math.min(makers + membersWithInfo, 1) + countFilled(f, ["licenseCode"]),
       2,
     ),
+    block(
+      10,
+      "교사 개발자 윤리 자가점검",
+      5,
+      Math.min((team.ethics ?? []).length, Math.max(team.members.length, 1)),
+      Math.max(team.members.length, 1),
+    ),
   ];
 }
 
