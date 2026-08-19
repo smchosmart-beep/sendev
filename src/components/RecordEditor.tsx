@@ -498,6 +498,9 @@ export function RecordEditor({
           longCols={[1, 2]}
           rows={rowsOf("process")}
           {...rowSectionProps}
+          authorEnabled
+          defaultAuthor={memberAuthor}
+
         />
       )}
 
