@@ -4,6 +4,8 @@ import type {
   RecordOverviewFinal,
 } from "./record.functions";
 import { ETHICS_PRINCIPLES, ethicsAverage } from "./record-ethics";
+import { parseAttachments } from "./file-upload";
+
 import {
   ROW_SECTION_DEFS,
   STANCE_QUESTIONS,
