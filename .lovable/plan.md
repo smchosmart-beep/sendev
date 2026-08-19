@@ -52,14 +52,20 @@
 
 - 마이그레이션 1건:
   - `record_final`에 신규 컬럼 추가(프로젝트명, 문제영역, 주사용자, 결과물유형, 태그, 배포상태, 사용환경, 시연영상, 사용조건, 기술스택 5칸, 디렉터리/설치/실행, 한계, 다음계획, 개인정보 처리 여부, 위험·대응·검증 4칸, 공개동의).
-  - `record_rows`에 `col4`~`col6`(text), `subtype`(text), `author`(text) 추가. 새 `kind` 값: `process`, `devlog`, `feature`, `flow`, `maker`, `decision`, `stuck`, `stance`, `ai_use`, `ai_error`, `privacy`. DB 검증 트리거 `validate_record_row_kind`, `RECORD_ROW_KINDS`, zod enum 4지점을 함께 갱신.
+  - `record_rows`에 `col4`~`col6`(text, NOT NULL DEFAULT ''), `subtype`(text), `author`(text) 추가. 신규 컬럼은 모두 기존과 같이 NOT NULL + 기본값을 둡니다.
+  - `kind` 최종 목록: `process`, `devlog`, `feature`, `flow`, `maker`, `decision`, `stuck`, `stance`, `ai_use`, `ai_error`, `privacy`. **폐지되는 `limit` / `plan` / `check`**: 한계·다음 계획은 `record_final` 컬럼으로 옮기고, 교육적 점검 8항목은 3단계의 세부 블록으로 대체합니다. 폐지에 맞춰 `record_rows_check_unique` 부분 인덱스를 삭제하고, `limit`/`plan`/`check`를 참조하는 `src/lib/record-readme.ts`, `src/routes/admin.records.tsx`, `src/components/RecordEditor.tsx`를 같은 작업에서 함께 정리합니다(남겨두면 빈 섹션·0/0 배지가 그대로 출력됨).
+  - `kind` 목록은 DB 트리거 `validate_record_row_kind`, `RECORD_ROW_KINDS`(record.server.ts), `saveRecordRow`/`deleteRecordRow`의 zod enum까지 4지점을 동시에 갱신합니다.
+  - `saveRecordRow`의 길이 검증(`superRefine`)은 현재 `process`/`devlog`만 2000자, 나머지는 1000자입니다. 신규 kind(판단·막힌 순간·AI 활용 등)는 서술형이라 2000자 그룹에 포함시킵니다.
   - `record_members`에 `affiliation`, `role` 추가.
-  - `record_reflections`에 `affiliation`, `role`, `q1`, `q2`, `promises`(text[]), `promise_detail`, `spread_plan` 추가.
-  - 기존 `record_rows` / `record_final` / `record_reflections` 데이터는 삭제(보존 불필요).
+  - `record_reflections`에 `affiliation`, `role`, `q1`, `q2`, `promises`(text[] DEFAULT '{}'), `promise_detail`, `spread_plan` 추가.
+  - 실제 데이터 확인 결과 `record_rows`/`record_final`/`record_reflections`/`record_members` 모두 0건, `type='record'` 글도 0건이므로 삭제 SQL 없이 스키마만 변경합니다(데이터 유실 위험 없음).
   - 모든 신규 컬럼은 기존 보안 모델 유지(RLS on, `service_role`만 GRANT).
-- 서버 함수는 신규 없이 기존 `saveRecordFinal` / `saveRecordRow` / `saveRecordReflection`의 스키마만 확장합니다. 호출 횟수·데이터량이 거의 그대로라 서버 부하 변화는 없습니다.
+- 서버 함수는 신규 없이 기존 `saveRecordFinal` / `saveRecordRow` / `saveRecordReflection`의 스키마만 확장합니다. `record_final` 신규 필드는 **zod patch 스키마 → 컬럼 맵 → `RecordFinalDTO` → `getRecord` 매핑 → `fetchRecordOverview` 매핑** 5지점을 모두 갱신해야 합니다(한 곳이라도 빠지면 저장은 성공한 듯 보이지만 값이 사라짐).
+- 호출 빈도는 지금과 동일합니다(1초 지연 자동 저장 + 행 단위 저장). 단계 이동 시 대기분 1회 flush가 추가되지만 요청량 증가는 무시할 수준이고, 한 화면에 한 단계만 렌더링해 오히려 초기 렌더 비용이 줄어듭니다.
+- 개인정보 표(입력·전송·저장 정보)는 관리자 ZIP·엑셀에 그대로 포함되므로, 환경변수 안내처럼 "실제 개인정보 값은 적지 말고 항목 이름만" 경고 문구를 입력창 옆에 둡니다.
 - `src/components/RecordEditor.tsx`는 스텝 셸(`RecordEditor`) + 단계별 컴포넌트 5개로 분리하고, 반복행 UI는 4~6열을 받을 수 있는 공용 `RowSection`으로 일반화합니다. 파일 분할 위치: `src/components/record/`.
-- 현재 단계는 `localStorage`에 글 단위로 기억해 다시 들어와도 이어서 작성합니다.
+- 현재 단계는 `localStorage`에 글 단위로 기억합니다. 값은 `useEffect`에서 읽어 하이드레이션 불일치를 피하고, 초기 렌더는 항상 0단계로 시작합니다.
+
 
 ## 마무리
 
