@@ -36,6 +36,15 @@ export interface RecordRowDTO {
   updatedAt: string;
 }
 
+export interface RecordReflectionDTO {
+  id: string;
+  username: string;
+  usernameKey: string;
+  content: string;
+  promise: string;
+  updatedAt: string;
+}
+
 export interface RecordBundleDTO {
   postId: string;
   categoryId: string;
@@ -43,6 +52,7 @@ export interface RecordBundleDTO {
   members: RecordMemberDTO[];
   final: RecordFinalDTO | null;
   rows: RecordRowDTO[];
+  reflections: RecordReflectionDTO[];
 }
 
 // 활동기록 전체(팀원 + 최종 결과물 + 반복행)를 한 번에 읽는다.
