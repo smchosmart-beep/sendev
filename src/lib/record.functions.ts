@@ -339,21 +339,45 @@ export const saveRecordFinal = createServerFn({ method: "POST" })
   });
 
 // 반복행 저장(행 단위 upsert). id가 없으면 새 행을 만든다.
+// kind='check'는 8개 고정 문항이라 (post_id, sort_order) 부분 유니크 인덱스가 있고,
+// 동시 클릭 시 23505가 나면 다시 조회해 update로 폴백한다.
 export const saveRecordRow = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
       .object({
         postId: z.string().uuid(),
         id: z.string().uuid().nullable().default(null),
-        kind: z.enum(["feature", "flow", "limit", "plan", "maker"]),
+        kind: z.enum([
+          "feature",
+          "flow",
+          "limit",
+          "plan",
+          "maker",
+          "process",
+          "devlog",
+          "check",
+        ]),
         sortOrder: z.number().int().min(0).max(999).default(0),
-        col1: z.string().max(1000).default(""),
-        col2: z.string().max(1000).default(""),
-        col3: z.string().max(1000).default(""),
+        col1: z.string().max(2000).default(""),
+        col2: z.string().max(2000).default(""),
+        col3: z.string().max(2000).default(""),
         knownUpdatedAt: z.string().max(40).default(""),
         author: z.string().trim().max(100).default(""),
         nicknamePassword: z.string().trim().max(100).default(""),
         adminPassword: z.string().max(200).default(""),
+      })
+      .superRefine((v, ctx) => {
+        // 1차 섹션은 기존과 동일하게 1000자, 2차(과정기록/개발기록)만 2000자 허용
+        const limit = v.kind === "process" || v.kind === "devlog" ? 2000 : 1000;
+        for (const key of ["col1", "col2", "col3"] as const) {
+          if ((v[key] ?? "").length > limit) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: [key],
+              message: `${limit}자까지 입력할 수 있어요.`,
+            });
+          }
+        }
       })
       .parse(input),
   )
@@ -378,11 +402,39 @@ export const saveRecordRow = createServerFn({ method: "POST" })
       updated_by: who,
       updated_at: new Date().toISOString(),
     };
-    if (data.id) {
+
+    const updateById = async (id: string) => {
+      const { data: saved, error } = await db
+        .from("record_rows")
+        .update(payload)
+        .eq("id", id)
+        .eq("post_id", data.postId)
+        .select("id, updated_at")
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!saved) throw new Error("행을 찾을 수 없어요.");
+      return { id: saved.id as string, updatedAt: saved.updated_at as string, updatedBy: who };
+    };
+
+    let targetId = data.id;
+
+    // 고정 문항은 (post_id, sort_order)로 기존 행을 먼저 찾는다.
+    if (!targetId && data.kind === "check") {
+      const { data: existing } = await db
+        .from("record_rows")
+        .select("id")
+        .eq("post_id", data.postId)
+        .eq("kind", "check")
+        .eq("sort_order", data.sortOrder)
+        .maybeSingle();
+      if (existing) targetId = existing.id;
+    }
+
+    if (targetId) {
       const { data: current } = await db
         .from("record_rows")
         .select("updated_at")
-        .eq("id", data.id)
+        .eq("id", targetId)
         .maybeSingle();
       if (
         current &&
@@ -391,24 +443,117 @@ export const saveRecordRow = createServerFn({ method: "POST" })
       ) {
         throw new Error("다른 팀원이 먼저 수정했어요. 최신 내용을 불러온 뒤 다시 저장해 주세요.");
       }
-      const { data: saved, error } = await db
-        .from("record_rows")
-        .update(payload)
-        .eq("id", data.id)
-        .eq("post_id", data.postId)
-        .select("id, updated_at")
-        .maybeSingle();
-      if (error) throw new Error(error.message);
-      if (!saved) throw new Error("행을 찾을 수 없어요.");
-      return { id: saved.id, updatedAt: saved.updated_at, updatedBy: who };
+      return updateById(targetId);
     }
+
     const { data: saved, error } = await db
       .from("record_rows")
       .insert(payload)
       .select("id, updated_at")
       .maybeSingle();
-    if (error) throw new Error(error.message);
+    if (error) {
+      const dup =
+        (error as any)?.code === "23505" ||
+        String(error.message ?? "").toLowerCase().includes("duplicate");
+      if (data.kind === "check" && dup) {
+        const { data: again } = await db
+          .from("record_rows")
+          .select("id")
+          .eq("post_id", data.postId)
+          .eq("kind", "check")
+          .eq("sort_order", data.sortOrder)
+          .maybeSingle();
+        if (again) return updateById(again.id);
+      }
+      throw new Error(error.message);
+    }
     return { id: saved.id, updatedAt: saved.updated_at, updatedBy: who };
+  });
+
+// 개인 후기와 약속 — 본인 닉네임 행만 쓰기, 관리자는 삭제만.
+export const saveRecordReflection = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        postId: z.string().uuid(),
+        content: z.string().max(2000).default(""),
+        promise: z.string().max(1000).default(""),
+        knownUpdatedAt: z.string().max(40).default(""),
+        author: z.string().trim().min(1).max(100),
+        nicknamePassword: z.string().trim().max(100).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ id: string; updatedAt: string }> => {
+    const R = await import("./record.server");
+    const db = await R.getRecordDb();
+    const name = await R.ensureNickname(db, data.author, data.nicknamePassword);
+    const key = R.normalizeName(name);
+    const { data: member } = await db
+      .from("record_members")
+      .select("id")
+      .eq("post_id", data.postId)
+      .eq("username_key", key)
+      .maybeSingle();
+    if (!member) throw new Error("이 활동기록의 팀원만 후기를 쓸 수 있어요.");
+
+    const { data: current } = await db
+      .from("record_reflections")
+      .select("id, updated_at")
+      .eq("post_id", data.postId)
+      .eq("username_key", key)
+      .maybeSingle();
+    if (
+      current &&
+      data.knownUpdatedAt &&
+      new Date(current.updated_at).getTime() > new Date(data.knownUpdatedAt).getTime()
+    ) {
+      throw new Error("다른 기기에서 먼저 저장했어요. 최신 내용을 불러온 뒤 다시 저장해 주세요.");
+    }
+
+    const payload = {
+      post_id: data.postId,
+      username: name,
+      username_key: key,
+      content: data.content,
+      promise: data.promise,
+      updated_by: name,
+      updated_at: new Date().toISOString(),
+    };
+    const { data: saved, error } = await db
+      .from("record_reflections")
+      .upsert(payload, { onConflict: "post_id,username_key" })
+      .select("id, updated_at")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return { id: saved.id, updatedAt: saved.updated_at };
+  });
+
+export const deleteRecordReflection = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        postId: z.string().uuid(),
+        id: z.string().uuid(),
+        author: z.string().trim().max(100).default(""),
+        nicknamePassword: z.string().trim().max(100).default(""),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const R = await import("./record.server");
+    const db = await R.getRecordDb();
+    let filterKey: string | null = null;
+    if (!R.isAdminPassword(data.adminPassword)) {
+      const name = await R.ensureNickname(db, data.author, data.nicknamePassword);
+      filterKey = R.normalizeName(name);
+    }
+    let q = db.from("record_reflections").delete().eq("id", data.id).eq("post_id", data.postId);
+    if (filterKey) q = q.eq("username_key", filterKey);
+    const { error } = await q;
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const deleteRecordRow = createServerFn({ method: "POST" })
