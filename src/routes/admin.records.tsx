@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -14,8 +14,10 @@ import {
   Loader2,
   AlertCircle,
   Table2,
+  Printer,
 } from "lucide-react";
 
+import { CasebookDocument } from "@/components/record/CasebookDocument";
 import { categoriesQueryOptions } from "@/lib/platform.queries";
 import { getRecordOverview } from "@/lib/record.functions";
 import type { RecordOverviewTeam } from "@/lib/record.functions";
@@ -157,6 +159,42 @@ function RecordOverviewPage() {
       }),
     enabled: !!categoryId,
   });
+
+  // 사례집 합본 인쇄 — 버튼을 누른 뒤에만 지면을 만든다(지연 렌더링)
+  const [printingCasebook, setPrintingCasebook] = useState(false);
+  const casebookRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!printingCasebook) return;
+    let cancelled = false;
+    const done = () => setPrintingCasebook(false);
+    window.addEventListener("afterprint", done);
+
+    const run = async () => {
+      const root = casebookRef.current;
+      if (root) {
+        const images = Array.from(root.querySelectorAll<HTMLImageElement>("img"));
+        await Promise.all(
+          images.map((img) =>
+            img.complete
+              ? Promise.resolve()
+              : new Promise<void>((resolve) => {
+                  img.addEventListener("load", () => resolve(), { once: true });
+                  img.addEventListener("error", () => resolve(), { once: true });
+                }),
+          ),
+        );
+      }
+      if (cancelled) return;
+      window.print();
+    };
+    void run();
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("afterprint", done);
+    };
+  }, [printingCasebook]);
 
   const toggleExpand = (postId: string) => {
     setExpanded((prev) => {
@@ -335,6 +373,19 @@ function RecordOverviewPage() {
             >
               <FileArchive className="h-4 w-4" />
               ZIP
+            </button>
+            <button
+              type="button"
+              onClick={() => setPrintingCasebook(true)}
+              disabled={!overview || overview.teams.length === 0 || printingCasebook}
+              className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+            >
+              {printingCasebook ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Printer className="h-4 w-4" />
+              )}
+              사례집 합본 인쇄
             </button>
           </div>
         </div>
@@ -629,6 +680,14 @@ function RecordOverviewPage() {
           )}
         </div>
       )}
+
+      {printingCasebook && overview ? (
+        <div ref={casebookRef} className="casebook-root casebook-offscreen" aria-hidden>
+          {overview.teams.map((team) => (
+            <CasebookDocument key={team.postId} team={team} />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

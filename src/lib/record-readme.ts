@@ -126,7 +126,7 @@ function escapeMd(text: string): string {
   return (text ?? "").replace(/\n/g, "  \n");
 }
 
-function normalizeUrl(raw: string): string {
+export function normalizeUrl(raw: string): string {
   const url = (raw ?? "").trim();
   if (!url) return "";
   const withProtocol = /^(https?:|mailto:)/i.test(url) ? url : `https://${url}`;
