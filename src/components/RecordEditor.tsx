@@ -437,11 +437,14 @@ export function RecordEditor({
   const rowsOf = (kind: RowKind) =>
     bundle.rows.filter((r) => r.kind === kind).sort((a, b) => a.sortOrder - b.sortOrder);
 
+  const memberAuthor = isMember ? (identity?.author ?? "").trim() : "";
+
   const rowSectionProps = {
     canEdit,
     onSave: (vars: SaveRowVars) => rowMutation.mutate(vars),
     onDelete: (id: string) => deleteMutation.mutate(id),
   };
+
 
   return (
     <div className="space-y-6">
