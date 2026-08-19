@@ -316,7 +316,8 @@ const STEPS = [
   { no: "04", title: "개발·교육적 점검" },
   { no: "05", title: "개인 후기·소회" },
   { no: "06", title: "윤리 설문" },
-  { no: "07", title: "출력 보기" },
+  { no: "07", title: "README 출력" },
+  { no: "08", title: "사례집 출력" },
 ];
 
 export function RecordEditor({
