@@ -14,6 +14,7 @@ import {
   Loader2,
   AlertCircle,
   Table2,
+  Printer,
 } from "lucide-react";
 
 import { categoriesQueryOptions } from "@/lib/platform.queries";
