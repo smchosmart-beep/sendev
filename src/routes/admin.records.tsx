@@ -241,8 +241,28 @@ function RecordOverviewPage() {
         `${counts.check}/${CHECK_ITEMS_COUNT}`,
         counts.reflection.count,
         counts.reflection.count,
+        team.ethics.length,
+        team.ethics.length
+          ? (
+              team.ethics.reduce((sum, e) => sum + ethicsAverage(e as any), 0) /
+              team.ethics.length
+            ).toFixed(1)
+          : "",
+        ...ETHICS_PRINCIPLES.map((p) =>
+          team.ethics.length
+            ? (
+                team.ethics.reduce((sum, e) => sum + Number((e as any)[p.key] ?? 0), 0) /
+                team.ethics.length
+              ).toFixed(1)
+            : "",
+        ),
+        team.ethics
+          .filter((e) => (e.extraPromise ?? "").trim())
+          .map((e) => `${e.username}: ${e.extraPromise}`)
+          .join(" / "),
       ];
     });
+
 
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     const wb = XLSX.utils.book_new();
