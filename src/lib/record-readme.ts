@@ -266,3 +266,245 @@ function formatDateTime(value: string | null | undefined): string {
     return value;
   }
 }
+
+// ─────────────────────────────────────────────────────────────
+// 공개용 README (9블록) — 결과물을 처음 보는 사람이 읽는 문서
+// ─────────────────────────────────────────────────────────────
+
+export interface PublicReadmeBlock {
+  no: number;
+  title: string;
+  step: number; // 편집기 단계 인덱스
+  filled: boolean;
+}
+
+function rowsOfKind(team: RecordOverviewTeam, kind: RecordRowKindName) {
+  return team.rows
+    .filter((r) => r.kind === kind)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+function hasAny(final: RecordOverviewFinal | null, keys: RecordFinalKey[]): boolean {
+  if (!final) return false;
+  return keys.some((k) => finalValue(final, k).trim());
+}
+
+export function getPublicReadmeBlocks(team: RecordOverviewTeam): PublicReadmeBlock[] {
+  const f = team.final;
+  return [
+    {
+      no: 1,
+      title: "프로젝트명과 한 줄 설명",
+      step: 2,
+      filled: hasAny(f, ["serviceName", "oneLiner"]),
+    },
+    {
+      no: 2,
+      title: "대표 화면과 배포·GitHub·영상 링크",
+      step: 2,
+      filled: hasAny(f, ["heroImageUrl", "deployUrl", "githubUrl", "demoVideoUrl"]),
+    },
+    {
+      no: 3,
+      title: "최종적으로 해결한 문제",
+      step: 2,
+      filled: hasAny(f, ["problem", "solution"]),
+    },
+    { no: 4, title: "핵심 기능", step: 2, filled: rowsOfKind(team, "feature").length > 0 },
+    {
+      no: 5,
+      title: "사용 흐름과 사용 방법",
+      step: 2,
+      filled: rowsOfKind(team, "flow").length > 0 || hasAny(f, ["usageEnv", "usageCondition"]),
+    },
+    {
+      no: 6,
+      title: "기술 스택·디렉터리·설치·실행",
+      step: 2,
+      filled: hasAny(f, [
+        "techScreen",
+        "techServer",
+        "techAi",
+        "techStorage",
+        "techDeploy",
+        "dirStructure",
+        "installCmd",
+        "runCmd",
+        "envNames",
+      ]),
+    },
+    {
+      no: 7,
+      title: "작동 범위·기술적 한계·다음 계획",
+      step: 3,
+      filled:
+        hasAny(f, ["currentScope"]) ||
+        rowsOfKind(team, "limit").length > 0 ||
+        rowsOfKind(team, "plan").length > 0,
+    },
+    {
+      no: 8,
+      title: "교육 현장에서 사용할 때의 주의사항",
+      step: 3,
+      filled:
+        hasAny(f, ["privacyStatus", "riskExpected", "riskMitigation", "riskStop", "riskTest"]) ||
+        rowsOfKind(team, "stance").length > 0,
+    },
+    {
+      no: 9,
+      title: "제작자와 라이선스",
+      step: 2,
+      filled:
+        team.members.length > 0 ||
+        rowsOfKind(team, "maker").length > 0 ||
+        hasAny(f, ["licenseCode", "licenseDocs", "licenseExternal"]),
+    },
+  ];
+}
+
+export function buildPublicReadme(team: RecordOverviewTeam): string {
+  const f = team.final;
+  const v = (k: RecordFinalKey) => (f ? finalValue(f, k).trim() : "");
+  const L: string[] = [];
+  const push = (...xs: string[]) => L.push(...xs);
+  const empty = "_아직 작성되지 않았어요._";
+
+  push(`# ${escapeMd(v("serviceName") || team.teamName)}`, "");
+  if (v("oneLiner")) push(`> ${escapeMd(v("oneLiner"))}`, "");
+
+  // 2. 대표 화면과 링크
+  push("## 대표 화면과 링크", "");
+  if (v("heroImageUrl")) push(`![대표 화면](${v("heroImageUrl")})`, "");
+  const links: string[] = [];
+  if (v("deployUrl")) links.push(`- 배포 주소: ${v("deployUrl")}`);
+  if (v("githubUrl")) links.push(`- GitHub: ${v("githubUrl")}`);
+  if (v("demoVideoUrl")) links.push(`- 시연 영상: ${v("demoVideoUrl")}`);
+  push(...(links.length ? links : [empty]), "");
+
+  // 3. 해결한 문제
+  push("## 최종적으로 해결한 문제", "");
+  push(v("problem") ? escapeMd(v("problem")) : empty, "");
+  if (v("solution")) push("### 어떻게 풀었나요?", "", escapeMd(v("solution")), "");
+
+  // 4. 핵심 기능
+  push("## 핵심 기능", "");
+  const features = rowsOfKind(team, "feature");
+  if (features.length === 0) push(empty, "");
+  else {
+    for (const r of features) {
+      const cols = [r.col1, r.col2, r.col3].filter((c) => (c ?? "").trim());
+      push(`- **${escapeMd(cols[0] ?? "-")}**${cols[1] ? `: ${escapeMd(cols[1])}` : ""}`);
+      if (cols[2]) push(`  - ${escapeMd(cols[2])}`);
+    }
+    push("");
+  }
+
+  // 5. 사용 흐름과 사용 방법
+  push("## 사용 흐름과 사용 방법", "");
+  const flows = rowsOfKind(team, "flow");
+  if (flows.length === 0 && !v("usageEnv") && !v("usageCondition")) push(empty, "");
+  else {
+    flows.forEach((r, i) => {
+      const cols = [r.col1, r.col2, r.col3].filter((c) => (c ?? "").trim());
+      push(`${i + 1}. ${cols.map(escapeMd).join(" — ")}`);
+    });
+    if (flows.length > 0) push("");
+    if (v("usageEnv")) push(`- 사용 환경: ${escapeMd(v("usageEnv"))}`);
+    if (v("usageCondition")) push(`- 사용 조건: ${escapeMd(v("usageCondition"))}`);
+    push("");
+  }
+
+  // 6. 기술 구성
+  push("## 기술 스택과 실행 방법", "");
+  const techKeys: RecordFinalKey[] = [
+    "techScreen",
+    "techServer",
+    "techAi",
+    "techStorage",
+    "techDeploy",
+  ];
+  const techLines = techKeys
+    .filter((k) => v(k))
+    .map((k) => `- **${FINAL_LABELS[k] ?? k}**: ${escapeMd(v(k))}`);
+  if (techLines.length === 0 && !v("dirStructure") && !v("installCmd") && !v("runCmd") && !v("envNames"))
+    push(empty, "");
+  else {
+    if (techLines.length) push(...techLines, "");
+    if (v("dirStructure")) push("### 폴더 구조", "", "```text", v("dirStructure"), "```", "");
+    if (v("installCmd") || v("runCmd")) {
+      push("### 설치와 실행", "", "```bash");
+      if (v("installCmd")) push(v("installCmd"));
+      if (v("runCmd")) push(v("runCmd"));
+      push("```", "");
+    }
+    if (v("envNames")) push(`- 필요한 환경변수(이름만): ${escapeMd(v("envNames"))}`, "");
+  }
+
+  // 7. 작동 범위·한계·다음 계획
+  push("## 작동 범위와 한계, 다음 계획", "");
+  const limits = rowsOfKind(team, "limit");
+  const plans = rowsOfKind(team, "plan");
+  if (!v("currentScope") && limits.length === 0 && plans.length === 0) push(empty, "");
+  else {
+    if (v("currentScope")) push(`- 지금까지 확인한 범위: ${escapeMd(v("currentScope"))}`, "");
+    if (limits.length) {
+      push("### 기술적 한계", "");
+      for (const r of limits)
+        push(`- ${[r.col1, r.col2, r.col3].filter((c) => (c ?? "").trim()).map(escapeMd).join(" — ")}`);
+      push("");
+    }
+    if (plans.length) {
+      push("### 다음 계획", "");
+      for (const r of plans)
+        push(`- ${[r.col1, r.col2, r.col3].filter((c) => (c ?? "").trim()).map(escapeMd).join(" — ")}`);
+      push("");
+    }
+  }
+
+  // 8. 교육 현장 주의사항
+  push("## 교육 현장에서 사용할 때의 주의사항", "");
+  const cautionKeys: RecordFinalKey[] = [
+    "privacyStatus",
+    "riskExpected",
+    "riskMitigation",
+    "riskStop",
+    "riskTest",
+  ];
+  const cautionLines = cautionKeys
+    .filter((k) => v(k))
+    .map((k) => `- **${FINAL_LABELS[k] ?? k}**: ${escapeMd(v(k))}`);
+  const stance = rowsOfKind(team, "stance");
+  const privacyRows = rowsOfKind(team, "privacy");
+  if (cautionLines.length === 0 && stance.length === 0 && privacyRows.length === 0) push(empty, "");
+  else {
+    if (cautionLines.length) push(...cautionLines, "");
+    if (privacyRows.length) {
+      push("### 입력·전송·저장 정보", "");
+      for (const r of privacyRows)
+        push(`- ${[r.col1, r.col2, r.col3].filter((c) => (c ?? "").trim()).map(escapeMd).join(" — ")}`);
+      push("");
+    }
+    if (stance.length) {
+      push("### 교육적 태도 점검", "");
+      for (const r of stance) {
+        const q = STANCE_QUESTIONS[r.sortOrder] ?? `문항 ${r.sortOrder + 1}`;
+        push(`- ${escapeMd(q)}: ${escapeMd(r.col1) || "-"}${r.col2.trim() ? ` (${escapeMd(r.col2)})` : ""}`);
+      }
+      push("");
+    }
+  }
+
+  // 9. 제작자와 라이선스
+  push("## 제작자와 라이선스", "");
+  if (team.members.length) {
+    for (const m of team.members)
+      push(`- ${[m.username, m.affiliation, m.role].filter((x) => (x ?? "").trim()).map(escapeMd).join(" · ")}`);
+  }
+  for (const r of rowsOfKind(team, "maker"))
+    push(`- ${[r.col1, r.col2, r.col3].filter((c) => (c ?? "").trim()).map(escapeMd).join(" · ")}`);
+  const licenseKeys: RecordFinalKey[] = ["licenseCode", "licenseDocs", "licenseExternal"];
+  for (const k of licenseKeys) if (v(k)) push(`- **${FINAL_LABELS[k] ?? k}**: ${escapeMd(v(k))}`);
+  push("");
+
+  return L.join("\n").trim() + "\n";
+}

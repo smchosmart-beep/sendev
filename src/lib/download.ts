@@ -26,3 +26,20 @@ export async function downloadFile(url: string, fileName: string): Promise<void>
     window.open(url, "_blank", "noopener,noreferrer");
   }
 }
+
+// Saves a text payload (e.g. Markdown) as a local file via a Blob URL.
+export function downloadTextFile(
+  fileName: string,
+  content: string,
+  mime = "text/markdown;charset=utf-8",
+): void {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName || "download.txt";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
