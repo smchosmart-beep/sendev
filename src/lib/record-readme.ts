@@ -287,10 +287,6 @@ function rowsOfKind(team: RecordOverviewTeam, kind: RecordRowKindName) {
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
-function countFilled(final: RecordOverviewFinal | null, keys: RecordFinalKey[]): number {
-
-
-function countFilled(final: RecordOverviewFinal | null, keys: RecordFinalKey[]): number {
   if (!final) return 0;
   return keys.filter((k) => finalValue(final, k).trim()).length;
 }
