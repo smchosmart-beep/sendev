@@ -46,7 +46,7 @@
 - 개인 후기는 인원별 1건 제한이 필요하므로 새 테이블 `record_reflections`를 만듭니다.
   - `post_id, username, username_key, content, promise, updated_by, created_at, updated_at`
   - `unique (post_id, username_key)`
-  - RLS 활성화, 기존 `record_*` 테이블과 동일한 보안 모델: `authenticated`/`anon`에 `GRANT ALL` (또는 필요한 최소 권한) + RLS 정책은 두지 않고 service_role 전용 접근. `record_reflections`에도 동일하게 grant를 부여한 뒤 RLS를 활성화합니다.
+  - RLS 활성화, 기존 `record_*` 테이블과 동일한 보안 모델: `authenticated`, `anon`, `service_role` 세 롤 모두에 `GRANT ALL`을 부여하고 RLS 정책은 두지 않고 service_role 전용 접근. `record_reflections`에도 동일하게 grant를 부여한 뒤 RLS를 활성화합니다.
 
 ## 서버
 
