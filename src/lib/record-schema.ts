@@ -103,6 +103,22 @@ export interface RowSectionDef {
 }
 
 export const ROW_SECTION_DEFS: Record<string, RowSectionDef> = {
+  process: {
+    kind: "process",
+    title: "문제 정의 과정 기록",
+    hint: "회의·인터뷰 기록을 종류별로 남겨요.",
+    cols: ["언제·어디서", "무엇을 나눴나요?", "그래서 정한 것"],
+    longCols: [1, 2],
+    addLabel: "문제 정의 기록 추가",
+  },
+  devlog: {
+    kind: "devlog",
+    title: "개발 과정 자유기록",
+    hint: "개발하며 겪은 일과 해결 방법을 자유롭게 쌓아요.",
+    cols: ["날짜", "무슨 일이 있었나", "어떻게 해결했나"],
+    longCols: [1, 2],
+    addLabel: "개발 기록 추가",
+  },
   feature: {
     kind: "feature",
     title: "핵심 기능",
