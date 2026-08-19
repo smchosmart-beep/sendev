@@ -524,14 +524,16 @@ export function RecordEditor({
                 type="button"
                 onClick={() => setStep(i)}
                 className={cn(
-                  "w-full rounded-xl px-3 py-2 text-left transition-colors",
+                  "flex min-h-[3.5rem] w-full flex-col justify-center rounded-xl px-2 py-2 text-left transition-colors",
                   i === step
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted/50 text-muted-foreground hover:bg-muted",
                 )}
               >
-                <span className="block text-[11px] font-semibold opacity-80">{s.no}</span>
-                <span className="block truncate text-xs font-medium sm:text-sm">{s.title}</span>
+                <span className="block text-[10px] font-semibold opacity-80">{s.no}</span>
+                <span className="block text-[10px] font-medium leading-tight break-keep sm:text-[11px]">
+                  {s.title}
+                </span>
               </button>
             </li>
           ))}
