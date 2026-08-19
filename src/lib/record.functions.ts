@@ -358,18 +358,8 @@ export const saveRecordFinal = createServerFn({ method: "POST" })
     ) {
       throw new Error("다른 팀원이 먼저 수정했어요. 최신 내용을 불러온 뒤 다시 저장해 주세요.");
     }
-    const map: Record<string, string> = {
-      serviceName: "service_name",
-      oneLiner: "one_liner",
-      targetUser: "target_user",
-      problem: "problem",
-      solution: "solution",
-      heroImageUrl: "hero_image_url",
-      deployUrl: "deploy_url",
-      githubUrl: "github_url",
-      techStack: "tech_stack",
-      envNames: "env_names",
-    };
+    const map = RECORD_FINAL_COLUMN_MAP;
+
     const patch: Record<string, unknown> = { updated_by: who, updated_at: new Date().toISOString() };
     for (const [k, v] of Object.entries(data.patch)) {
       if (v !== undefined && map[k]) patch[map[k]] = v;
