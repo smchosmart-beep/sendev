@@ -187,3 +187,49 @@ export const ROW_SECTION_DEFS: Record<string, RowSectionDef> = {
     addLabel: "정보 항목 행 추가",
   },
 };
+
+/** 최종 결과물(팀당 1건) 필드 정의 — 카멜키 ↔ DB 컬럼 ↔ 최대 길이 */
+export const RECORD_FINAL_FIELDS = [
+  { key: "serviceName", column: "service_name", max: 200 },
+  { key: "problemArea", column: "problem_area", max: 200 },
+  { key: "targetUser", column: "target_user", max: 200 },
+  { key: "outputType", column: "output_type", max: 200 },
+  { key: "tags", column: "tags", max: 300 },
+  { key: "consent", column: "consent", max: 10 },
+  { key: "deployStatus", column: "deploy_status", max: 100 },
+  { key: "usageEnv", column: "usage_env", max: 300 },
+  { key: "oneLiner", column: "one_liner", max: 500 },
+  { key: "problem", column: "problem", max: 2000 },
+  { key: "solution", column: "solution", max: 2000 },
+  { key: "deployUrl", column: "deploy_url", max: 500 },
+  { key: "githubUrl", column: "github_url", max: 500 },
+  { key: "demoVideoUrl", column: "demo_video_url", max: 500 },
+  { key: "heroImageUrl", column: "hero_image_url", max: 2000 },
+  { key: "usageCondition", column: "usage_condition", max: 1000 },
+  { key: "techScreen", column: "tech_screen", max: 300 },
+  { key: "techServer", column: "tech_server", max: 300 },
+  { key: "techAi", column: "tech_ai", max: 300 },
+  { key: "techStorage", column: "tech_storage", max: 300 },
+  { key: "techDeploy", column: "tech_deploy", max: 300 },
+  { key: "dirStructure", column: "dir_structure", max: 2000 },
+  { key: "installCmd", column: "install_cmd", max: 1000 },
+  { key: "runCmd", column: "run_cmd", max: 1000 },
+  { key: "envNames", column: "env_names", max: 1000 },
+  { key: "currentScope", column: "current_scope", max: 2000 },
+  { key: "changeType", column: "change_type", max: 100 },
+  { key: "changeContent", column: "change_content", max: 2000 },
+  { key: "privacyStatus", column: "privacy_status", max: 100 },
+  { key: "riskExpected", column: "risk_expected", max: 2000 },
+  { key: "riskMitigation", column: "risk_mitigation", max: 2000 },
+  { key: "riskStop", column: "risk_stop", max: 2000 },
+  { key: "riskTest", column: "risk_test", max: 2000 },
+  { key: "licenseCode", column: "license_code", max: 300 },
+  { key: "licenseDocs", column: "license_docs", max: 300 },
+  { key: "licenseExternal", column: "license_external", max: 1000 },
+] as const;
+
+export type RecordFinalKey = (typeof RECORD_FINAL_FIELDS)[number]["key"];
+
+export const RECORD_FINAL_COLUMN_MAP: Record<string, string> = Object.fromEntries(
+  RECORD_FINAL_FIELDS.map((f) => [f.key, f.column]),
+);
