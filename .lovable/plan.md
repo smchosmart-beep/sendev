@@ -21,8 +21,8 @@
 ## 기술 메모
 
 - 현재 `src/lib/record-readme.ts`의 `buildRecordReadme`는 관리자 ZIP용 **전체 덤프**(모든 입력 항목 나열) 형식입니다. HTML의 최종 README는 **결과물을 처음 보는 사람이 읽는 9블록 문서**라 목적이 다릅니다. 그래서 같은 파일에 `buildPublicReadme(team)`을 새로 추가하고, 기존 `buildRecordReadme`(관리자 ZIP)는 그대로 둡니다. 관리자 ZIP에는 팀 폴더에 `README.md`(공개용 9블록)와 `RECORD.md`(전체 덤프) 두 개를 넣습니다.
-- 편집기는 이미 `getRecord`로 final/rows/members/reflections를 모두 들고 있으므로, 이 데이터를 `RecordOverviewTeam` 형태로 맞춰 주는 작은 어댑터만 만들면 서버 호출 추가 없이 클라이언트에서 README를 만들 수 있습니다. **신규 서버 함수·DB 변경 없음.**
-- 마크다운 렌더링은 이미 프로젝트에서 쓰는 렌더러를 재사용합니다(신규 의존성 없음). `.md` 다운로드는 기존 `src/lib/download.ts` 사용.
+- 편집기는 이미 `getRecord`로 final/rows/members/reflections를 모두 들고 있으므로, 이 데이터를 `RecordOverviewTeam` 형태로 맞춰 주는 작은 어댑터만 만들면 서버 호출 추가 없이 클라이언트에서 README를 만들 수 있습니다. **단, `getRecord` 응답(`RecordBundleDTO`)에는 `post_no`/`slug`가 없으므로, 어댑터는 이 두 값을 상세 페이지에서 `RecordEditor`에 props로 넘겨 받습니다.**
+- 마크다운 렌더링은 이미 프로젝트에서 쓰는 렌더러를 재사용합니다(신규 의존성 없음). `.md` 다운로드는 `src/routes/_main.readme.tsx`에 이미 있는 Blob 텍스트 저장 함수를 `src/lib/download.ts` 등 공용 유틸로 옮겨 재사용합니다. 기존 `downloadFile`은 원격 URL 다운로드만 하므로 새로 분리합니다.
 - 인쇄 스타일은 `src/styles.css`에 `@media print` 블록을 추가하고, README 컨테이너에 `data-print-root` 표시를 둬 그 안만 출력합니다. 다른 페이지 인쇄에는 영향이 없도록 활동기록 화면에만 적용되는 선택자를 씁니다.
 
 ## 부작용 점검
