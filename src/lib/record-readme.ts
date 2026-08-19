@@ -2,12 +2,22 @@ import type {
   RecordOverviewResult,
   RecordOverviewTeam,
   RecordOverviewRow,
+  RecordOverviewFinal,
 } from "./record.functions";
 
-const FINAL_FIELDS: {
-  key: keyof RecordOverviewTeam["final"] & string;
-  label: string;
-}[] = [
+type FinalKey =
+  | "serviceName"
+  | "oneLiner"
+  | "targetUser"
+  | "problem"
+  | "solution"
+  | "heroImageUrl"
+  | "deployUrl"
+  | "githubUrl"
+  | "techStack"
+  | "envNames";
+
+const FINAL_FIELDS: { key: FinalKey; label: string }[] = [
   { key: "serviceName", label: "서비스 이름" },
   { key: "oneLiner", label: "한 줄 소개" },
   { key: "targetUser", label: "누구를 위한 것인가요?" },
@@ -47,6 +57,10 @@ const ROW_SECTIONS: {
   },
 ];
 
+function getFinalValue(final: RecordOverviewFinal, key: FinalKey): string {
+  return final[key] ?? "";
+}
+
 function escapeMd(text: string): string {
   return (text ?? "").replace(/\n/g, "  \n");
 }
@@ -74,7 +88,7 @@ export function buildRecordReadme(team: RecordOverviewTeam): string {
   if (team.final) {
     const f = team.final;
     for (const field of FINAL_FIELDS) {
-      const value = (f as Record<string, string>)[field.key];
+      const value = getFinalValue(f, field.key);
       lines.push(`### ${field.label}`);
       lines.push(value?.trim() ? escapeMd(value) : "_미입력_");
       lines.push("");
@@ -152,3 +166,4 @@ function formatDateTime(value: string | null | undefined): string {
     return value;
   }
 }
+
