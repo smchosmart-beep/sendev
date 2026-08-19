@@ -1207,12 +1207,11 @@ function RowItem({
 
       <div className="grid gap-2 sm:grid-cols-2">
         {labels.map((label, i) => {
-          if (i === fileCol) return null;
-          const isLink = i === linkCol;
+          if (i === fileCol || i === linkCol) return null;
           return (
             <div
               key={label}
-              className={cn("space-y-1", (longs.includes(i) || isLink) && "sm:col-span-2")}
+              className={cn("space-y-1", longs.includes(i) && "sm:col-span-2")}
             >
               <Label className="text-xs text-muted-foreground">{label}</Label>
               {longs.includes(i) ? (
@@ -1239,68 +1238,85 @@ function RowItem({
       </div>
 
       {fileCol !== undefined && (
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">
-            {labels[fileCol] ?? "관련 파일"}{" "}
-            <span className="text-[11px]">(최대 3개, 개당 3MB)</span>
-          </Label>
-          <div className="flex flex-wrap items-center gap-2">
-            {attachments.map((f) => {
-              const Icon = getFileIcon(f.name);
-              return (
-                <span
-                  key={f.url}
-                  className="inline-flex items-center gap-1 rounded-full bg-background px-2.5 py-1 text-xs"
-                >
-                  <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                  <button
-                    type="button"
-                    className="max-w-[12rem] truncate hover:underline"
-                    onClick={() => downloadFile(f.url, f.name)}
+        <div className="flex flex-wrap gap-4">
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">
+              {labels[fileCol] ?? "관련 파일"}{" "}
+              <span className="text-[11px]">(최대 3개, 개당 3MB)</span>
+            </Label>
+            <div className="flex flex-wrap items-center gap-2">
+              {attachments.map((f) => {
+                const Icon = getFileIcon(f.name);
+                return (
+                  <span
+                    key={f.url}
+                    className="inline-flex items-center gap-1 rounded-full bg-background px-2.5 py-1 text-xs"
                   >
-                    {f.name}
-                  </button>
-                  {canEdit && (
+                    <Icon className="h-3.5 w-3.5 text-muted-foreground" />
                     <button
                       type="button"
-                      aria-label={`${f.name} 첨부 제거`}
-                      className="text-muted-foreground hover:text-destructive"
-                      onClick={() =>
-                        setAttachments(attachments.filter((a) => a.url !== f.url))
-                      }
+                      className="max-w-[12rem] truncate hover:underline"
+                      onClick={() => downloadFile(f.url, f.name)}
                     >
-                      <X className="h-3.5 w-3.5" />
+                      {f.name}
                     </button>
-                  )}
-                </span>
-              );
-            })}
-            {canEdit && (
-              <>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  className="hidden"
-                  onChange={handleFilePick}
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={uploading || attachments.length >= 3}
-                  className="rounded-xl active:scale-95"
-                  onClick={() => fileRef.current?.click()}
-                >
-                  {uploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Plus className="h-4 w-4" />
-                  )}
-                  파일 첨부
-                </Button>
-              </>
-            )}
+                    {canEdit && (
+                      <button
+                        type="button"
+                        aria-label={`${f.name} 첨부 제거`}
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() =>
+                          setAttachments(attachments.filter((a) => a.url !== f.url))
+                        }
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </span>
+                );
+              })}
+              {canEdit && (
+                <>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    className="hidden"
+                    onChange={handleFilePick}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={uploading || attachments.length >= 3}
+                    className="rounded-xl active:scale-95"
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4" />
+                    )}
+                    파일 첨부
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
+
+          {linkCol !== undefined && (
+            <div className="min-w-[16rem] flex-1 space-y-1">
+              <Label className="text-xs text-muted-foreground">
+                {labels[linkCol] ?? "관련 링크"}
+              </Label>
+              <Input
+                value={values[linkCol] ?? ""}
+                onChange={(e) => update(linkCol, e.target.value.slice(0, 3000))}
+                placeholder={placeholders?.[linkCol]}
+                disabled={!canEdit}
+                className="rounded-xl bg-background"
+              />
+            </div>
+          )}
         </div>
       )}
       {canEdit && (
