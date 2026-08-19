@@ -618,3 +618,31 @@ export const isRecordAdmin = createServerFn({ method: "POST" })
     const { isAdminPassword } = await import("./record.server");
     return { ok: isAdminPassword(data.adminPassword) };
   });
+
+// 팀원의 소속·역할 저장 (팀원 또는 관리자)
+export const updateRecordMember = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        postId: z.string().uuid(),
+        memberId: z.string().uuid(),
+        affiliation: z.string().max(200).default(""),
+        role: z.string().max(200).default(""),
+        author: z.string().trim().max(100).default(""),
+        nicknamePassword: z.string().trim().max(100).default(""),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const R = await import("./record.server");
+    const db = await R.getRecordDb();
+    await R.requireTeamMember(db, data.postId, data.author, data.nicknamePassword, data.adminPassword);
+    const { error } = await db
+      .from("record_members")
+      .update({ affiliation: data.affiliation, role: data.role })
+      .eq("id", data.memberId)
+      .eq("post_id", data.postId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
