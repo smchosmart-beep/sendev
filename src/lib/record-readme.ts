@@ -383,14 +383,17 @@ export function buildPublicReadme(team: RecordOverviewTeam): string {
   push(`# ${escapeMd(v("serviceName") || team.teamName)}`, "");
   if (v("oneLiner")) push(`> ${escapeMd(v("oneLiner"))}`, "");
 
-  // 2. 대표 화면과 링크
+  // 2. 링크 배지 + 대표 화면
+  const linkBadges: string[] = [];
+  if (v("deployUrl")) linkBadges.push(`[🌐 바로 사용하기](${normalizeUrl(v("deployUrl"))})`);
+  if (v("githubUrl")) linkBadges.push(`[💻 소스코드](${normalizeUrl(v("githubUrl"))})`);
+  if (v("demoVideoUrl")) linkBadges.push(`[▶️ 시연 보기](${normalizeUrl(v("demoVideoUrl"))})`);
+  if (linkBadges.length) push(linkBadges.join(" · "), "");
+
   push("## 대표 화면과 링크", "");
   if (v("heroImageUrl")) push(`![대표 화면](${v("heroImageUrl")})`, "");
-  const links: string[] = [];
-  if (v("deployUrl")) links.push(`- 배포 주소: ${v("deployUrl")}`);
-  if (v("githubUrl")) links.push(`- GitHub: ${v("githubUrl")}`);
-  if (v("demoVideoUrl")) links.push(`- 시연 영상: ${v("demoVideoUrl")}`);
-  push(...(links.length ? links : [empty]), "");
+  if (!linkBadges.length && !v("heroImageUrl")) push(empty, "");
+
 
   // 3. 해결한 문제
   push("## 최종적으로 해결한 문제", "");
