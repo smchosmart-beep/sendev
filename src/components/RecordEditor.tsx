@@ -562,6 +562,9 @@ export function RecordEditor({
             longCols={[1, 2]}
             rows={rowsOf("devlog")}
             {...rowSectionProps}
+            authorEnabled
+            defaultAuthor={memberAuthor}
+
           />
           {(["decision", "stuck", "ai_use", "ai_error", "privacy"] as RowKind[]).map((kind) => (
             <RowSection
