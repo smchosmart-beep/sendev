@@ -38,6 +38,7 @@ import {
   type RowSectionDef,
 } from "@/lib/record-schema";
 import { RecordOutput } from "@/components/RecordOutput";
+import { EthicsSection } from "@/components/record/EthicsSection";
 import { getAdminPassword } from "@/lib/admin-auth";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import { Button } from "@/components/ui/button";
