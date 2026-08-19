@@ -36,7 +36,7 @@
 - 새 컴포넌트 `src/components/record/StepSidebar.tsx`: `{ id, no, title, status, meta }[]`와 현재 활성 id를 받아 렌더링. 스크롤 감시는 `IntersectionObserver`, 클릭 시 `scrollIntoView({ behavior: "smooth", block: "start" })`.
 - 앵커 id는 카드가 아니라 **`FINAL_GROUPS`의 각 그룹 `div`**와 각 `RowSection` 래퍼에 부여하고 `scroll-mt-24`를 함께 둡니다.
 - 배치: 03·04 단계의 `<>…</>` 프래그먼트를 `relative` 래퍼 `div`로 감싸면 부모 `space-y-6`의 형제 간격이 바뀌므로, 래퍼에 `space-y-6`을 그대로 부여해 기존 세로 간격을 유지합니다(시각적 변화 없음). 사이드바는 `absolute right-full mr-6 top-0 h-full` + 내부 `sticky top-24`로 왼쪽 여백에 띄우고, 본문 그리드·폭에는 손대지 않습니다.
-- 노출 조건: 왼쪽 여백은 대략 `(100vw - 1024px)/2`이므로 `2xl`(1536px, 여백 약 300px)에서 `w-[240px]` 전체형, `xl`(1280px, 여백 약 176px)에서 `w-[132px]` 축약형(번호 뱃지 + 한 줄 말줄임 제목 + 점 형태 상태)으로 보이고, 그 아래에서는 `hidden` + 본문 상단 접이식 카드로 대체합니다. `_main.tsx`와 라우트 파일은 수정하지 않습니다.
+- 노출 조건: 왼쪽 여백은 대략 `(100vw - 1024px)/2`이므로 `2xl`(1536px, 여백 약 256px)에서만 `w-[240px]` 전체형을 띄웁니다(`hidden 2xl:block`). 그 아래 폭에서는 여백이 부족해 잘리므로 사이드바를 렌더하지 않고, 본문 상단 접이식 카드(`2xl:hidden`)로 대체합니다. `_main.tsx`와 라우트 파일은 수정하지 않습니다.
 - 상태 계산은 `src/lib/record-progress.ts`에 순수 함수로 분리하고, **편집 블록 기준으로 독립 계산**합니다. `record-readme.ts`의 판정은 README 출력 블록 단위라 경계가 달라 재사용하지 않고, 3단계 구분(`empty`/`partial`/`done`)과 라벨 문구만 동일하게 맞춥니다. 07 출력 보기 배지 로직은 손대지 않습니다.
 - 데이터 소스는 이미 로드된 `bundle`과 `final` 로컬 상태뿐이라 추가 서버 요청·쿼리·마이그레이션이 없습니다. 저장 로직에도 손대지 않습니다.
 - 사이드바는 인쇄/출력 영역과 무관하므로 `record-output-ui` 계열 클래스와 충돌하지 않게 별도 래퍼로 둡니다.
