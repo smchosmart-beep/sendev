@@ -196,6 +196,10 @@ function RecordOverviewPage() {
       "교육적 점검",
       "개인 후기",
       "팀원 약속",
+      "윤리 응답 인원",
+      "윤리 전체 평균",
+      ...ETHICS_PRINCIPLES.map((p) => `윤리 평균-${p.title}`),
+      "윤리 추가 약속",
     ];
 
     const rows = overview.teams.map((team) => {
