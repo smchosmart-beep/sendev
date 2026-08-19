@@ -3,6 +3,15 @@ import { z } from "zod";
 
 import type { RecordRowKind } from "./record.server";
 
+export type {
+  RecordOverviewMember,
+  RecordOverviewFinal,
+  RecordOverviewRow,
+  RecordOverviewReflection,
+  RecordOverviewTeam,
+  RecordOverviewResult,
+} from "./record.server";
+
 export interface RecordMemberDTO {
   id: string;
   username: string;
@@ -58,6 +67,86 @@ export interface RecordBundleDTO {
 // 활동기록 전체(팀원 + 최종 결과물 + 반복행)를 한 번에 읽는다.
 export const getRecord = createServerFn({ method: "GET" })
   .inputValidator((input) => z.object({ postId: z.string().uuid() }).parse(input))
+  .handler(async ({ data }): Promise<RecordBundleDTO | null> => {
+    const R = await import("./record.server");
+    const db = await R.getRecordDb();
+    const { data: post } = await db
+      .from("posts")
+      .select("id, category_id, title, type")
+      .eq("id", data.postId)
+      .maybeSingle();
+    if (!post || post.type !== "record") return null;
+
+    const [{ data: members }, { data: final }, { data: rows }, { data: reflections }] = await Promise.all([
+      db.from("record_members").select("id, username, username_key").eq("post_id", post.id).order("created_at", { ascending: true }),
+      db.from("record_final").select("*").eq("post_id", post.id).maybeSingle(),
+      db.from("record_rows").select("*").eq("post_id", post.id).order("kind", { ascending: true }).order("sort_order", { ascending: true }),
+      db.from("record_reflections").select("*").eq("post_id", post.id).order("created_at", { ascending: true }),
+    ]);
+
+    return {
+      postId: post.id,
+      categoryId: post.category_id,
+      teamName: post.title,
+      members: (members ?? []).map((m: any) => ({
+        id: m.id,
+        username: m.username,
+        usernameKey: m.username_key,
+      })),
+      final: final
+        ? {
+            postId: final.post_id,
+            serviceName: final.service_name ?? "",
+            oneLiner: final.one_liner ?? "",
+            targetUser: final.target_user ?? "",
+            problem: final.problem ?? "",
+            solution: final.solution ?? "",
+            heroImageUrl: final.hero_image_url ?? "",
+            deployUrl: final.deploy_url ?? "",
+            githubUrl: final.github_url ?? "",
+            techStack: final.tech_stack ?? "",
+            envNames: final.env_names ?? "",
+            updatedBy: final.updated_by ?? "",
+            updatedAt: final.updated_at ?? "",
+          }
+        : null,
+      rows: (rows ?? []).map((r: any) => ({
+        id: r.id,
+        kind: r.kind as RecordRowKind,
+        sortOrder: r.sort_order ?? 0,
+        col1: r.col1 ?? "",
+        col2: r.col2 ?? "",
+        col3: r.col3 ?? "",
+        updatedBy: r.updated_by ?? "",
+        updatedAt: r.updated_at ?? "",
+      })),
+      reflections: (reflections ?? []).map((r: any) => ({
+        id: r.id,
+        username: r.username,
+        usernameKey: r.username_key,
+        content: r.content ?? "",
+        promise: r.promise ?? "",
+        updatedAt: r.updated_at ?? "",
+      })),
+    };
+  });
+
+// 관리자용: 한 카테고리의 모든 활동기록 팀별 현황을 한 번에 조회한다.
+export const getRecordOverview = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<R.fetchRecordOverview> => {
+    const R = await import("./record.server");
+    if (!R.isAdminPassword(data.adminPassword)) throw new Error("권한이 없습니다.");
+    const db = await R.getRecordDb();
+    return R.fetchRecordOverview(db, data.categoryId);
+  });
   .handler(async ({ data }): Promise<RecordBundleDTO | null> => {
     const R = await import("./record.server");
     const db = await R.getRecordDb();
