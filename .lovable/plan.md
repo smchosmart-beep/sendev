@@ -16,7 +16,7 @@
 
 - 게시판 선택: `enable_record`가 켜진 카테고리만 목록에 나옵니다.
 - 각 숫자는 작성된 행 수(점검·후기는 `작성/전체`), 칸이 비어 있으면 회색으로 옅게 표시해 미작성 팀이 바로 눈에 띄게 합니다.
-- 팀 이름을 누르면 해당 활동기록 글로 이동합니다.
+- 팀 이름을 누르면 `/board/<slug>/<post_no>`로 해당 활동기록 글로 이동합니다. 여기서 `slug`는 글이 속한 카테고리의 `slug`입니다(한 카테고리 단위 조회이므로 추가 조회 없이 알 수 있습니다).
 - 팀 행을 펼치면 그 팀의 팀원 목록과 후기 작성자/미작성자를 확인할 수 있습니다.
 
 ## 내려받기
@@ -36,7 +36,7 @@
 - `getRecordOverview({ categoryId, adminPassword })` — `createServerFn({ method: "POST" })`로 구현합니다.
   - `isAdminPassword`로 먼저 검증하고, 아니면 즉시 거부(현황 데이터는 관리자만 볼 수 있습니다).
   - 해당 카테고리의 `type = 'record'` 글을 모두 찾고, `record_members` · `record_final` · `record_rows` · `record_reflections`를 **글 목록에 대한 `in()` 조회 4번**으로 한꺼번에 읽어 팀별로 묶어 돌려줍니다(팀 수만큼 반복 조회하지 않습니다).
-  - 각 팀의 `post_no`와 `slug`도 함께 반환하여 팀 이름 클릭 시 `/board/<slug>/<post_no>`로 바로 이동할 수 있게 합니다.
+  - 각 팀의 `post_no`와 카테고리 `slug`도 함께 반환하여 팀 이름 클릭 시 `/board/<slug>/<post_no>`로 바로 이동할 수 있게 합니다.
   - 기존 `getRecord`는 그대로 두고 재사용하지 않습니다(개별 팀 상세는 기존 화면 담당).
 
 기존 저장·삭제 함수는 전혀 수정하지 않습니다.
@@ -44,7 +44,7 @@
 ## 기술 메모
 
 - 새 라우트 `src/routes/admin.records.tsx`, 관리자 탭 배열(`src/routes/admin.tsx`의 `tabs`)에 항목 추가.
-- 관리자 비밀번호는 기존 `getAdminPassword()`(sessionStorage) 방식을 그대로 사용 — `admin.profiles.tsx`와 동일한 패턴. 조회 함수는 `POST`로 만들어 비밀번호가 URL 쿼리에 노출되지 않도록 합니다.
+- 관리자 비밀번호는 기존 `getAdminPassword()`(sessionStorage) 방식을 그대로 사용 — `admin.categories.tsx`와 동일한 일반 관리자 패턴. 서버에서는 `isAdminPassword`로 `ADMIN_PASSWORD`를 검증하고, 조회 함수는 `POST`로 만들어 비밀번호가 URL 쿼리에 노출되지 않도록 합니다.
 - 엑셀은 `admin.categories.tsx`와 동일하게 `await import("xlsx")` 동적 로딩, ZIP은 `await import("jszip")`.
 - 조회는 `useQuery`로 하고 게시판을 바꿀 때만 다시 부릅니다(자동 폴링 없음).
 - DB 마이그레이션 없음. 새 테이블·컬럼·정책 변경 없음.
