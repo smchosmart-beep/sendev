@@ -18,10 +18,9 @@ import {
 
 import { categoriesQueryOptions } from "@/lib/platform.queries";
 import { getRecordOverview } from "@/lib/record.functions";
-import type { RecordOverviewTeam, RecordOverviewResult } from "@/lib/record.functions";
+import type { RecordOverviewTeam } from "@/lib/record.functions";
 import { getAdminPassword } from "@/lib/admin-auth";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import {
   buildRecordReadme,
   buildOverviewReadme,
