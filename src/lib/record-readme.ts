@@ -271,11 +271,14 @@ function formatDateTime(value: string | null | undefined): string {
 // 공개용 README (9블록) — 결과물을 처음 보는 사람이 읽는 문서
 // ─────────────────────────────────────────────────────────────
 
+export type PublicReadmeStatus = "empty" | "partial" | "done";
+
 export interface PublicReadmeBlock {
   no: number;
   title: string;
   step: number; // 편집기 단계 인덱스
-  filled: boolean;
+  status: PublicReadmeStatus;
+  filled: boolean; // status !== "empty"
 }
 
 function rowsOfKind(team: RecordOverviewTeam, kind: RecordRowKindName) {
@@ -289,78 +292,90 @@ function hasAny(final: RecordOverviewFinal | null, keys: RecordFinalKey[]): bool
   return keys.some((k) => finalValue(final, k).trim());
 }
 
+function countFilled(final: RecordOverviewFinal | null, keys: RecordFinalKey[]): number {
+  if (!final) return 0;
+  return keys.filter((k) => finalValue(final, k).trim()).length;
+}
+
+function toStatus(done: number, total: number): PublicReadmeStatus {
+  if (done <= 0) return "empty";
+  return done >= total ? "done" : "partial";
+}
+
+function block(
+  no: number,
+  title: string,
+  step: number,
+  done: number,
+  total: number,
+): PublicReadmeBlock {
+  const status = toStatus(done, total);
+  return { no, title, step, status, filled: status !== "empty" };
+}
+
 export function getPublicReadmeBlocks(team: RecordOverviewTeam): PublicReadmeBlock[] {
   const f = team.final;
+  const techCount = countFilled(f, [
+    "techScreen",
+    "techServer",
+    "techAi",
+    "techStorage",
+    "techDeploy",
+  ]);
+  const runCount = countFilled(f, ["dirStructure", "installCmd", "runCmd", "envNames"]);
+  const features = rowsOfKind(team, "feature").length;
+  const flows = rowsOfKind(team, "flow").length;
+  const limits = rowsOfKind(team, "limit").length;
+  const plans = rowsOfKind(team, "plan").length;
+  const stances = rowsOfKind(team, "stance").length;
+  const makers = rowsOfKind(team, "maker").length;
+  const membersWithInfo = team.members.filter(
+    (m) => (m.affiliation ?? "").trim() || (m.role ?? "").trim(),
+  ).length;
+
   return [
-    {
-      no: 1,
-      title: "프로젝트명과 한 줄 설명",
-      step: 2,
-      filled: hasAny(f, ["serviceName", "oneLiner"]),
-    },
-    {
-      no: 2,
-      title: "대표 화면과 배포·GitHub·영상 링크",
-      step: 2,
-      filled: hasAny(f, ["heroImageUrl", "deployUrl", "githubUrl", "demoVideoUrl"]),
-    },
-    {
-      no: 3,
-      title: "최종적으로 해결한 문제",
-      step: 2,
-      filled: hasAny(f, ["problem", "solution"]),
-    },
-    { no: 4, title: "핵심 기능", step: 2, filled: rowsOfKind(team, "feature").length > 0 },
-    {
-      no: 5,
-      title: "사용 흐름과 사용 방법",
-      step: 2,
-      filled: rowsOfKind(team, "flow").length > 0 || hasAny(f, ["usageEnv", "usageCondition"]),
-    },
-    {
-      no: 6,
-      title: "기술 스택·디렉터리·설치·실행",
-      step: 2,
-      filled: hasAny(f, [
-        "techScreen",
-        "techServer",
-        "techAi",
-        "techStorage",
-        "techDeploy",
-        "dirStructure",
-        "installCmd",
-        "runCmd",
-        "envNames",
-      ]),
-    },
-    {
-      no: 7,
-      title: "작동 범위·기술적 한계·다음 계획",
-      step: 3,
-      filled:
-        hasAny(f, ["currentScope"]) ||
-        rowsOfKind(team, "limit").length > 0 ||
-        rowsOfKind(team, "plan").length > 0,
-    },
-    {
-      no: 8,
-      title: "교육 현장에서 사용할 때의 주의사항",
-      step: 3,
-      filled:
-        hasAny(f, ["privacyStatus", "riskExpected", "riskMitigation", "riskStop", "riskTest"]) ||
-        rowsOfKind(team, "stance").length > 0,
-    },
-    {
-      no: 9,
-      title: "제작자와 라이선스",
-      step: 2,
-      filled:
-        team.members.length > 0 ||
-        rowsOfKind(team, "maker").length > 0 ||
-        hasAny(f, ["licenseCode", "licenseDocs", "licenseExternal"]),
-    },
+    block(1, "프로젝트명과 한 줄 설명", 2, countFilled(f, ["serviceName", "oneLiner"]), 2),
+    block(
+      2,
+      "대표 화면과 배포·GitHub·영상 링크",
+      2,
+      countFilled(f, ["heroImageUrl", "deployUrl", "githubUrl"]),
+      3,
+    ),
+    block(3, "최종적으로 해결한 문제", 2, countFilled(f, ["problem", "solution"]), 2),
+    block(4, "핵심 기능", 2, Math.min(features, 2), 2),
+    block(5, "사용 흐름과 사용 방법", 2, Math.min(flows, 1) + countFilled(f, ["usageEnv"]), 2),
+    block(
+      6,
+      "기술 스택·디렉터리·설치·실행",
+      2,
+      Math.min(techCount, 3) + Math.min(runCount, 1),
+      4,
+    ),
+    block(
+      7,
+      "작동 범위·기술적 한계·다음 계획",
+      3,
+      countFilled(f, ["currentScope"]) + Math.min(limits, 1) + Math.min(plans, 1),
+      3,
+    ),
+    block(
+      8,
+      "교육 현장에서 사용할 때의 주의사항",
+      3,
+      countFilled(f, ["privacyStatus", "riskExpected", "riskMitigation"]) + Math.min(stances, 1),
+      4,
+    ),
+    block(
+      9,
+      "제작자와 라이선스",
+      2,
+      Math.min(makers + membersWithInfo, 1) + countFilled(f, ["licenseCode"]),
+      2,
+    ),
   ];
 }
+
 
 export function buildPublicReadme(team: RecordOverviewTeam): string {
   const f = team.final;
