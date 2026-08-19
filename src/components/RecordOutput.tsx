@@ -191,7 +191,10 @@ export function RecordOutput({
               data-print-root
               className="prose prose-sm max-w-none rounded-xl border border-border bg-background p-5 dark:prose-invert"
             >
-              <ReactMarkdown components={markdownComponents}>{markdown}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                {markdown}
+              </ReactMarkdown>
+
             </div>
           )}
         </div>
