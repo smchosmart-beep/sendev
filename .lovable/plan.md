@@ -35,9 +35,9 @@
 
 - 새 컴포넌트 `src/components/record/StepSidebar.tsx`: `{ id, no, title, status, meta }[]`와 현재 활성 id를 받아 렌더링. 스크롤 감시는 `IntersectionObserver`, 클릭 시 `scrollIntoView({ behavior: "smooth", block: "start" })`.
 - 앵커 id는 카드가 아니라 **`FINAL_GROUPS`의 각 그룹 `div`**와 각 `RowSection` 래퍼에 부여하고 `scroll-mt-24`를 함께 둡니다.
-- `src/components/RecordEditor.tsx`의 `step === 2` / `step === 3` 렌더 블록을 `lg:grid lg:grid-cols-[minmax(0,1fr)_260px]` 레이아웃으로 감쌉니다.
+- 배치: 03·04 단계 래퍼를 `relative`로 두고, 사이드바를 `absolute right-full mr-6 top-0 h-full` + 내부 `sticky top-24 w-[240px]`로 왼쪽 여백에 띄웁니다. 본문 그리드·폭에는 손대지 않습니다.
+- 노출 조건: 왼쪽 여백은 대략 `(100vw - 1024px)/2`이므로, `1536px` 이상(`2xl:block`, 여백 약 256px)에서만 보이게 하고 그 아래에서는 `hidden` + 본문 상단 접이식 카드로 대체합니다. `_main.tsx`와 라우트 파일은 수정하지 않습니다.
 - 상태 계산은 `src/lib/record-progress.ts`에 순수 함수로 분리하고, **편집 블록 기준으로 독립 계산**합니다. `record-readme.ts`의 판정은 README 출력 블록 단위라 경계가 달라 재사용하지 않고, 3단계 구분(`empty`/`partial`/`done`)과 라벨 문구만 동일하게 맞춥니다. 07 출력 보기 배지 로직은 손대지 않습니다.
-- `src/routes/_main.tsx:406`의 컨테이너 폭 분기에 record 글 조건을 추가합니다(`isRecord ? "max-w-[1400px] py-8"`). 다른 글 유형은 기존 `max-w-5xl` 유지.
 - 데이터 소스는 이미 로드된 `bundle`과 `final` 로컬 상태뿐이라 추가 서버 요청·쿼리·마이그레이션이 없습니다. 저장 로직에도 손대지 않습니다.
 - 사이드바는 인쇄/출력 영역과 무관하므로 `record-output-ui` 계열 클래스와 충돌하지 않게 별도 래퍼로 둡니다.
 
