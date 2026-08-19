@@ -26,6 +26,8 @@ import {
   buildOverviewReadme,
   sanitizeFolderName,
 } from "@/lib/record-readme";
+import { RECORD_FINAL_KEYS } from "@/lib/record-readme";
+import { STANCE_QUESTIONS } from "@/lib/record-schema";
 
 
 export const Route = createFileRoute("/admin/records")({
@@ -73,7 +75,7 @@ const CHECK_ITEMS_COUNT = STANCE_QUESTIONS.length;
 function finalFilledCount(final: RecordOverviewTeam["final"]): number {
   if (!final) return 0;
   return RECORD_FINAL_KEYS.filter(
-    (k) => ((final as Record<string, string>)[k] ?? "").trim().length > 0,
+    (k: string) => ((final as Record<string, string>)[k] ?? "").trim().length > 0,
   ).length;
 }
 
@@ -220,7 +222,7 @@ function RecordOverviewPage() {
         f?.heroImageUrl ?? "",
         f?.deployUrl ?? "",
         f?.githubUrl ?? "",
-        f?.techStack ?? "",
+        f?.techScreen ?? "",
         f?.envNames ?? "",
         f?.updatedBy ?? "",
         f?.updatedAt ? formatDateTime(f.updatedAt) : "",
@@ -439,7 +441,7 @@ function RecordOverviewPage() {
                             </td>
                             {ROW_SECTIONS.map((s) => {
                               const count = rowCountByKind(team, s.kind);
-                              if (s.kind === "check") {
+                              if (s.kind === "stance") {
                                 return (
                                   <td
                                     key={s.kind}
