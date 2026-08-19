@@ -101,8 +101,13 @@ export interface RowSectionDef {
   placeholders?: string[];
   /** 여러 줄 입력으로 보여줄 열 인덱스 */
   longCols?: number[];
+  /** 이 열은 텍스트 대신 '관련 링크' 입력으로 렌더링한다 */
+  linkCol?: number;
+  /** 이 열은 텍스트 대신 '관련 파일' 첨부 UI로 렌더링한다 (JSON 저장) */
+  fileCol?: number;
   addLabel: string;
 }
+
 
 export const ROW_SECTION_DEFS: Record<string, RowSectionDef> = {
   process: {
