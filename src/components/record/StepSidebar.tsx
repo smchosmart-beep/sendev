@@ -69,7 +69,9 @@ function BlockList({
               {b.no}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-xs font-medium text-foreground">{b.title}</span>
+              <span className="block text-[11px] font-medium leading-tight break-keep text-foreground">
+                {b.title}
+              </span>
               <span className={cn("block text-[11px]", STATUS_CLASS[b.status])}>
                 {BLOCK_STATUS_LABEL[b.status]}
                 {b.meta ? ` · ${b.meta}` : ""}
