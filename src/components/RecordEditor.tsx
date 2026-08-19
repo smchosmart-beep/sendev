@@ -746,12 +746,14 @@ function RowSection({
 function RowItem({
   row,
   cols,
+  long,
   canEdit,
   onSave,
   onDelete,
 }: {
   row: RecordRowDTO;
   cols: string[];
+  long?: boolean;
   canEdit: boolean;
   onSave: (vars: {
     id: string | null;
@@ -772,21 +774,38 @@ function RowItem({
   const dirty =
     values[0] !== row.col1 || values[1] !== row.col2 || values[2] !== row.col3;
 
+  const update = (i: number, next: string) =>
+    setValues((prev) => prev.map((v, idx) => (idx === i ? next : v)));
+
   return (
     <div className="grid gap-2 rounded-xl bg-muted/40 p-3 sm:grid-cols-[1fr_auto]">
       <div className="grid gap-2 sm:grid-cols-3">
-        {cols.map((label, i) => (
-          <Input
-            key={label}
-            value={values[i] ?? ""}
-            onChange={(e) =>
-              setValues((prev) => prev.map((v, idx) => (idx === i ? e.target.value : v)))
-            }
-            placeholder={label}
-            disabled={!canEdit}
-            className="rounded-xl bg-background"
-          />
-        ))}
+        {cols.map((label, i) =>
+          long && i > 0 ? (
+            <div key={label} className="space-y-1">
+              <Textarea
+                value={values[i] ?? ""}
+                onChange={(e) => update(i, e.target.value.slice(0, LONG_MAX))}
+                placeholder={label}
+                rows={4}
+                disabled={!canEdit}
+                className="rounded-xl bg-background"
+              />
+              <p className="text-right text-xs text-muted-foreground">
+                {(values[i] ?? "").length}/{LONG_MAX}
+              </p>
+            </div>
+          ) : (
+            <Input
+              key={label}
+              value={values[i] ?? ""}
+              onChange={(e) => update(i, e.target.value)}
+              placeholder={label}
+              disabled={!canEdit}
+              className="rounded-xl bg-background"
+            />
+          ),
+        )}
       </div>
       {canEdit && (
         <div className="flex items-center gap-2">
