@@ -43,7 +43,7 @@
 ## 기술 메모
 
 - 새 라우트 `src/routes/admin.records.tsx`, 관리자 탭 배열(`src/routes/admin.tsx`의 `tabs`)에 항목 추가.
-- 관리자 비밀번호는 기존 `getAdminPassword()`(sessionStorage) 방식을 그대로 사용 — `admin.profiles.tsx`와 동일한 패턴.
+- 관리자 비밀번호는 기존 `getAdminPassword()`(sessionStorage) 방식을 그대로 사용 — `admin.profiles.tsx`와 동일한 패턴. 조회 함수는 `POST`로 만들어 비밀번호가 URL 쿼리에 노출되지 않도록 합니다.
 - 엑셀은 `admin.categories.tsx`와 동일하게 `await import("xlsx")` 동적 로딩, ZIP은 `await import("jszip")`.
 - 조회는 `useQuery`로 하고 게시판을 바꿀 때만 다시 부릅니다(자동 폴링 없음).
 - DB 마이그레이션 없음. 새 테이블·컬럼·정책 변경 없음.
