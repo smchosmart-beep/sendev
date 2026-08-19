@@ -19,6 +19,7 @@ import {
 import { categoriesQueryOptions } from "@/lib/platform.queries";
 import { getRecordOverview } from "@/lib/record.functions";
 import type { RecordOverviewTeam } from "@/lib/record.functions";
+import { ETHICS_PRINCIPLES, ethicsAverage } from "@/lib/record-ethics";
 import { getAdminPassword } from "@/lib/admin-auth";
 import { cn } from "@/lib/utils";
 import {
@@ -196,6 +197,10 @@ function RecordOverviewPage() {
       "교육적 점검",
       "개인 후기",
       "팀원 약속",
+      "윤리 응답 인원",
+      "윤리 전체 평균",
+      ...ETHICS_PRINCIPLES.map((p) => `윤리 평균-${p.title}`),
+      "윤리 추가 약속",
     ];
 
     const rows = overview.teams.map((team) => {
@@ -237,8 +242,28 @@ function RecordOverviewPage() {
         `${counts.check}/${CHECK_ITEMS_COUNT}`,
         counts.reflection.count,
         counts.reflection.count,
+        team.ethics.length,
+        team.ethics.length
+          ? (
+              team.ethics.reduce((sum, e) => sum + ethicsAverage(e as any), 0) /
+              team.ethics.length
+            ).toFixed(1)
+          : "",
+        ...ETHICS_PRINCIPLES.map((p) =>
+          team.ethics.length
+            ? (
+                team.ethics.reduce((sum, e) => sum + Number((e as any)[p.key] ?? 0), 0) /
+                team.ethics.length
+              ).toFixed(1)
+            : "",
+        ),
+        team.ethics
+          .filter((e) => (e.extraPromise ?? "").trim())
+          .map((e) => `${e.username}: ${e.extraPromise}`)
+          .join(" / "),
       ];
     });
+
 
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     const wb = XLSX.utils.book_new();
@@ -394,6 +419,10 @@ function RecordOverviewPage() {
                         후기
                       </th>
                       <th className="whitespace-nowrap px-3 py-3 text-center font-semibold text-foreground">
+                        윤리설문
+                      </th>
+
+                      <th className="whitespace-nowrap px-3 py-3 text-center font-semibold text-foreground">
                         수정일
                       </th>
                       <th className="px-3 py-3 text-center font-semibold text-foreground">보기</th>
@@ -483,6 +512,19 @@ function RecordOverviewPage() {
                                 {reflectionCount}/{memberCount}명
                               </span>
                             </td>
+                            <td className="whitespace-nowrap px-3 py-3 text-center align-middle">
+                              <span
+                                className={cn(
+                                  "inline-flex rounded-full px-2.5 py-1 text-xs font-medium",
+                                  team.ethics.length === memberCount && memberCount > 0
+                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                                    : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+                                )}
+                              >
+                                {team.ethics.length}/{memberCount}명
+                              </span>
+                            </td>
+
                             <td className="whitespace-nowrap px-3 py-3 text-center align-middle text-xs text-muted-foreground">
                               {formatDateTime(team.final?.updatedAt)}
                             </td>
@@ -500,7 +542,7 @@ function RecordOverviewPage() {
                           {isExpanded && (
                             <tr>
                               <td
-                                colSpan={ROW_SECTIONS.length + 5}
+                                colSpan={ROW_SECTIONS.length + 6}
                                 className="bg-muted/30 px-3 py-3"
                               >
                                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

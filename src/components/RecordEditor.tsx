@@ -38,6 +38,7 @@ import {
   type RowSectionDef,
 } from "@/lib/record-schema";
 import { RecordOutput } from "@/components/RecordOutput";
+import { EthicsSection } from "@/components/record/EthicsSection";
 import { getAdminPassword } from "@/lib/admin-auth";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import { Button } from "@/components/ui/button";
@@ -296,7 +297,8 @@ const STEPS = [
   { no: "03", title: "최종 결과물" },
   { no: "04", title: "개발·교육적 점검" },
   { no: "05", title: "개인 후기·소회" },
-  { no: "06", title: "출력 보기" },
+  { no: "06", title: "윤리 설문" },
+  { no: "07", title: "출력 보기" },
 ];
 
 export function RecordEditor({
@@ -603,6 +605,17 @@ export function RecordEditor({
       )}
 
       {step === 5 && (
+        <EthicsSection
+          postId={postId}
+          ethics={bundle.ethics}
+          members={bundle.members}
+          myKey={(identity?.author ?? "").trim().toLowerCase()}
+          isMember={isMember}
+          isAdmin={!!auth.adminPassword}
+        />
+      )}
+
+      {step === 6 && (
         <RecordOutput
           team={{
             postId: bundle.postId,
@@ -614,10 +627,12 @@ export function RecordEditor({
             final: bundle.final,
             rows: bundle.rows,
             reflections: bundle.reflections,
+            ethics: bundle.ethics,
           }}
           onGoStep={setStep}
         />
       )}
+
 
       <div className="record-output-ui flex items-center justify-between gap-3">
         <Button

@@ -169,6 +169,21 @@ export interface RecordOverviewReflection {
 }
 
 
+export interface RecordOverviewEthics {
+  id: string;
+  username: string;
+  usernameKey: string;
+  s1: number;
+  s2: number;
+  s3: number;
+  s4: number;
+  s5: number;
+  s6: number;
+  s7: number;
+  extraPromise: string;
+  updatedAt: string;
+}
+
 export interface RecordOverviewTeam {
   postId: string;
   postNo: number;
@@ -179,6 +194,7 @@ export interface RecordOverviewTeam {
   final: RecordOverviewFinal | null;
   rows: RecordOverviewRow[];
   reflections: RecordOverviewReflection[];
+  ethics: RecordOverviewEthics[];
 }
 
 export interface RecordOverviewResult {
@@ -211,7 +227,7 @@ export async function fetchRecordOverview(
     return { categoryId, slug: category.slug as string, teams: [] };
   }
 
-  const [{ data: members }, { data: finals }, { data: rows }, { data: reflections }] =
+  const [{ data: members }, { data: finals }, { data: rows }, { data: reflections }, { data: ethics }] =
     await Promise.all([
       db
         .from("record_members")
@@ -228,6 +244,11 @@ export async function fetchRecordOverview(
       db
         .from("record_reflections")
         .select("id, post_id, username, username_key, content, promise, updated_at")
+        .in("post_id", postIds)
+        .order("created_at", { ascending: true }),
+      db
+        .from("record_ethics")
+        .select("*")
         .in("post_id", postIds)
         .order("created_at", { ascending: true }),
     ]);
@@ -251,6 +272,14 @@ export async function fetchRecordOverview(
     list.push(r);
     reflectionsByPost.set(r.post_id, list);
   }
+  const ethicsByPost = new Map<string, any[]>();
+  for (const e of ethics ?? []) {
+    const list = ethicsByPost.get(e.post_id) ?? [];
+    list.push(e);
+    ethicsByPost.set(e.post_id, list);
+  }
+
+
 
   const teams = (posts ?? []).map((p: any): RecordOverviewTeam => {
     const f = finalByPost.get(p.id);
@@ -305,8 +334,23 @@ export async function fetchRecordOverview(
         spreadPlan: r.spread_plan ?? "",
         updatedAt: r.updated_at ?? "",
       })),
+      ethics: (ethicsByPost.get(p.id) ?? []).map((e: any) => ({
+        id: e.id,
+        username: e.username ?? "",
+        usernameKey: e.username_key,
+        s1: Number(e.s1 ?? 0),
+        s2: Number(e.s2 ?? 0),
+        s3: Number(e.s3 ?? 0),
+        s4: Number(e.s4 ?? 0),
+        s5: Number(e.s5 ?? 0),
+        s6: Number(e.s6 ?? 0),
+        s7: Number(e.s7 ?? 0),
+        extraPromise: e.extra_promise ?? "",
+        updatedAt: e.updated_at ?? "",
+      })),
     };
   });
+
 
 
   return { categoryId, slug: category.slug as string, teams };

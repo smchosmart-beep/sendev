@@ -15,6 +15,7 @@ import type {
   RecordOverviewFinal,
   RecordOverviewRow,
   RecordOverviewReflection,
+  RecordOverviewEthics,
   RecordOverviewTeam,
   RecordOverviewResult,
 } from "./record.server";
@@ -24,6 +25,7 @@ export type {
   RecordOverviewFinal,
   RecordOverviewRow,
   RecordOverviewReflection,
+  RecordOverviewEthics,
   RecordOverviewTeam,
   RecordOverviewResult,
 } from "./record.server";
@@ -73,6 +75,21 @@ export interface RecordReflectionDTO {
 }
 
 
+export interface RecordEthicsDTO {
+  id: string;
+  username: string;
+  usernameKey: string;
+  s1: number;
+  s2: number;
+  s3: number;
+  s4: number;
+  s5: number;
+  s6: number;
+  s7: number;
+  extraPromise: string;
+  updatedAt: string;
+}
+
 export interface RecordBundleDTO {
   postId: string;
   categoryId: string;
@@ -81,6 +98,7 @@ export interface RecordBundleDTO {
   final: RecordFinalDTO | null;
   rows: RecordRowDTO[];
   reflections: RecordReflectionDTO[];
+  ethics: RecordEthicsDTO[];
 }
 
 // 활동기록 전체(팀원 + 최종 결과물 + 반복행)를 한 번에 읽는다.
@@ -96,11 +114,12 @@ export const getRecord = createServerFn({ method: "GET" })
       .maybeSingle();
     if (!post || post.type !== "record") return null;
 
-    const [{ data: members }, { data: final }, { data: rows }, { data: reflections }] = await Promise.all([
+    const [{ data: members }, { data: final }, { data: rows }, { data: reflections }, { data: ethics }] = await Promise.all([
       db.from("record_members").select("*").eq("post_id", post.id).order("created_at", { ascending: true }),
       db.from("record_final").select("*").eq("post_id", post.id).maybeSingle(),
       db.from("record_rows").select("*").eq("post_id", post.id).order("kind", { ascending: true }).order("sort_order", { ascending: true }),
       db.from("record_reflections").select("*").eq("post_id", post.id).order("created_at", { ascending: true }),
+      db.from("record_ethics").select("*").eq("post_id", post.id).order("created_at", { ascending: true }),
     ]);
 
     return {
@@ -152,7 +171,22 @@ export const getRecord = createServerFn({ method: "GET" })
         spreadPlan: r.spread_plan ?? "",
         updatedAt: r.updated_at ?? "",
       })),
+      ethics: (ethics ?? []).map((e: any) => ({
+        id: e.id,
+        username: e.username ?? "",
+        usernameKey: e.username_key,
+        s1: Number(e.s1 ?? 0),
+        s2: Number(e.s2 ?? 0),
+        s3: Number(e.s3 ?? 0),
+        s4: Number(e.s4 ?? 0),
+        s5: Number(e.s5 ?? 0),
+        s6: Number(e.s6 ?? 0),
+        s7: Number(e.s7 ?? 0),
+        extraPromise: e.extra_promise ?? "",
+        updatedAt: e.updated_at ?? "",
+      })),
     };
+
 
   });
 
@@ -643,6 +677,106 @@ export const updateRecordMember = createServerFn({ method: "POST" })
       .update({ affiliation: data.affiliation, role: data.role })
       .eq("id", data.memberId)
       .eq("post_id", data.postId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// 교사 개발자 윤리 자가점검 — 본인 닉네임 행만 쓰기, 관리자는 삭제만.
+const ethicsScore = z.number().min(0).max(5).multipleOf(0.5).default(0);
+
+export const saveRecordEthics = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        postId: z.string().uuid(),
+        s1: ethicsScore,
+        s2: ethicsScore,
+        s3: ethicsScore,
+        s4: ethicsScore,
+        s5: ethicsScore,
+        s6: ethicsScore,
+        s7: ethicsScore,
+        extraPromise: z.string().max(200).default(""),
+        knownUpdatedAt: z.string().max(40).default(""),
+        author: z.string().trim().min(1).max(100),
+        nicknamePassword: z.string().trim().max(100).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ id: string; updatedAt: string }> => {
+    const R = await import("./record.server");
+    const db = await R.getRecordDb();
+    const name = await R.ensureNickname(db, data.author, data.nicknamePassword);
+    const key = R.normalizeName(name);
+    const { data: member } = await db
+      .from("record_members")
+      .select("id")
+      .eq("post_id", data.postId)
+      .eq("username_key", key)
+      .maybeSingle();
+    if (!member) throw new Error("이 활동기록의 팀원만 설문에 답할 수 있어요.");
+
+    const { data: current } = await db
+      .from("record_ethics")
+      .select("id, updated_at")
+      .eq("post_id", data.postId)
+      .eq("username_key", key)
+      .maybeSingle();
+    if (
+      current &&
+      data.knownUpdatedAt &&
+      new Date(current.updated_at).getTime() > new Date(data.knownUpdatedAt).getTime()
+    ) {
+      throw new Error("다른 기기에서 먼저 저장했어요. 최신 내용을 불러온 뒤 다시 저장해 주세요.");
+    }
+
+    const payload = {
+      post_id: data.postId,
+      username: name,
+      username_key: key,
+      s1: data.s1,
+      s2: data.s2,
+      s3: data.s3,
+      s4: data.s4,
+      s5: data.s5,
+      s6: data.s6,
+      s7: data.s7,
+      extra_promise: data.extraPromise,
+      updated_by: name,
+      updated_at: new Date().toISOString(),
+    };
+    const { data: saved, error } = await db
+      .from("record_ethics")
+      .upsert(payload, { onConflict: "post_id,username_key" })
+      .select("id, updated_at")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return { id: saved.id, updatedAt: saved.updated_at };
+  });
+
+export const deleteRecordEthics = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        postId: z.string().uuid(),
+        id: z.string().uuid(),
+        author: z.string().trim().max(100).default(""),
+        nicknamePassword: z.string().trim().max(100).default(""),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const R = await import("./record.server");
+    const db = await R.getRecordDb();
+    let filterKey: string | null = null;
+    if (!R.isAdminPassword(data.adminPassword)) {
+      const name = await R.ensureNickname(db, data.author, data.nicknamePassword);
+      filterKey = R.normalizeName(name);
+    }
+    let q = db.from("record_ethics").delete().eq("id", data.id).eq("post_id", data.postId);
+    if (filterKey) q = q.eq("username_key", filterKey);
+    const { error } = await q;
     if (error) throw new Error(error.message);
     return { ok: true };
   });
