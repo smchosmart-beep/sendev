@@ -542,7 +542,7 @@ function RecordOverviewPage() {
                           {isExpanded && (
                             <tr>
                               <td
-                                colSpan={ROW_SECTIONS.length + 5}
+                                colSpan={ROW_SECTIONS.length + 6}
                                 className="bg-muted/30 px-3 py-3"
                               >
                                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
