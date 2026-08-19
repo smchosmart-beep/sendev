@@ -371,7 +371,7 @@
   color: var(--primary-foreground);
 }
 
-/* 활동기록 출력 보기 — 인쇄/PDF 시 README 본문만 A4로 출력 */
+/* 활동기록 README 출력 — 인쇄/PDF 시 README 본문만 A4로 출력 */
 @media print {
   body:has(.record-output [data-print-root]) * {
     visibility: hidden;
