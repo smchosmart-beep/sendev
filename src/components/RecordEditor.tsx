@@ -35,6 +35,7 @@ import {
   type RecordFinalKey,
   type RowSectionDef,
 } from "@/lib/record-schema";
+import { RecordOutput } from "@/components/RecordOutput";
 import { getAdminPassword } from "@/lib/admin-auth";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import { Button } from "@/components/ui/button";
@@ -170,9 +171,18 @@ const STEPS = [
   { no: "03", title: "최종 결과물" },
   { no: "04", title: "개발·교육적 점검" },
   { no: "05", title: "개인 후기·소회" },
+  { no: "06", title: "출력 보기" },
 ];
 
-export function RecordEditor({ postId }: { postId: string }) {
+export function RecordEditor({
+  postId,
+  postNo,
+  slug,
+}: {
+  postId: string;
+  postNo: number;
+  slug: string;
+}) {
   const queryClient = useQueryClient();
   const fetchRecord = useServerFn(getRecord);
   const saveFinalFn = useServerFn(saveRecordFinal);
@@ -467,7 +477,24 @@ export function RecordEditor({ postId }: { postId: string }) {
         />
       )}
 
-      <div className="flex items-center justify-between gap-3">
+      {step === 5 && (
+        <RecordOutput
+          team={{
+            postId: bundle.postId,
+            postNo,
+            categoryId: bundle.categoryId,
+            slug,
+            teamName: bundle.teamName,
+            members: bundle.members,
+            final: bundle.final,
+            rows: bundle.rows,
+            reflections: bundle.reflections,
+          }}
+          onGoStep={setStep}
+        />
+      )}
+
+      <div className="record-output-ui flex items-center justify-between gap-3">
         <Button
           type="button"
           variant="outline"
