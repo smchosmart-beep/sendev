@@ -80,7 +80,7 @@ type FinalInput = {
   key: RecordFinalKey;
   label: string;
   hint?: string;
-  type: "text" | "textarea" | "select";
+  type: "text" | "textarea" | "select" | "image";
   options?: string[];
   full?: boolean;
 };
@@ -113,7 +113,13 @@ const FINAL_GROUPS: { title: string; hint?: string; fields: FinalInput[] }[] = [
       { key: "deployUrl", label: "배포 주소", type: "text" },
       { key: "githubUrl", label: "GitHub 주소", type: "text" },
       { key: "demoVideoUrl", label: "시연 영상 주소", type: "text" },
-      { key: "heroImageUrl", label: "대표 이미지 주소", type: "text" },
+      {
+        key: "heroImageUrl",
+        label: "대표 이미지",
+        hint: "이미지 파일을 올리면 자동으로 등록돼요.",
+        type: "image",
+        full: true,
+      },
       {
         key: "usageCondition",
         label: "사용 조건",
