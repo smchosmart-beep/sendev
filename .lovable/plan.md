@@ -43,8 +43,9 @@
   2. `src/lib/record.server.ts`의 `RecordRowKind` 타입
   3. 같은 파일의 `RECORD_ROW_KINDS` 배열
   4. `src/lib/record.functions.ts`의 zod enum
+  - `kind = 'devlog'`의 `col2`, `col3`와 `kind = 'process'`의 `col2`는 본문 길이가 1000자를 초과할 수 있으므로, 마이그레이션에서 해당 컬럼의 제한을 2000자로 상향하거나, zod 검증에서 조건부 max(2000)을 적용합니다. 클라이언트 입력창에도 동일한 길이 안내를 표시합니다.
 - 개인 후기는 인원별 1건 제한이 필요하므로 새 테이블 `record_reflections`를 만듭니다.
-  - `post_id, username, username_key, content, promise, updated_by, created_at, updated_at`
+  - `post_id, username, username_key, content, promise, updated_by, updated_at, created_at`
   - `unique (post_id, username_key)`
   - RLS 활성화, 기존 `record_*` 테이블과 동일한 보안 모델: `authenticated`, `anon`, `service_role` 세 롤 모두에 `GRANT ALL`을 부여하고 RLS 정책은 두지 않고 service_role 전용 접근. `record_reflections`에도 동일하게 grant를 부여한 뒤 RLS를 활성화합니다.
 
