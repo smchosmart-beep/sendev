@@ -427,6 +427,68 @@ export type Database = {
           },
         ]
       }
+      record_ethics: {
+        Row: {
+          created_at: string
+          extra_promise: string
+          id: string
+          post_id: string
+          s1: number
+          s2: number
+          s3: number
+          s4: number
+          s5: number
+          s6: number
+          s7: number
+          updated_at: string
+          updated_by: string
+          username: string
+          username_key: string
+        }
+        Insert: {
+          created_at?: string
+          extra_promise?: string
+          id?: string
+          post_id: string
+          s1?: number
+          s2?: number
+          s3?: number
+          s4?: number
+          s5?: number
+          s6?: number
+          s7?: number
+          updated_at?: string
+          updated_by?: string
+          username?: string
+          username_key: string
+        }
+        Update: {
+          created_at?: string
+          extra_promise?: string
+          id?: string
+          post_id?: string
+          s1?: number
+          s2?: number
+          s3?: number
+          s4?: number
+          s5?: number
+          s6?: number
+          s7?: number
+          updated_at?: string
+          updated_by?: string
+          username?: string
+          username_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_ethics_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       record_final: {
         Row: {
           change_content: string
