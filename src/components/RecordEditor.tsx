@@ -437,11 +437,14 @@ export function RecordEditor({
   const rowsOf = (kind: RowKind) =>
     bundle.rows.filter((r) => r.kind === kind).sort((a, b) => a.sortOrder - b.sortOrder);
 
+  const memberAuthor = isMember ? (identity?.author ?? "").trim() : "";
+
   const rowSectionProps = {
     canEdit,
     onSave: (vars: SaveRowVars) => rowMutation.mutate(vars),
     onDelete: (id: string) => deleteMutation.mutate(id),
   };
+
 
   return (
     <div className="space-y-6">
@@ -495,6 +498,9 @@ export function RecordEditor({
           longCols={[1, 2]}
           rows={rowsOf("process")}
           {...rowSectionProps}
+          authorEnabled
+          defaultAuthor={memberAuthor}
+
         />
       )}
 
@@ -556,6 +562,9 @@ export function RecordEditor({
             longCols={[1, 2]}
             rows={rowsOf("devlog")}
             {...rowSectionProps}
+            authorEnabled
+            defaultAuthor={memberAuthor}
+
           />
           {(["decision", "stuck", "ai_use", "ai_error", "privacy"] as RowKind[]).map((kind) => (
             <RowSection
@@ -924,6 +933,8 @@ function RowSection({
   longCols,
   placeholders,
   subtypes,
+  defaultAuthor = "",
+  authorEnabled = false,
 }: {
   def: RowSectionDef;
   rows: RecordRowDTO[];
@@ -936,6 +947,10 @@ function RowSection({
   longCols?: number[];
   placeholders?: string[];
   subtypes?: string[];
+  // 새 행을 만들 때 미리 채울 작성자 이름 (작성자 사용 섹션에서만 전달)
+  defaultAuthor?: string;
+  // 작성자 입력칸을 노출할 섹션인지 여부 (과정 기록·개발 자유기록만 true)
+  authorEnabled?: boolean;
 }) {
   const labels = cols ?? def.cols;
   const longs = longCols ?? def.longCols ?? [];
@@ -957,6 +972,7 @@ function RowSection({
             placeholders={hints}
             subtypes={subtypes}
             canEdit={canEdit}
+            authorEnabled={authorEnabled}
             onSave={onSave}
             onDelete={onDelete}
           />
@@ -966,7 +982,9 @@ function RowSection({
             type="button"
             variant="secondary"
             className="rounded-xl active:scale-95"
-            onClick={() => onSave(emptyRowVars(def.kind, rows.length))}
+            onClick={() =>
+              onSave({ ...emptyRowVars(def.kind, rows.length), rowAuthor: defaultAuthor })
+            }
           >
             <Plus className="h-4 w-4" />
             {def.addLabel}
@@ -984,6 +1002,7 @@ function RowItem({
   placeholders,
   subtypes,
   canEdit,
+  authorEnabled,
   onSave,
   onDelete,
 }: {
@@ -993,6 +1012,7 @@ function RowItem({
   placeholders?: string[];
   subtypes?: string[];
   canEdit: boolean;
+  authorEnabled?: boolean;
   onSave: (vars: SaveRowVars) => void;
   onDelete: (id: string) => void;
 }) {
@@ -1013,9 +1033,12 @@ function RowItem({
   const update = (i: number, next: string) =>
     setValues((prev) => prev.map((v, idx) => (idx === i ? next : v)));
 
+  // 작성자 칸을 쓰지 않는 표에서도 예전에 저장된 이름은 읽기 전용으로 보여 준다.
+  const legacyAuthor = !authorEnabled && author.trim() ? author.trim() : "";
+
   return (
     <div className="space-y-2 rounded-xl bg-muted/40 p-3">
-      {(subtypes || canEdit) && (
+      {(subtypes || legacyAuthor || (authorEnabled && canEdit)) && (
         <div className="flex flex-wrap items-center gap-2">
           {subtypes?.map((s) => (
             <Button
@@ -1030,15 +1053,25 @@ function RowItem({
               {s}
             </Button>
           ))}
-          <Input
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            placeholder="예) 김수학 (선택)"
-            disabled={!canEdit}
-            className="h-8 w-40 rounded-xl bg-background text-xs"
-          />
+          {authorEnabled ? (
+            <div className="flex items-center gap-1.5">
+              <Label className="text-xs text-muted-foreground">기록한 사람</Label>
+              <Input
+                value={author}
+                onChange={(e) => setAuthor(e.target.value)}
+                placeholder="예) 김수학 (수정 가능)"
+                disabled={!canEdit}
+                className="h-8 w-40 rounded-xl bg-background text-xs"
+              />
+            </div>
+          ) : (
+            legacyAuthor && (
+              <span className="text-xs text-muted-foreground">기록한 사람: {legacyAuthor}</span>
+            )
+          )}
         </div>
       )}
+
       <div className="grid gap-2 sm:grid-cols-2">
         {labels.map((label, i) => (
           <div
