@@ -14,6 +14,7 @@ import { Route as MainRouteImport } from './routes/_main'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminRecordsRouteImport } from './routes/admin.records'
 import { Route as AdminProfilesRouteImport } from './routes/admin.profiles'
 import { Route as AdminProblemOptionsRouteImport } from './routes/admin.problem-options'
 import { Route as AdminHomeRouteImport } from './routes/admin.home'
@@ -61,6 +62,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminRecordsRoute = AdminRecordsRouteImport.update({
+  id: '/records',
+  path: '/records',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminProfilesRoute = AdminProfilesRouteImport.update({
@@ -201,6 +207,7 @@ export interface FileRoutesByFullPath {
   '/admin/home': typeof AdminHomeRoute
   '/admin/problem-options': typeof AdminProblemOptionsRoute
   '/admin/profiles': typeof AdminProfilesRoute
+  '/admin/records': typeof AdminRecordsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
   '/board/$slug': typeof MainBoardSlugRouteWithChildren
@@ -230,6 +237,7 @@ export interface FileRoutesByTo {
   '/admin/home': typeof AdminHomeRoute
   '/admin/problem-options': typeof AdminProblemOptionsRoute
   '/admin/profiles': typeof AdminProfilesRoute
+  '/admin/records': typeof AdminRecordsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin': typeof AdminIndexRoute
   '/board': typeof MainBoardIndexRoute
@@ -261,6 +269,7 @@ export interface FileRoutesById {
   '/admin/home': typeof AdminHomeRoute
   '/admin/problem-options': typeof AdminProblemOptionsRoute
   '/admin/profiles': typeof AdminProfilesRoute
+  '/admin/records': typeof AdminRecordsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
   '/_main/board/$slug': typeof MainBoardSlugRouteWithChildren
@@ -293,6 +302,7 @@ export interface FileRouteTypes {
     | '/admin/home'
     | '/admin/problem-options'
     | '/admin/profiles'
+    | '/admin/records'
     | '/admin/settings'
     | '/admin/'
     | '/board/$slug'
@@ -322,6 +332,7 @@ export interface FileRouteTypes {
     | '/admin/home'
     | '/admin/problem-options'
     | '/admin/profiles'
+    | '/admin/records'
     | '/admin/settings'
     | '/admin'
     | '/board'
@@ -352,6 +363,7 @@ export interface FileRouteTypes {
     | '/admin/home'
     | '/admin/problem-options'
     | '/admin/profiles'
+    | '/admin/records'
     | '/admin/settings'
     | '/admin/'
     | '/_main/board/$slug'
@@ -409,6 +421,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/admin/settings'
       preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/records': {
+      id: '/admin/records'
+      path: '/records'
+      fullPath: '/admin/records'
+      preLoaderRoute: typeof AdminRecordsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/profiles': {
@@ -643,6 +662,7 @@ interface AdminRouteChildren {
   AdminHomeRoute: typeof AdminHomeRoute
   AdminProblemOptionsRoute: typeof AdminProblemOptionsRoute
   AdminProfilesRoute: typeof AdminProfilesRoute
+  AdminRecordsRoute: typeof AdminRecordsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -654,6 +674,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminHomeRoute: AdminHomeRoute,
   AdminProblemOptionsRoute: AdminProblemOptionsRoute,
   AdminProfilesRoute: AdminProfilesRoute,
+  AdminRecordsRoute: AdminRecordsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
