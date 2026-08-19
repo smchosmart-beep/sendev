@@ -111,6 +111,14 @@ export const getRecord = createServerFn({ method: "GET" })
         updatedBy: r.updated_by ?? "",
         updatedAt: r.updated_at ?? "",
       })),
+      reflections: (reflections ?? []).map((r: any) => ({
+        id: r.id,
+        username: r.username,
+        usernameKey: r.username_key,
+        content: r.content ?? "",
+        promise: r.promise ?? "",
+        updatedAt: r.updated_at ?? "",
+      })),
     };
   });
 
