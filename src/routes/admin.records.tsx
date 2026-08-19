@@ -127,15 +127,13 @@ function downloadBlob(blob: Blob, filename: string) {
 }
 
 function RecordOverviewPage() {
-  const fetchCategories = useServerFn(listCategories);
   const fetchOverview = useServerFn(getRecordOverview);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  const { data: categories, isLoading: categoriesLoading } = useQuery({
-    queryKey: ["categories"],
-    queryFn: () => fetchCategories(),
-  });
+  const { data: categories, isLoading: categoriesLoading } = useQuery(
+    categoriesQueryOptions(),
+  );
 
   const recordCategories = useMemo(
     () => (categories ?? []).filter((c) => c.enableRecord),
