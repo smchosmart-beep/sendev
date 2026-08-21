@@ -1302,7 +1302,7 @@ function RowItem({
             const files = attachmentsOf(col);
             const isImageCol = imageCols.includes(col);
             return (
-              <div key={col} className="space-y-1">
+              <div key={col} className={cn("space-y-1", isImageCol && "w-full")}>
                 <Label className="text-xs text-muted-foreground">
                   {label} <span className="text-[11px]">(최대 3개, 개당 3MB)</span>
                 </Label>
@@ -1312,12 +1312,13 @@ function RowItem({
                     const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(f.name);
                     if (isImageCol && isImage) {
                       return (
-                        <span key={f.url} className="relative inline-block">
+                        <span key={f.url} className="relative inline-block w-full max-w-2xl">
                           <img
                             src={f.url}
                             alt={f.name}
-                            className="h-20 w-28 rounded-lg border border-border object-cover"
+                            className="h-auto max-h-[28rem] w-full rounded-lg border border-border object-contain"
                           />
+
                           {canEdit && (
                             <button
                               type="button"
