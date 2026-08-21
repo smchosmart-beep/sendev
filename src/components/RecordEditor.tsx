@@ -1047,6 +1047,8 @@ function RowSection({
   longCols?: number[];
   placeholders?: string[];
   subtypes?: string[];
+  // 새 행을 만들 때 기본으로 선택할 탭
+  defaultSubtype?: string;
   // 새 행을 만들 때 미리 채울 작성자 이름 (작성자 사용 섹션에서만 전달)
   defaultAuthor?: string;
   // 작성자 입력칸을 노출할 섹션인지 여부 (과정 기록·개발 자유기록만 true)
