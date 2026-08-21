@@ -5,8 +5,8 @@ import { ETHICS_PRINCIPLES } from "@/lib/record-ethics";
 import { parseAttachments } from "@/lib/file-upload";
 import { normalizeUrl } from "@/lib/record-readme";
 import {
-  ROW_SECTION_DEFS,
   STANCE_QUESTIONS,
+  rowTemplate,
   type RecordFinalKey,
   type RecordRowKindName,
 } from "@/lib/record-schema";
