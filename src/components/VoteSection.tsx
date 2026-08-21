@@ -174,6 +174,28 @@ export function VoteSection({
     };
   }, [status, ordered, counts, seats, lockedIds]);
 
+  // 표 수 기준 표준 경쟁 순위(동점은 같은 순위, 다음 순위는 인원수만큼 건너뜀).
+  const rankMap = useMemo(() => {
+    const map = new Map<string, { rank: number; tied: boolean }>();
+    if (status !== "closed") return map;
+    let rank = 0;
+    let prev: number | null = null;
+    const groups = new Map<number, number>();
+    ordered.forEach((p) => {
+      const c = counts[p.id] ?? 0;
+      groups.set(c, (groups.get(c) ?? 0) + 1);
+    });
+    ordered.forEach((p, i) => {
+      const c = counts[p.id] ?? 0;
+      if (prev === null || c !== prev) {
+        rank = i + 1;
+        prev = c;
+      }
+      map.set(p.id, { rank, tied: (groups.get(c) ?? 0) > 1 });
+    });
+    return map;
+  }, [ordered, counts, status]);
+
   const pageCount = Math.max(1, Math.ceil(ordered.length / PAGE_SIZE));
   const current = Math.min(Math.max(1, page), pageCount);
   const paged = ordered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
@@ -320,10 +342,12 @@ export function VoteSection({
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {paged.map((post, idx) => {
+            {paged.map((post) => {
               const voted = mySet.has(post.id);
               const count = counts[post.id] ?? 0;
-              const rank = status === "closed" ? (current - 1) * PAGE_SIZE + idx + 1 : 0;
+              const rankInfo = rankMap.get(post.id);
+              const showRank =
+                status === "closed" && count > 0 && !!rankInfo && rankInfo.rank <= 3;
               return (
                 <div
                   key={post.id}
@@ -337,10 +361,10 @@ export function VoteSection({
                     className="space-y-1"
                   >
                     <span className="flex flex-wrap items-center gap-1">
-                      {status === "closed" && rank <= 3 && (
+                      {showRank && rankInfo && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
                           <Trophy className="h-3.5 w-3.5" />
-                          {rank}위
+                          {rankInfo.tied ? `공동 ${rankInfo.rank}위` : `${rankInfo.rank}위`}
                         </span>
                       )}
                       {(lockedIds.has(post.id) ||
