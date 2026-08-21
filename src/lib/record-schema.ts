@@ -136,6 +136,21 @@ export const PROCESS_SUBTYPE_TEMPLATES: Record<string, RowTemplate> = {
     fileCols: [4, 5],
     imageCols: [4, 5],
   },
+  "인터뷰 기록": {
+    cols: ["인터뷰 질문", "인터뷰 대상", "인터뷰 내용", "", "", ""],
+    placeholders: [
+      "예) 어떤 상황에서 배수 판별이 가장 어렵나요?",
+      "예) 5학년 학생 3명 · 6학년 담임 교사 1명",
+      "예) 학생들은 3의 배수는 자릿수 합으로 잘 찾지만, 7의 배수는 방법을 몰라 하나씩 나눠 본다고 했어요.",
+      "",
+      "",
+      "",
+    ],
+    longCols: [0, 2],
+    fileCols: [],
+    imageCols: [],
+  },
+
 };
 
 /** 행의 종류·탭에 맞는 양식을 돌려준다. */
