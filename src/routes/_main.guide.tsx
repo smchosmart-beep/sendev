@@ -509,48 +509,47 @@ function GuidePage() {
         </ul>
       </Section>
 
-      <Section id="readme" icon={FileText} title="README 작성">
+      <Section id="readme" icon={FileText} title="README 출력">
         <p>
-          <strong>해커톤</strong> 탭 상단의 <strong>"README 작성"</strong> 버튼을 누르면 프로젝트 README.md를
-          만들 수 있는 페이지로 이동합니다. 후기 작성 버튼 바로 왼쪽에 있어요.
+          <strong>활동기록</strong>의 <strong>07 README 출력</strong> 단계에서 지금까지 작성한 내용을 바탕으로 한
+          README.md를 확인하고 내려받을 수 있습니다. 별도의 "README 작성" 메뉴는 없으며, 활동기록을 작성하면서
+          자연스럽게 README가 완성됩니다.
         </p>
         <p className="mt-3">
-          입력 항목은 다음과 같습니다.
+          README에 들어가는 주요 항목은 다음과 같습니다.
         </p>
         <ul className="ml-5 mt-3 list-disc space-y-2">
           <li>
-            <strong>프로젝트명</strong>과 <strong>한 줄 소개</strong>를 입력하면 README 제목과 설명으로 들어갑니다.
+            <strong>프로젝트명</strong>과 <strong>한 줄 소개</strong>는 01 팀 공통정보의 서비스명과 한 줄 소개에서
+            가져옵니다.
           </li>
           <li>
-            <strong>스크린샷 이미지 주소</strong>와 <strong>대체 텍스트</strong>를 입력하면 미리보기 섹션이 생깁니다. 주소를
-            비우면 해당 섹션은 자동으로 생략됩니다.
+            <strong>대표 이미지</strong>는 03 최종 결과물에서 업로드한 파일을 사용합니다. 이미지를 등록하지 않으면
+            해당 섹션은 자동으로 생략됩니다.
           </li>
           <li>
-            <strong>주요 기능</strong>은 제목과 설명을 한 쌍으로 입력하고, 필요하면 행을 추가하거나 삭제할 수 있습니다.
+            <strong>해결한 문제</strong>, <strong>핵심 기능</strong>, <strong>사용 흐름</strong>, <strong>기술 스택</strong>,
+            <strong>작동 범위와 한계</strong>, <strong>다음 계획</strong> 등은 활동기록 각 단계에서 입력한 내용이
+            자동으로 반영됩니다.
           </li>
           <li>
-            <strong>기술 스택</strong>은 Frontend / Backend & DB / Deployment 세 칸에 각각 입력합니다.
+            <strong>배포 주소 · GitHub 주소 · 시연 영상 주소</strong>를 넣으면 한 줄 소개 아래에
+            <strong> 🌐 바로 사용하기 💻 소스코드 ▶️ 시연 보기</strong> 형태의 아이콘 링크 배지가 표시되며,
+            클릭하면 새 탭에서 열립니다. 주소에 <code>https://</code>가 없으면 자동으로 붙습니다.
           </li>
           <li>
-            <strong>배포 주소 및 사용법</strong>에는 배포된 서비스 주소와 GitHub 저장소 주소(선택)를 적습니다.
-            <strong> 사용법</strong>은 "단계 추가" 버튼으로 한 줄씩 단계를 입력하면 1단계 → 2단계 → 3단계로 이어지는
-            <strong> 흐름도(Mermaid)</strong>가 자동으로 만들어집니다. GitHub에서는 도형 흐름도로 보입니다. 비워 두면
-            해당 섹션은 생략됩니다.
-          </li>
-
-
-          <li>
-            <strong>추가 설명</strong>은 선택 입력란입니다. 마크다운 문법을 지원하며, 프로젝트 구조·팀 소개·라이선스 등을
-            자유롭게 추가할 수 있습니다.
+            <strong>교육 현장 주의사항</strong>, <strong>제작자와 라이선스</strong>, <strong>교사 개발자 윤리 자가점검</strong>은
+            04 개발·교육적 점검, 05 개인 후기·소회, 06 윤리 설문 단계에서 입력한 내용이 반영됩니다.
           </li>
         </ul>
         <p className="mt-3">
-          화면 왼쪽(모바일에서는 위)에 입력 폼, 오른쪽(아래)에 실시간으로 생성된 마크다운 미리보기가 표시됩니다. 입력값은
-          브라우저 <strong>localStorage</strong>에 자동 저장되어 새로고침해도 유지됩니다. 완성 후 하단의
-          <strong> README.md 다운로드</strong> 버튼으로 파일을 받거나, <strong>클립보드에 복사</strong>해서 붙여넣을 수
-          있습니다. <strong>초기화</strong> 버튼으로 모든 입력을 지울 수 있습니다.
+          <strong>[README 구성]</strong> 탭에서는 최종 README를 이루는 10개 블록의 <strong>미작성 · 작성중 · 작성완료</strong>
+          상태를 한눈에 보고, 블록을 눌러 해당 작성 단계로 바로 이동할 수 있습니다. <strong>[최종 README]</strong> 탭에서는
+          완성된 문서를 미리보고 <strong>Markdown 원본 열기 · 원본 복사 · .md 내려받기 · 인쇄 · PDF</strong> 기능을
+          사용할 수 있습니다. 인쇄를 누르면 편집 화면은 빠지고 README 본문만 A4로 출력됩니다.
         </p>
       </Section>
+
 
       <Section id="posting" icon={LayoutGrid} title="글쓰기와 공지">
         <p>
