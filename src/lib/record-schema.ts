@@ -193,7 +193,7 @@ export const ROW_SECTION_DEFS: Record<string, RowSectionDef> = {
     longCols: [1, 2],
     linkCol: 3,
     fileCol: 4,
-    addLabel: "문제 정의 기록 추가",
+    addLabel: "그 밖의 문제 정의 메모 추가",
 
   },
   devlog: {
