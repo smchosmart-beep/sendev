@@ -567,7 +567,8 @@ export function RecordEditor({
           title="문제 정의 과정 기록"
           hint="회의·인터뷰 기록을 종류별로 남겨요."
           subtypes={PROCESS_SUBTYPES}
-          cols={["언제·어디서", "무엇을 나눴나요?", "그래서 정한 것"]}
+          defaultSubtype="그 밖의 문제 정의 메모"
+          cols={["언제·어디서", "무엇을 나눴나요?", "그래서 정한 것", "관련 링크", "관련 파일"]}
           longCols={[1, 2]}
           rows={rowsOf("process")}
           {...rowSectionProps}
