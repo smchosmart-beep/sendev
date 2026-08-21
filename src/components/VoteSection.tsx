@@ -127,12 +127,45 @@ export function VoteSection({
       toast.error(err instanceof Error ? err.message : "투표하지 못했어요."),
   });
 
+  // 결선 라운드에서는 동점 후보만 보여준다.
+  const visible = useMemo(
+    () => (isRunoff ? posts.filter((p) => runoffIds.has(p.id)) : posts),
+    [posts, isRunoff, runoffIds],
+  );
+
   const ordered = useMemo(() => {
-    if (status !== "closed") return posts;
-    return [...posts].sort(
+    if (status !== "closed") return visible;
+    return [...visible].sort(
       (a, b) => (counts[b.id] ?? 0) - (counts[a.id] ?? 0),
     );
-  }, [posts, status, counts]);
+  }, [visible, status, counts]);
+
+  // 이번 라운드 종료 시 남은 자리를 채운 팀(동점으로 넘치면 그대로 표시).
+  const winnerInfo = useMemo(() => {
+    if (status !== "closed") return { winners: new Set<string>(), tied: 0, tieCount: 0 };
+    const remaining = Math.max(0, seats - lockedIds.size);
+    const sorted = [...ordered];
+    if (remaining <= 0 || sorted.length <= remaining) {
+      return { winners: new Set(sorted.map((p) => p.id)), tied: 0, tieCount: 0 };
+    }
+    const cutoff = counts[sorted[remaining - 1]!.id] ?? 0;
+    const above = sorted.filter((p) => (counts[p.id] ?? 0) > cutoff);
+    const tied = sorted.filter((p) => (counts[p.id] ?? 0) === cutoff);
+    const overflow = above.length + tied.length > remaining;
+    return {
+      winners: new Set([...above, ...(overflow ? [] : tied)].map((p) => p.id)),
+      tied: overflow ? tied.length : 0,
+      tieCount: cutoff,
+      lockedCount: lockedIds.size + above.length,
+      openSeats: remaining - above.length,
+    } as {
+      winners: Set<string>;
+      tied: number;
+      tieCount: number;
+      lockedCount?: number;
+      openSeats?: number;
+    };
+  }, [status, ordered, counts, seats, lockedIds]);
 
   const pageCount = Math.max(1, Math.ceil(ordered.length / PAGE_SIZE));
   const current = Math.min(Math.max(1, page), pageCount);
