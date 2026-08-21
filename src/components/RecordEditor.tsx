@@ -1032,6 +1032,7 @@ function RowSection({
   longCols,
   placeholders,
   subtypes,
+  defaultSubtype = "",
   defaultAuthor = "",
   authorEnabled = false,
 }: {
