@@ -102,8 +102,8 @@ function RowTable({
                 {head ? <span className="casebook-card-sub">{head}</span> : null}
               </div>
               <dl className="casebook-dl">
-                {values.map((v, i) => {
-                  const text = (v ?? "").trim();
+                {(tpl.displayOrder ?? values.map((_, i) => i)).map((i) => {
+                  const text = (values[i] ?? "").trim();
                   if (!text) return null;
                   const label = (cols[i] ?? "").trim();
                   // 이 양식에서 쓰지 않는 열은 출력하지 않는다.
@@ -121,6 +121,23 @@ function RowTable({
                   if (tpl.fileCols?.includes(i)) {
                     const files = parseAttachments(text);
                     if (files.length === 0) return null;
+                    if (tpl.imageCols?.includes(i)) {
+                      return (
+                        <div key={i} className="casebook-field">
+                          <dt>{label}</dt>
+                          <dd>
+                            {files.map((f) => (
+                              <img
+                                key={f.url}
+                                src={f.url}
+                                alt={f.name}
+                                className="casebook-figure"
+                              />
+                            ))}
+                          </dd>
+                        </div>
+                      );
+                    }
                     return (
                       <div key={i} className="casebook-field">
                         <dt>{label}</dt>

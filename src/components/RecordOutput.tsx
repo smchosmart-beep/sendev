@@ -12,6 +12,17 @@ import type { RecordOverviewTeam } from "@/lib/record.functions";
 import { cn } from "@/lib/utils";
 
 const markdownComponents = {
+  img({ src, alt, ...props }: { src?: string; alt?: string }) {
+    return (
+      <img
+        src={src}
+        alt={alt ?? ""}
+        loading="lazy"
+        className="my-3 h-auto w-full max-w-2xl rounded-xl border border-border object-contain"
+        {...props}
+      />
+    );
+  },
   code({ className, children, ...props }: { className?: string; children?: React.ReactNode }) {
     if (className?.includes("language-mermaid")) {
       return <MermaidBlock code={String(children ?? "").trim()} />;

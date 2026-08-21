@@ -67,6 +67,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { normalizeUrl } from "@/lib/record-readme";
 
 type RowKind = RecordRowDTO["kind"];
 
@@ -85,10 +86,10 @@ type SaveRowVars = {
   knownUpdatedAt: string;
 };
 
-const emptyRowVars = (kind: RowKind, sortOrder: number): SaveRowVars => ({
+const emptyRowVars = (kind: RowKind, sortOrder: number, subtype = ""): SaveRowVars => ({
   id: null,
   kind,
-  subtype: "",
+  subtype,
   rowAuthor: "",
   sortOrder,
   col1: "",
@@ -567,7 +568,8 @@ export function RecordEditor({
           title="문제 정의 과정 기록"
           hint="회의·인터뷰 기록을 종류별로 남겨요."
           subtypes={PROCESS_SUBTYPES}
-          cols={["언제·어디서", "무엇을 나눴나요?", "그래서 정한 것"]}
+          defaultSubtype="그 밖의 문제 정의 메모"
+          cols={["언제·어디서", "무엇을 나눴나요?", "그래서 정한 것", "관련 링크", "관련 파일"]}
           longCols={[1, 2]}
           rows={rowsOf("process")}
           {...rowSectionProps}
@@ -1031,6 +1033,7 @@ function RowSection({
   longCols,
   placeholders,
   subtypes,
+  defaultSubtype = "",
   defaultAuthor = "",
   authorEnabled = false,
 }: {
@@ -1045,6 +1048,8 @@ function RowSection({
   longCols?: number[];
   placeholders?: string[];
   subtypes?: string[];
+  // 새 행을 만들 때 기본으로 선택할 탭
+  defaultSubtype?: string;
   // 새 행을 만들 때 미리 채울 작성자 이름 (작성자 사용 섹션에서만 전달)
   defaultAuthor?: string;
   // 작성자 입력칸을 노출할 섹션인지 여부 (과정 기록·개발 자유기록만 true)
@@ -1084,7 +1089,10 @@ function RowSection({
             variant="secondary"
             className="rounded-xl active:scale-95"
             onClick={() =>
-              onSave({ ...emptyRowVars(def.kind, rows.length), rowAuthor: defaultAuthor })
+              onSave({
+                ...emptyRowVars(def.kind, rows.length, defaultSubtype),
+                rowAuthor: defaultAuthor,
+              })
             }
           >
             <Plus className="h-4 w-4" />
@@ -1295,7 +1303,7 @@ function RowItem({
             const files = attachmentsOf(col);
             const isImageCol = imageCols.includes(col);
             return (
-              <div key={col} className="space-y-1">
+              <div key={col} className={cn("space-y-1", isImageCol && "w-full")}>
                 <Label className="text-xs text-muted-foreground">
                   {label} <span className="text-[11px]">(최대 3개, 개당 3MB)</span>
                 </Label>
@@ -1305,12 +1313,13 @@ function RowItem({
                     const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(f.name);
                     if (isImageCol && isImage) {
                       return (
-                        <span key={f.url} className="relative inline-block">
+                        <span key={f.url} className="relative inline-block w-full max-w-2xl">
                           <img
                             src={f.url}
                             alt={f.name}
-                            className="h-20 w-28 rounded-lg border border-border object-cover"
+                            className="h-auto max-h-[28rem] w-full rounded-lg border border-border object-contain"
                           />
+
                           {canEdit && (
                             <button
                               type="button"
@@ -1398,6 +1407,16 @@ function RowItem({
                 disabled={!canEdit}
                 className="rounded-xl bg-background"
               />
+              {(values[effLink] ?? "").trim() && (
+                <a
+                  href={normalizeUrl((values[effLink] ?? "").trim())}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block max-w-full truncate text-xs text-primary underline underline-offset-2"
+                >
+                  링크 열기 · {(values[effLink] ?? "").trim()}
+                </a>
+              )}
             </div>
           )}
         </div>
