@@ -1334,7 +1334,13 @@ function RowItem({
                 <Label className="text-xs text-muted-foreground">
                   {label} <span className="text-[11px]">(최대 3개, 개당 3MB)</span>
                 </Label>
-                <div className="flex flex-wrap items-center gap-2">
+                <div
+                  className={cn(
+                    "gap-2",
+                    isImageCol ? "flex flex-col items-stretch" : "flex flex-wrap items-center",
+                  )}
+                >
+
                   {files.map((f) => {
                     const Icon = getFileIcon(f.name);
                     const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(f.name);
