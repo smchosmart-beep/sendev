@@ -118,6 +118,11 @@ export interface RowTemplate {
   fileCols?: number[];
   /** 첨부 중 이미지 미리보기를 보여줄 열 목록 */
   imageCols?: number[];
+  /**
+   * 화면·출력에서 열을 보여줄 순서(열 인덱스 배열).
+   * 저장 열 인덱스는 그대로 두고 표시 순서만 바꾼다. 없으면 0..5 순서.
+   */
+  displayOrder?: number[];
 }
 
 /** 문제 정의 과정(process) 탭별 양식. 없으면 기본 양식을 쓴다. */
@@ -135,7 +140,9 @@ export const PROCESS_SUBTYPE_TEMPLATES: Record<string, RowTemplate> = {
     linkCol: 3,
     fileCols: [4, 5],
     imageCols: [4, 5],
+    displayOrder: [4, 5, 3],
   },
+
   "인터뷰 기록": {
     cols: ["인터뷰 질문", "인터뷰 대상", "인터뷰 내용", "", "", ""],
     placeholders: [
