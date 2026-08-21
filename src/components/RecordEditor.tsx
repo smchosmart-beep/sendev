@@ -1402,29 +1402,88 @@ function RowItem({
                       </span>
                     );
                   })}
-                  {canEdit && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      disabled={uploading || files.length >= 3}
-                      className="rounded-xl active:scale-95"
-                      onClick={() => {
-                        pendingCol.current = col;
-                        if (fileRef.current) {
-                          fileRef.current.accept = isImageCol ? "image/*" : "";
-                          fileRef.current.click();
-                        }
-                      }}
-                    >
-                      {uploadingCol === col ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Plus className="h-4 w-4" />
-                      )}
-                      {isImageCol ? "이미지 첨부" : "파일 첨부"}
-                    </Button>
-                  )}
+                  {canEdit &&
+                    (isImageCol ? (
+                      files.length < 3 && (
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          aria-label="이미지 첨부: 끌어다 놓거나 클릭"
+                          aria-disabled={uploading}
+                          className={cn(
+                            "flex w-full max-w-2xl cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border bg-background/60 px-4 py-6 text-center text-xs text-muted-foreground transition-colors",
+                            dragCol === col && "border-primary bg-primary/5 text-primary",
+                            uploading && "pointer-events-none opacity-60",
+                          )}
+                          onClick={() => openPicker(col, true)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              openPicker(col, true);
+                            }
+                          }}
+                          onDragEnter={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setDragCol(col);
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (dragCol !== col) setDragCol(col);
+                          }}
+                          onDragLeave={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragCol(null);
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setDragCol(null);
+                            if (uploading) return;
+                            const file = Array.from(e.dataTransfer.files).find((f) =>
+                              f.type.startsWith("image/"),
+                            );
+                            if (!file) {
+                              toast.error("이미지 파일만 첨부할 수 있어요.");
+                              return;
+                            }
+                            void uploadToCol(col, file);
+                          }}
+                        >
+                          {uploadingCol === col ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <ImagePlus className="h-5 w-5" />
+                          )}
+                          <span>
+                            이미지를 여기에 끌어다 놓거나 <span className="underline">클릭</span>해서
+                            첨부하세요
+                          </span>
+                          <span className="text-[11px]">
+                            {files.length}/3 · 개당 3MB 이하
+                          </span>
+                        </div>
+                      )
+                    ) : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={uploading || files.length >= 3}
+                        className="rounded-xl active:scale-95"
+                        onClick={() => openPicker(col, false)}
+                      >
+                        {uploadingCol === col ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Plus className="h-4 w-4" />
+                        )}
+                        파일 첨부
+                      </Button>
+                    ))}
+
                 </div>
               </div>
             );
