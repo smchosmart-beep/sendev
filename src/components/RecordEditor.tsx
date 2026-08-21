@@ -1119,8 +1119,6 @@ function RowItem({
   onSave: (vars: SaveRowVars) => void;
   onDelete: (id: string) => void;
 }) {
-
-
   const initial = [row.col1, row.col2, row.col3, row.col4, row.col5, row.col6];
   const [values, setValues] = useState(initial);
   const [subtype, setSubtype] = useState(row.subtype);
@@ -1137,21 +1135,42 @@ function RowItem({
   const update = (i: number, next: string) =>
     setValues((prev) => prev.map((v, idx) => (idx === i ? next : v)));
 
-  // 관련 파일 첨부 (fileCol 열에 JSON 문자열로 저장)
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const attachments = fileCol === undefined ? [] : parseAttachments(values[fileCol]);
+  // 탭(subtype)에 전용 양식이 있으면 그 양식으로, 없으면 섹션 기본 양식으로 렌더링한다.
+  // 이 양식에서 쓰지 않는 열의 값은 지우지 않고 그대로 보존한다.
+  const tpl: RowTemplate = useMemo(() => {
+    const custom = row.kind === "process" ? PROCESS_SUBTYPE_TEMPLATES[subtype] : undefined;
+    if (custom) return custom;
+    return {
+      cols: labels,
+      placeholders,
+      longCols: longs,
+      linkCol,
+      fileCols: fileCol === undefined ? [] : [fileCol],
+      imageCols: [],
+    };
+  }, [row.kind, subtype, labels, placeholders, longs, linkCol, fileCol]);
 
-  const setAttachments = (next: AttachedFile[]) => {
-    if (fileCol === undefined) return;
-    update(fileCol, serializeAttachments(next));
-  };
+  const effLabels = tpl.cols;
+  const effLongs = tpl.longCols ?? [];
+  const effLink = tpl.linkCol;
+  const fileCols = tpl.fileCols ?? [];
+  const imageCols = tpl.imageCols ?? [];
+
+  // 첨부 (해당 열에 JSON 문자열로 저장)
+  const fileRef = useRef<HTMLInputElement>(null);
+  const pendingCol = useRef<number | null>(null);
+  const [uploadingCol, setUploadingCol] = useState<number | null>(null);
+
+  const attachmentsOf = (col: number) => parseAttachments(values[col]);
 
   const handleFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
-    if (!file) return;
-    if (attachments.length >= 3) {
+    const col = pendingCol.current;
+    pendingCol.current = null;
+    if (!file || col === null) return;
+    const current = attachmentsOf(col);
+    if (current.length >= 3) {
       toast.error("파일은 최대 3개까지 첨부할 수 있어요.");
       return;
     }
@@ -1159,28 +1178,28 @@ function RowItem({
       toast.error("파일 크기는 3MB 이하만 가능해요.");
       return;
     }
-    setUploading(true);
+    setUploadingCol(col);
     try {
       const uploaded = await uploadAttachment(file);
-      const next = [...attachments, uploaded];
+      const next = [...current, uploaded];
       if (serializeAttachments(next).length > 2900) {
         toast.error("첨부가 너무 많아요. 파일 수를 줄여 주세요.");
         return;
       }
-      setAttachments(next);
+      update(col, serializeAttachments(next));
       toast.success("파일을 첨부했어요! 저장을 눌러 주세요.");
     } catch (err) {
       console.error("record file upload failed", err);
       toast.error("파일 업로드에 실패했어요.");
     } finally {
-      setUploading(false);
+      setUploadingCol(null);
     }
   };
 
   // 저장 직전 관련 링크에 프로토콜 보정
   const normalizedValues = () =>
     values.map((v, i) => {
-      if (i !== linkCol) return v;
+      if (i !== effLink) return v;
       const url = v.trim();
       if (!url) return "";
       return /^(https?:|mailto:)/i.test(url) ? url : `https://${url}`;
@@ -1189,6 +1208,7 @@ function RowItem({
   // 작성자 칸을 쓰지 않는 표에서도 예전에 저장된 이름은 읽기 전용으로 보여 준다.
   const legacyAuthor = !authorEnabled && author.trim() ? author.trim() : "";
 
+  const uploading = uploadingCol !== null;
 
   return (
     <div className="space-y-2 rounded-xl bg-muted/40 p-3">
@@ -1227,20 +1247,18 @@ function RowItem({
       )}
 
       <div className="grid gap-2 sm:grid-cols-2">
-        {labels.map((label, i) => {
-          if (i === fileCol || i === linkCol) return null;
+        {effLabels.map((label, i) => {
+          if (!label.trim()) return null;
+          if (fileCols.includes(i) || i === effLink) return null;
           return (
-            <div
-              key={label}
-              className={cn("space-y-1", longs.includes(i) && "sm:col-span-2")}
-            >
+            <div key={i} className={cn("space-y-1", effLongs.includes(i) && "sm:col-span-2")}>
               <Label className="text-xs text-muted-foreground">{label}</Label>
-              {longs.includes(i) ? (
+              {effLongs.includes(i) ? (
                 <Textarea
                   value={values[i] ?? ""}
                   onChange={(e) => update(i, e.target.value.slice(0, 3000))}
                   rows={3}
-                  placeholder={placeholders?.[i]}
+                  placeholder={tpl.placeholders?.[i]}
                   disabled={!canEdit}
                   className="rounded-xl bg-background"
                 />
@@ -1248,7 +1266,7 @@ function RowItem({
                 <Input
                   value={values[i] ?? ""}
                   onChange={(e) => update(i, e.target.value.slice(0, 3000))}
-                  placeholder={placeholders?.[i]}
+                  placeholder={tpl.placeholders?.[i]}
                   disabled={!canEdit}
                   className="rounded-xl bg-background"
                 />
@@ -1258,81 +1276,117 @@ function RowItem({
         })}
       </div>
 
-      {fileCol !== undefined && (
+      {(fileCols.length > 0 || effLink !== undefined) && (
         <div className="flex flex-wrap gap-4">
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">
-              {labels[fileCol] ?? "관련 파일"}{" "}
-              <span className="text-[11px]">(최대 3개, 개당 3MB)</span>
-            </Label>
-            <div className="flex flex-wrap items-center gap-2">
-              {attachments.map((f) => {
-                const Icon = getFileIcon(f.name);
-                return (
-                  <span
-                    key={f.url}
-                    className="inline-flex items-center gap-1 rounded-full bg-background px-2.5 py-1 text-xs"
-                  >
-                    <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                    <button
-                      type="button"
-                      className="max-w-[12rem] truncate hover:underline"
-                      onClick={() => downloadFile(f.url, f.name)}
-                    >
-                      {f.name}
-                    </button>
-                    {canEdit && (
-                      <button
-                        type="button"
-                        aria-label={`${f.name} 첨부 제거`}
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() =>
-                          setAttachments(attachments.filter((a) => a.url !== f.url))
-                        }
+          {canEdit && (
+            <input ref={fileRef} type="file" className="hidden" onChange={handleFilePick} />
+          )}
+          {fileCols.map((col) => {
+            const label = (effLabels[col] ?? "").trim();
+            if (!label) return null;
+            const files = attachmentsOf(col);
+            const isImageCol = imageCols.includes(col);
+            return (
+              <div key={col} className="space-y-1">
+                <Label className="text-xs text-muted-foreground">
+                  {label} <span className="text-[11px]">(최대 3개, 개당 3MB)</span>
+                </Label>
+                <div className="flex flex-wrap items-center gap-2">
+                  {files.map((f) => {
+                    const Icon = getFileIcon(f.name);
+                    const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(f.name);
+                    if (isImageCol && isImage) {
+                      return (
+                        <span key={f.url} className="relative inline-block">
+                          <img
+                            src={f.url}
+                            alt={f.name}
+                            className="h-20 w-28 rounded-lg border border-border object-cover"
+                          />
+                          {canEdit && (
+                            <button
+                              type="button"
+                              aria-label={`${f.name} 첨부 제거`}
+                              className="absolute -right-1.5 -top-1.5 rounded-full bg-background p-0.5 text-muted-foreground shadow hover:text-destructive"
+                              onClick={() =>
+                                update(
+                                  col,
+                                  serializeAttachments(files.filter((a) => a.url !== f.url)),
+                                )
+                              }
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </span>
+                      );
+                    }
+                    return (
+                      <span
+                        key={f.url}
+                        className="inline-flex items-center gap-1 rounded-full bg-background px-2.5 py-1 text-xs"
                       >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                  </span>
-                );
-              })}
-              {canEdit && (
-                <>
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    className="hidden"
-                    onChange={handleFilePick}
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={uploading || attachments.length >= 3}
-                    className="rounded-xl active:scale-95"
-                    onClick={() => fileRef.current?.click()}
-                  >
-                    {uploading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Plus className="h-4 w-4" />
-                    )}
-                    파일 첨부
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
+                        <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                        <button
+                          type="button"
+                          className="max-w-[12rem] truncate hover:underline"
+                          onClick={() => downloadFile(f.url, f.name)}
+                        >
+                          {f.name}
+                        </button>
+                        {canEdit && (
+                          <button
+                            type="button"
+                            aria-label={`${f.name} 첨부 제거`}
+                            className="text-muted-foreground hover:text-destructive"
+                            onClick={() =>
+                              update(
+                                col,
+                                serializeAttachments(files.filter((a) => a.url !== f.url)),
+                              )
+                            }
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </span>
+                    );
+                  })}
+                  {canEdit && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={uploading || files.length >= 3}
+                      className="rounded-xl active:scale-95"
+                      onClick={() => {
+                        pendingCol.current = col;
+                        if (fileRef.current) {
+                          fileRef.current.accept = isImageCol ? "image/*" : "";
+                          fileRef.current.click();
+                        }
+                      }}
+                    >
+                      {uploadingCol === col ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Plus className="h-4 w-4" />
+                      )}
+                      {isImageCol ? "이미지 첨부" : "파일 첨부"}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
 
-          {linkCol !== undefined && (
+          {effLink !== undefined && (effLabels[effLink] ?? "").trim() && (
             <div className="min-w-[16rem] flex-1 space-y-1">
-              <Label className="text-xs text-muted-foreground">
-                {labels[linkCol] ?? "관련 링크"}
-              </Label>
+              <Label className="text-xs text-muted-foreground">{effLabels[effLink]}</Label>
               <Input
-                value={values[linkCol] ?? ""}
-                onChange={(e) => update(linkCol, e.target.value.slice(0, 3000))}
-                placeholder={placeholders?.[linkCol]}
+                value={values[effLink] ?? ""}
+                onChange={(e) => update(effLink, e.target.value.slice(0, 3000))}
+                placeholder={tpl.placeholders?.[effLink]}
                 disabled={!canEdit}
                 className="rounded-xl bg-background"
               />
@@ -1349,7 +1403,7 @@ function RowItem({
             className="rounded-xl active:scale-95"
             onClick={() => {
               const vals = normalizedValues();
-              if (fileCol !== undefined && (vals[fileCol] ?? "").length > 2900) {
+              if (fileCols.some((c) => (vals[c] ?? "").length > 2900)) {
                 toast.error("첨부가 너무 많아요. 파일 수를 줄여 주세요.");
                 return;
               }
@@ -1369,7 +1423,6 @@ function RowItem({
               });
             }}
           >
-
             저장
           </Button>
           <Button
