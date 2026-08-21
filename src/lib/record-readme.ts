@@ -10,6 +10,7 @@ import {
   ROW_SECTION_DEFS,
   STANCE_QUESTIONS,
   RECORD_FINAL_FIELDS,
+  rowTemplate,
   type RecordFinalKey,
   type RecordRowKindName,
 } from "./record-schema";
