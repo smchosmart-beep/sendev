@@ -1183,15 +1183,11 @@ function RowItem({
   const fileRef = useRef<HTMLInputElement>(null);
   const pendingCol = useRef<number | null>(null);
   const [uploadingCol, setUploadingCol] = useState<number | null>(null);
+  const [dragCol, setDragCol] = useState<number | null>(null);
 
   const attachmentsOf = (col: number) => parseAttachments(values[col]);
 
-  const handleFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    const col = pendingCol.current;
-    pendingCol.current = null;
-    if (!file || col === null) return;
+  const uploadToCol = async (col: number, file: File) => {
     const current = attachmentsOf(col);
     if (current.length >= 3) {
       toast.error("파일은 최대 3개까지 첨부할 수 있어요.");
@@ -1218,6 +1214,24 @@ function RowItem({
       setUploadingCol(null);
     }
   };
+
+  const handleFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    const col = pendingCol.current;
+    pendingCol.current = null;
+    if (!file || col === null) return;
+    await uploadToCol(col, file);
+  };
+
+  const openPicker = (col: number, isImageCol: boolean) => {
+    pendingCol.current = col;
+    if (fileRef.current) {
+      fileRef.current.accept = isImageCol ? "image/*" : "";
+      fileRef.current.click();
+    }
+  };
+
 
   // 저장 직전 관련 링크에 프로토콜 보정
   const normalizedValues = () =>
