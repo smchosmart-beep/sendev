@@ -1,4 +1,4 @@
-# 02 문제 정의 과정 - 22일 회의 탭 정리 (수정본)
+# 02 문제 정의 과정 - 22일 회의 탭 정리 (수정본2)
 
 ## 1. 추가 버튼 정리
 - 섹션 하단의 `+ 문제 정의 기록 추가`를 `+ 그 밖의 문제 정의 메모 추가`로 바꾸고, 새 기록은 탭이 [그 밖의 문제 정의 메모]로 지정된 채 생성되도록 합니다.
@@ -11,8 +11,8 @@
 
 ## 3. 첨부 이미지를 크게 보기
 - 작성 화면: 저장된 이미지를 칸 전체 너비로, 원본 비율을 유지한 채(높이 상한 안에서) 크게 표시. 클릭하면 원본이 새 창에서 열리고, 삭제(X) 버튼은 그대로.
-- README 출력: 파일명 링크 대신 실제 이미지를 삽입(이미지 확장자일 때만, 그 외 파일은 지금처럼 파일명 링크).
-- 사례집 PDF: 현재 파일명 텍스트만 나오는 부분을 이미지로 렌더링. 인쇄 시 이미지가 페이지 경계에서 잘리지 않도록 처리하고 높이 상한을 둡니다.
+- README 출력: 파일명 링크 대신 실제 이미지를 삽입(이미지 확장자일 때만, 그 외 파일은 지금처럼 파일명 링크). 이미지가 본문 너비를 넘지 않도록 `max-w-full h-auto` 스타일을 마크다운 이미지 컴포넌트에 추가합니다.
+- 사례집 PDF: 현재 파일명 텍스트만 나오는 부분을 이미지로 렌더링. 인쇄 시 이미지가 페이지 경계에서 잘리지 않도록 `break-inside: avoid`를 적용하고, 인쇄 높이 상한을 둡니다.
 
 ## 4. 유튜브 링크 하이퍼링크
 - 작성 화면에서 저장된 링크 옆(또는 아래)에 "링크 열기" 하이퍼링크를 표시. `https://` 없이 입력해도 자동 보정해 연결합니다.
@@ -22,7 +22,8 @@
 - `src/lib/record-schema.ts`: 22일 회의 양식에 표시 순서 필드 추가(저장 열 인덱스 불변), process `addLabel` 문구, 기본 subtype 상수.
 - `src/components/RecordEditor.tsx`: `RowSection`에 선택적 `defaultSubtype`, RowItem의 표시 순서 적용·이미지 미리보기 확대·링크 열기 UI.
 - `src/lib/record-readme.ts`: 이미지 확장자 첨부는 마크다운 이미지로 출력.
-- `src/components/record/CasebookDocument.tsx` + 인쇄 CSS: `imageCols` 분기 추가, `break-inside: avoid`·`max-height` 적용.
+- `src/components/RecordOutput.tsx`: 마크다운 `img` 컴포넌트 매핑을 추가해 본문 너비를 넘지 않도록 제어.
+- `src/components/record/CasebookDocument.tsx` + `src/styles.css` 인쇄 블록: `imageCols` 분기 추가, `break-inside: avoid`·`max-height` 적용.
 - DB 마이그레이션·데이터 삭제 없음, 서버 호출 추가 없음.
 
 ## 가이드
