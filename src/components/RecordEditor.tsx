@@ -1421,14 +1421,27 @@ function RowItem({
                 className="rounded-xl bg-background"
               />
               {(values[effLink] ?? "").trim() && (
-                <a
-                  href={normalizeUrl((values[effLink] ?? "").trim())}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-block max-w-full truncate text-xs text-primary underline underline-offset-2"
-                >
-                  링크 열기 · {(values[effLink] ?? "").trim()}
-                </a>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={normalizeUrl((values[effLink] ?? "").trim())}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block max-w-full truncate text-xs text-primary underline underline-offset-2"
+                  >
+                    링크 열기 · {(values[effLink] ?? "").trim()}
+                  </a>
+                  {isYouTubeUrl(values[effLink] ?? "") && (
+                    <a
+                      href={normalizeUrl((values[effLink] ?? "").trim())}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label="영상 재생"
+                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+                    >
+                      <Play className="h-4 w-4 fill-current" />
+                    </a>
+                  )}
+                </div>
               )}
             </div>
           )}
