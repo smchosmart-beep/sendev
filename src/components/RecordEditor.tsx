@@ -1058,15 +1058,37 @@ function RowSection({
   const labels = cols ?? def.cols;
   const longs = longCols ?? def.longCols ?? [];
   const hints = placeholders ?? def.placeholders;
+  const [selectedSubtype, setSelectedSubtype] = useState(defaultSubtype);
+  const filterBySubtype = !!subtypes && !!defaultSubtype;
+  const filteredRows = useMemo(() => {
+    if (!filterBySubtype) return rows;
+    return rows.filter((r) => r.subtype === selectedSubtype);
+  }, [rows, filterBySubtype, selectedSubtype]);
   return (
     <section className="rounded-2xl bg-card p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-foreground">{title ?? def.title}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{hint ?? def.hint}</p>
+      {filterBySubtype && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {subtypes.map((s) => (
+            <Button
+              key={s}
+              type="button"
+              size="sm"
+              variant={selectedSubtype === s ? "default" : "outline"}
+              onClick={() => setSelectedSubtype(s)}
+              className="rounded-full active:scale-95"
+            >
+              {s}
+            </Button>
+          ))}
+        </div>
+      )}
       <div className="mt-4 space-y-3">
-        {rows.length === 0 && (
+        {filteredRows.length === 0 && (
           <p className="text-sm text-muted-foreground">아직 등록된 내용이 없어요.</p>
         )}
-        {rows.map((row) => (
+        {filteredRows.map((row) => (
           <RowItem
             key={row.id}
             row={row}
@@ -1083,7 +1105,7 @@ function RowSection({
             onDelete={onDelete}
           />
         ))}
-        {canEdit && (
+        {canEdit && (!filterBySubtype || selectedSubtype === defaultSubtype) && (
           <Button
             type="button"
             variant="secondary"
@@ -1492,35 +1514,35 @@ function RowItem({
           {effLink !== undefined && (effLabels[effLink] ?? "").trim() && (
             <div className="min-w-[16rem] flex-1 space-y-1">
               <Label className="text-xs text-muted-foreground">{effLabels[effLink]}</Label>
-              <Input
-                value={values[effLink] ?? ""}
-                onChange={(e) => update(effLink, e.target.value.slice(0, 3000))}
-                placeholder={tpl.placeholders?.[effLink]}
-                disabled={!canEdit}
-                className="rounded-xl bg-background"
-              />
-              {(values[effLink] ?? "").trim() && (
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                <Input
+                  value={values[effLink] ?? ""}
+                  onChange={(e) => update(effLink, e.target.value.slice(0, 3000))}
+                  placeholder={tpl.placeholders?.[effLink]}
+                  disabled={!canEdit}
+                  className="w-full max-w-md rounded-xl bg-background"
+                />
+                {isYouTubeUrl((values[effLink] ?? "").trim()) && (
                   <a
                     href={normalizeUrl((values[effLink] ?? "").trim())}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-block max-w-full truncate text-xs text-primary underline underline-offset-2"
+                    aria-label="영상 재생"
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
                   >
-                    링크 열기 · {(values[effLink] ?? "").trim()}
+                    <Play className="h-4 w-4 fill-current" />
                   </a>
-                  {isYouTubeUrl(values[effLink] ?? "") && (
-                    <a
-                      href={normalizeUrl((values[effLink] ?? "").trim())}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label="영상 재생"
-                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
-                    >
-                      <Play className="h-4 w-4 fill-current" />
-                    </a>
-                  )}
-                </div>
+                )}
+              </div>
+              {(values[effLink] ?? "").trim() && !isYouTubeUrl((values[effLink] ?? "").trim()) && (
+                <a
+                  href={normalizeUrl((values[effLink] ?? "").trim())}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block max-w-full truncate text-xs text-primary underline underline-offset-2"
+                >
+                  링크 열기 · {(values[effLink] ?? "").trim()}
+                </a>
               )}
             </div>
           )}
