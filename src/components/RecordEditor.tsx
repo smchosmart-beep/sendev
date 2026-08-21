@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, ChevronLeft, ChevronRight, ImagePlus, Loader2, Plus, Trash2, Users, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, ImagePlus, Loader2, Play, Plus, Trash2, Users, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { uploadCommentImage } from "@/lib/image-upload";
