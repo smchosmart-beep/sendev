@@ -6,7 +6,14 @@ import { Check, Lock, Plus, RotateCcw, Save, Trophy, Vote } from "lucide-react";
 import { toast } from "sonner";
 
 import type { CategoryDTO, PostDTO } from "@/lib/platform.functions";
-import { normalizeUsername, resetVotes, setVoteStatus, submitVotes } from "@/lib/platform.functions";
+import {
+  cancelRunoff,
+  normalizeUsername,
+  resetVotes,
+  setVoteStatus,
+  startRunoff,
+  submitVotes,
+} from "@/lib/platform.functions";
 import {
   getBoardPassword,
   myVotesQueryOptions,
@@ -421,21 +428,33 @@ function AdminVoteControls({
   categoryId,
   status,
   maxChoices,
+  seats,
+  round,
+  canStartRunoff,
+  runoffCandidates,
+  defaultRunoffChoices,
   confirm,
   onDone,
 }: {
   categoryId: string;
   status: string;
   maxChoices: number;
+  seats: number;
+  round: number;
+  canStartRunoff: boolean;
+  runoffCandidates: number;
+  defaultRunoffChoices: number;
   confirm: (opts: { title?: string; description: string; destructive?: boolean }) => Promise<boolean>;
   onDone: () => void;
 }) {
+  type Mode = "start" | "stop" | "reset" | "runoff" | "cancel-runoff";
   const [dialog, setDialog] = useState<
     | null
     | {
-        mode: "start" | "stop" | "reset";
+        mode: Mode;
         password: string;
         limit: string;
+        seats: string;
         error: string;
         submitting: boolean;
       }
@@ -443,12 +462,18 @@ function AdminVoteControls({
 
   const setStatus = useServerFn(setVoteStatus);
   const reset = useServerFn(resetVotes);
+  const runoff = useServerFn(startRunoff);
+  const cancel = useServerFn(cancelRunoff);
 
-  const openDialog = (mode: "start" | "stop" | "reset") => {
+  const openDialog = (mode: Mode) => {
     setDialog({
       mode,
       password: "",
-      limit: String(maxChoices || 1),
+      limit:
+        mode === "runoff"
+          ? String(Math.max(1, defaultRunoffChoices))
+          : String(maxChoices || 1),
+      seats: String(seats || maxChoices || 1),
       error: "",
       submitting: false,
     });
@@ -466,6 +491,7 @@ function AdminVoteControls({
             categoryId,
             status: "open",
             maxChoices: Math.max(1, Number(dialog.limit) || 1),
+            seats: Math.max(1, Number(dialog.seats) || 1),
             adminPassword: dialog.password,
           },
         });
@@ -478,6 +504,16 @@ function AdminVoteControls({
         await setStatus({
           data: { categoryId, status: "idle", maxChoices: 1, adminPassword: dialog.password },
         });
+      } else if (dialog.mode === "runoff") {
+        await runoff({
+          data: {
+            categoryId,
+            maxChoices: Math.max(1, Number(dialog.limit) || 1),
+            adminPassword: dialog.password,
+          },
+        });
+      } else {
+        await cancel({ data: { categoryId, adminPassword: dialog.password } });
       }
       closeDialog();
       onDone();
@@ -486,7 +522,11 @@ function AdminVoteControls({
           ? "투표를 시작했어요."
           : dialog.mode === "stop"
             ? "투표를 종료했어요."
-            : "투표 기록을 초기화했어요.",
+            : dialog.mode === "reset"
+              ? "투표 기록을 초기화했어요."
+              : dialog.mode === "runoff"
+                ? "결선 투표를 시작했어요."
+                : "결선을 취소했어요.",
       );
     } catch (err) {
       setDialog({
@@ -497,6 +537,28 @@ function AdminVoteControls({
     }
   };
 
+  const title =
+    dialog?.mode === "start"
+      ? "투표 시작"
+      : dialog?.mode === "stop"
+        ? "투표 종료"
+        : dialog?.mode === "reset"
+          ? "투표 초기화"
+          : dialog?.mode === "runoff"
+            ? "결선 투표 시작"
+            : "결선 취소";
+
+  const description =
+    dialog?.mode === "start"
+      ? "관리자 비밀번호를 입력하고 1인당 최대 투표 수와 선발 정원을 정해 주세요."
+      : dialog?.mode === "stop"
+        ? "관리자 비밀번호를 입력하면 투표가 종료되고 결과가 공개됩니다."
+        : dialog?.mode === "reset"
+          ? "관리자 비밀번호를 입력하면 모든 투표 기록이 삭제됩니다."
+          : dialog?.mode === "runoff"
+            ? `동점 후보 ${runoffCandidates}팀만으로 결선 투표를 엽니다. 1인당 선택 수를 정해 주세요.`
+            : "현재 결선 라운드의 표를 지우고 직전 결과로 되돌립니다.";
+
   return (
     <>
       <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-dashed border-primary/40 bg-card p-4">
@@ -504,6 +566,12 @@ function AdminVoteControls({
           <Label className="text-xs">1인당 최대 투표 수</Label>
           <p className="h-9 w-28 rounded-xl border border-border bg-muted/50 px-3 py-2 text-sm text-foreground">
             {maxChoices || 1}표
+          </p>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">선발 정원</Label>
+          <p className="h-9 w-28 rounded-xl border border-border bg-muted/50 px-3 py-2 text-sm text-foreground">
+            {seats || 1}팀
           </p>
         </div>
         {status !== "open" ? (
@@ -521,6 +589,32 @@ function AdminVoteControls({
             onClick={() => openDialog("stop")}
           >
             투표 종료
+          </Button>
+        )}
+        {canStartRunoff && (
+          <Button
+            type="button"
+            className="rounded-xl active:scale-95"
+            onClick={() => openDialog("runoff")}
+          >
+            결선 투표 시작
+          </Button>
+        )}
+        {round > 1 && (
+          <Button
+            type="button"
+            variant="secondary"
+            className="rounded-xl active:scale-95"
+            onClick={async () => {
+              const ok = await confirm({
+                title: "결선 취소",
+                description: "현재 결선 라운드의 표가 삭제되고 직전 결과로 돌아가요.",
+                destructive: true,
+              });
+              if (ok) openDialog("cancel-runoff");
+            }}
+          >
+            결선 취소
           </Button>
         )}
         <Button
@@ -544,20 +638,8 @@ function AdminVoteControls({
       <Dialog open={!!dialog} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="rounded-2xl sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {dialog?.mode === "start"
-                ? "투표 시작"
-                : dialog?.mode === "stop"
-                  ? "투표 종료"
-                  : "투표 초기화"}
-            </DialogTitle>
-            <DialogDescription>
-              {dialog?.mode === "start"
-                ? "관리자 비밀번호를 입력하고 1인당 최대 투표 수를 확인해 주세요."
-                : dialog?.mode === "stop"
-                  ? "관리자 비밀번호를 입력하면 투표가 종료되고 결과가 공개됩니다."
-                  : "관리자 비밀번호를 입력하면 모든 투표 기록이 삭제됩니다."}
-            </DialogDescription>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
 
           <form
@@ -567,7 +649,7 @@ function AdminVoteControls({
             }}
             className="space-y-4"
           >
-            {dialog?.mode === "start" && (
+            {(dialog?.mode === "start" || dialog?.mode === "runoff") && (
               <div className="space-y-1">
                 <Label htmlFor="vote-limit" className="text-xs">
                   1인당 최대 투표 수
@@ -579,6 +661,22 @@ function AdminVoteControls({
                   max={100}
                   value={dialog.limit}
                   onChange={(e) => setDialog({ ...dialog, limit: e.target.value })}
+                  className="h-10 rounded-xl"
+                />
+              </div>
+            )}
+            {dialog?.mode === "start" && (
+              <div className="space-y-1">
+                <Label htmlFor="vote-seats" className="text-xs">
+                  선발 정원(최종 몇 팀을 뽑을지)
+                </Label>
+                <Input
+                  id="vote-seats"
+                  type="number"
+                  min={1}
+                  max={1000}
+                  value={dialog.seats}
+                  onChange={(e) => setDialog({ ...dialog, seats: e.target.value })}
                   className="h-10 rounded-xl"
                 />
               </div>
@@ -616,9 +714,7 @@ function AdminVoteControls({
               <Button
                 type="submit"
                 className="rounded-xl"
-                disabled={
-                  !dialog?.password.trim() || dialog?.submitting
-                }
+                disabled={!dialog?.password.trim() || dialog?.submitting}
               >
                 {dialog?.submitting ? "처리 중..." : "확인"}
               </Button>
