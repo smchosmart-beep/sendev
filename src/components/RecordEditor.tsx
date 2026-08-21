@@ -1406,6 +1406,16 @@ function RowItem({
                 disabled={!canEdit}
                 className="rounded-xl bg-background"
               />
+              {(values[effLink] ?? "").trim() && (
+                <a
+                  href={withProtocol((values[effLink] ?? "").trim())}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block max-w-full truncate text-xs text-primary underline underline-offset-2"
+                >
+                  링크 열기 · {(values[effLink] ?? "").trim()}
+                </a>
+              )}
             </div>
           )}
         </div>
