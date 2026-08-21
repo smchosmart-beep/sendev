@@ -204,8 +204,10 @@ export function buildRecordReadme(team: RecordOverviewTeam): string {
       const tpl = rowTemplate(section.kind, r.subtype);
       const cols = tpl.cols;
       const values = [r.col1, r.col2, r.col3, r.col4, r.col5, r.col6];
-      values.forEach((v, i) => {
-        if (!(v ?? "").trim()) return;
+      const order = tpl.displayOrder ?? values.map((_, i) => i);
+      order.forEach((i) => {
+        const v = values[i] ?? "";
+        if (!v.trim()) return;
         // 이 양식에서 쓰지 않는 열은 출력하지 않는다(값은 DB에 보존).
         if (!(cols[i] ?? "").trim()) return;
         // 관련 링크 열: 마크다운 링크로 표기
@@ -218,6 +220,14 @@ export function buildRecordReadme(team: RecordOverviewTeam): string {
         if (tpl.fileCols?.includes(i)) {
           const files = parseAttachments(v);
           if (files.length === 0) return;
+          // 이미지 열은 실제 이미지로 삽입
+          if (tpl.imageCols?.includes(i)) {
+            lines.push(`- **${cols[i]}**`);
+            lines.push("");
+            for (const f of files) lines.push(`![${escapeMd(f.name)}](${f.url})`);
+            lines.push("");
+            return;
+          }
           lines.push(
             `- **${cols[i]}**: ${files
               .map((f) => `[${escapeMd(f.name)}](${f.url})`)
