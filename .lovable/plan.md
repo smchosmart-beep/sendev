@@ -1,35 +1,50 @@
-# 투표 결과 카드 색상 구분
+# 투표 진행 중 투표자 현황판
 
-## 요구사항
-투표 종료 상태에서 결과 카드의 선발 여부를 색상으로 한눈에 구분합니다.
+투표가 진행 중일 때, 참여자 닉네임별 투표 완료 여부를 화면 좌우 여백에 표시합니다.
 
-- **선발 확정** 게시글: 녹색 계열 배경/테두리
-- **공동 등수로 재투표 필요**한 게시글: 노란색 계열 배경/테두리
-- 그 외: 기존 흰색/회색 카드 유지
+## 표시 방식
 
-## 수정 내용
-1. `src/components/VoteSection.tsx`의 `winnerInfo` 계산에서 동점 후보 ID 집합(`tiedIds`)도 함께 반환합니다.
-   - 현재 `tied`는 동점 개수만 담고 있어, 어떤 게시글이 동점인지 알 수 없습니다.
-   - `tied` 배열을 Set으로 변환해 카드 렌더링에서 사용합니다.
-   - `winnerInfo` 초기값(`status !== "closed"`)과 `remaining <= 0 || sorted.length <= remaining` branch에도 `tiedIds: new Set<string>()`을 함께 반환합니다. 이 값이 없으면 카드 렌더링에서 `winnerInfo.tiedIds.has(...)` 호출 시 `undefined` 런타임 오류가 발생할 수 있습니다.
-   - 동점이 실제로 발생한 경우(`overflow === true`)에만 `tiedIds`를 `tied` 배열의 ID Set으로 반환합니다.
-2. 카드(`paged.map(...)` 내부 `<div>`)의 `className`에 상태별 배경색을 추가합니다.
-   - `isLocked || isWinner` → `bg-emerald-50 border-emerald-300` (선발 확정)
-   - `isTied` → `bg-amber-50 border-amber-300` (재투표 필요)
-   - `voted` 상태 색상은 선발/동점 색상에 덮어쓰지 않거나, 기존 `accent` 색상을 우선순위 낮게 둡니다.
-3. 기존 "선발" 배지 및 순위 배지는 그대로 유지합니다.
+- 명단: 해당 투표 게시판에 글을 올린 작성자 닉네임(중복 제거), 가나다순 정렬
+- 좌우 두 열로 나눠 배치 — 명단이 36명이면 왼쪽 18명 / 오른쪽 18명 (홀수면 왼쪽이 하나 더)
+- 각 이름 옆 상태 표시
+  - 완료: 초록 체크 + 진한 글씨
+  - 미완료: 회색 원 + 흐린 글씨
+- 상단에 "n / 36 완료" 요약과 진행 막대
+- 투표 진행 중(status = open)일 때만 노출. 종료 후에는 감춤
+- 모두에게 공개(관리자 비밀번호 불필요)
 
-## 기술 세부
-- `winnerInfo` 객체 타입에 `tiedIds: Set<string>` 추가.
-- 카드 className 예시:
-  ```tsx
-  const isLocked = lockedIds.has(post.id);
-  const isWinner = status === "closed" && winnerInfo.winners.has(post.id);
-  const isTied = status === "closed" && winnerInfo.tiedIds.has(post.id);
-  ```
-  ```
-  isLocked || isWinner ? "bg-emerald-50 border-emerald-300" :
-  isTied ? "bg-amber-50 border-amber-300" :
-  voted ? "border-primary bg-accent/50" : "border-border bg-card"
-  ```
-- 서버/DB 변경 없음. `src/lib/platform.queries.ts` 및 `src/lib/platform.functions.ts` 수정 없음.
+## 레이아웃
+
+```text
+데스크톱(xl 이상)
+┌────────┬───────────────────────┬────────┐
+│ 명단 A │      투표 목록        │ 명단 B │
+│ 18명   │                       │ 18명   │
+└────────┴───────────────────────┴────────┘
+
+모바일 / 좁은 화면
+┌───────────────────────────────┐
+│ ▸ 투표 현황 12/36  (접이식)   │
+├───────────────────────────────┤
+│        투표 목록              │
+└───────────────────────────────┘
+```
+
+- 좌우 패널은 화면이 충분히 넓을 때만 표시되며 스크롤에 따라 상단 고정(sticky)
+- 좁은 화면에서는 투표 목록 위에 접었다 펼치는 요약 패널 하나로 대체(기본 접힘, 헤더에 완료 인원 표시)
+
+## 익명성 유지
+
+투표 종료 전에는 글 작성자를 숨기는 현재 정책을 유지하기 위해, 명단은 가나다순으로만 정렬해 어떤 글의 작성자인지 매칭할 수 없게 하고, 누가 무엇에 투표했는지는 절대 내려보내지 않습니다(완료 여부만).
+
+## 기술 상세
+
+- `src/lib/platform.functions.ts`에 `getVoteVoterStatus` 서버 함수 추가
+  - 입력: `categoryId`, `boardPassword`(선택), `adminPassword`(선택)
+  - 게시판 접근 확인 후, 해당 카테고리의 `type = 'vote'` 글에서 작성자 닉네임을 모아 정규화 키로 중복 제거
+  - 현재 라운드 `votes`의 `voter_key` 집합과 대조해 `{ name, voted }[]` 반환 (득표수·투표 대상은 반환하지 않음)
+- `src/lib/platform.queries.ts`에 `voteVoterStatusQueryOptions` 추가 (30초 `refetchInterval`, 기존 `vote-state` 폴링과 동일한 부담 수준)
+- 신규 컴포넌트 `src/components/VoteVoterPanel.tsx` — 명단 슬라이스와 상태 배지 렌더링
+- `src/routes/_main.board.$slug.index.tsx`에서 투표 게시판일 때 3열 그리드로 감싸 좌/우 패널 배치, 좁은 화면에서는 접이식 패널
+- 투표 저장 성공 시 `vote-voter-status` 쿼리 무효화하여 본인 상태 즉시 반영
+- 사용자 가이드(`/guide`)의 투표 게시판 설명에 현황판 안내 추가
