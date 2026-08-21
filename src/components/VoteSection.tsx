@@ -361,10 +361,10 @@ export function VoteSection({
                     className="space-y-1"
                   >
                     <span className="flex flex-wrap items-center gap-1">
-                      {status === "closed" && rank <= 3 && (
+                      {showRank && rankInfo && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
                           <Trophy className="h-3.5 w-3.5" />
-                          {rank}위
+                          {rankInfo.tied ? `공동 ${rankInfo.rank}위` : `${rankInfo.rank}위`}
                         </span>
                       )}
                       {(lockedIds.has(post.id) ||
