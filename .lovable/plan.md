@@ -21,7 +21,7 @@
 ## 기술 메모
 
 - `src/lib/record-schema.ts`: `PROCESS_SUBTYPE_TEMPLATES` 추가. 탭 이름 → 필드 정의(라벨/플레이스홀더/타입: text·long·link·image, 저장 열 인덱스). 기본값은 지금의 `ROW_SECTION_DEFS.process`.
-  - 팀빌딩 탭 저장 매핑: `col1` = 페르소나 이미지(첨부 JSON), `col2` = 고객 여정 맵 이미지(첨부 JSON), `col3` = 유튜브 링크. `col4`/`col5`는 이 탭에서 미사용.
+  - 팀빌딩 탭 저장 매핑(충돌 없는 빈 열 사용): `col5` = 페르소나 이미지(첨부 JSON), `col6` = 고객 여정 맵 이미지(첨부 JSON), `col4` = 유튜브 링크. `col1`~`col3`은 이 탭에서 미사용이며 값이 있어도 지우지 않고 보존만 한다. 실제 조회 결과 process 기록 7건 모두 `col4`·`col5`·`col6`이 비어 있어 기존 텍스트와 겹치지 않는다(다른 탭 기록을 팀빌딩으로 잘못 바꿔도 기존 본문이 첨부 JSON으로 덮이지 않음).
 - `src/components/RecordEditor.tsx`의 `RowItem`: 현재 고정된 `linkCol`/`fileCol` 한 개씩 대신, 선택된 subtype의 템플릿에서 필드 목록을 받아 렌더링하도록 일반화. 파일/이미지 열은 여러 개 지원, 이미지 열은 썸네일 + 삭제. 업로드는 기존 `src/lib/file-upload.ts`(`uploadAttachment`, `parseAttachments`, `serializeAttachments`, 3MB 제한, 열당 3개 제한)를 그대로 재사용하므로 새 버킷·새 서버 함수는 없습니다.
   - subtype을 잘못 눌렀다 되돌릴 때 값이 사라지지 않도록, 템플릿이 쓰지 않는 열은 지우지 않고 그대로 보존하되 화면·출력에서만 무시.
 - `src/lib/record-readme.ts`, `src/components/record/CasebookDocument.tsx`: 지금은 전역 `def.linkCol`/`def.fileCol` 하나만 보므로, 그대로 두면 팀빌딩 행의 첨부 JSON이 본문에 그대로 노출됩니다. 행의 `subtype` 템플릿을 조회해 열별 종류(텍스트/링크/이미지)를 판정하도록 함께 수정하고, 이미지 열은 파일명 링크로 표기(`normalizeUrl` 재사용).
