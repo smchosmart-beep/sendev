@@ -10,6 +10,7 @@ import {
   ROW_SECTION_DEFS,
   STANCE_QUESTIONS,
   RECORD_FINAL_FIELDS,
+  rowTemplate,
   type RecordFinalKey,
   type RecordRowKindName,
 } from "./record-schema";
@@ -199,28 +200,32 @@ export function buildRecordReadme(team: RecordOverviewTeam): string {
     rows.forEach((r, idx) => {
       const head = [r.subtype, r.author].filter((v) => (v ?? "").trim()).join(" · ");
       lines.push(`### ${idx + 1}${head ? `. ${escapeMd(head)}` : ""}`);
-      const cols = def?.cols ?? [];
+      // 탭(subtype)별 전용 양식이 있으면 그 양식의 열 정의를 따른다.
+      const tpl = rowTemplate(section.kind, r.subtype);
+      const cols = tpl.cols;
       const values = [r.col1, r.col2, r.col3, r.col4, r.col5, r.col6];
       values.forEach((v, i) => {
         if (!(v ?? "").trim()) return;
+        // 이 양식에서 쓰지 않는 열은 출력하지 않는다(값은 DB에 보존).
+        if (!(cols[i] ?? "").trim()) return;
         // 관련 링크 열: 마크다운 링크로 표기
-        if (def?.linkCol === i) {
+        if (tpl.linkCol === i) {
           const url = normalizeUrl(v);
-          lines.push(`- **${cols[i] ?? "관련 링크"}**: [${escapeMd(v)}](${url})`);
+          lines.push(`- **${cols[i]}**: [${escapeMd(v)}](${url})`);
           return;
         }
-        // 관련 파일 열: JSON을 파싱해 파일명 링크 목록으로. 실패하면 생략(원본 노출 금지)
-        if (def?.fileCol === i) {
+        // 첨부 열: JSON을 파싱해 파일명 링크 목록으로. 실패하면 생략(원본 노출 금지)
+        if (tpl.fileCols?.includes(i)) {
           const files = parseAttachments(v);
           if (files.length === 0) return;
           lines.push(
-            `- **${cols[i] ?? "관련 파일"}**: ${files
+            `- **${cols[i]}**: ${files
               .map((f) => `[${escapeMd(f.name)}](${f.url})`)
               .join(" ")}`,
           );
           return;
         }
-        lines.push(`- **${cols[i] ?? `항목 ${i + 1}`}**: ${escapeMd(v)}`);
+        lines.push(`- **${cols[i]}**: ${escapeMd(v)}`);
       });
 
       lines.push("");

@@ -5,8 +5,8 @@ import { ETHICS_PRINCIPLES } from "@/lib/record-ethics";
 import { parseAttachments } from "@/lib/file-upload";
 import { normalizeUrl } from "@/lib/record-readme";
 import {
-  ROW_SECTION_DEFS,
   STANCE_QUESTIONS,
+  rowTemplate,
   type RecordFinalKey,
   type RecordRowKindName,
 } from "@/lib/record-schema";
@@ -84,8 +84,6 @@ function RowTable({
 }) {
   const rows = rowsOf(team, kind);
   if (rows.length === 0) return null;
-  const def = ROW_SECTION_DEFS[kind];
-  const cols = def?.cols ?? [];
 
   return (
     <div className="casebook-block">
@@ -94,6 +92,9 @@ function RowTable({
         {rows.map((r, idx) => {
           const values = [r.col1, r.col2, r.col3, r.col4, r.col5, r.col6];
           const head = [r.subtype, r.author].filter((v) => (v ?? "").trim()).join(" · ");
+          // 탭(subtype)별 전용 양식이 있으면 그 정의를 따른다.
+          const tpl = rowTemplate(kind, r.subtype);
+          const cols = tpl.cols;
           return (
             <li key={idx} className="casebook-card">
               <div className="casebook-card-head">
@@ -104,8 +105,10 @@ function RowTable({
                 {values.map((v, i) => {
                   const text = (v ?? "").trim();
                   if (!text) return null;
-                  const label = cols[i] || `항목 ${i + 1}`;
-                  if (def?.linkCol === i) {
+                  const label = (cols[i] ?? "").trim();
+                  // 이 양식에서 쓰지 않는 열은 출력하지 않는다.
+                  if (!label) return null;
+                  if (tpl.linkCol === i) {
                     return (
                       <div key={i} className="casebook-field">
                         <dt>{label}</dt>
@@ -115,7 +118,7 @@ function RowTable({
                       </div>
                     );
                   }
-                  if (def?.fileCol === i) {
+                  if (tpl.fileCols?.includes(i)) {
                     const files = parseAttachments(text);
                     if (files.length === 0) return null;
                     return (

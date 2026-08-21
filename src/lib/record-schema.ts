@@ -108,6 +108,52 @@ export interface RowSectionDef {
   addLabel: string;
 }
 
+/** 탭(subtype)별 전용 입력 양식. 라벨이 빈 열은 이 양식에서 사용하지 않는다(값은 보존만 됨). */
+export interface RowTemplate {
+  cols: string[];
+  placeholders?: string[];
+  longCols?: number[];
+  linkCol?: number;
+  /** 첨부(JSON 저장) 열 목록 */
+  fileCols?: number[];
+  /** 첨부 중 이미지 미리보기를 보여줄 열 목록 */
+  imageCols?: number[];
+}
+
+/** 문제 정의 과정(process) 탭별 양식. 없으면 기본 양식을 쓴다. */
+export const PROCESS_SUBTYPE_TEMPLATES: Record<string, RowTemplate> = {
+  "22일 팀빌딩·문제 정의 회의": {
+    cols: [
+      "",
+      "",
+      "",
+      "종이 프로토타입 유튜브 영상 링크",
+      "페르소나 이미지",
+      "고객 여정 맵 이미지",
+    ],
+    placeholders: ["", "", "", "예) https://youtu.be/xxxxxxxx", "", ""],
+    linkCol: 3,
+    fileCols: [4, 5],
+    imageCols: [4, 5],
+  },
+};
+
+/** 행의 종류·탭에 맞는 양식을 돌려준다. */
+export function rowTemplate(kind: string, subtype?: string | null): RowTemplate {
+  if (kind === "process" && subtype && PROCESS_SUBTYPE_TEMPLATES[subtype]) {
+    return PROCESS_SUBTYPE_TEMPLATES[subtype];
+  }
+  const def = ROW_SECTION_DEFS[kind];
+  return {
+    cols: def?.cols ?? [],
+    placeholders: def?.placeholders,
+    longCols: def?.longCols,
+    linkCol: def?.linkCol,
+    fileCols: def?.fileCol === undefined ? [] : [def.fileCol],
+    imageCols: [],
+  };
+}
+
 
 export const ROW_SECTION_DEFS: Record<string, RowSectionDef> = {
   process: {
