@@ -1408,7 +1408,7 @@ function RowItem({
               />
               {(values[effLink] ?? "").trim() && (
                 <a
-                  href={withProtocol((values[effLink] ?? "").trim())}
+                  href={normalizeUrl((values[effLink] ?? "").trim())}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-block max-w-full truncate text-xs text-primary underline underline-offset-2"
