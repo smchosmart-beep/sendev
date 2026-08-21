@@ -215,6 +215,11 @@ export function VoteSection({
           <Vote className="h-5 w-5 text-primary" />
           {boardName}
           <StatusBadge status={status} />
+          {isRunoff && (
+            <span className="rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive">
+              결선 {round}차
+            </span>
+          )}
         </h2>
         <Button asChild className="rounded-xl active:scale-95">
           <Link to="/board/$slug/new-vote" params={{ slug }}>
@@ -227,6 +232,13 @@ export function VoteSection({
       <p className="rounded-xl bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
         {status === "open" ? (
           <>
+            {isRunoff && (
+              <>
+                동점으로 남은 자리를 가리는 <b>결선 투표</b>예요. 이미 확정된{" "}
+                <b>{lockedIds.size}팀</b>을 뺀 남은 자리를 두고 아래 후보들만
+                다시 투표합니다.{" "}
+              </>
+            )}
             투표가 진행 중이에요. <b>{required}개</b>를 모두 선택한 뒤 <b>투표
             저장</b>을 눌러야 반영돼요. 본인이 쓴 글에는 투표할 수 없고, 종료
             전까지는 선택을 바꿔 다시 저장할 수 있어요. 결과는 투표가 종료된 뒤
@@ -239,6 +251,16 @@ export function VoteSection({
         )}
 
       </p>
+
+      {status === "closed" && winnerInfo.tied > 0 && (
+        <p className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-foreground">
+          <b>{winnerInfo.lockedCount ?? 0}팀 확정</b>, 남은 자리{" "}
+          {winnerInfo.openSeats ?? 0}개를 {winnerInfo.tied}팀이 동점(
+          {winnerInfo.tieCount}표)으로 다투는 중이에요. 관리자는 아래에서 결선
+          투표를 시작할 수 있어요.
+        </p>
+      )}
+
 
       {status === "open" && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3">
