@@ -10,8 +10,8 @@ import {
   Folder,
   FolderOpen,
   ChevronRight,
-  FileText,
 } from "lucide-react";
+
 
 import {
   categoriesQueryOptions,
@@ -325,17 +325,11 @@ function BoardListPage() {
           <MarkAllReadButton unreadCount={totalUnread} label="전체 읽음 처리" />
           {isHackathon && (
             <>
-              <Link
-                to="/readme"
-                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-secondary px-3 text-sm font-semibold text-secondary-foreground shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
-              >
-                <FileText className="h-4 w-4" />
-                README 작성
-              </Link>
               <HackathonReviewButton onClick={openCreateReview} />
             </>
           )}
         </div>
+
       </div>
 
 
