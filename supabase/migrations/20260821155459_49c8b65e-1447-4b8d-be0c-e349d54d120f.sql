@@ -1,0 +1,1 @@
+DELETE FROM public.record_rows WHERE kind = 'process' AND subtype = '인터뷰 기록' AND id IN ('b94a1649-88b8-4ae7-a631-bb7849186887','1db7eb6a-544a-43a0-b575-0e8527c1733e');
