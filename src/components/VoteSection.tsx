@@ -289,6 +289,11 @@ export function VoteSection({
           categoryId={category.id}
           status={status}
           maxChoices={maxChoices}
+          seats={seats}
+          round={round}
+          canStartRunoff={status === "closed" && winnerInfo.tied > 0}
+          runoffCandidates={winnerInfo.tied}
+          defaultRunoffChoices={Math.max(1, winnerInfo.openSeats ?? 1)}
           confirm={confirm}
           onDone={() => {
             queryClient.invalidateQueries({ queryKey: ["vote-state", category.id] });
