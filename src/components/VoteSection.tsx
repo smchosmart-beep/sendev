@@ -130,9 +130,18 @@ export function VoteSection({
       queryClient.invalidateQueries({ queryKey: ["vote-requirement", category.id] });
       toast.success("투표를 저장했어요.");
     },
-    onError: (err: unknown) =>
-      toast.error(err instanceof Error ? err.message : "투표하지 못했어요."),
+    onError: (err: unknown) => {
+      queryClient.invalidateQueries({ queryKey: ["vote-state", category.id] });
+      queryClient.invalidateQueries({ queryKey: ["vote-requirement", category.id] });
+      toast.error(err instanceof Error ? err.message : "투표하지 못했어요.");
+    },
   });
+
+  // 라운드나 1인당 선택 수가 바뀌면, 선택 가능 표 수 기준도 즉시 다시 불러온다.
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["vote-requirement", category.id] });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [round, maxChoices, category.id]);
 
   // 결선 라운드에서는 동점 후보만 보여준다.
   const visible = useMemo(
@@ -329,6 +338,7 @@ export function VoteSection({
             queryClient.invalidateQueries({ queryKey: ["vote-results", category.id] });
             queryClient.invalidateQueries({ queryKey: ["my-votes", category.id] });
             queryClient.invalidateQueries({ queryKey: ["categories"] });
+            queryClient.invalidateQueries({ queryKey: ["vote-requirement", category.id] });
           }}
         />
       )}
