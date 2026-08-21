@@ -31,8 +31,10 @@
 └───────────────────────────────┘
 ```
 
+- 현재 본문 영역이 1024px로 좁아 그대로 3열을 넣으면 투표 목록이 좁아집니다. 그래서 투표 게시판일 때만 본문 최대 폭을 넓힙니다(캘린더/README 페이지에 이미 쓰고 있는 예외 방식과 동일 — 다른 페이지 영향 없음)
 - 좌우 패널은 화면이 충분히 넓을 때만 표시되며 스크롤에 따라 상단 고정(sticky)
-- 좁은 화면에서는 투표 목록 위에 접었다 펼치는 요약 패널 하나로 대체(기본 접힘, 헤더에 완료 인원 표시)
+- 폭이 부족한 화면에서는 자동으로 좌우 패널을 감추고, 투표 목록 위에 접었다 펼치는 요약 패널 하나로 대체(기본 접힘, 헤더에 완료 인원 표시)
+
 
 ## 익명성 유지
 
@@ -42,10 +44,13 @@
 
 - `src/lib/platform.functions.ts`에 `getVoteVoterStatus` 서버 함수 추가
   - 입력: `categoryId`, `boardPassword`(선택), `adminPassword`(선택)
-  - 게시판 접근 확인 후, 해당 카테고리의 `type = 'vote'` 글에서 작성자 닉네임을 모아 정규화 키로 중복 제거
+  - 게시판 접근 확인 후, 해당 카테고리의 `type = 'vote'` 글에서 작성자 닉네임을 모아 중복 제거
+  - 키 대조는 반드시 기존 투표 저장과 같은 `normalizeName()`을 사용(`votes.voter_key`가 이 규칙으로 저장됨). 다른 정규화 함수를 쓰면 실제 투표자가 미완료로 표시됨
   - 현재 라운드 `votes`의 `voter_key` 집합과 대조해 `{ name, voted }[]` 반환 (득표수·투표 대상은 반환하지 않음)
 - `src/lib/platform.queries.ts`에 `voteVoterStatusQueryOptions` 추가 (30초 `refetchInterval`, 기존 `vote-state` 폴링과 동일한 부담 수준)
 - 신규 컴포넌트 `src/components/VoteVoterPanel.tsx` — 명단 슬라이스와 상태 배지 렌더링
+- `src/routes/_main.tsx`에서 투표 게시판 경로일 때 본문 컨테이너 폭 확대(기존 캘린더/README 분기와 같은 방식)
 - `src/routes/_main.board.$slug.index.tsx`에서 투표 게시판일 때 3열 그리드로 감싸 좌/우 패널 배치, 좁은 화면에서는 접이식 패널
 - 투표 저장 성공 시 `vote-voter-status` 쿼리 무효화하여 본인 상태 즉시 반영
+
 - 사용자 가이드(`/guide`)의 투표 게시판 설명에 현황판 안내 추가
