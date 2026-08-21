@@ -342,10 +342,12 @@ export function VoteSection({
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {paged.map((post, idx) => {
+            {paged.map((post) => {
               const voted = mySet.has(post.id);
               const count = counts[post.id] ?? 0;
-              const rank = status === "closed" ? (current - 1) * PAGE_SIZE + idx + 1 : 0;
+              const rankInfo = rankMap.get(post.id);
+              const showRank =
+                status === "closed" && count > 0 && !!rankInfo && rankInfo.rank <= 3;
               return (
                 <div
                   key={post.id}
