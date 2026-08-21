@@ -11,6 +11,8 @@
 1. `src/components/VoteSection.tsx`의 `winnerInfo` 계산에서 동점 후보 ID 집합(`tiedIds`)도 함께 반환합니다.
    - 현재 `tied`는 동점 개수만 담고 있어, 어떤 게시글이 동점인지 알 수 없습니다.
    - `tied` 배열을 Set으로 변환해 카드 렌더링에서 사용합니다.
+   - `winnerInfo` 초기값(`status !== "closed"`)과 `remaining <= 0 || sorted.length <= remaining` branch에도 `tiedIds: new Set<string>()`을 함께 반환합니다. 이 값이 없으면 카드 렌더링에서 `winnerInfo.tiedIds.has(...)` 호출 시 `undefined` 런타임 오류가 발생할 수 있습니다.
+   - 동점이 실제로 발생한 경우(`overflow === true`)에만 `tiedIds`를 `tied` 배열의 ID Set으로 반환합니다.
 2. 카드(`paged.map(...)` 내부 `<div>`)의 `className`에 상태별 배경색을 추가합니다.
    - `isLocked || isWinner` → `bg-emerald-50 border-emerald-300` (선발 확정)
    - `isTied` → `bg-amber-50 border-amber-300` (재투표 필요)
