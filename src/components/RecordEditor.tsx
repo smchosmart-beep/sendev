@@ -1103,6 +1103,19 @@ function RowSection({
     </section>
   );
 }
+function isYouTubeUrl(raw: string): boolean {
+  const url = raw.trim();
+  if (!url) return false;
+  let host: string;
+  try {
+    host = new URL(/^(https?:|mailto:)/i.test(url) ? url : `https://${url}`).hostname
+      .replace(/^www\./, "")
+      .toLowerCase();
+  } catch {
+    return false;
+  }
+  return host === "youtu.be" || host === "youtube.com" || host === "m.youtube.com";
+}
 
 function RowItem({
   row,
