@@ -6,7 +6,14 @@ import { Check, Lock, Plus, RotateCcw, Save, Trophy, Vote } from "lucide-react";
 import { toast } from "sonner";
 
 import type { CategoryDTO, PostDTO } from "@/lib/platform.functions";
-import { normalizeUsername, resetVotes, setVoteStatus, submitVotes } from "@/lib/platform.functions";
+import {
+  cancelRunoff,
+  normalizeUsername,
+  resetVotes,
+  setVoteStatus,
+  startRunoff,
+  submitVotes,
+} from "@/lib/platform.functions";
 import {
   getBoardPassword,
   myVotesQueryOptions,
@@ -68,6 +75,11 @@ export function VoteSection({
   const { data: state } = useQuery(voteStateQueryOptions(category.id));
   const status = state?.status ?? category.voteStatus;
   const maxChoices = state?.maxChoices ?? category.voteMaxChoices;
+  const round = state?.round ?? 1;
+  const seats = state?.seats ?? maxChoices;
+  const runoffIds = useMemo(() => new Set(state?.runoffIds ?? []), [state]);
+  const lockedIds = useMemo(() => new Set(state?.lockedIds ?? []), [state]);
+  const isRunoff = round > 1;
 
   const { data: myVotes = [] } = useQuery(
     myVotesQueryOptions(category.id, nickname, boardPassword, adminPassword),
@@ -90,7 +102,7 @@ export function VoteSection({
 
   const { data: results } = useQuery({
     ...voteResultsQueryOptions(category.id, boardPassword, adminPassword),
-    enabled: status === "closed",
+    enabled: status === "closed" || isRunoff,
   });
   const counts = results?.counts ?? {};
   // 닉네임이 투표 판단에 영향을 주지 않도록, 종료 전까지는 관리자 포함 모두 작성자를 숨긴다.
@@ -122,12 +134,45 @@ export function VoteSection({
       toast.error(err instanceof Error ? err.message : "투표하지 못했어요."),
   });
 
+  // 결선 라운드에서는 동점 후보만 보여준다.
+  const visible = useMemo(
+    () => (isRunoff ? posts.filter((p) => runoffIds.has(p.id)) : posts),
+    [posts, isRunoff, runoffIds],
+  );
+
   const ordered = useMemo(() => {
-    if (status !== "closed") return posts;
-    return [...posts].sort(
+    if (status !== "closed") return visible;
+    return [...visible].sort(
       (a, b) => (counts[b.id] ?? 0) - (counts[a.id] ?? 0),
     );
-  }, [posts, status, counts]);
+  }, [visible, status, counts]);
+
+  // 이번 라운드 종료 시 남은 자리를 채운 팀(동점으로 넘치면 그대로 표시).
+  const winnerInfo = useMemo(() => {
+    if (status !== "closed") return { winners: new Set<string>(), tied: 0, tieCount: 0 };
+    const remaining = Math.max(0, seats - lockedIds.size);
+    const sorted = [...ordered];
+    if (remaining <= 0 || sorted.length <= remaining) {
+      return { winners: new Set(sorted.map((p) => p.id)), tied: 0, tieCount: 0 };
+    }
+    const cutoff = counts[sorted[remaining - 1]!.id] ?? 0;
+    const above = sorted.filter((p) => (counts[p.id] ?? 0) > cutoff);
+    const tied = sorted.filter((p) => (counts[p.id] ?? 0) === cutoff);
+    const overflow = above.length + tied.length > remaining;
+    return {
+      winners: new Set([...above, ...(overflow ? [] : tied)].map((p) => p.id)),
+      tied: overflow ? tied.length : 0,
+      tieCount: cutoff,
+      lockedCount: lockedIds.size + above.length,
+      openSeats: remaining - above.length,
+    } as {
+      winners: Set<string>;
+      tied: number;
+      tieCount: number;
+      lockedCount?: number;
+      openSeats?: number;
+    };
+  }, [status, ordered, counts, seats, lockedIds]);
 
   const pageCount = Math.max(1, Math.ceil(ordered.length / PAGE_SIZE));
   const current = Math.min(Math.max(1, page), pageCount);
@@ -177,6 +222,11 @@ export function VoteSection({
           <Vote className="h-5 w-5 text-primary" />
           {boardName}
           <StatusBadge status={status} />
+          {isRunoff && (
+            <span className="rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive">
+              결선 {round}차
+            </span>
+          )}
         </h2>
         <Button asChild className="rounded-xl active:scale-95">
           <Link to="/board/$slug/new-vote" params={{ slug }}>
@@ -189,6 +239,13 @@ export function VoteSection({
       <p className="rounded-xl bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
         {status === "open" ? (
           <>
+            {isRunoff && (
+              <>
+                동점으로 남은 자리를 가리는 <b>결선 투표</b>예요. 이미 확정된{" "}
+                <b>{lockedIds.size}팀</b>을 뺀 남은 자리를 두고 아래 후보들만
+                다시 투표합니다.{" "}
+              </>
+            )}
             투표가 진행 중이에요. <b>{required}개</b>를 모두 선택한 뒤 <b>투표
             저장</b>을 눌러야 반영돼요. 본인이 쓴 글에는 투표할 수 없고, 종료
             전까지는 선택을 바꿔 다시 저장할 수 있어요. 결과는 투표가 종료된 뒤
@@ -201,6 +258,16 @@ export function VoteSection({
         )}
 
       </p>
+
+      {status === "closed" && winnerInfo.tied > 0 && (
+        <p className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-foreground">
+          <b>{winnerInfo.lockedCount ?? 0}팀 확정</b>, 남은 자리{" "}
+          {winnerInfo.openSeats ?? 0}개를 {winnerInfo.tied}팀이 동점(
+          {winnerInfo.tieCount}표)으로 다투는 중이에요. 관리자는 아래에서 결선
+          투표를 시작할 수 있어요.
+        </p>
+      )}
+
 
       {status === "open" && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3">
@@ -229,6 +296,11 @@ export function VoteSection({
           categoryId={category.id}
           status={status}
           maxChoices={maxChoices}
+          seats={seats}
+          round={round}
+          canStartRunoff={status === "closed" && winnerInfo.tied > 0}
+          runoffCandidates={winnerInfo.tied}
+          defaultRunoffChoices={Math.max(1, winnerInfo.openSeats ?? 1)}
           confirm={confirm}
           onDone={() => {
             queryClient.invalidateQueries({ queryKey: ["vote-state", category.id] });
@@ -264,12 +336,20 @@ export function VoteSection({
                     params={{ slug, postNo: String(post.postNo) }}
                     className="space-y-1"
                   >
-                    {status === "closed" && rank <= 3 && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                        <Trophy className="h-3.5 w-3.5" />
-                        {rank}위
-                      </span>
-                    )}
+                    <span className="flex flex-wrap items-center gap-1">
+                      {status === "closed" && rank <= 3 && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                          <Trophy className="h-3.5 w-3.5" />
+                          {rank}위
+                        </span>
+                      )}
+                      {(lockedIds.has(post.id) ||
+                        (status === "closed" && winnerInfo.winners.has(post.id))) && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-600">
+                          선발
+                        </span>
+                      )}
+                    </span>
                     <p className="line-clamp-5 text-sm font-medium leading-relaxed text-foreground">
                       {voteCardText(post.content, post.title)}
                     </p>
@@ -348,21 +428,33 @@ function AdminVoteControls({
   categoryId,
   status,
   maxChoices,
+  seats,
+  round,
+  canStartRunoff,
+  runoffCandidates,
+  defaultRunoffChoices,
   confirm,
   onDone,
 }: {
   categoryId: string;
   status: string;
   maxChoices: number;
+  seats: number;
+  round: number;
+  canStartRunoff: boolean;
+  runoffCandidates: number;
+  defaultRunoffChoices: number;
   confirm: (opts: { title?: string; description: string; destructive?: boolean }) => Promise<boolean>;
   onDone: () => void;
 }) {
+  type Mode = "start" | "stop" | "reset" | "runoff" | "cancel-runoff";
   const [dialog, setDialog] = useState<
     | null
     | {
-        mode: "start" | "stop" | "reset";
+        mode: Mode;
         password: string;
         limit: string;
+        seats: string;
         error: string;
         submitting: boolean;
       }
@@ -370,12 +462,18 @@ function AdminVoteControls({
 
   const setStatus = useServerFn(setVoteStatus);
   const reset = useServerFn(resetVotes);
+  const runoff = useServerFn(startRunoff);
+  const cancel = useServerFn(cancelRunoff);
 
-  const openDialog = (mode: "start" | "stop" | "reset") => {
+  const openDialog = (mode: Mode) => {
     setDialog({
       mode,
       password: "",
-      limit: String(maxChoices || 1),
+      limit:
+        mode === "runoff"
+          ? String(Math.max(1, defaultRunoffChoices))
+          : String(maxChoices || 1),
+      seats: String(seats || maxChoices || 1),
       error: "",
       submitting: false,
     });
@@ -393,6 +491,7 @@ function AdminVoteControls({
             categoryId,
             status: "open",
             maxChoices: Math.max(1, Number(dialog.limit) || 1),
+            seats: Math.max(1, Number(dialog.seats) || 1),
             adminPassword: dialog.password,
           },
         });
@@ -405,6 +504,16 @@ function AdminVoteControls({
         await setStatus({
           data: { categoryId, status: "idle", maxChoices: 1, adminPassword: dialog.password },
         });
+      } else if (dialog.mode === "runoff") {
+        await runoff({
+          data: {
+            categoryId,
+            maxChoices: Math.max(1, Number(dialog.limit) || 1),
+            adminPassword: dialog.password,
+          },
+        });
+      } else {
+        await cancel({ data: { categoryId, adminPassword: dialog.password } });
       }
       closeDialog();
       onDone();
@@ -413,7 +522,11 @@ function AdminVoteControls({
           ? "투표를 시작했어요."
           : dialog.mode === "stop"
             ? "투표를 종료했어요."
-            : "투표 기록을 초기화했어요.",
+            : dialog.mode === "reset"
+              ? "투표 기록을 초기화했어요."
+              : dialog.mode === "runoff"
+                ? "결선 투표를 시작했어요."
+                : "결선을 취소했어요.",
       );
     } catch (err) {
       setDialog({
@@ -424,6 +537,28 @@ function AdminVoteControls({
     }
   };
 
+  const title =
+    dialog?.mode === "start"
+      ? "투표 시작"
+      : dialog?.mode === "stop"
+        ? "투표 종료"
+        : dialog?.mode === "reset"
+          ? "투표 초기화"
+          : dialog?.mode === "runoff"
+            ? "결선 투표 시작"
+            : "결선 취소";
+
+  const description =
+    dialog?.mode === "start"
+      ? "관리자 비밀번호를 입력하고 1인당 최대 투표 수와 선발 정원을 정해 주세요."
+      : dialog?.mode === "stop"
+        ? "관리자 비밀번호를 입력하면 투표가 종료되고 결과가 공개됩니다."
+        : dialog?.mode === "reset"
+          ? "관리자 비밀번호를 입력하면 모든 투표 기록이 삭제됩니다."
+          : dialog?.mode === "runoff"
+            ? `동점 후보 ${runoffCandidates}팀만으로 결선 투표를 엽니다. 1인당 선택 수를 정해 주세요.`
+            : "현재 결선 라운드의 표를 지우고 직전 결과로 되돌립니다.";
+
   return (
     <>
       <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-dashed border-primary/40 bg-card p-4">
@@ -431,6 +566,12 @@ function AdminVoteControls({
           <Label className="text-xs">1인당 최대 투표 수</Label>
           <p className="h-9 w-28 rounded-xl border border-border bg-muted/50 px-3 py-2 text-sm text-foreground">
             {maxChoices || 1}표
+          </p>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">선발 정원</Label>
+          <p className="h-9 w-28 rounded-xl border border-border bg-muted/50 px-3 py-2 text-sm text-foreground">
+            {seats || 1}팀
           </p>
         </div>
         {status !== "open" ? (
@@ -448,6 +589,32 @@ function AdminVoteControls({
             onClick={() => openDialog("stop")}
           >
             투표 종료
+          </Button>
+        )}
+        {canStartRunoff && (
+          <Button
+            type="button"
+            className="rounded-xl active:scale-95"
+            onClick={() => openDialog("runoff")}
+          >
+            결선 투표 시작
+          </Button>
+        )}
+        {round > 1 && (
+          <Button
+            type="button"
+            variant="secondary"
+            className="rounded-xl active:scale-95"
+            onClick={async () => {
+              const ok = await confirm({
+                title: "결선 취소",
+                description: "현재 결선 라운드의 표가 삭제되고 직전 결과로 돌아가요.",
+                destructive: true,
+              });
+              if (ok) openDialog("cancel-runoff");
+            }}
+          >
+            결선 취소
           </Button>
         )}
         <Button
@@ -471,20 +638,8 @@ function AdminVoteControls({
       <Dialog open={!!dialog} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="rounded-2xl sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {dialog?.mode === "start"
-                ? "투표 시작"
-                : dialog?.mode === "stop"
-                  ? "투표 종료"
-                  : "투표 초기화"}
-            </DialogTitle>
-            <DialogDescription>
-              {dialog?.mode === "start"
-                ? "관리자 비밀번호를 입력하고 1인당 최대 투표 수를 확인해 주세요."
-                : dialog?.mode === "stop"
-                  ? "관리자 비밀번호를 입력하면 투표가 종료되고 결과가 공개됩니다."
-                  : "관리자 비밀번호를 입력하면 모든 투표 기록이 삭제됩니다."}
-            </DialogDescription>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
 
           <form
@@ -494,7 +649,7 @@ function AdminVoteControls({
             }}
             className="space-y-4"
           >
-            {dialog?.mode === "start" && (
+            {(dialog?.mode === "start" || dialog?.mode === "runoff") && (
               <div className="space-y-1">
                 <Label htmlFor="vote-limit" className="text-xs">
                   1인당 최대 투표 수
@@ -506,6 +661,22 @@ function AdminVoteControls({
                   max={100}
                   value={dialog.limit}
                   onChange={(e) => setDialog({ ...dialog, limit: e.target.value })}
+                  className="h-10 rounded-xl"
+                />
+              </div>
+            )}
+            {dialog?.mode === "start" && (
+              <div className="space-y-1">
+                <Label htmlFor="vote-seats" className="text-xs">
+                  선발 정원(최종 몇 팀을 뽑을지)
+                </Label>
+                <Input
+                  id="vote-seats"
+                  type="number"
+                  min={1}
+                  max={1000}
+                  value={dialog.seats}
+                  onChange={(e) => setDialog({ ...dialog, seats: e.target.value })}
                   className="h-10 rounded-xl"
                 />
               </div>
@@ -543,9 +714,7 @@ function AdminVoteControls({
               <Button
                 type="submit"
                 className="rounded-xl"
-                disabled={
-                  !dialog?.password.trim() || dialog?.submitting
-                }
+                disabled={!dialog?.password.trim() || dialog?.submitting}
               >
                 {dialog?.submitting ? "처리 중..." : "확인"}
               </Button>

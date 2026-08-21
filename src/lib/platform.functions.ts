@@ -4117,15 +4117,61 @@ export const deleteHackathonReview = createServerFn({ method: "POST" })
 export interface VoteStateDTO {
   status: VoteStatus;
   maxChoices: number;
+  seats: number;
+  round: number;
+  runoffIds: string[];
+  lockedIds: string[];
 }
 
 export interface VoteResultsDTO {
   status: VoteStatus;
   counts: Record<string, number>;
   voters: Record<string, string[]>; // 관리자에게만 채워진다
+  round: number;
+  seats: number;
+  runoffIds: string[];
+  lockedIds: string[];
 }
 
-// 관리자 전용: 투표 시작/종료. 시작할 때 1인당 최대 선택 수를 함께 지정한다.
+const VOTE_COLUMNS =
+  "vote_status, vote_max_choices, vote_seats, vote_round, vote_runoff_ids, vote_locked_ids, vote_round_history";
+
+function idList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((v) => String(v)).filter((v) => v.length > 0);
+}
+
+interface VoteConfig {
+  status: VoteStatus;
+  maxChoices: number;
+  seats: number;
+  round: number;
+  runoffIds: string[];
+  lockedIds: string[];
+  history: any[];
+}
+
+async function loadVoteConfig(db: any, categoryId: string): Promise<VoteConfig> {
+  const { data: row, error } = await db
+    .from("categories")
+    .select(VOTE_COLUMNS)
+    .eq("id", categoryId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  const r: any = row ?? {};
+  return {
+    status: (r.vote_status ?? "idle") as VoteStatus,
+    maxChoices: Number(r.vote_max_choices ?? 1),
+    seats: Number(r.vote_seats ?? 1),
+    round: Math.max(1, Number(r.vote_round ?? 1)),
+    runoffIds: idList(r.vote_runoff_ids),
+    lockedIds: idList(r.vote_locked_ids),
+    history: Array.isArray(r.vote_round_history) ? r.vote_round_history : [],
+  };
+}
+
+// 관리자 전용: 투표 시작/종료. 시작할 때 1인당 최대 선택 수와 선발 정원을
+// 함께 지정하고, 라운드 관련 상태를 1라운드로 초기화한다.
 export const setVoteStatus = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
@@ -4133,6 +4179,7 @@ export const setVoteStatus = createServerFn({ method: "POST" })
         categoryId: z.string().uuid(),
         status: z.enum(["idle", "open", "closed"]),
         maxChoices: z.number().int().min(1).max(100).default(1),
+        seats: z.number().int().min(1).max(1000).optional(),
         adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
@@ -4141,7 +4188,21 @@ export const setVoteStatus = createServerFn({ method: "POST" })
     requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const patch: Record<string, unknown> = { vote_status: data.status };
-    if (data.status === "open") patch.vote_max_choices = data.maxChoices;
+    if (data.status === "open") {
+      // 새 투표를 여는 동작이므로 라운드 상태를 1라운드로 되돌린다.
+      patch.vote_max_choices = data.maxChoices;
+      patch.vote_seats = data.seats ?? data.maxChoices;
+      patch.vote_round = 1;
+      patch.vote_runoff_ids = [];
+      patch.vote_locked_ids = [];
+      patch.vote_round_history = [];
+    }
+    if (data.status === "idle") {
+      patch.vote_round = 1;
+      patch.vote_runoff_ids = [];
+      patch.vote_locked_ids = [];
+      patch.vote_round_history = [];
+    }
     const { error } = await db
       .from("categories")
       .update(patch)
@@ -4150,7 +4211,7 @@ export const setVoteStatus = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// 관리자 전용: 해당 게시판의 표를 모두 삭제한다(되돌릴 수 없음).
+// 관리자 전용: 해당 게시판의 표를 모두 삭제하고 라운드 상태를 초기화한다.
 export const resetVotes = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
@@ -4168,6 +4229,16 @@ export const resetVotes = createServerFn({ method: "POST" })
       .delete()
       .eq("category_id", data.categoryId);
     if (error) throw new Error(error.message);
+    const { error: cErr } = await db
+      .from("categories")
+      .update({
+        vote_round: 1,
+        vote_runoff_ids: [],
+        vote_locked_ids: [],
+        vote_round_history: [],
+      })
+      .eq("id", data.categoryId);
+    if (cErr) throw new Error(cErr.message);
     return { ok: true };
   });
 
@@ -4179,19 +4250,19 @@ export const getVoteState = createServerFn({ method: "GET" })
   )
   .handler(async ({ data }): Promise<VoteStateDTO> => {
     const db = await getAdmin();
-    const { data: row, error } = await db
-      .from("categories")
-      .select("vote_status, vote_max_choices")
-      .eq("id", data.categoryId)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
+    const cfg = await loadVoteConfig(db, data.categoryId);
     return {
-      status: (row?.vote_status ?? "idle") as VoteStatus,
-      maxChoices: Number(row?.vote_max_choices ?? 1),
+      status: cfg.status,
+      maxChoices: cfg.maxChoices,
+      seats: cfg.seats,
+      round: cfg.round,
+      runoffIds: cfg.runoffIds,
+      lockedIds: cfg.lockedIds,
     };
   });
 
-// 내가 고른 게시글 id 목록. 본인 것만 돌려주므로 진행 중 비공개가 유지된다.
+// 내가 고른 게시글 id 목록(현재 라운드 기준). 본인 것만 돌려주므로
+// 진행 중 비공개가 유지된다.
 export const getMyVotes = createServerFn({ method: "GET" })
   .inputValidator((input) =>
     z
@@ -4212,84 +4283,15 @@ export const getMyVotes = createServerFn({ method: "GET" })
     ) {
       return [];
     }
+    const cfg = await loadVoteConfig(db, data.categoryId);
     const { data: rows, error } = await db
       .from("votes")
       .select("post_id")
       .eq("category_id", data.categoryId)
-      .eq("voter_key", key);
+      .eq("voter_key", key)
+      .eq("round", cfg.round);
     if (error) throw new Error(error.message);
     return (rows ?? []).map((r: any) => String(r.post_id));
-  });
-
-// 투표 토글. 게시판 비밀번호 + 닉네임 소유권을 서버에서 다시 검증한다.
-export const castVote = createServerFn({ method: "POST" })
-  .inputValidator((input) =>
-    z
-      .object({
-        categoryId: z.string().uuid(),
-        postId: z.string().uuid(),
-        nickname: z.string().trim().min(1).max(100),
-        nicknamePassword: z.string().trim().max(100).default(""),
-        boardPassword: z.string().max(100).optional(),
-        adminPassword: z.string().max(200).optional(),
-      })
-      .parse(input),
-  )
-  .handler(async ({ data }) => {
-    const db = await getAdmin();
-    if (
-      !(await boardAccessOk(db, data.categoryId, data.boardPassword, data.adminPassword))
-    ) {
-      throw new Error("이 게시판에 접근할 수 없어요.");
-    }
-    const { data: cat, error: cErr } = await db
-      .from("categories")
-      .select("vote_status, vote_max_choices")
-      .eq("id", data.categoryId)
-      .maybeSingle();
-    if (cErr) throw new Error(cErr.message);
-    if ((cat?.vote_status ?? "idle") !== "open") {
-      throw new Error("지금은 투표할 수 없어요.");
-    }
-    await ensureNicknameOwnership(db, data.nickname, data.nicknamePassword, false);
-    const key = normalizeName(data.nickname);
-    if (!key || key === "익명") throw new Error("닉네임이 필요해요.");
-
-    const { data: mine, error: mErr } = await db
-      .from("votes")
-      .select("id, post_id")
-      .eq("category_id", data.categoryId)
-      .eq("voter_key", key);
-    if (mErr) throw new Error(mErr.message);
-    const existing = (mine ?? []).find(
-      (r: any) => String(r.post_id) === data.postId,
-    );
-    if (existing) {
-      const { error } = await db.from("votes").delete().eq("id", existing.id);
-      if (error) throw new Error(error.message);
-      return { ok: true, voted: false };
-    }
-    // 본인이 쓴 후보 글에는 투표할 수 없다.
-    const { data: target } = await db
-      .from("posts")
-      .select("author")
-      .eq("id", data.postId)
-      .maybeSingle();
-    if (normalizeName(String((target as any)?.author ?? "")) === key) {
-      throw new Error("본인이 쓴 글에는 투표할 수 없어요.");
-    }
-    const max = Number(cat?.vote_max_choices ?? 1);
-    if ((mine ?? []).length >= max) {
-      throw new Error(`최대 ${max}개까지 투표할 수 있어요.`);
-    }
-    const { error } = await db.from("votes").insert({
-      category_id: data.categoryId,
-      post_id: data.postId,
-      voter_key: key,
-      voter_name: data.nickname.trim(),
-    });
-    if (error) throw new Error(error.message);
-    return { ok: true, voted: true };
   });
 
 export interface VoteRequirementDTO {
@@ -4298,7 +4300,7 @@ export interface VoteRequirementDTO {
   maxChoices: number;
 }
 
-// 검색 필터와 무관하게, 전체 후보 기준으로 이 사람이 채워야 할 표 수를 계산한다.
+// 이번 라운드에서 이 사람이 채워야 할 표 수를 계산한다(검색 필터와 무관).
 export const getVoteRequirement = createServerFn({ method: "GET" })
   .inputValidator((input) =>
     z
@@ -4310,21 +4312,20 @@ export const getVoteRequirement = createServerFn({ method: "GET" })
   )
   .handler(async ({ data }): Promise<VoteRequirementDTO> => {
     const db = await getAdmin();
-    const { data: cat } = await db
-      .from("categories")
-      .select("vote_max_choices")
-      .eq("id", data.categoryId)
-      .maybeSingle();
-    const maxChoices = Number((cat as any)?.vote_max_choices ?? 1);
+    const cfg = await loadVoteConfig(db, data.categoryId);
+    const maxChoices = cfg.maxChoices;
     const { data: rows, error } = await db
       .from("posts")
       .select("id, author")
       .eq("category_id", data.categoryId)
       .eq("type", "vote");
     if (error) throw new Error(error.message);
+    const runoff = cfg.round > 1 ? new Set(cfg.runoffIds) : null;
     const key = normalizeName(data.nickname);
     const eligibleCount = (rows ?? []).filter(
-      (r: any) => !key || normalizeName(String(r.author ?? "")) !== key,
+      (r: any) =>
+        (!runoff || runoff.has(String(r.id))) &&
+        (!key || normalizeName(String(r.author ?? "")) !== key),
     ).length;
     return {
       required: Math.max(0, Math.min(maxChoices, eligibleCount)),
@@ -4355,13 +4356,8 @@ export const submitVotes = createServerFn({ method: "POST" })
     ) {
       throw new Error("이 게시판에 접근할 수 없어요.");
     }
-    const { data: cat, error: cErr } = await db
-      .from("categories")
-      .select("vote_status, vote_max_choices")
-      .eq("id", data.categoryId)
-      .maybeSingle();
-    if (cErr) throw new Error(cErr.message);
-    if (((cat as any)?.vote_status ?? "idle") !== "open") {
+    const cfg = await loadVoteConfig(db, data.categoryId);
+    if (cfg.status !== "open") {
       throw new Error("지금은 투표할 수 없어요.");
     }
     await ensureNicknameOwnership(db, data.nickname, data.nicknamePassword, false);
@@ -4374,9 +4370,11 @@ export const submitVotes = createServerFn({ method: "POST" })
       .eq("category_id", data.categoryId)
       .eq("type", "vote");
     if (pErr) throw new Error(pErr.message);
+    const runoff = cfg.round > 1 ? new Set(cfg.runoffIds) : null;
     const eligible = new Set(
       (candidates ?? [])
         .filter((r: any) => normalizeName(String(r.author ?? "")) !== key)
+        .filter((r: any) => !runoff || runoff.has(String(r.id)))
         .map((r: any) => String(r.id)),
     );
 
@@ -4389,8 +4387,7 @@ export const submitVotes = createServerFn({ method: "POST" })
         throw new Error("본인이 쓴 글이거나 선택할 수 없는 글이 포함됐어요.");
       }
     }
-    const maxChoices = Number((cat as any)?.vote_max_choices ?? 1);
-    const required = Math.max(0, Math.min(maxChoices, eligible.size));
+    const required = Math.max(0, Math.min(cfg.maxChoices, eligible.size));
     if (wanted.length !== required) {
       throw new Error(`${required}개를 모두 선택해야 저장할 수 있어요.`);
     }
@@ -4399,7 +4396,8 @@ export const submitVotes = createServerFn({ method: "POST" })
       .from("votes")
       .select("id, post_id")
       .eq("category_id", data.categoryId)
-      .eq("voter_key", key);
+      .eq("voter_key", key)
+      .eq("round", cfg.round);
     if (mErr) throw new Error(mErr.message);
     const current = new Map<string, string>();
     for (const r of mine ?? []) current.set(String((r as any).post_id), String((r as any).id));
@@ -4416,6 +4414,7 @@ export const submitVotes = createServerFn({ method: "POST" })
           post_id: pid,
           voter_key: key,
           voter_name: data.nickname.trim(),
+          round: cfg.round,
         })),
       );
       if (error) throw new Error(error.message);
@@ -4428,7 +4427,8 @@ export const submitVotes = createServerFn({ method: "POST" })
   });
 
 
-// 결과 조회: 종료 상태에서만 집계를 돌려주고, 명단은 관리자에게만 준다.
+// 결과 조회: 종료 상태에서만 이번 라운드 집계를 돌려주고, 명단은 관리자에게만 준다.
+// 확정 명단(이전 라운드에서 잠긴 팀)은 라운드 진행 중에도 함께 내려준다.
 export const getVoteResults = createServerFn({ method: "GET" })
   .inputValidator((input) =>
     z
@@ -4442,24 +4442,36 @@ export const getVoteResults = createServerFn({ method: "GET" })
   .handler(async ({ data }): Promise<VoteResultsDTO> => {
     const db = await getAdmin();
     const isAdmin = isAdminPassword(data.adminPassword);
-    const empty: VoteResultsDTO = { status: "idle", counts: {}, voters: {} };
+    const empty: VoteResultsDTO = {
+      status: "idle",
+      counts: {},
+      voters: {},
+      round: 1,
+      seats: 1,
+      runoffIds: [],
+      lockedIds: [],
+    };
     if (
       !(await boardAccessOk(db, data.categoryId, data.boardPassword, data.adminPassword))
     ) {
       return empty;
     }
-    const { data: cat } = await db
-      .from("categories")
-      .select("vote_status")
-      .eq("id", data.categoryId)
-      .maybeSingle();
-    const status = (cat?.vote_status ?? "idle") as VoteStatus;
-    if (status !== "closed") return { status, counts: {}, voters: {} };
+    const cfg = await loadVoteConfig(db, data.categoryId);
+    const base = {
+      status: cfg.status,
+      round: cfg.round,
+      seats: cfg.seats,
+      runoffIds: cfg.runoffIds,
+      lockedIds: cfg.lockedIds,
+    };
+    // 진행 중에는 득표수를 공개하지 않는다.
+    if (cfg.status !== "closed") return { ...base, counts: {}, voters: {} };
 
     const { data: rows, error } = await db
       .from("votes")
       .select("post_id, voter_name")
-      .eq("category_id", data.categoryId);
+      .eq("category_id", data.categoryId)
+      .eq("round", cfg.round);
     if (error) throw new Error(error.message);
     const counts: Record<string, number> = {};
     const voters: Record<string, string[]> = {};
@@ -4470,5 +4482,153 @@ export const getVoteResults = createServerFn({ method: "GET" })
         (voters[pid] ??= []).push(String((r as any).voter_name ?? ""));
       }
     }
-    return { status, counts, voters };
+    return { ...base, counts, voters };
+  });
+
+export interface RunoffPreviewDTO {
+  seats: number;
+  lockedIds: string[];
+  tiedIds: string[];
+  remaining: number;
+  tieCount: number;
+}
+
+// 현재(종료된) 라운드 집계를 바탕으로 확정 팀과 경계선 동점 후보를 계산한다.
+async function computeRunoff(
+  db: any,
+  categoryId: string,
+  cfg: VoteConfig,
+): Promise<RunoffPreviewDTO> {
+  if (cfg.status !== "closed") {
+    throw new Error("투표를 먼저 종료해야 결선을 열 수 있어요.");
+  }
+  const { data: posts, error: pErr } = await db
+    .from("posts")
+    .select("id")
+    .eq("category_id", categoryId)
+    .eq("type", "vote");
+  if (pErr) throw new Error(pErr.message);
+  const runoff = cfg.round > 1 ? new Set(cfg.runoffIds) : null;
+  const candidateIds = (posts ?? [])
+    .map((p: any) => String(p.id))
+    .filter((id: string) => !runoff || runoff.has(id));
+
+  const { data: rows, error } = await db
+    .from("votes")
+    .select("post_id")
+    .eq("category_id", categoryId)
+    .eq("round", cfg.round);
+  if (error) throw new Error(error.message);
+  const counts = new Map<string, number>();
+  for (const id of candidateIds) counts.set(id, 0);
+  for (const r of rows ?? []) {
+    const pid = String((r as any).post_id);
+    if (counts.has(pid)) counts.set(pid, (counts.get(pid) ?? 0) + 1);
+  }
+
+  const locked = cfg.lockedIds.slice();
+  const remaining = cfg.seats - locked.length;
+  if (remaining <= 0) throw new Error("이미 선발 정원이 모두 찼어요.");
+  const sorted = candidateIds
+    .slice()
+    .sort((a: string, b: string) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0));
+  if (sorted.length <= remaining) {
+    throw new Error("후보 수가 남은 자리보다 적거나 같아 결선이 필요 없어요.");
+  }
+  const cutoff = counts.get(sorted[remaining - 1]!) ?? 0;
+  const above = sorted.filter((id: string) => (counts.get(id) ?? 0) > cutoff);
+  const tied = sorted.filter((id: string) => (counts.get(id) ?? 0) === cutoff);
+  if (above.length + tied.length <= remaining) {
+    throw new Error("경계선에 동점이 없어 결선이 필요 없어요.");
+  }
+  return {
+    seats: cfg.seats,
+    lockedIds: [...locked, ...above],
+    tiedIds: tied,
+    remaining: remaining - above.length,
+    tieCount: cutoff,
+  };
+}
+
+// 관리자 전용: 경계선 동점 후보만으로 다음 라운드를 연다.
+export const startRunoff = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        maxChoices: z.number().int().min(1).max(100).optional(),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
+    const db = await getAdmin();
+    const cfg = await loadVoteConfig(db, data.categoryId);
+    const preview = await computeRunoff(db, data.categoryId, cfg);
+    const wanted = data.maxChoices ?? preview.remaining;
+    if (wanted < 1 || wanted > preview.tiedIds.length) {
+      throw new Error(
+        `1인당 선택 수는 1 이상 ${preview.tiedIds.length} 이하로 정해 주세요.`,
+      );
+    }
+    const history = [
+      ...cfg.history,
+      {
+        round: cfg.round,
+        maxChoices: cfg.maxChoices,
+        runoffIds: cfg.runoffIds,
+        lockedIds: cfg.lockedIds,
+      },
+    ];
+    const { error } = await db
+      .from("categories")
+      .update({
+        vote_status: "open",
+        vote_round: cfg.round + 1,
+        vote_max_choices: wanted,
+        vote_runoff_ids: preview.tiedIds,
+        vote_locked_ids: preview.lockedIds,
+        vote_round_history: history,
+      })
+      .eq("id", data.categoryId);
+    if (error) throw new Error(error.message);
+    return { ok: true, round: cfg.round + 1, candidates: preview.tiedIds.length };
+  });
+
+// 관리자 전용: 현재 결선 라운드의 표만 지우고 직전 라운드 종료 상태로 되돌린다.
+export const cancelRunoff = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
+    const db = await getAdmin();
+    const cfg = await loadVoteConfig(db, data.categoryId);
+    if (cfg.round <= 1) throw new Error("결선 라운드가 아니에요.");
+    const prev: any = cfg.history[cfg.history.length - 1] ?? {};
+    const { error: dErr } = await db
+      .from("votes")
+      .delete()
+      .eq("category_id", data.categoryId)
+      .eq("round", cfg.round);
+    if (dErr) throw new Error(dErr.message);
+    const { error } = await db
+      .from("categories")
+      .update({
+        vote_status: "closed",
+        vote_round: Math.max(1, cfg.round - 1),
+        vote_max_choices: Number(prev.maxChoices ?? cfg.maxChoices),
+        vote_runoff_ids: idList(prev.runoffIds),
+        vote_locked_ids: idList(prev.lockedIds),
+        vote_round_history: cfg.history.slice(0, -1),
+      })
+      .eq("id", data.categoryId);
+    if (error) throw new Error(error.message);
+    return { ok: true, round: Math.max(1, cfg.round - 1) };
   });

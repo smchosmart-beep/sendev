@@ -75,8 +75,13 @@ export type Database = {
           template_post: string
           template_question: string
           template_vote: string
+          vote_locked_ids: Json
           vote_max_choices: number
           vote_name: string
+          vote_round: number
+          vote_round_history: Json
+          vote_runoff_ids: Json
+          vote_seats: number
           vote_status: string
         }
         Insert: {
@@ -112,8 +117,13 @@ export type Database = {
           template_post?: string
           template_question?: string
           template_vote?: string
+          vote_locked_ids?: Json
           vote_max_choices?: number
           vote_name?: string
+          vote_round?: number
+          vote_round_history?: Json
+          vote_runoff_ids?: Json
+          vote_seats?: number
           vote_status?: string
         }
         Update: {
@@ -149,8 +159,13 @@ export type Database = {
           template_post?: string
           template_question?: string
           template_vote?: string
+          vote_locked_ids?: Json
           vote_max_choices?: number
           vote_name?: string
+          vote_round?: number
+          vote_round_history?: Json
+          vote_runoff_ids?: Json
+          vote_seats?: number
           vote_status?: string
         }
         Relationships: [
@@ -997,6 +1012,7 @@ export type Database = {
           created_at: string
           id: string
           post_id: string
+          round: number
           voter_key: string
           voter_name: string
         }
@@ -1005,6 +1021,7 @@ export type Database = {
           created_at?: string
           id?: string
           post_id: string
+          round?: number
           voter_key: string
           voter_name?: string
         }
@@ -1013,6 +1030,7 @@ export type Database = {
           created_at?: string
           id?: string
           post_id?: string
+          round?: number
           voter_key?: string
           voter_name?: string
         }
