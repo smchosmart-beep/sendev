@@ -1256,24 +1256,30 @@ function RowItem({
             <div key={i} className={cn("space-y-1", effLongs.includes(i) && "sm:col-span-2")}>
               <Label className="text-xs text-muted-foreground">{label}</Label>
               {effLongs.includes(i) ? (
-                <Textarea
-                  value={values[i] ?? ""}
-                  onChange={(e) => update(i, e.target.value.slice(0, 3000))}
-                  rows={3}
-                  placeholder={tpl.placeholders?.[i]}
-                  disabled={!canEdit}
-                  className="rounded-xl bg-background"
-                />
+                <>
+                  <Textarea
+                    value={values[i] ?? ""}
+                    onChange={(e) => update(i, e.target.value.slice(0, 8000))}
+                    rows={4}
+                    placeholder={tpl.placeholders?.[i]}
+                    disabled={!canEdit}
+                    className="rounded-xl bg-background"
+                  />
+                  <p className="text-right text-xs text-muted-foreground">
+                    {(values[i] ?? "").length}/8000
+                  </p>
+                </>
               ) : (
                 <Input
                   value={values[i] ?? ""}
-                  onChange={(e) => update(i, e.target.value.slice(0, 3000))}
+                  onChange={(e) => update(i, e.target.value.slice(0, 8000))}
                   placeholder={tpl.placeholders?.[i]}
                   disabled={!canEdit}
                   className="rounded-xl bg-background"
                 />
               )}
             </div>
+
           );
         })}
       </div>
