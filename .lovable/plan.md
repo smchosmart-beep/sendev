@@ -33,5 +33,6 @@
 ## 기술 메모
 - `src/lib/record-schema.ts`의 `PROCESS_SUBTYPE_TEMPLATES`에 `"인터뷰 기록"` 항목 추가: `cols: ["인터뷰 질문", "인터뷰 대상", "인터뷰 내용", "", "", ""]`, `longCols: [0, 2]`, 첨부/링크 열 없음.
 - 저장 열은 기존 `col1~col3`을 그대로 쓰므로 스키마 변경·마이그레이션 없음.
-- `record-readme.ts`, `CasebookDocument.tsx`, `RecordEditor.tsx`는 이미 `rowTemplate(kind, subtype)`을 사용하므로 코드 수정 없이 반영된다(동작 확인만 수행).
-- 서버 함수·버킷·비용 증가 없음.
+- 길이 상한: `RecordEditor.tsx`의 `slice(0, 3000)` → 8000, `record.functions.ts`의 행 저장 스키마 `z.string().max(3000)` → `max(8000)` (col1~col6 공통). `col*`은 Postgres `text`라 DB 변경 불필요.
+- `record-readme.ts`, `CasebookDocument.tsx`, `RecordEditor.tsx`는 이미 `rowTemplate(kind, subtype)`을 사용하므로 라벨 추가만으로 반영된다(동작 확인 수행).
+- 서버 함수·버킷 추가 없음. 저장 요청 크기만 소폭 증가하며 비용 영향은 없음.
