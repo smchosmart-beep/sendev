@@ -50,8 +50,7 @@
   - 현재 라운드 `votes`의 `voter_key` 집합과 대조해 `{ name, voted }[]` 반환 (득표수·투표 대상은 반환하지 않음)
 - `src/lib/platform.queries.ts`에 `voteVoterStatusQueryOptions` 추가 (30초 `refetchInterval`, 기존 `vote-state` 폴링과 동일한 부담 수준)
 - 신규 컴포넌트 `src/components/VoteVoterPanel.tsx` — 명단 슬라이스와 상태 배지 렌더링
-- `src/routes/_main.tsx`에서 투표 게시판 경로일 때 본문 컨테이너 폭 확대(기존 캘린더/README 분기와 같은 방식)
-- `src/routes/_main.board.$slug.index.tsx`에서 투표 게시판일 때 3열 그리드로 감싸 좌/우 패널 배치, 좁은 화면에서는 접이식 패널
+- `src/routes/_main.board.$slug.index.tsx`에서 투표 게시판일 때만 좌우 fixed 패널과 모바일 접이식 패널을 조건부로 렌더링. 공용 본문 레이아웃(`_main.tsx`)은 수정하지 않습니다.
 - 투표 저장 성공 시 `vote-voter-status` 쿼리 무효화하여 본인 상태 즉시 반영
 
 - 사용자 가이드(`/guide`)의 투표 게시판 설명에 현황판 안내 추가
