@@ -371,11 +371,21 @@ export function VoteSection({
               const rankInfo = rankMap.get(post.id);
               const showRank =
                 status === "closed" && count > 0 && !!rankInfo && rankInfo.rank <= 3;
+              const isLocked = lockedIds.has(post.id);
+              const isWinner =
+                status === "closed" && winnerInfo.winners.has(post.id);
+              const isTied = status === "closed" && winnerInfo.tiedIds.has(post.id);
               return (
                 <div
                   key={post.id}
                   className={`flex flex-col justify-between gap-3 rounded-2xl border p-4 shadow-sm transition-shadow hover:shadow-md ${
-                    voted ? "border-primary bg-accent/50" : "border-border bg-card"
+                    isLocked || isWinner
+                      ? "border-emerald-300 bg-emerald-50"
+                      : isTied
+                        ? "border-amber-300 bg-amber-50"
+                        : voted
+                          ? "border-primary bg-accent/50"
+                          : "border-border bg-card"
                   }`}
                 >
                   <Link
