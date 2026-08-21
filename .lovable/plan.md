@@ -34,7 +34,7 @@
 서버 함수(`src/lib/platform.functions.ts`)
 - `setVoteStatus`: `seats` 입력 추가, 새 투표를 열 때 라운드 1로 초기화
 - `getVoteState` / `getVoteResults`: `seats`, `round`, `runoffIds`, `lockedIds`, 라운드별 counts 반환
-- `startRunoff`(신규, 관리자 전용): 현재 라운드 집계 → 확정 목록과 경계선 동점 목록 산출 → 다음 라운드 오픈. 동점이 없으면 오류로 거부
+- `startRunoff`(신규, 관리자 전용): 현재 라운드 집계 → 확정 목록과 경계선 동점 목록 산출 → 다음 라운드 오픈. `maxChoices`를 입력으로 받아(미지정 시 남은 자리 수) 1 이상·결선 후보 수 이하로 검증. 동점이 없으면 오류로 거부
 - `cancelRunoff`(신규, 관리자 전용): 현재 라운드 표 삭제 후 이전 라운드 `closed` 상태로 복귀
 - `submitVotes` / `getMyVotes` / `getVoteRequirement`: 현재 라운드 기준으로 조회·저장, 결선 라운드에서는 후보 목록 밖 글 선택을 서버에서 차단(선택 수 = 남은 자리 수)
 
