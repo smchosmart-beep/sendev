@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, ChevronLeft, ChevronRight, ImagePlus, Loader2, Plus, Trash2, Users, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, ImagePlus, Loader2, Play, Plus, Trash2, Users, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { uploadCommentImage } from "@/lib/image-upload";
@@ -1103,6 +1103,19 @@ function RowSection({
     </section>
   );
 }
+function isYouTubeUrl(raw: string): boolean {
+  const url = raw.trim();
+  if (!url) return false;
+  let host: string;
+  try {
+    host = new URL(/^(https?:|mailto:)/i.test(url) ? url : `https://${url}`).hostname
+      .replace(/^www\./, "")
+      .toLowerCase();
+  } catch {
+    return false;
+  }
+  return host === "youtu.be" || host === "youtube.com" || host === "m.youtube.com";
+}
 
 function RowItem({
   row,
@@ -1408,14 +1421,27 @@ function RowItem({
                 className="rounded-xl bg-background"
               />
               {(values[effLink] ?? "").trim() && (
-                <a
-                  href={normalizeUrl((values[effLink] ?? "").trim())}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-block max-w-full truncate text-xs text-primary underline underline-offset-2"
-                >
-                  링크 열기 · {(values[effLink] ?? "").trim()}
-                </a>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={normalizeUrl((values[effLink] ?? "").trim())}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block max-w-full truncate text-xs text-primary underline underline-offset-2"
+                  >
+                    링크 열기 · {(values[effLink] ?? "").trim()}
+                  </a>
+                  {isYouTubeUrl(values[effLink] ?? "") && (
+                    <a
+                      href={normalizeUrl((values[effLink] ?? "").trim())}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label="영상 재생"
+                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+                    >
+                      <Play className="h-4 w-4 fill-current" />
+                    </a>
+                  )}
+                </div>
               )}
             </div>
           )}
