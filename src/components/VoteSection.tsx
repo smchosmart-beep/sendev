@@ -158,11 +158,22 @@ export function VoteSection({
 
   // 이번 라운드 종료 시 남은 자리를 채운 팀(동점으로 넘치면 그대로 표시).
   const winnerInfo = useMemo(() => {
-    if (status !== "closed") return { winners: new Set<string>(), tied: 0, tieCount: 0 };
+    if (status !== "closed")
+      return {
+        winners: new Set<string>(),
+        tied: 0,
+        tieCount: 0,
+        tiedIds: new Set<string>(),
+      };
     const remaining = Math.max(0, seats - lockedIds.size);
     const sorted = [...ordered];
     if (remaining <= 0 || sorted.length <= remaining) {
-      return { winners: new Set(sorted.map((p) => p.id)), tied: 0, tieCount: 0 };
+      return {
+        winners: new Set(sorted.map((p) => p.id)),
+        tied: 0,
+        tieCount: 0,
+        tiedIds: new Set<string>(),
+      };
     }
     const cutoff = counts[sorted[remaining - 1]!.id] ?? 0;
     const above = sorted.filter((p) => (counts[p.id] ?? 0) > cutoff);
@@ -172,12 +183,14 @@ export function VoteSection({
       winners: new Set([...above, ...(overflow ? [] : tied)].map((p) => p.id)),
       tied: overflow ? tied.length : 0,
       tieCount: cutoff,
+      tiedIds: new Set(overflow ? tied.map((p) => p.id) : []),
       lockedCount: lockedIds.size + above.length,
       openSeats: remaining - above.length,
     } as {
       winners: Set<string>;
       tied: number;
       tieCount: number;
+      tiedIds: Set<string>;
       lockedCount?: number;
       openSeats?: number;
     };
