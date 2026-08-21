@@ -465,6 +465,17 @@
   border: 1px solid var(--cb-line);
   border-radius: 4px;
 }
+.casebook-figure {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: 120mm;
+  object-fit: contain;
+  border: 1px solid var(--cb-line);
+  border-radius: 4px;
+  margin: 2mm 0;
+}
 .casebook-cover-meta {
   display: grid;
   gap: 2mm;
