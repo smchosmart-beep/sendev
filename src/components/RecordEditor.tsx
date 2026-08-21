@@ -1088,7 +1088,10 @@ function RowSection({
             variant="secondary"
             className="rounded-xl active:scale-95"
             onClick={() =>
-              onSave({ ...emptyRowVars(def.kind, rows.length), rowAuthor: defaultAuthor })
+              onSave({
+                ...emptyRowVars(def.kind, rows.length, defaultSubtype),
+                rowAuthor: defaultAuthor,
+              })
             }
           >
             <Plus className="h-4 w-4" />
