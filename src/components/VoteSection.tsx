@@ -68,6 +68,11 @@ export function VoteSection({
   const { data: state } = useQuery(voteStateQueryOptions(category.id));
   const status = state?.status ?? category.voteStatus;
   const maxChoices = state?.maxChoices ?? category.voteMaxChoices;
+  const round = state?.round ?? 1;
+  const seats = state?.seats ?? maxChoices;
+  const runoffIds = useMemo(() => new Set(state?.runoffIds ?? []), [state]);
+  const lockedIds = useMemo(() => new Set(state?.lockedIds ?? []), [state]);
+  const isRunoff = round > 1;
 
   const { data: myVotes = [] } = useQuery(
     myVotesQueryOptions(category.id, nickname, boardPassword, adminPassword),
@@ -90,7 +95,7 @@ export function VoteSection({
 
   const { data: results } = useQuery({
     ...voteResultsQueryOptions(category.id, boardPassword, adminPassword),
-    enabled: status === "closed",
+    enabled: status === "closed" || isRunoff,
   });
   const counts = results?.counts ?? {};
   // 닉네임이 투표 판단에 영향을 주지 않도록, 종료 전까지는 관리자 포함 모두 작성자를 숨긴다.
