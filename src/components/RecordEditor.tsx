@@ -85,10 +85,10 @@ type SaveRowVars = {
   knownUpdatedAt: string;
 };
 
-const emptyRowVars = (kind: RowKind, sortOrder: number): SaveRowVars => ({
+const emptyRowVars = (kind: RowKind, sortOrder: number, subtype = ""): SaveRowVars => ({
   id: null,
   kind,
-  subtype: "",
+  subtype,
   rowAuthor: "",
   sortOrder,
   col1: "",
