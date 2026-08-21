@@ -23,10 +23,10 @@
 - `src/lib/record-schema.ts`: `PROCESS_SUBTYPE_TEMPLATES` 추가. 탭 이름 → 필드 정의(라벨/플레이스홀더/타입: text·long·link·image, 저장 열 인덱스). 기본값은 지금의 `ROW_SECTION_DEFS.process`.
   - 팀빌딩 탭 저장 매핑: `col1` = 페르소나 이미지(첨부 JSON), `col2` = 고객 여정 맵 이미지(첨부 JSON), `col3` = 유튜브 링크. `col4`/`col5`는 이 탭에서 미사용.
 - `src/components/RecordEditor.tsx`의 `RowItem`: 현재 고정된 `linkCol`/`fileCol` 한 개씩 대신, 선택된 subtype의 템플릿에서 필드 목록을 받아 렌더링하도록 일반화. 파일/이미지 열은 여러 개 지원, 이미지 열은 썸네일 + 삭제. 업로드는 기존 `src/lib/file-upload.ts`(`uploadAttachment`, `parseAttachments`, `serializeAttachments`, 3MB 제한, 열당 3개 제한)를 그대로 재사용하므로 새 버킷·새 서버 함수는 없습니다.
-  - subtype 전환 시 다른 템플릿의 값이 섞이지 않도록, 저장 시 해당 템플릿이 쓰지 않는 열은 빈 문자열로 정리.
-- `src/lib/record-readme.ts`, `src/components/record/CasebookDocument.tsx`: process 행은 행의 `subtype` 템플릿 라벨로 출력. 이미지 열은 파일명 링크(README는 마크다운 링크, 사례집은 앵커)로 표기하고 `normalizeUrl` 재사용.
-- `src/lib/record-progress.ts`: process 진행도는 템플릿의 필수 열 기준으로 채움 여부 판정.
-- 마이그레이션 1건: `DELETE FROM public.record_rows WHERE kind = 'process' AND subtype = '22일 팀빌딩·문제 정의 회의';` (스키마 변경 없음, 새 컬럼 없음)
+  - subtype을 잘못 눌렀다 되돌릴 때 값이 사라지지 않도록, 템플릿이 쓰지 않는 열은 지우지 않고 그대로 보존하되 화면·출력에서만 무시.
+- `src/lib/record-readme.ts`, `src/components/record/CasebookDocument.tsx`: 지금은 전역 `def.linkCol`/`def.fileCol` 하나만 보므로, 그대로 두면 팀빌딩 행의 첨부 JSON이 본문에 그대로 노출됩니다. 행의 `subtype` 템플릿을 조회해 열별 종류(텍스트/링크/이미지)를 판정하도록 함께 수정하고, 이미지 열은 파일명 링크로 표기(`normalizeUrl` 재사용).
+- 진행도(`src/lib/record-progress.ts`)는 process를 건수 기준으로만 계산하므로 변경 없음.
+- 데이터 정리(스키마 변경 아님 → 데이터 도구로 실행): `DELETE FROM public.record_rows WHERE kind = 'process' AND subtype = '22일 팀빌딩·문제 정의 회의';`
 - `src/routes/_main.guide.tsx`: 02 문제 정의 과정 설명에 탭별 양식이 다르다는 점과 팀빌딩 탭 항목 3가지를 추가.
 
 ## 확인
