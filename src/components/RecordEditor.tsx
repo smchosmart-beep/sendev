@@ -1346,7 +1346,7 @@ function RowItem({
                     const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(f.name);
                     if (isImageCol && isImage) {
                       return (
-                        <span key={f.url} className="relative inline-block w-full max-w-2xl">
+                        <span key={f.url} className="relative inline-block w-full">
                           <img
                             src={f.url}
                             alt={f.name}
@@ -1411,7 +1411,7 @@ function RowItem({
                           aria-label="이미지 첨부: 끌어다 놓거나 클릭"
                           aria-disabled={uploading}
                           className={cn(
-                            "flex w-full max-w-2xl cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border bg-background/60 px-4 py-6 text-center text-xs text-muted-foreground transition-colors",
+                            "flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border bg-background/60 px-4 py-6 text-center text-xs text-muted-foreground transition-colors",
                             dragCol === col && "border-primary bg-primary/5 text-primary",
                             uploading && "pointer-events-none opacity-60",
                           )}
