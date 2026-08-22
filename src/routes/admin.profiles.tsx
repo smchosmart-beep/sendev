@@ -542,6 +542,49 @@ function ProfilesAdmin() {
     renameMutation.mutate({ id: p.id, newUsername: next });
   };
 
+  const mergeMutation = useMutation({
+    mutationFn: ({
+      oldUsername,
+      targetUsername,
+    }: {
+      oldUsername: string;
+      targetUsername: string;
+    }) =>
+      adminMerge({
+        data: {
+          oldUsername,
+          targetUsername,
+          adminPassword: getProfileAdminPassword(),
+        },
+      }),
+    onSuccess: (res) => {
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      setMergingFor(null);
+      setMergeValue("");
+      if (res.leftover.length > 0) {
+        toast.warning(
+          `'${res.oldUsername}' → '${res.username}' 합쳤지만 일부가 남았어요: ${res.leftover.join(", ")}`,
+        );
+      } else {
+        toast.success(`'${res.oldUsername}'을 '${res.username}'으로 합쳤어요.`);
+      }
+    },
+    onError: (err) =>
+      toast.error(
+        err instanceof Error ? err.message : "합치는 중 문제가 발생했어요.",
+      ),
+  });
+
+  const submitMerge = (p: UserProfileDTO) => {
+    const target = mergeValue.trim();
+    if (!target) {
+      toast.error("합칠 닉네임을 입력해 주세요.");
+      return;
+    }
+    mergeMutation.mutate({ oldUsername: p.username, targetUsername: target });
+  };
+
 
 
 
