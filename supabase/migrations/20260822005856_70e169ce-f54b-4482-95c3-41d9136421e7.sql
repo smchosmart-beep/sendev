@@ -1,0 +1,1 @@
+ALTER TABLE public.categories ADD COLUMN IF NOT EXISTS vote_revealed boolean NOT NULL DEFAULT false;
