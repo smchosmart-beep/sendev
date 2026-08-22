@@ -35,4 +35,5 @@
 - 목록 마스킹: `platform.functions.ts`의 최근글 조회에서 `categories!inner(... , vote_status)` → `vote_revealed`도 함께 select 하고 마스킹 조건을 `!vote_revealed`로 변경.
 - 클라이언트: `VoteSection.tsx`의 `showAuthor = status === "closed"` → `state.revealed`, `_main.board.$slug.$postNo.tsx`의 `hideVoteAuthor`도 동일 기준. 토글 후 `vote-state`·`categories`·게시글 관련 쿼리 invalidate.
 - 추가 쿼리/폴링 없음 — 기존 `vote-state` 쿼리에 필드만 얹으므로 서버 부하 변화 없음.
+- 참고(기존 한계): 게시판 목록/상세 조회(`listPosts`, `getPostByNo`)는 작성자를 그대로 내려보내고 화면에서만 "익명"으로 가립니다. 원하시면 이번에 이 두 곳도 서버에서 마스킹하도록 함께 강화할 수 있습니다(수정/삭제 권한 확인은 별도 비밀번호 검증이라 영향 없음).
 
