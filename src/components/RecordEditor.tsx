@@ -491,7 +491,7 @@ export function RecordEditor({
 
   const rowSectionProps = {
     canEdit,
-    onSave: (vars: SaveRowVars) => rowMutation.mutate(vars),
+    onSave: saveRow,
     onDelete: (id: string) => deleteMutation.mutate(id),
   };
 
