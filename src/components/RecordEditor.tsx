@@ -13,6 +13,7 @@ import {
   type AttachedFile,
 } from "@/lib/file-upload";
 import { getFileIcon } from "@/lib/file-icons";
+import { downloadFile } from "@/lib/download";
 import { TemplateNotice } from "@/components/record/TemplateNotice";
 
 
