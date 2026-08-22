@@ -84,7 +84,8 @@ type SaveRowVars = {
   col5: string;
   col6: string;
   knownUpdatedAt: string;
-};
+type DraftRow = Omit<RecordRowDTO, "id"> & { id: string | null };
+
 
 const emptyRowVars = (kind: RowKind, sortOrder: number, subtype = ""): SaveRowVars => ({
   id: null,
