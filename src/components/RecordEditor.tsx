@@ -1235,6 +1235,7 @@ function RowItem({
   longs,
   placeholders,
   indexLabel,
+  subtypes,
   canEdit,
   authorEnabled,
   linkCol,
