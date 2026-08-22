@@ -1339,9 +1339,14 @@ function RowItem({
   authorEnabled?: boolean;
   linkCol?: number;
   fileCol?: number;
-  onSave: (vars: SaveRowVars) => void;
+  onSave: (vars: SaveRowVars) => Promise<void>;
   onDelete: (id: string) => void;
+  /** 저장 전 draft 취소 (서버 호출 없음) */
+  onCancel?: (draftId: string) => void;
+  /** 저장 성공 후 로컬 draft 제거 */
+  onRemoveDraft?: (draftId: string) => void;
 }) {
+  const [saving, setSaving] = useState(false);
   const initial = [row.col1, row.col2, row.col3, row.col4, row.col5, row.col6];
   const [values, setValues] = useState(initial);
   const [subtype, setSubtype] = useState(row.subtype);
