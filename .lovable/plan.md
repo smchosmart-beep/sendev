@@ -32,7 +32,7 @@
 
 - 수정: 로컬 상태에서 draft를 별도 배열로 관리하며, 각 항목은 `{ draftId: string; row: DraftRow }` 형태로 저장한다. `DraftRow`의 `id`는 계속 `null`로 유지하고, `key`는 `draftId`로 사용한다. 각 draft에 고유 ID(`draft-<sectionKey>-<subtype>-<index>` 또는 `crypto.randomUUID`)를 부여하여 key 충돌을 방지한다. 저장되지 않고 제거된 draft는 배열에서 필터링한다.
 - `RowItem`에 `onCancel?: (draftId: string) => void` prop을 추가하여 `row.id`가 없는 draft에도 삭제(취소) 아이콘을 노출하고, 클릭 시 서버 호출 없이 로컬 draft 배열에서만 제거한다. `RowItem`은 `row.id == null`이면 `onDelete`를 호출하지 않고 `onCancel`을 호출하도록 조건을 변경한다. 기존 실제 행(`id != null`)의 삭제는 기존 `onDelete` 경로를 그대로 사용한다.
-- **자동 draft(`showDraft`)와 로컬 draft 배열의 이중 관리 충돌 방지**: `showDraft`로 파생되는 자동 draft는 `draftId`를 가지지 않는 별도 항목이므로, `RowItem`의 `draftId`와 `onCancel`/`onRemoveDraft` prop을 optional로 정의한다. `draftId`가 없는 자동 draft는 `onCancel`이 없어도 그대로 렌더되며, 별도 제거 핸들러는 호출하지 않는다. 새 draft 배열에 추가하는 버튼은 `draftId`가 있는 항목만 생성하도록 한다.
+- **자동 draft(`showDraft`)와 로컬 draft 배열의 이중 관리 충돌 방지**: `showDraft`로 파생되는 자동 draft는 `draftId`를 가지지 않는 별도 항목이므로, `RowItem`의 `draftId`와 `onCancel`/`onRemoveDraft` prop을 **optional**로 정의한다. `draftId`가 없는 자동 draft는 `onCancel`이 없어도 그대로 렌더되며, 별도 제거 핸들러는 호출하지 않는다. 새 draft 배열에 추가하는 버튼은 반드시 `draftId`가 있는 항목만 생성하도록 한다. `showDraft`가 true일 때 추가 버튼은 숨기므로(2항), 사용자가 의도적으로 추가하는 draft만 배열에 쌓인다.
 
 ### 5. 임시 draft 저장 후 실제 행과 중복 표시되지 않게 (요청별 추적)
 
