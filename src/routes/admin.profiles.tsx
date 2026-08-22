@@ -702,7 +702,14 @@ function ProfilesAdmin() {
                   >
                     <div className="flex items-center gap-3">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-foreground">{p.username}</p>
+                      <p className="truncate font-medium text-foreground">
+                        {p.username}
+                        {!p.registered && (
+                          <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[11px] font-normal text-muted-foreground">
+                            미등록
+                          </span>
+                        )}
+                      </p>
                       <div className="mt-1 flex flex-wrap items-center gap-2">
                         {p.level != null ? (
                           <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
