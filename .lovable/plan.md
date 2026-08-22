@@ -9,9 +9,10 @@
 
 현재 `src/lib/record-readme.ts`의 `ROW_ORDER` 루프 안에서 모든 `kind`에 대해 `localeCompare` 기반 정렬을 하고 있다. 이 방식은 `subtype`을 갖는 `process`의 탭 순서가 라벨 문자열 비교에 의존하고, `ai_use`(`src/lib/record-schema.ts:83`의 `AI_USE_TYPES`)처럼 `subtype`을 갖는 다른 섹션의 출력 순서도 섞일 수 있다.
 
-- 수정: `subtype`이 있는 kind(`process`, `ai_use`)는 `sortOrder`를 1순위로 적용하고, 동일 `sortOrder` 내에서 `subtype` 그룹 인덱스로 tie-break한다. `process` 그룹 순서는 `PROCESS_SUBTYPES` 배열 인덱스를 따르고, `ai_use`는 `AI_USE_TYPES` 정의 순서를 따른다. 목록에 없는 subtype은 `idx < 0 ? 999 : idx` 폴백으로 맨 뒤 "기타" 그룹으로 보낸다. `subtype`이 없는 kind(핵심 기능, 사용 흐름 등)는 기존 `sortOrder` 단독 정렬을 유지한다. **정렬 우선순위는 1) sortOrder, 2) subtype 그룹 인덱스, 3) 동일 값이면 uuid id로 tie-break하며, 목록에 없는 subtype이 혼재되어 있어도 출력 순서가 흔들리지 않도록 한다.** 실제 서버 응답에는 `created_at` 필드가 없으므로 3순위 tie-break은 uuid `id`를 사용한다.
+- 수정: `subtype`이 있는 kind(`process`, `ai_use`)는 **1) subtype 그룹 인덱스, 2) 그룹 내 `sortOrder`, 3) 동일 값이면 uuid `id`로 tie-break**하여 정렬한다. `process` 그룹 순서는 `PROCESS_SUBTYPES` 배열 인덱스를 따르고, `ai_use`는 `AI_USE_TYPES` 정의 순서를 따른다. 목록에 없는 subtype은 `idx < 0 ? 999 : idx` 폴백으로 맨 뒤 "기타" 그룹으로 보낸다. `subtype`이 없는 kind(핵심 기능, 사용 흐름 등)는 기존 `sortOrder` 단독 정렬을 유지한다. 실제 서버 응답에는 `created_at` 필드가 없으므로 3순위 tie-break은 uuid `id`를 사용한다.
 - `AI_USE_TYPES`의 현재 배열 순서(`["서비스 기능", "개발 과정"]`)는 현행을 유지한다. `ai_use` 실제 데이터가 없어 재배열로 얻는 출력 순서 이득이 없고, 드롭다운 순서 변경은 기존 사용 흐름에 불필요한 변화만 가져오기 때문이다. 정렬 규칙만 "정의 순서 + `idx < 0 ? 999`"로 통일한다.
-- `src/components/record/CasebookDocument.tsx`의 `rowsOf` 함수도 동일한 정렬 기준과 폴백 값(`idx < 0 ? 999 : idx`)을 적용하여, README 출력과 사례집 출력의 순서가 일치하도록 맞춘다. 양쪽 모두 `sortOrder` 기반 안정 정렬을 유지하되, `sortOrder`가 동일할 때만 subtype 인덱스가 적용된다. `subtype` 그룹 정렬은 `process`/`ai_use`에만 적용하고, 나머지 kind(`stance`, `devlog`, `decision` 등)는 `sortOrder` 단독 정렬임을 명시한다.
+- `src/lib/record-readme.ts`의 `rowsOfKind` 함수는 README 블록 status(`empty/partial/done`) 판정에 사용되며, 정렬 결과가 status 판정에 영향을 주지 않으므로 **현행 그대로 `sortOrder` 단독 정렬을 유지**한다.
+- `src/components/record/CasebookDocument.tsx`의 `rowsOf` 함수에서만 `process`/`ai_use`에 subtype 그룹 인덱스를 1순위로 적용하고, `stance`/`devlog`/`decision` 등 나머지 kind는 `sortOrder` 단독 정렬을 유지한다. 양쪽 출력 로직 모두 `idx < 0 ? 999 : idx` 폴백 값을 동일하게 적용하여, README 출력과 사례집 출력의 순서가 일치하도록 맞춘다.
 
 
 ### 2. `multi` 탭에서 빈 양식과 추가 버튼이 동시에 보이지 않게
