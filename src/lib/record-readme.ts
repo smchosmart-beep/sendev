@@ -19,15 +19,16 @@ import {
 
 /**
  * 출력물(README·사례집) 공통 정렬 규칙.
- * subtype이 있는 kind(process·ai_use)는 1) subtype 그룹 인덱스 → 2) 그룹 내 sortOrder → 3) id 순.
+ * subtype이 있는 kind(process·ai_use)는 1) subtype 그룹 인덱스 → 2) 그룹 내 sortOrder 순.
  * subtype이 없는 kind는 sortOrder 단독 정렬을 유지한다.
+ * (서버 응답 행에는 id/created_at이 없어 3순위 tie-break은 두지 않는다.)
  */
 export function compareOutputRows(kind: RecordRowKindName) {
   const groups =
     kind === "process" ? PROCESS_SUBTYPES : kind === "ai_use" ? AI_USE_TYPES : undefined;
   return (
-    a: { subtype?: string | null; sortOrder: number; id: string },
-    b: { subtype?: string | null; sortOrder: number; id: string },
+    a: { subtype?: string | null; sortOrder: number },
+    b: { subtype?: string | null; sortOrder: number },
   ) => {
     if (groups) {
       const ia = groups.indexOf(a.subtype ?? "");
@@ -36,7 +37,7 @@ export function compareOutputRows(kind: RecordRowKindName) {
       const gb = ib < 0 ? 999 : ib;
       if (ga !== gb) return ga - gb;
     }
-    return a.sortOrder - b.sortOrder || a.id.localeCompare(b.id);
+    return a.sortOrder - b.sortOrder;
   };
 }
 
