@@ -30,8 +30,9 @@
 
 `showDraft`로 표시하는 임시 draft는 `key={\`draft-${selectedSubtype}\`}`를 사용하고 있다. 같은 탭에서 "+" 버튼으로 여러 draft를 추가하면 key가 충돌하여 React 리스트 오류가 발생할 수 있다. 또한 draft는 `id`가 `null`이라 기존 `RowItem`의 삭제 버튼 조건(`row.id` 존재)에 걸려 취소할 방법이 없다.
 
-- 수정: 로컬 상태에서 draft를 별도 배열로 관리하며, 각 항목은 `{ draftId: string; row: DraftRow }` 형태로 저장한다. `DraftRow`의 `id`는 계속 `null`로 유지하고, `key`는 `draftId`로 사용한다. 각 draft에 고유 ID(`draft-<sectionKey>-<index>` 또는 `crypto.randomUUID`)를 부여하여 key 충돌을 방지한다. 저장되지 않고 제거된 draft는 배열에서 필터링한다.
+- 수정: 로컬 상태에서 draft를 별도 배열로 관리하며, 각 항목은 `{ draftId: string; row: DraftRow }` 형태로 저장한다. `DraftRow`의 `id`는 계속 `null`로 유지하고, `key`는 `draftId`로 사용한다. 각 draft에 고유 ID(`draft-<sectionKey>-<subtype>-<index>` 또는 `crypto.randomUUID`)를 부여하여 key 충돌을 방지한다. 저장되지 않고 제거된 draft는 배열에서 필터링한다.
 - `RowItem`에 `onCancel?: (draftId: string) => void` prop을 추가하여 `row.id`가 없는 draft에도 삭제(취소) 아이콘을 노출하고, 클릭 시 서버 호출 없이 로컬 draft 배열에서만 제거한다. `RowItem`은 `row.id == null`이면 `onDelete`를 호출하지 않고 `onCancel`을 호출하도록 조건을 변경한다. 기존 실제 행(`id != null`)의 삭제는 기존 `onDelete` 경로를 그대로 사용한다.
+- **자동 draft(`showDraft`)와 로컬 draft 배열의 이중 관리 충돌 방지**: `showDraft`로 파생되는 자동 draft는 `draftId`를 가지지 않는 별도 항목이므로, `RowItem`의 `draftId`와 `onCancel`/`onRemoveDraft` prop을 optional로 정의한다. `draftId`가 없는 자동 draft는 `onCancel`이 없어도 그대로 렌더되며, 별도 제거 핸들러는 호출하지 않는다. 새 draft 배열에 추가하는 버튼은 `draftId`가 있는 항목만 생성하도록 한다.
 
 ### 5. 임시 draft 저장 후 실제 행과 중복 표시되지 않게 (요청별 추적)
 
@@ -46,7 +47,8 @@
 
 `multi` 탭이나 다른 행 섹션에서 추가 버튼으로 만든 로컬 draft가 현재 선택된 탭과 무관하게 노출되면, 탭 전환 시 다른 탭의 draft가 섞여 보이거나 잘못된 `subtype`으로 저장될 수 있다.
 
-- 수정: draft 항목에 생성 당시의 `subtype` 값을 저장하고(`DraftRow`에 `subtype` 필드가 이미 있음), 렌더 시 `RowSection` 필터링에서 `currentSubtype`과 일치하는 draft만 `visibleDrafts`로 노출한다. 다른 subtype의 draft는 숨겨진 상태로 유지되며, 해당 탭으로 돌아왔을 때만 다시 보인다.
+- 수정: draft 항목에 생성 당시의 `subtype` 값을 저장하고(`DraftRow`에 `subtype` 필드가 이미 있음), 렌더 시 `RowSection` 필터링에서 `filterBySubtype`가 true인 섹션은 현재 `currentSubtype`과 일치하는 draft만 `visibleDrafts`로 노출한다. 다른 subtype의 draft는 숨겨진 상태로 유지되며, 해당 탭으로 돌아왔을 때만 다시 보인다.
+- **subtype이 없는 섹션의 예외 처리**: `filterBySubtype`가 false인 섹션(예: 핵심 기능, 사용 흐름, AI 활용 등)은 `subtype` 필터링을 적용하지 않고 해당 섹션의 모든 draft를 노출한다. 이때 draft의 `subtype`이 빈 문자열(`""`)이거나 동적으로 변경될 수 있으므로, 섹션 key(`sectionKey`)를 기준으로 먼저 분리한 뒤 `filterBySubtype` 여부에 따라 필터링 규칙을 적용한다. 같은 섹션 key 안에서만 draft가 공유되며, 다른 섹션으로는 새어 나가지 않는다.
 - `draftId` 생성 시 `sectionKey`와 `subtype`을 포함하여 같은 섹션 내에서도 탭별 key 충돌이 없도록 한다.
 
 ### 7. "아직 등록된 내용이 없어요" 빈 상태 문구가 draft를 반영하도록
@@ -59,7 +61,8 @@
 
 `mutateAsync`가 resolve되어도 `invalidateQueries`는 비동기로 동작하여, draft를 즉시 제거하면 서버에서 실제 행이 목록에 나타나기까지 잠깐 항목이 사라지는 플리커가 발생할 수 있다. 또한 `rowMutation`의 `onError` 토스트와 `RowItem`의 `catch` 내부 토스트가 중복될 수 있다.
 
-- 수정: `rowMutation`의 `onSuccess`에서 `invalidateQueries`를 `return`하여 mutation 결과가 resolve되기 전에 쿼리 갱신이 완료되도록 한다. `RowItem` 내부에서 저장 버튼 클릭 시 `try { await onSave({ ...row, sectionKey }); onRemoveDraft(draftId); } catch { ... }`로 호출하고, `catch` 블록에서는 토스트를 띄우지 않고 draft만 유지하여 재시도를 가능하게 한다. 실제 에러 토스트는 `rowMutation`의 `onError` 콜백에서 한 곳에서만 담당한다.
+- 수정: `rowMutation`의 `onSuccess`에서 `invalidateQueries`를 `return`하여 mutation 결과가 resolve되기 전에 쿼리 갱신이 완료되도록 한다. 이때 `refetchType: "active"` 옵션을 사용하여 활성 쿼리만 갱신하고, 비활성 쿼리는 즉시 무효화만 처리하여 전체 지연을 최소화한다. `RowItem` 내부에서 저장 버튼 클릭 시 `try { await onSave({ ...row, sectionKey }); onRemoveDraft(draftId); } catch { ... }`로 호출하고, `catch` 블록에서는 토스트를 띄우지 않고 draft만 유지하여 재시도를 가능하게 한다. 실제 에러 토스트는 `rowMutation`의 `onError` 콜백에서 한 곳에서만 담당한다.
+- **전역 지연 최소화**: `rowMutation`은 `RecordEditor.tsx` 전체에서 공유되므로, stance 자동 저장 등 모든 행 수정에 영향을 준다. `invalidateQueries`의 대기 범위를 `refetchType: "active"`로 좁히거나, draft 제거 시점에만 쿼리 갱신 완료를 기다리고 기존 실제 행 수정은 `await`하지 않도록 구조를 정교화한다. 필요 시 draft 저장용 mutation과 기존 행 수정용 mutation을 분리하여 체감 지연을 줄인다.
 
 ## 영향 범위
 
