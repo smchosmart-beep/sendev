@@ -246,27 +246,50 @@ export function VoteSection({
   }, [status, runoffOrdered, counts, seats, lockedIds]);
 
   // 표 수 기준 표준 경쟁 순위(동점은 같은 순위, 다음 순위는 인원수만큼 건너뜀).
-  // 라운드가 다른 확정 팀은 순위 비교 대상에서 제외한다.
+  // 결선이 끝난 뒤에는 1차 확정 팀부터 순위를 매기고, 결선 통과 팀이 그 뒤를 잇는다.
+  // 라운드가 다른 확정 팀은 같은 라운드끼리만 표 수를 비교한다.
   const rankMap = useMemo(() => {
     const map = new Map<string, { rank: number; tied: boolean }>();
     if (status !== "closed") return map;
-    let rank = 0;
-    let prev: number | null = null;
-    const groups = new Map<number, number>();
-    runoffOrdered.forEach((p) => {
-      const c = counts[p.id] ?? 0;
-      groups.set(c, (groups.get(c) ?? 0) + 1);
-    });
-    runoffOrdered.forEach((p, i) => {
-      const c = counts[p.id] ?? 0;
-      if (prev === null || c !== prev) {
-        rank = i + 1;
-        prev = c;
-      }
-      map.set(p.id, { rank, tied: (groups.get(c) ?? 0) > 1 });
-    });
+    let offset = 0;
+    const rankGroup = (
+      list: typeof posts,
+      countOf: (id: string) => number,
+    ) => {
+      const groups = new Map<number, number>();
+      list.forEach((p) => {
+        const c = countOf(p.id);
+        groups.set(c, (groups.get(c) ?? 0) + 1);
+      });
+      let rank = 0;
+      let prev: number | null = null;
+      list.forEach((p, i) => {
+        const c = countOf(p.id);
+        if (prev === null || c !== prev) {
+          rank = offset + i + 1;
+          prev = c;
+        }
+        map.set(p.id, { rank, tied: (groups.get(c) ?? 0) > 1 });
+      });
+      offset += list.length;
+    };
+
+    if (showFinal) {
+      // 확정 라운드별로 묶어 순위를 이어서 부여
+      const byRound = new Map<number, typeof posts>();
+      lockedOrdered.forEach((p) => {
+        const r = lockedInfoOf(p.id).round;
+        byRound.set(r, [...(byRound.get(r) ?? []), p]);
+      });
+      [...byRound.keys()]
+        .sort((a, b) => a - b)
+        .forEach((r) => rankGroup(byRound.get(r)!, (id) => lockedCountOf(id)));
+    }
+    rankGroup(runoffOrdered, (id) => counts[id] ?? 0);
     return map;
-  }, [runoffOrdered, counts, status]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runoffOrdered, lockedOrdered, showFinal, counts, status, results, round]);
+
 
   const pageCount = Math.max(1, Math.ceil(ordered.length / PAGE_SIZE));
   const current = Math.min(Math.max(1, page), pageCount);
