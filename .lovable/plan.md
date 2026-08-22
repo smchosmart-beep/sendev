@@ -47,7 +47,9 @@
 - `src/lib/record-readme.ts`: subtype 사용 kind(process, ai_use) 그룹 정렬 + process/ai_use 정의 순서 + 폴백
 - `src/lib/record-schema.ts`: `AI_USE_TYPES` 배열 순서를 현재 README/사례집 출력 순서에 맞춰 재배열
 - `src/components/record/CasebookDocument.tsx`: 동일 정렬 로직 확인·수정
-- `src/components/RecordEditor.tsx`: `RowSection`의 draft/추가 버튼 조건, 임시 draft 배열 관리, draft key, 저장 후 제거, `isPending` prop 전달
+- `src/components/RecordEditor.tsx`: `RowSection`의 draft/추가 버튼 조건, 임시 draft 배열 관리, draft key, 저장 후 제거, `onSave` 비동기 콜백 전달
+- `src/components/record/RowSection.tsx`: `onSave` prop을 비동기 콜백으로 변경, draft 저장 시 요청별 추적
+- `src/components/record/RowItem.tsx`: draft 취소(삭제) 아이콘 노출 조건 및 `onCancel` 핸들러 추가
 
 ## 데이터·보안·비용
 
