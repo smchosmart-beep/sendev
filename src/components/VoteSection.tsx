@@ -25,6 +25,7 @@ import { getAdminPassword } from "@/lib/admin-auth";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import { useConfirm } from "@/hooks/useConfirm";
 import { EmptyState } from "@/components/EmptyState";
+import { VoteVoterPanel } from "@/components/VoteVoterPanel";
 import { voteCardText } from "@/lib/post-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -128,6 +129,7 @@ export function VoteSection({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-votes", category.id] });
       queryClient.invalidateQueries({ queryKey: ["vote-requirement", category.id] });
+      queryClient.invalidateQueries({ queryKey: ["vote-voter-status", category.id] });
       toast.success("투표를 저장했어요.");
     },
     onError: (err: unknown) => {
@@ -261,6 +263,12 @@ export function VoteSection({
   return (
     <section className="space-y-4">
       {confirmDialog}
+      <VoteVoterPanel
+        categoryId={category.id}
+        boardPassword={boardPassword}
+        adminPassword={adminPassword}
+        active={status === "open"}
+      />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
           <Vote className="h-5 w-5 text-primary" />
@@ -352,6 +360,7 @@ export function VoteSection({
             queryClient.invalidateQueries({ queryKey: ["my-votes", category.id] });
             queryClient.invalidateQueries({ queryKey: ["categories"] });
             queryClient.invalidateQueries({ queryKey: ["vote-requirement", category.id] });
+            queryClient.invalidateQueries({ queryKey: ["vote-voter-status", category.id] });
           }}
         />
       )}

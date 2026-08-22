@@ -4632,3 +4632,58 @@ export const cancelRunoff = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, round: Math.max(1, cfg.round - 1) };
   });
+
+export interface VoteVoterStatusDTO {
+  voters: { name: string; voted: boolean }[];
+  round: number;
+  status: VoteStatus;
+}
+
+// 투표 진행 중 "누가 투표를 마쳤는지"만 알려주는 현황판용 조회.
+// 어떤 글에 투표했는지는 절대 내려보내지 않아 익명성이 유지된다.
+export const getVoteVoterStatus = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        boardPassword: z.string().max(100).optional(),
+        adminPassword: z.string().max(200).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<VoteVoterStatusDTO> => {
+    const db = await getAdmin();
+    const cfg = await loadVoteConfig(db, data.categoryId);
+    if (
+      !(await boardAccessOk(db, data.categoryId, data.boardPassword, data.adminPassword))
+    ) {
+      return { voters: [], round: cfg.round, status: cfg.status };
+    }
+    const { data: rows, error } = await db
+      .from("posts")
+      .select("author")
+      .eq("category_id", data.categoryId)
+      .eq("type", "vote");
+    if (error) throw new Error(error.message);
+    // 같은 닉네임의 여러 글은 한 명으로 합친다(투표 저장 키와 동일 규칙).
+    const byKey = new Map<string, string>();
+    for (const r of rows ?? []) {
+      const name = String((r as any).author ?? "").trim();
+      const key = normalizeName(name);
+      if (!key) continue;
+      if (!byKey.has(key)) byKey.set(key, name);
+    }
+    const { data: voteRows, error: vErr } = await db
+      .from("votes")
+      .select("voter_key")
+      .eq("category_id", data.categoryId)
+      .eq("round", cfg.round);
+    if (vErr) throw new Error(vErr.message);
+    const votedKeys = new Set(
+      (voteRows ?? []).map((r: any) => String(r.voter_key ?? "")),
+    );
+    const voters = [...byKey.entries()]
+      .map(([key, name]) => ({ name, voted: votedKeys.has(key) }))
+      .sort((a, b) => a.name.localeCompare(b.name, "ko"));
+    return { voters, round: cfg.round, status: cfg.status };
+  });
