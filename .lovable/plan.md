@@ -9,9 +9,9 @@
 
 현재 `src/lib/record-readme.ts`의 `ROW_ORDER` 루프 안에서 모든 `kind`에 대해 `localeCompare` 기반 정렬을 하고 있다. 이 방식은 `subtype`을 갖는 `process`의 탭 순서가 라벨 문자열 비교에 의존하고, `ai_use`(`src/lib/record-schema.ts:83`의 `AI_USE_TYPES`)처럼 `subtype`을 갖는 다른 섹션의 출력 순서도 섞일 수 있다.
 
-- 수정: `subtype`이 있는 kind(`process`, `ai_use`)는 `subtype` 그룹별로 먼저 묶고, 그룹 내에서 `sortOrder`를 적용한다. `process` 그룹 순서는 `PROCESS_SUBTYPES` 배열 인덱스를 따르고, `ai_use`는 `AI_USE_TYPES` 정의 순서를 따른다. 목록에 없는 subtype은 `idx < 0 ? 999 : idx` 폴백으로 맨 뒤 "기타" 그룹으로 보낸다. `subtype`이 없는 kind(핵심 기능, 사용 흐름 등)는 기존 `sortOrder`만 적용한다. **정렬 우선순위는 1) subtype 그룹 인덱스, 2) 그룹 내 sortOrder, 3) 동일 값이면 id(created_at)로 명확히 하며, 목록에 없는 subtype이 혼재되어 있어도 출력 순서가 흔들리지 않도록 한다.**
-- `AI_USE_TYPES`의 현재 배열 순서(`["서비스 기능", "개발 과정"]`)가 현재 `localeCompare` 출력 순서와 역순이므로, README/사례집 출력 순서를 유지하려면 배열을 `["개발 과정", "서비스 기능"]`으로 재배열하거나, `ai_use`는 현행 `localeCompare` 기준을 유지하도록 범위를 좁혀야 한다. 본 계획에서는 `AI_USE_TYPES` 배열 순서를 현재 출력 순서에 맞춰 재배열하고, `process`와 동일한 정의 순서 정렬을 적용한다. 편집 화면의 subtype 선택 드롭다운 순서도 함께 바뀌는 것은 의도된 변경이다.
-- `src/components/record/CasebookDocument.tsx`의 `rowsOf` 함수도 동일한 정렬 기준과 폴백 값(`idx < 0 ? 999 : idx`)을 적용하여, README 출력과 사례집 출력의 순서가 일치하도록 맞춘다. 양쪽 모두 `sortOrder` 기반 안정 정렬을 유지하되, subtype 인덱스가 우선 적용된다.
+- 수정: `subtype`이 있는 kind(`process`, `ai_use`)는 `sortOrder`를 1순위로 적용하고, 동일 `sortOrder` 내에서 `subtype` 그룹 인덱스로 tie-break한다. `process` 그룹 순서는 `PROCESS_SUBTYPES` 배열 인덱스를 따르고, `ai_use`는 `AI_USE_TYPES` 정의 순서를 따른다. 목록에 없는 subtype은 `idx < 0 ? 999 : idx` 폴백으로 맨 뒤 "기타" 그룹으로 보낸다. `subtype`이 없는 kind(핵심 기능, 사용 흐름 등)는 기존 `sortOrder` 단독 정렬을 유지한다. **정렬 우선순위는 1) sortOrder, 2) subtype 그룹 인덱스, 3) 동일 값이면 uuid id로 tie-break하며, 목록에 없는 subtype이 혼재되어 있어도 출력 순서가 흔들리지 않도록 한다.** 실제 서버 응답에는 `created_at` 필드가 없으므로 3순위 tie-break은 uuid `id`를 사용한다.
+- `AI_USE_TYPES`의 현재 배열 순서(`["서비스 기능", "개발 과정"]`)는 현행을 유지한다. `ai_use` 실제 데이터가 없어 재배열로 얻는 출력 순서 이득이 없고, 드롭다운 순서 변경은 기존 사용 흐름에 불필요한 변화만 가져오기 때문이다. 정렬 규칙만 "정의 순서 + `idx < 0 ? 999`"로 통일한다.
+- `src/components/record/CasebookDocument.tsx`의 `rowsOf` 함수도 동일한 정렬 기준과 폴백 값(`idx < 0 ? 999 : idx`)을 적용하여, README 출력과 사례집 출력의 순서가 일치하도록 맞춘다. 양쪽 모두 `sortOrder` 기반 안정 정렬을 유지하되, `sortOrder`가 동일할 때만 subtype 인덱스가 적용된다. `subtype` 그룹 정렬은 `process`/`ai_use`에만 적용하고, 나머지 kind(`stance`, `devlog`, `decision` 등)는 `sortOrder` 단독 정렬임을 명시한다.
 
 
 ### 2. `multi` 탭에서 빈 양식과 추가 버튼이 동시에 보이지 않게
