@@ -10,10 +10,35 @@ import {
   ROW_SECTION_DEFS,
   STANCE_QUESTIONS,
   RECORD_FINAL_FIELDS,
+  PROCESS_SUBTYPES,
+  AI_USE_TYPES,
   rowTemplate,
   type RecordFinalKey,
   type RecordRowKindName,
 } from "./record-schema";
+
+/**
+ * 출력물(README·사례집) 공통 정렬 규칙.
+ * subtype이 있는 kind(process·ai_use)는 1) subtype 그룹 인덱스 → 2) 그룹 내 sortOrder → 3) id 순.
+ * subtype이 없는 kind는 sortOrder 단독 정렬을 유지한다.
+ */
+export function compareOutputRows(kind: RecordRowKindName) {
+  const groups =
+    kind === "process" ? PROCESS_SUBTYPES : kind === "ai_use" ? AI_USE_TYPES : undefined;
+  return (
+    a: { subtype?: string | null; sortOrder: number; id: string },
+    b: { subtype?: string | null; sortOrder: number; id: string },
+  ) => {
+    if (groups) {
+      const ia = groups.indexOf(a.subtype ?? "");
+      const ib = groups.indexOf(b.subtype ?? "");
+      const ga = ia < 0 ? 999 : ia;
+      const gb = ib < 0 ? 999 : ib;
+      if (ga !== gb) return ga - gb;
+    }
+    return a.sortOrder - b.sortOrder || a.id.localeCompare(b.id);
+  };
+}
 
 const FINAL_LABELS: Partial<Record<RecordFinalKey, string>> = {
   serviceName: "서비스 이름",
