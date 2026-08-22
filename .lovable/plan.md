@@ -16,13 +16,18 @@
 
 ## 부작용 점검
 - 다른 탭(1~4)과 다른 단계 양식은 건드리지 않습니다.
-- 작성 현황(빈 행 판정)은 링크 칸 값으로 계속 판정되며, 기존에 콘티만 입력된 행도 비어 있지 않은 것으로 유지됩니다.
+- 작성 현황 판정도 **출력용 판정 헬퍼를 공유**하므로, 콘티만 입력된 행은 "비어 있음"으로 통일되고 기존에 링크만 입력된 행은 계속 "작성됨"으로 집계됩니다.
 - 서버 함수·DB 스키마·정책 변경 없음. 추가 호출 없음.
 
 ## 기술 메모
 - `src/lib/record-schema.ts`의 `PROCESS_SUBTYPE_TEMPLATES["5. 종이 프로토타입 영상 콘티"]`: `cols[0]`을 빈 문자열로, `placeholders[0]`을 빈 문자열로, `longCols`를 `[]`로, `displayOrder`를 `[3]`으로 변경.
 - `PROCESS_TEMPLATE_NOTICES["5. 종이 프로토타입 영상 콘티"]`는 유지(인덱스 0 키는 파일 칸이 아니라 행 상단 안내로 렌더링됨).
-- 출력 단계(README, 사례집)에서 "해당 양식의 표시(displayOrder) 열 값이 전부 비어 있으면 행을 skip"하는 필터를 추가합니다.
-  - `src/lib/record-readme.ts`: `rows` 필터 시 `displayOrder` 기준 빈 값 검사.
-  - `src/components/record/CasebookDocument.tsx`: `rowsOf` 필터 시 동일한 로직 적용.
+- `src/lib/record-readme.ts`에 공용 헬퍼 `isBlankForOutput(row, tpl)`를 추가하고 export합니다:
+  - `tpl.displayOrder`에 포함된 열에 대해서만 검사합니다.
+  - 텍스트/링크 칸은 값이 비어 있으면 빈 것으로 봅니다.
+  - 파일/이미지 칸(`fileCols`/`imageCols`에 포함된 인덱스)은 `parseAttachments` 결과 길이가 0이면 빈 것으로 봅니다.
+- 이 헬퍼를 세 곳에서 공유합니다:
+  - `src/lib/record-readme.ts`: README의 `rows` 필터 시 `isBlankForOutput` 적용.
+  - `src/components/record/CasebookDocument.tsx`: 사례집의 `rowsOf` 필터 시 `isBlankForOutput` 적용.
+  - `src/components/RecordEditor.tsx`: 작성 현황 집계(`empty/partial/done` 판정) 시 `isBlankForOutput` 적용. 기존 `isBlankRow`는 원본 col1~col6 전체 검사용으로 남겨둡니다.
 - `src/routes/_main.guide.tsx` 문구 1곳 수정.
