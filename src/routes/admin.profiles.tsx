@@ -382,6 +382,7 @@ function ProfilesAdmin() {
   const remove = useServerFn(deleteUserProfile);
   const resetPw = useServerFn(resetNicknamePassword);
   const adminRename = useServerFn(adminRenameNickname);
+  const adminMerge = useServerFn(adminMergeNickname);
   const { confirm, confirmDialog } = useConfirm();
 
 
