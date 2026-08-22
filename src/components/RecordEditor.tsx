@@ -486,8 +486,9 @@ export function RecordEditor({
       id: `s3-${kind}`,
       no: String(FINAL_GROUPS.length + i + 1).padStart(2, "0"),
       title: ROW_SECTION_DEFS[kind]!.title,
-      ...rowBlockStatus(rowsOf(kind).length),
+      ...rowBlockStatus(rowsOf(kind).filter((r) => !isBlankRow(r)).length),
     })),
+
   ];
 
   const step4RowKinds: RowKind[] = [
