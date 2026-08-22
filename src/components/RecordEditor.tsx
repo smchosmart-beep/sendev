@@ -1862,7 +1862,7 @@ function StanceSection({
 }: {
   rows: RecordRowDTO[];
   canEdit: boolean;
-  onSave: (vars: SaveRowVars) => void;
+  onSave: (vars: SaveRowVars) => Promise<void>;
 }) {
   const byOrder = new Map(rows.map((r) => [r.sortOrder, r]));
   return (
