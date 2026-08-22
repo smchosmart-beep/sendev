@@ -44,6 +44,6 @@
 ## 기술 메모
 
 - `src/lib/record-schema.ts`: `PROCESS_SUBTYPES`, `PROCESS_SUBTYPE_TEMPLATES`, `PROCESS_TEMPLATE_NOTICES`를 새 5탭 기준으로 재정의. 저장 열 인덱스는 기존과 동일하게 유지(페르소나=col5, 여정맵=col6, 링크=col4, 파일=col5 등 기존 매핑 보존)해 데이터 호환성 확보.
-- `src/components/RecordEditor.tsx`: `defaultSubtype`을 첫 탭으로 바꾸고, 추가 버튼 노출 조건(메모 탭 한정)을 제거해 선택된 탭 기준으로 추가하도록 수정. 가상(빈) 행 표시 로직은 5개 탭 모두에 적용.
+- `src/components/RecordEditor.tsx`: `defaultSubtype`을 첫 탭으로 변경. 추가 버튼 노출 조건을 "메모 탭 한정"에서 "인터뷰 기록 탭 한정(multi 탭)"으로 교체 — 스키마에 탭별 `multi: boolean` 플래그를 두고 그 값으로 판단. 가상(빈) 행 표시 로직은 5개 탭 모두에 적용(단일 탭은 1개만). 인터뷰 행의 작성자는 기존 `record_rows.author` 컬럼을 사용하며 로그인 닉네임을 기본값으로 채움.
 - `src/lib/record-readme.ts`, `src/components/record/CasebookDocument.tsx`: 하드코딩된 탭 이름·정렬 기준 갱신.
 - 마이그레이션은 `record_rows` 대상 INSERT/UPDATE 스크립트 1건(스키마 변경 없음).
