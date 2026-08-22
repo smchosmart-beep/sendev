@@ -2733,6 +2733,8 @@ export interface UserProfileDTO {
   postCount: number;
   commentCount: number;
   points: number;
+  // false = no profile row; the name only survives in activity (votes, posts…).
+  registered: boolean;
 }
 
 // Public display map keyed by normalized username.
@@ -2760,14 +2762,22 @@ export function levelFromActivity(
 }
 
 // Aggregates posts + comments by normalized author name.
+// `name` keeps the last seen display spelling (used to surface unregistered ones).
 async function getActivityCounts(db: any): Promise<
-  Map<string, { postCount: number; commentCount: number }>
+  Map<string, { postCount: number; commentCount: number; name: string }>
 > {
-  const counts = new Map<string, { postCount: number; commentCount: number }>();
+  const counts = new Map<
+    string,
+    { postCount: number; commentCount: number; name: string }
+  >();
   const bump = (name: string, kind: "post" | "comment") => {
     const key = normalizeUsername(name ?? "");
     if (!key) return;
-    const cur = counts.get(key) ?? { postCount: 0, commentCount: 0 };
+    const cur = counts.get(key) ?? {
+      postCount: 0,
+      commentCount: 0,
+      name: (name ?? "").trim(),
+    };
     if (kind === "post") cur.postCount += 1;
     else cur.commentCount += 1;
     counts.set(key, cur);
@@ -2805,19 +2815,28 @@ async function getAwardsByKey(
 }
 
 // Admin: full list of profile mappings with computed levels + activity.
+// Also surfaces "unregistered" nicknames — names that still appear in activity
+// (posts, comments, votes) but have no profile row, e.g. leftovers from a
+// partially applied rename. The extra votes query runs on this admin screen only.
 export const listUserProfiles = createServerFn({ method: "GET" }).handler(
-  async () => {
+  async (): Promise<UserProfileDTO[]> => {
     const db = await getAdmin();
-    const [profilesRes, counts, awardsByKey] = await Promise.all([
+    const [profilesRes, counts, awardsByKey, votesRes] = await Promise.all([
       db
         .from("user_profiles")
         .select("id, username, username_key")
         .order("username", { ascending: true }),
       getActivityCounts(db),
       getAwardsByKey(db),
+      db.from("votes").select("voter_key, voter_name"),
     ]);
     if (profilesRes.error) throw new Error(profilesRes.error.message);
-    return (profilesRes.data ?? []).map((r: any): UserProfileDTO => {
+    if (votesRes.error) throw new Error(votesRes.error.message);
+
+    const registeredKeys = new Set<string>(
+      (profilesRes.data ?? []).map((r: any) => String(r.username_key)),
+    );
+    const rows = (profilesRes.data ?? []).map((r: any): UserProfileDTO => {
       const c = counts.get(r.username_key) ?? { postCount: 0, commentCount: 0 };
       return {
         id: r.id,
@@ -2827,8 +2846,37 @@ export const listUserProfiles = createServerFn({ method: "GET" }).handler(
         commentCount: c.commentCount,
         points: c.postCount * 5 + c.commentCount * 1,
         level: levelFromActivity(c.postCount, c.commentCount),
+        registered: true,
       };
     });
+
+    // Names that exist only in activity.
+    const orphans = new Map<string, string>();
+    for (const [key, c] of counts) {
+      if (!registeredKeys.has(key)) orphans.set(key, c.name || key);
+    }
+    for (const v of votesRes.data ?? []) {
+      const key = String(v.voter_key ?? "");
+      if (!key || registeredKeys.has(key) || orphans.has(key)) continue;
+      orphans.set(key, String(v.voter_name ?? key));
+    }
+    for (const [key, name] of orphans) {
+      const c = counts.get(key) ?? { postCount: 0, commentCount: 0 };
+      rows.push({
+        id: `unregistered:${key}`,
+        username: name,
+        awards: awardsByKey.get(key) ?? [],
+        postCount: c.postCount,
+        commentCount: c.commentCount,
+        points: c.postCount * 5 + c.commentCount * 1,
+        level: levelFromActivity(c.postCount, c.commentCount),
+        registered: false,
+      });
+    }
+    rows.sort((a: UserProfileDTO, b: UserProfileDTO) =>
+      a.username.localeCompare(b.username, "ko"),
+    );
+    return rows;
   },
 );
 
@@ -3842,82 +3890,240 @@ async function assertNicknameAvailable(
   }
 }
 
-// Runs one migration step, tolerating unique-constraint collisions so a rare
-// duplicate row can't leave the rename half-applied.
+// --- Nickname migration -----------------------------------------------------
+// Moving a nickname can collide with unique constraints when the target name
+// already has a row for the same (post/category/round). Every such table is
+// declared here so collisions are resolved *before* the UPDATE runs; otherwise
+// a single duplicate row aborts the whole UPDATE and leaves the old name behind.
+//
+// strategy:
+//  - "delete": pure junction rows (a read mark, a like, a vote for the same
+//    post/round). Removing the old row is plain de-duplication and only ever
+//    happens when the target key already holds the identical combination.
+//  - "skip": rows that carry content (a post, a review, an activity record).
+//    Those are left under the old name and reported back to the caller.
+type DedupeSpec = {
+  table: string;
+  keyCol?: string; // normalized-key column
+  nameCol?: string; // display-name column (case-insensitive unique)
+  peers: string[]; // remaining columns of the unique constraint
+  strategy: "delete" | "skip";
+  extraEq?: Record<string, string>;
+};
+
+const DEDUPE_SPECS: DedupeSpec[] = [
+  { table: "user_awards", keyCol: "username_key", peers: ["name"], strategy: "delete" },
+  {
+    table: "posts",
+    nameCol: "author",
+    peers: ["category_id"],
+    strategy: "skip",
+    extraEq: { type: "vote" },
+  },
+  {
+    table: "post_likes",
+    keyCol: "liker_key",
+    peers: ["target_type", "target_id"],
+    strategy: "delete",
+  },
+  { table: "post_reads", keyCol: "username_key", peers: ["post_id"], strategy: "delete" },
+  {
+    table: "votes",
+    keyCol: "voter_key",
+    peers: ["category_id", "post_id", "round"],
+    strategy: "delete",
+  },
+  {
+    table: "review_allowlist",
+    keyCol: "reviewer_key",
+    peers: ["category_id"],
+    strategy: "delete",
+  },
+  { table: "reviews", nameCol: "reviewer_name", peers: ["post_id"], strategy: "skip" },
+  {
+    table: "record_members",
+    keyCol: "username_key",
+    peers: ["post_id"],
+    strategy: "skip",
+  },
+  {
+    table: "record_members",
+    keyCol: "username_key",
+    peers: ["category_id"],
+    strategy: "skip",
+  },
+  {
+    table: "record_reflections",
+    keyCol: "username_key",
+    peers: ["post_id"],
+    strategy: "skip",
+  },
+  {
+    table: "record_ethics",
+    keyCol: "username_key",
+    peers: ["post_id"],
+    strategy: "skip",
+  },
+];
+
+async function fetchDedupeRows(
+  db: { from: (t: string) => any },
+  spec: DedupeSpec,
+  value: string,
+): Promise<any[]> {
+  let q = db.from(spec.table).select(["id", ...spec.peers].join(", "));
+  q = spec.keyCol
+    ? q.eq(spec.keyCol, normalizeName(value))
+    : q.ilike(spec.nameCol as string, escapeIlike(value));
+  for (const [col, val] of Object.entries(spec.extraEq ?? {})) q = q.eq(col, val);
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+// Returns ids of old rows that must be excluded from the UPDATE ("skip"), after
+// deleting the ones whose duplicate already exists under the target name.
+async function resolveDuplicates(
+  db: { from: (t: string) => any },
+  spec: DedupeSpec,
+  oldName: string,
+  newName: string,
+): Promise<string[]> {
+  const sig = (r: any) => spec.peers.map((c) => String(r[c] ?? "")).join("\u0000");
+  const newRows = await fetchDedupeRows(db, spec, newName);
+  if (newRows.length === 0) return [];
+  const taken = new Set(newRows.map(sig));
+  const oldRows = await fetchDedupeRows(db, spec, oldName);
+  const dupIds = oldRows
+    .filter((r) => taken.has(sig(r)))
+    .map((r) => String(r.id));
+  if (dupIds.length === 0) return [];
+  if (spec.strategy === "delete") {
+    // Only ever removes a row the target key already has an equivalent of.
+    const { error } = await db.from(spec.table).delete().in("id", dupIds);
+    if (error) throw new Error(error.message);
+    return [];
+  }
+  return dupIds;
+}
+
+// Runs one migration step, reporting (instead of silently swallowing) any
+// collision that still slips through.
 async function migrateStep(
   label: string,
+  skipped: string[],
   run: () => Promise<{ error: any }>,
 ): Promise<void> {
   const { error } = await run();
   if (!error) return;
-  if (/duplicate|unique|conflict/i.test(error.message ?? "")) return;
+  if (/duplicate|unique|conflict/i.test(error.message ?? "")) {
+    if (!skipped.includes(label)) skipped.push(label);
+    return;
+  }
   throw new Error(`${label}: ${error.message}`);
 }
 
 // Moves every trace of a nickname (display name + normalized key) to a new
 // name. Authorship is stored as free text, so each table is migrated directly.
+// Returns the labels of anything that could not be moved.
 async function migrateNickname(
   db: { from: (t: string) => any },
   oldName: string,
   newName: string,
-): Promise<void> {
+  opts: { skipProfile?: boolean } = {},
+): Promise<string[]> {
   const oldKey = normalizeName(oldName);
   const newKey = normalizeName(newName);
   const oldPat = escapeIlike(oldName);
+  const skipped: string[] = [];
+
+  // Resolve every unique-constraint collision up front.
+  const excluded = new Map<string, Set<string>>();
+  for (const spec of DEDUPE_SPECS) {
+    const ids = await resolveDuplicates(db, spec, oldName, newName);
+    if (ids.length === 0) continue;
+    const set = excluded.get(spec.table) ?? new Set<string>();
+    for (const id of ids) set.add(id);
+    excluded.set(spec.table, set);
+  }
+  const notDup = (table: string, q: any) => {
+    const set = excluded.get(table);
+    if (!set || set.size === 0) return q;
+    return q.not("id", "in", `(${[...set].join(",")})`);
+  };
+  const markSkipped = (table: string, label: string) => {
+    if (excluded.get(table)?.size) {
+      if (!skipped.includes(label)) skipped.push(label);
+    }
+  };
 
   // Profile (keeps level, password, recovery Q&A intact) and badges.
-  await migrateStep("프로필", () =>
-    db
-      .from("user_profiles")
-      .update({ username: newName, username_key: newKey })
-      .eq("username_key", oldKey),
-  );
-  await migrateStep("배지", () =>
-    db
-      .from("user_awards")
-      .update({ username: newName, username_key: newKey })
-      .eq("username_key", oldKey),
+  if (!opts.skipProfile) {
+    await migrateStep("프로필", skipped, () =>
+      db
+        .from("user_profiles")
+        .update({ username: newName, username_key: newKey })
+        .eq("username_key", oldKey),
+    );
+  }
+  markSkipped("user_awards", "배지");
+  await migrateStep("배지", skipped, () =>
+    notDup(
+      "user_awards",
+      db
+        .from("user_awards")
+        .update({ username: newName, username_key: newKey })
+        .eq("username_key", oldKey),
+    ),
   );
 
   // Authored posts & comments (case-insensitive exact match).
-  await migrateStep("게시글", () =>
-    db.from("posts").update({ author: newName }).ilike("author", oldPat),
+  markSkipped("posts", "게시글");
+  await migrateStep("게시글", skipped, () =>
+    notDup(
+      "posts",
+      db.from("posts").update({ author: newName }).ilike("author", oldPat),
+    ),
   );
-  await migrateStep("댓글", () =>
+  await migrateStep("댓글", skipped, () =>
     db.from("comments").update({ author: newName }).ilike("author", oldPat),
   );
 
   // Likes given, reads, votes, review allowlist, reviews.
-  await migrateStep("좋아요", () =>
+  await migrateStep("좋아요", skipped, () =>
     db
       .from("post_likes")
       .update({ liker_name: newName, liker_key: newKey })
       .eq("liker_key", oldKey),
   );
-  await migrateStep("읽음 표시", () =>
+  await migrateStep("읽음 표시", skipped, () =>
     db.from("post_reads").update({ username_key: newKey }).eq("username_key", oldKey),
   );
-  await migrateStep("투표", () =>
+  await migrateStep("투표", skipped, () =>
     db
       .from("votes")
       .update({ voter_name: newName, voter_key: newKey })
       .eq("voter_key", oldKey),
   );
-  await migrateStep("심사 명단", () =>
+  await migrateStep("심사 명단", skipped, () =>
     db
       .from("review_allowlist")
       .update({ reviewer_name: newName, reviewer_key: newKey })
       .eq("reviewer_key", oldKey),
   );
-  await migrateStep("평가", () =>
-    db
-      .from("reviews")
-      .update({ reviewer_name: newName })
-      .ilike("reviewer_name", oldPat),
+  markSkipped("reviews", "평가");
+  await migrateStep("평가", skipped, () =>
+    notDup(
+      "reviews",
+      db
+        .from("reviews")
+        .update({ reviewer_name: newName })
+        .ilike("reviewer_name", oldPat),
+    ),
   );
 
   // Hackathon reviews (sticky notes).
-  await migrateStep("해커톤 후기", () =>
+  await migrateStep("해커톤 후기", skipped, () =>
     db
       .from("hackathon_reviews")
       .update({ nickname: newName })
@@ -3926,21 +4132,82 @@ async function migrateNickname(
 
   // Activity records.
   for (const table of ["record_members", "record_reflections", "record_ethics"]) {
-    await migrateStep("활동기록", () =>
-      db
-        .from(table)
-        .update({ username: newName, username_key: newKey })
-        .eq("username_key", oldKey),
+    markSkipped(table, "활동기록");
+    await migrateStep("활동기록", skipped, () =>
+      notDup(
+        table,
+        db
+          .from(table)
+          .update({ username: newName, username_key: newKey })
+          .eq("username_key", oldKey),
+      ),
     );
   }
-  await migrateStep("활동기록 표", () =>
+  await migrateStep("활동기록 표", skipped, () =>
     db.from("record_rows").update({ author: newName }).ilike("author", oldPat),
   );
   for (const table of ["record_rows", "record_final"]) {
-    await migrateStep("활동기록 수정자", () =>
+    await migrateStep("활동기록 수정자", skipped, () =>
       db.from(table).update({ updated_by: newName }).ilike("updated_by", oldPat),
     );
   }
+  return skipped;
+}
+
+// After a rename, checks the main tables for rows still carrying the old name
+// and retries once. Returns the labels that are still left over.
+async function verifyNicknameMigration(
+  db: { from: (t: string) => any },
+  oldName: string,
+  newName: string,
+  opts: { skipProfile?: boolean } = {},
+): Promise<string[]> {
+  const oldKey = normalizeName(oldName);
+  const oldPat = escapeIlike(oldName);
+  const probe = async (
+    label: string,
+    q: () => Promise<{ data: any[] | null; error: any }>,
+  ) => {
+    const { data, error } = await q();
+    if (error) throw new Error(error.message);
+    return (data?.length ?? 0) > 0 ? label : null;
+  };
+  const found = (
+    await Promise.all([
+      probe("투표", () =>
+        db.from("votes").select("id").eq("voter_key", oldKey).limit(1),
+      ),
+      probe("게시글", () =>
+        db.from("posts").select("id").ilike("author", oldPat).limit(1),
+      ),
+      probe("댓글", () =>
+        db.from("comments").select("id").ilike("author", oldPat).limit(1),
+      ),
+      probe("읽음 표시", () =>
+        db.from("post_reads").select("id").eq("username_key", oldKey).limit(1),
+      ),
+    ])
+  ).filter((v): v is string => v !== null);
+  if (found.length === 0) return [];
+  // One automatic retry for whatever is left.
+  await migrateNickname(db, oldName, newName, opts);
+  const again = (
+    await Promise.all([
+      probe("투표", () =>
+        db.from("votes").select("id").eq("voter_key", oldKey).limit(1),
+      ),
+      probe("게시글", () =>
+        db.from("posts").select("id").ilike("author", oldPat).limit(1),
+      ),
+      probe("댓글", () =>
+        db.from("comments").select("id").ilike("author", oldPat).limit(1),
+      ),
+      probe("읽음 표시", () =>
+        db.from("post_reads").select("id").eq("username_key", oldKey).limit(1),
+      ),
+    ])
+  ).filter((v): v is string => v !== null);
+  return again;
 }
 
 // Renames a nickname while preserving all linked activity (level, badges,
@@ -3955,36 +4222,48 @@ export const renameNickname = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data }): Promise<{ ok: boolean; username: string }> => {
-    const db = await getAdmin();
-    const oldName = data.username.trim();
-    const oldKey = normalizeName(oldName);
-    const newName = data.newUsername.trim();
-    const newKey = normalizeName(newName);
+  .handler(
+    async ({
+      data,
+    }): Promise<{ ok: boolean; username: string; leftover: string[] }> => {
+      const db = await getAdmin();
+      const oldName = data.username.trim();
+      const oldKey = normalizeName(oldName);
+      const newName = data.newUsername.trim();
+      const newKey = normalizeName(newName);
 
-    // Authenticate as the current owner.
-    const { data: prof, error: pErr } = await db
-      .from("user_profiles")
-      .select("username, nickname_password")
-      .eq("username_key", oldKey)
-      .maybeSingle();
-    if (pErr) throw new Error(pErr.message);
-    if (!prof || !prof.nickname_password) {
-      throw new Error("등록되지 않은 닉네임이거나 비밀번호가 설정되지 않았습니다.");
-    }
-    if (!(await verifySecret(data.password, prof.nickname_password))) {
-      throw new Error("비밀번호가 일치하지 않습니다.");
-    }
+      // Authenticate as the current owner.
+      const { data: prof, error: pErr } = await db
+        .from("user_profiles")
+        .select("username, nickname_password")
+        .eq("username_key", oldKey)
+        .maybeSingle();
+      if (pErr) throw new Error(pErr.message);
+      if (!prof || !prof.nickname_password) {
+        throw new Error("등록되지 않은 닉네임이거나 비밀번호가 설정되지 않았습니다.");
+      }
+      if (!(await verifySecret(data.password, prof.nickname_password))) {
+        throw new Error("비밀번호가 일치하지 않습니다.");
+      }
 
-    if (newKey !== oldKey) {
-      await assertNicknameAvailable(db, newName, newKey);
-    } else if (!newName) {
-      throw new Error("새 닉네임을 입력해주세요.");
-    }
+      if (newKey !== oldKey) {
+        await assertNicknameAvailable(db, newName, newKey);
+      } else if (!newName) {
+        throw new Error("새 닉네임을 입력해주세요.");
+      }
 
-    await migrateNickname(db, oldName, newName);
-    return { ok: true, username: newName };
-  });
+      const skipped = await migrateNickname(db, oldName, newName);
+      const leftover =
+        newKey === oldKey
+          ? []
+          : await verifyNicknameMigration(db, oldName, newName);
+      return {
+        ok: true,
+        username: newName,
+        leftover: [...new Set([...skipped, ...leftover])],
+      };
+    },
+  );
 
 // Admin: rename a nickname on the user's behalf. Uses the profile-admin
 // password instead of the owner's nickname password.
@@ -3999,7 +4278,14 @@ export const adminRenameNickname = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(
-    async ({ data }): Promise<{ ok: boolean; oldUsername: string; username: string }> => {
+    async ({
+      data,
+    }): Promise<{
+      ok: boolean;
+      oldUsername: string;
+      username: string;
+      leftover: string[];
+    }> => {
       requireProfileAdmin(data.adminPassword);
       const db = await getAdmin();
 
@@ -4021,8 +4307,85 @@ export const adminRenameNickname = createServerFn({ method: "POST" })
         await assertNicknameAvailable(db, newName, newKey);
       }
 
-      await migrateNickname(db, oldName, newName);
-      return { ok: true, oldUsername: oldName, username: newName };
+      const skipped = await migrateNickname(db, oldName, newName);
+      const leftover =
+        newKey === oldKey
+          ? []
+          : await verifyNicknameMigration(db, oldName, newName);
+      return {
+        ok: true,
+        oldUsername: oldName,
+        username: newName,
+        leftover: [...new Set([...skipped, ...leftover])],
+      };
+    },
+  );
+
+// Admin: merge an *unregistered* leftover nickname (activity exists but there
+// is no profile row) into an existing nickname. Unlike a rename, the target
+// name is expected to already exist, so no availability check is made.
+export const adminMergeNickname = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        oldUsername: z.string().trim().min(1).max(100),
+        targetUsername: z.string().trim().min(1).max(100),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(
+    async ({
+      data,
+    }): Promise<{
+      ok: boolean;
+      oldUsername: string;
+      username: string;
+      leftover: string[];
+    }> => {
+      requireProfileAdmin(data.adminPassword);
+      const db = await getAdmin();
+
+      const oldName = data.oldUsername.trim();
+      const oldKey = normalizeName(oldName);
+      const targetName = data.targetUsername.trim();
+      const targetKey = normalizeName(targetName);
+      if (!targetName) throw new Error("합칠 닉네임을 입력해주세요.");
+      if (oldKey === targetKey) {
+        throw new Error("같은 닉네임끼리는 합칠 수 없어요.");
+      }
+
+      const { data: target, error: tErr } = await db
+        .from("user_profiles")
+        .select("id, username")
+        .eq("username_key", targetKey)
+        .maybeSingle();
+      if (tErr) throw new Error(tErr.message);
+      if (!target) throw new Error("합칠 대상 닉네임의 프로필을 찾을 수 없습니다.");
+
+      const finalName = String(target.username ?? targetName).trim();
+      // Move the activity only; the target profile row stays as-is.
+      const skipped = await migrateNickname(db, oldName, finalName, {
+        skipProfile: true,
+      });
+      const leftover = await verifyNicknameMigration(db, oldName, finalName, {
+        skipProfile: true,
+      });
+
+      // If the old name happened to have its own profile row, drop it now that
+      // its activity has moved.
+      const { error: delErr } = await db
+        .from("user_profiles")
+        .delete()
+        .eq("username_key", oldKey);
+      if (delErr) throw new Error(delErr.message);
+
+      return {
+        ok: true,
+        oldUsername: oldName,
+        username: finalName,
+        leftover: [...new Set([...skipped, ...leftover])],
+      };
     },
   );
 

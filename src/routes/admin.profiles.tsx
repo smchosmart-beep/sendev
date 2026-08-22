@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { UserCog, Trophy, Trash2, Lock, AlertCircle, KeyRound, Plus, X, Search, Pencil, Users, Settings2, Eye, EyeOff, icons as lucideIcons } from "lucide-react";
+import { UserCog, Trophy, Trash2, Lock, AlertCircle, KeyRound, Plus, X, Search, Pencil, Users, Settings2, Eye, EyeOff, Merge, icons as lucideIcons } from "lucide-react";
 
 import { toast } from "sonner";
 
@@ -20,6 +20,7 @@ import {
   deleteUserProfile,
   resetNicknamePassword,
   adminRenameNickname,
+  adminMergeNickname,
   verifyProfileAdmin,
   setAwardIcon,
   addAwardIconRule,
@@ -382,6 +383,7 @@ function ProfilesAdmin() {
   const remove = useServerFn(deleteUserProfile);
   const resetPw = useServerFn(resetNicknamePassword);
   const adminRename = useServerFn(adminRenameNickname);
+  const adminMerge = useServerFn(adminMergeNickname);
   const { confirm, confirmDialog } = useConfirm();
 
 
@@ -403,6 +405,10 @@ function ProfilesAdmin() {
   // 목록 행 내 닉네임 변경
   const [renamingFor, setRenamingFor] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
+
+  // 미등록(프로필 없는) 닉네임을 기존 닉네임으로 합치기
+  const [mergingFor, setMergingFor] = useState<string | null>(null);
+  const [mergeValue, setMergeValue] = useState("");
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -540,6 +546,49 @@ function ProfilesAdmin() {
       return;
     }
     renameMutation.mutate({ id: p.id, newUsername: next });
+  };
+
+  const mergeMutation = useMutation({
+    mutationFn: ({
+      oldUsername,
+      targetUsername,
+    }: {
+      oldUsername: string;
+      targetUsername: string;
+    }) =>
+      adminMerge({
+        data: {
+          oldUsername,
+          targetUsername,
+          adminPassword: getProfileAdminPassword(),
+        },
+      }),
+    onSuccess: (res) => {
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      setMergingFor(null);
+      setMergeValue("");
+      if (res.leftover.length > 0) {
+        toast.warning(
+          `'${res.oldUsername}' → '${res.username}' 합쳤지만 일부가 남았어요: ${res.leftover.join(", ")}`,
+        );
+      } else {
+        toast.success(`'${res.oldUsername}'을 '${res.username}'으로 합쳤어요.`);
+      }
+    },
+    onError: (err) =>
+      toast.error(
+        err instanceof Error ? err.message : "합치는 중 문제가 발생했어요.",
+      ),
+  });
+
+  const submitMerge = (p: UserProfileDTO) => {
+    const target = mergeValue.trim();
+    if (!target) {
+      toast.error("합칠 닉네임을 입력해 주세요.");
+      return;
+    }
+    mergeMutation.mutate({ oldUsername: p.username, targetUsername: target });
   };
 
 
@@ -702,7 +751,14 @@ function ProfilesAdmin() {
                   >
                     <div className="flex items-center gap-3">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-foreground">{p.username}</p>
+                      <p className="truncate font-medium text-foreground">
+                        {p.username}
+                        {!p.registered && (
+                          <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[11px] font-normal text-muted-foreground">
+                            미등록
+                          </span>
+                        )}
+                      </p>
                       <div className="mt-1 flex flex-wrap items-center gap-2">
                         {p.level != null ? (
                           <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
@@ -754,6 +810,8 @@ function ProfilesAdmin() {
                       </div>
 
                     </div>
+                    {p.registered ? (
+                      <>
                     <button
                       type="button"
                       onClick={() => {
@@ -815,6 +873,24 @@ function ProfilesAdmin() {
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMergingFor((prev) => (prev === p.id ? null : p.id));
+                          setMergeValue("");
+                          setAddingFor(null);
+                          setRenamingFor(null);
+                        }}
+                        aria-label="기존 닉네임으로 합치기"
+                        title="기존 닉네임으로 합치기"
+                        className="flex h-9 items-center justify-center gap-1 rounded-xl bg-secondary px-3 text-xs font-medium text-secondary-foreground shadow-sm active:scale-95"
+                      >
+                        <Merge className="h-4 w-4" />
+                        합치기
+                      </button>
+                    )}
                     </div>
                     {addingFor === p.id && (
                       <div className="mt-3 flex items-center gap-2 rounded-xl bg-muted/60 p-2">
@@ -892,6 +968,48 @@ function ProfilesAdmin() {
                           글·댓글·좋아요·배지·투표·평가·활동기록·읽음 표시가 함께 옮겨져요.
                           변경 후에는 본인에게 <strong>기기에서 닉네임을 새 이름으로 바꾸고
                           기존 비밀번호로 다시 확인</strong>하도록 안내해 주세요.
+                        </p>
+                      </div>
+                    )}
+                    {mergingFor === p.id && (
+                      <div className="mt-3 space-y-2 rounded-xl bg-muted/60 p-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            autoFocus
+                            value={mergeValue}
+                            onChange={(e) => setMergeValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                submitMerge(p);
+                              }
+                            }}
+                            placeholder="합칠 기존 닉네임 (예: 이서영)"
+                            className="rounded-lg bg-background"
+                          />
+                          <Button
+                            type="button"
+                            onClick={() => submitMerge(p)}
+                            disabled={mergeMutation.isPending}
+                            className="rounded-lg active:scale-95"
+                          >
+                            합치기
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => {
+                              setMergingFor(null);
+                              setMergeValue("");
+                            }}
+                            className="rounded-lg active:scale-95"
+                          >
+                            취소
+                          </Button>
+                        </div>
+                        <p className="text-[11px] leading-relaxed text-muted-foreground">
+                          '{p.username}' 이름으로 남은 글·댓글·투표·읽음 표시 등을 위에 입력한
+                          <strong> 등록된 닉네임</strong>으로 옮깁니다. 표 수는 그대로 유지돼요.
                         </p>
                       </div>
                     )}

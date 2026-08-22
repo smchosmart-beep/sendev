@@ -405,7 +405,13 @@ function ChangeNicknameCard({
       newUsername: string;
     }) => rename({ data: input }),
     onSuccess: (res) => {
-      toast.success("닉네임을 변경했어요. 레벨·배지·활동은 그대로예요.");
+      if (res.leftover && res.leftover.length > 0) {
+        toast.warning(
+          `닉네임을 변경했지만 일부 기록이 이전 이름으로 남았어요 (${res.leftover.join(", ")}). 관리자에게 문의해 주세요.`,
+        );
+      } else {
+        toast.success("닉네임을 변경했어요. 레벨·배지·활동은 그대로예요.");
+      }
       setOpen(false);
       setNewName("");
       onRenamed(res.username);
