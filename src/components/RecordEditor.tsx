@@ -1069,7 +1069,7 @@ function RowSection({
   def: RowSectionDef;
   rows: RecordRowDTO[];
   canEdit: boolean;
-  onSave: (vars: SaveRowVars) => void;
+  onSave: (vars: SaveRowVars) => Promise<void>;
   onDelete: (id: string) => void;
   title?: string;
   hint?: string;
