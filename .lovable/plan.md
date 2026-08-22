@@ -13,8 +13,10 @@
 
 ## 할 일
 
-### 1) 이번 데이터 정리
+### 1) 이번 데이터 정리 (병합 경로 신설)
 `창일중(이서영)` 이름의 투표 기록을 현재 프로필 이름 `이서영`으로 옮깁니다. 표 수·라운드·선발 결과는 그대로 유지되고 표시 이름만 바뀝니다.
+
+기존 관리자 이름변경 기능은 "프로필이 등록된 닉네임"만 다룰 수 있어 이번처럼 프로필이 없는 옛 이름에는 쓸 수 없습니다. 그래서 **옛 이름을 이미 존재하는 닉네임으로 합치는 관리자 전용 병합 기능**을 새로 만들고, 관리자 프로필 화면의 `미등록` 행에 "기존 닉네임으로 합치기" 버튼으로 노출합니다.
 
 ### 2) 이름 변경 후 "남은 기록" 점검·재시도
 이름 변경이 끝나면 옛 이름이 남아 있는지 다시 확인하고, 남아 있으면 그 부분만 자동으로 한 번 더 정리합니다. 그래도 남으면 화면에 "일부 기록(예: 투표)이 옛 이름으로 남아 있습니다"라고 알려 관리자가 손볼 수 있게 합니다.
@@ -27,10 +29,14 @@
 
 ## 기술 메모
 
-- 정리 작업은 마이그레이션이 아니라 관리자 기능(기존 `adminRenameNickname` 경로)으로 처리 — 스키마 변경 없음.
+
 - `migrateNickname`/`migrateStep`(`src/lib/platform.functions.ts` 3847~3946): 충돌로 건너뛴 단계 라벨을 수집해 반환값에 담고, 호출부(`renameNickname`, `adminRenameNickname`)가 `skipped: string[]`를 함께 돌려주도록 확장. `user_profiles` 단계 충돌은 기존처럼 실패시키지 않되 결과에 보고.
 - 이전 후 검증: `votes.voter_key`, `posts.author`, `comments.author`에 옛 키가 남았는지 count 조회 1회 → 남으면 해당 표만 재시도. 추가 쿼리는 이름 변경 시점에만 발생(평시 부하 0).
-- `listUserProfiles`(2808행): 이미 조회 중인 활동 집계에 `votes.voter_key`/`voter_name` distinct를 더해, 프로필에 없는 키를 `registered: false` 항목으로 추가 반환. `src/routes/admin.profiles.tsx`에서 `미등록` 배지 표시, 해당 행은 비밀번호 초기화 대신 안내만 노출.
+- 정리 작업은 SQL 마이그레이션이 아니라 관리자 기능으로 처리 — 스키마 변경 없음.
+- **신설** `adminMergeNickname({ oldUsername, targetUsername, adminPassword })`: `requireProfileAdmin` → 대상 프로필 존재 확인 → `assertNicknameAvailable`은 **호출하지 않음**(중복이 정상 상황) → `migrateNickname`을 프로필 단계 제외 모드로 실행. 옛 이름에 프로필 행이 있으면 활동 이관 후 그 행 삭제. 기존 `adminRenameNickname`(3991행)은 `id: uuid` 기반이라 프로필 없는 이름에 사용 불가하므로 그대로 유지.
+- `migrateNickname`에 `skipProfile?: boolean` 옵션 추가 — 기존 호출부(`renameNickname`, `adminRenameNickname`) 동작은 변경 없음.
+- 유니크 충돌: `votes_unique_per_round(category_id, post_id, voter_key, round)` 존재. 이번 케이스는 대상 키 `이서영`의 표가 0건이라 충돌 없음(표 수 변화 없음). 일반 병합에서 충돌이 나면 중복 표가 생기지 않도록 옛 행을 삭제하는 방식으로 처리.
+- `listUserProfiles`(2808행): 이미 조회 중인 활동 집계에 `votes.voter_key`/`voter_name` distinct를 더해, 프로필에 없는 키를 `registered: false` 항목으로 추가 반환. `src/routes/admin.profiles.tsx`에서 `미등록` 배지 표시, 해당 행은 비밀번호 초기화 대신 병합 버튼과 안내만 노출.
 - `src/routes/_main.mypage.tsx`: 이름 변경 결과에 남은 항목이 있으면 토스트로 안내.
 - `src/routes/_main.guide.tsx`: 닉네임 변경 관련 설명 보완.
 
