@@ -134,6 +134,14 @@ export function normalizeUrl(raw: string): string {
   return withProtocol.replace(/ /g, "%20").replace(/\(/g, "%28").replace(/\)/g, "%29");
 }
 
+export function isBlankRow(
+  r: Record<`col${1 | 2 | 3 | 4 | 5 | 6}`, string> | Record<string, string>,
+): boolean {
+  return [r.col1, r.col2, r.col3, r.col4, r.col5, r.col6].every((v) => !(v ?? "").trim());
+}
+
+
+
 
 export function sanitizeFolderName(name: string): string {
   return (
