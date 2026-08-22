@@ -35,9 +35,10 @@
 
 `RowItem`의 저장 버튼은 `id: row.id`로 전달한다. draft 행의 `id`는 `null`이므로 신규 저장이 되고, 쿼리 갱신 후 서버에서 실제 `id`를 가진 행이 `filteredRows`에 추가된다. 이때 로컬 draft가 그대로 남아 있으면 같은 내용이 두 줄로 보인다.
 
-- 수정: `RowSection`은 저장된 draft를 로컬 배열에서 제거한다. 현재 `onSave` 콜백이 `void`를 반환해 성공 시점을 직접 알 수 없으므로, 다음 두 방법 중 하나를 적용한다.
-  - **방법 A**: `onSave`를 `mutateAsync` 기반 `Promise`를 반환하도록 변경하고, 저장 버튼 핸들러에서 `await` 후 draft를 제거한다.
-  - **방법 B**: `onSave`를 그대로 유지하고, `useEffect`로 `filteredRows` 개수가 증가한 시점(또는 `isPending`이 false로 돌아온 시점)을 감지해, 로컬 draft 배열에서 저장된 항목을 제거한다.
+- 수정: `RowSection`은 저장된 draft를 로컬 배열에서 제거한다. 현재 `onSave` 콜백이 `void`를 반환해 성공 시점을 직접 알 수 없으므로, `onSave` 시그니처를 바꾸지 않고 `RowSection` 내부에서 저장 시점을 추적한다.
+  - 각 draft에 임시 `draftId`를 부여하고, 저장 버튼을 누르면 해당 `draftId`를 `pending` 상태에 둔다.
+  - `rowMutation`의 `isPending`이 `false`로 돌아오고, 동시에 `filteredRows`의 길이가 증가하거나 새 행의 내용(`subtype`, `col1`~`col6`, `author`)이 저장하려던 draft와 일치하면 해당 draft를 로컬 배열에서 제거한다.
+  - 이 방식은 `rowSectionProps`(`RecordEditor.tsx:480-484`), `StanceSection`(`RecordEditor.tsx:680`), `RowItem`(`RecordEditor.tsx:1259`) 등의 호출부를 변경하지 않으므로, `mutateAsync` 도입 시 발생할 수 있는 타입/전파 오류를 피할 수 있다.
 - React 상태에서 draft와 서버 행을 분리해 관리하며, 저장된 draft는 즉시 로컬 배열에서 필터링한다.
 
 ## 영향 범위
