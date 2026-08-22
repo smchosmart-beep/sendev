@@ -1898,12 +1898,13 @@ function StanceItem({
   question: string;
   row: RecordRowDTO | null;
   canEdit: boolean;
-  onSave: (vars: SaveRowVars) => void;
+  onSave: (vars: SaveRowVars) => Promise<void>;
 }) {
   const [memo, setMemo] = useState(row?.col2 ?? "");
   useEffect(() => setMemo(row?.col2 ?? ""), [row?.col2]);
   const choice = row?.col1 ?? "";
 
+  // 에러 토스트는 rowMutation.onError에서 처리하므로 여기서는 rejection만 흡수한다.
   const save = (nextChoice: string, nextMemo: string) =>
     onSave({
       ...emptyRowVars("stance", index),
@@ -1911,7 +1912,7 @@ function StanceItem({
       col1: nextChoice,
       col2: nextMemo,
       knownUpdatedAt: row?.updatedAt ?? "",
-    });
+    }).catch(() => {});
 
   return (
     <div className="rounded-xl bg-muted/40 p-3">
