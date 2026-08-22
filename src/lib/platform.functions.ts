@@ -4174,36 +4174,48 @@ export const renameNickname = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data }): Promise<{ ok: boolean; username: string }> => {
-    const db = await getAdmin();
-    const oldName = data.username.trim();
-    const oldKey = normalizeName(oldName);
-    const newName = data.newUsername.trim();
-    const newKey = normalizeName(newName);
+  .handler(
+    async ({
+      data,
+    }): Promise<{ ok: boolean; username: string; leftover: string[] }> => {
+      const db = await getAdmin();
+      const oldName = data.username.trim();
+      const oldKey = normalizeName(oldName);
+      const newName = data.newUsername.trim();
+      const newKey = normalizeName(newName);
 
-    // Authenticate as the current owner.
-    const { data: prof, error: pErr } = await db
-      .from("user_profiles")
-      .select("username, nickname_password")
-      .eq("username_key", oldKey)
-      .maybeSingle();
-    if (pErr) throw new Error(pErr.message);
-    if (!prof || !prof.nickname_password) {
-      throw new Error("등록되지 않은 닉네임이거나 비밀번호가 설정되지 않았습니다.");
-    }
-    if (!(await verifySecret(data.password, prof.nickname_password))) {
-      throw new Error("비밀번호가 일치하지 않습니다.");
-    }
+      // Authenticate as the current owner.
+      const { data: prof, error: pErr } = await db
+        .from("user_profiles")
+        .select("username, nickname_password")
+        .eq("username_key", oldKey)
+        .maybeSingle();
+      if (pErr) throw new Error(pErr.message);
+      if (!prof || !prof.nickname_password) {
+        throw new Error("등록되지 않은 닉네임이거나 비밀번호가 설정되지 않았습니다.");
+      }
+      if (!(await verifySecret(data.password, prof.nickname_password))) {
+        throw new Error("비밀번호가 일치하지 않습니다.");
+      }
 
-    if (newKey !== oldKey) {
-      await assertNicknameAvailable(db, newName, newKey);
-    } else if (!newName) {
-      throw new Error("새 닉네임을 입력해주세요.");
-    }
+      if (newKey !== oldKey) {
+        await assertNicknameAvailable(db, newName, newKey);
+      } else if (!newName) {
+        throw new Error("새 닉네임을 입력해주세요.");
+      }
 
-    await migrateNickname(db, oldName, newName);
-    return { ok: true, username: newName };
-  });
+      const skipped = await migrateNickname(db, oldName, newName);
+      const leftover =
+        newKey === oldKey
+          ? []
+          : await verifyNicknameMigration(db, oldName, newName);
+      return {
+        ok: true,
+        username: newName,
+        leftover: [...new Set([...skipped, ...leftover])],
+      };
+    },
+  );
 
 // Admin: rename a nickname on the user's behalf. Uses the profile-admin
 // password instead of the owner's nickname password.
