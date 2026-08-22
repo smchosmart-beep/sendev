@@ -47,8 +47,8 @@
 
 `multi` 탭이나 다른 행 섹션에서 추가 버튼으로 만든 로컬 draft가 현재 선택된 탭과 무관하게 노출되면, 탭 전환 시 다른 탭의 draft가 섞여 보이거나 잘못된 `subtype`으로 저장될 수 있다.
 
-- 수정: draft 항목에 생성 당시의 `subtype` 값을 저장하고(`DraftRow`에 `subtype` 필드가 이미 있음), 렌더 시 `RowSection` 필터링에서 `filterBySubtype`가 true인 섹션은 현재 `currentSubtype`과 일치하는 draft만 `visibleDrafts`로 노출한다. 다른 subtype의 draft는 숨겨진 상태로 유지되며, 해당 탭으로 돌아왔을 때만 다시 보인다.
-- **subtype이 없는 섹션의 예외 처리**: `filterBySubtype`가 false인 섹션(예: 핵심 기능, 사용 흐름, AI 활용 등)은 `subtype` 필터링을 적용하지 않고 해당 섹션의 모든 draft를 노출한다. 이때 draft의 `subtype`이 빈 문자열(`""`)이거나 동적으로 변경될 수 있으므로, 섹션 key(`sectionKey`)를 기준으로 먼저 분리한 뒤 `filterBySubtype` 여부에 따라 필터링 규칙을 적용한다. 같은 섹션 key 안에서만 draft가 공유되며, 다른 섹션으로는 새어 나가지 않는다.
+- 수정: draft 항목에 생성 당시의 `subtype` 값을 초기값으로 저장한다(`DraftRow`에 `subtype` 필드가 이미 있음). 이 값은 양식 렌더링 초기값으로만 사용하며, **필터 조건에는 직접 사용하지 않는다**. 렌더 시 `RowSection` 필터링에서 `filterBySubtype`가 true인 섹션만 현재 `currentSubtype`과 일치하는 draft를 `visibleDrafts`로 노출한다. `filterBySubtype`가 false인 섹션(예: 핵심 기능, 사용 흐름, AI 활용 등)은 `subtype` 일치 필터를 적용하지 않고, 같은 `sectionKey`를 가진 draft를 모두 노출한다. 이때 draft의 `subtype`이 빈 문자열(`""`)이거나 `RowItem` 내부의 subtype 드롭다운으로 동적으로 변경되더라도 draft가 사라지지 않는다.
+- 다른 subtype의 draft는 숨겨진 상태로 유지되며, 해당 탭으로 돌아왔을 때만 다시 보인다.
 - `draftId` 생성 시 `sectionKey`와 `subtype`을 포함하여 같은 섹션 내에서도 탭별 key 충돌이 없도록 한다.
 
 ### 7. "아직 등록된 내용이 없어요" 빈 상태 문구가 draft를 반영하도록
