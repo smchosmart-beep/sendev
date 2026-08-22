@@ -1,6 +1,6 @@
 # 02 문제 정의 과정 탭 5개 구조 후속 개선 (수정본)
 
-02 문제 정의 과정을 5탭으로 개편한 구현에서 후속 검토로 발견된 7가지 개선점을 반영한다.
+02 문제 정의 과정을 5탭으로 개편한 구현에서 후속 검토로 발견된 8가지 개선점을 반영한다.
 
 ## 개선 항목
 
@@ -42,12 +42,31 @@
 - `onSave`의 반환형 변경은 `RecordEditor.tsx` 내부의 `rowSectionProps`, `StanceSection`/`StanceItem` 등 연관 호출부에 모두 영향을 미친다. 모든 `onSave` 호출부의 타입을 `Promise<void>`로 통일하고, `RowItem` 내부의 저장 호출은 `try/catch`로 감싸 실패 시 draft를 유지한다. `StanceItem`처럼 draft가 없는 곳은 `void onSave(...)` 형태로 호출하여 rejection을 삼키지 않도록 처리한다.
 - React 상태에서 draft와 서버 행을 분리해 관리하며, 저장된 draft는 성공 콜백에서만 로컬 배열에서 필터링한다.
 
+### 6. 로컬 draft를 subtype(탭)별로 격리
+
+`multi` 탭이나 다른 행 섹션에서 추가 버튼으로 만든 로컬 draft가 현재 선택된 탭과 무관하게 노출되면, 탭 전환 시 다른 탭의 draft가 섞여 보이거나 잘못된 `subtype`으로 저장될 수 있다.
+
+- 수정: draft 항목에 생성 당시의 `subtype` 값을 저장하고(`DraftRow`에 `subtype` 필드가 이미 있음), 렌더 시 `RowSection` 필터링에서 `currentSubtype`과 일치하는 draft만 `visibleDrafts`로 노출한다. 다른 subtype의 draft는 숨겨진 상태로 유지되며, 해당 탭으로 돌아왔을 때만 다시 보인다.
+- `draftId` 생성 시 `sectionKey`와 `subtype`을 포함하여 같은 섹션 내에서도 탭별 key 충돌이 없도록 한다.
+
+### 7. "아직 등록된 내용이 없어요" 빈 상태 문구가 draft를 반영하도록
+
+기존 빈 상태 문구는 `filteredRows.length === 0`일 때만 출력된다. draft 배열을 따로 관리하면 실제 행은 없지만 draft가 있을 때도 빈 상태 문구가 동시에 출력되어 사용자가 혼란을 겪을 수 있다.
+
+- 수정: 빈 상태 안내 문구(`아직 등록된 내용이 없어요`)의 노출 조건을 `filteredRows.length === 0 && visibleDrafts.length === 0`로 변경한다. draft가 있으면 안내 문구를 숨기고 draft 입력 양식만 보여준다.
+
+### 8. 저장 성공 시 draft 제거 시점을 쿼리 갱신 완료 후로 맞추고 중복 토스트 방지
+
+`mutateAsync`가 resolve되어도 `invalidateQueries`는 비동기로 동작하여, draft를 즉시 제거하면 서버에서 실제 행이 목록에 나타나기까지 잠깐 항목이 사라지는 플리커가 발생할 수 있다. 또한 `rowMutation`의 `onError` 토스트와 `RowItem`의 `catch` 내부 토스트가 중복될 수 있다.
+
+- 수정: `rowMutation`의 `onSuccess`에서 `invalidateQueries`를 `return`하여 mutation 결과가 resolve되기 전에 쿼리 갱신이 완료되도록 한다. `RowItem` 내부에서 저장 버튼 클릭 시 `try { await onSave({ ...row, sectionKey }); onRemoveDraft(draftId); } catch { ... }`로 호출하고, `catch` 블록에서는 토스트를 띄우지 않고 draft만 유지하여 재시도를 가능하게 한다. 실제 에러 토스트는 `rowMutation`의 `onError` 콜백에서 한 곳에서만 담당한다.
+
 ## 영향 범위
 
 - `src/lib/record-readme.ts`: subtype 사용 kind(process, ai_use) 그룹 정렬 + process/ai_use 정의 순서 + 폴백
 - `src/lib/record-schema.ts`: `AI_USE_TYPES` 배열 순서를 현재 README/사례집 출력 순서에 맞춰 재배열
 - `src/components/record/CasebookDocument.tsx`: 동일 정렬 로직 확인·수정
-- `src/components/RecordEditor.tsx` (내부 `RowSection`/`RowItem` 함수 수정): draft/추가 버튼 조건, 임시 draft 배열 관리, draft key, 저장 후 제거, `onSave` 비동기 콜백 전달, 연관 호출부 통일
+- `src/components/RecordEditor.tsx` (내부 `RowSection`/`RowItem` 함수 수정): draft/추가 버튼 조건, 임시 draft 배열 관리, draft key, 저장 후 제거, `onSave` 비동기 콜백 전달, 연관 호출부 통일, subtype별 draft 필터링, 빈 상태 문구 조건, 토스트 중복 방지
 - 별도 신규 파일(`RowSection.tsx`, `RowItem.tsx`)은 만들지 않는다.
 
 ## 데이터·보안·비용
