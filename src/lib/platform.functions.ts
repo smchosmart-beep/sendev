@@ -4230,7 +4230,14 @@ export const adminRenameNickname = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(
-    async ({ data }): Promise<{ ok: boolean; oldUsername: string; username: string }> => {
+    async ({
+      data,
+    }): Promise<{
+      ok: boolean;
+      oldUsername: string;
+      username: string;
+      leftover: string[];
+    }> => {
       requireProfileAdmin(data.adminPassword);
       const db = await getAdmin();
 
@@ -4252,8 +4259,85 @@ export const adminRenameNickname = createServerFn({ method: "POST" })
         await assertNicknameAvailable(db, newName, newKey);
       }
 
-      await migrateNickname(db, oldName, newName);
-      return { ok: true, oldUsername: oldName, username: newName };
+      const skipped = await migrateNickname(db, oldName, newName);
+      const leftover =
+        newKey === oldKey
+          ? []
+          : await verifyNicknameMigration(db, oldName, newName);
+      return {
+        ok: true,
+        oldUsername: oldName,
+        username: newName,
+        leftover: [...new Set([...skipped, ...leftover])],
+      };
+    },
+  );
+
+// Admin: merge an *unregistered* leftover nickname (activity exists but there
+// is no profile row) into an existing nickname. Unlike a rename, the target
+// name is expected to already exist, so no availability check is made.
+export const adminMergeNickname = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        oldUsername: z.string().trim().min(1).max(100),
+        targetUsername: z.string().trim().min(1).max(100),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(
+    async ({
+      data,
+    }): Promise<{
+      ok: boolean;
+      oldUsername: string;
+      username: string;
+      leftover: string[];
+    }> => {
+      requireProfileAdmin(data.adminPassword);
+      const db = await getAdmin();
+
+      const oldName = data.oldUsername.trim();
+      const oldKey = normalizeName(oldName);
+      const targetName = data.targetUsername.trim();
+      const targetKey = normalizeName(targetName);
+      if (!targetName) throw new Error("합칠 닉네임을 입력해주세요.");
+      if (oldKey === targetKey) {
+        throw new Error("같은 닉네임끼리는 합칠 수 없어요.");
+      }
+
+      const { data: target, error: tErr } = await db
+        .from("user_profiles")
+        .select("id, username")
+        .eq("username_key", targetKey)
+        .maybeSingle();
+      if (tErr) throw new Error(tErr.message);
+      if (!target) throw new Error("합칠 대상 닉네임의 프로필을 찾을 수 없습니다.");
+
+      const finalName = String(target.username ?? targetName).trim();
+      // Move the activity only; the target profile row stays as-is.
+      const skipped = await migrateNickname(db, oldName, finalName, {
+        skipProfile: true,
+      });
+      const leftover = await verifyNicknameMigration(db, oldName, finalName, {
+        skipProfile: true,
+      });
+
+      // If the old name happened to have its own profile row, drop it now that
+      // its activity has moved.
+      const { error: delErr } = await db
+        .from("user_profiles")
+        .delete()
+        .eq("username_key", oldKey);
+      if (delErr) throw new Error(delErr.message);
+
+      return {
+        ok: true,
+        oldUsername: oldName,
+        username: finalName,
+        leftover: [...new Set([...skipped, ...leftover])],
+      };
     },
   );
 
