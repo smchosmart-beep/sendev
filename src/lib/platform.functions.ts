@@ -4270,6 +4270,33 @@ export const getVoteState = createServerFn({ method: "GET" })
     };
   });
 
+// 관리자 전용: 최종 결과 확정 시 후보 작성자 닉네임을 공개/비공개로 전환한다.
+// 결선까지 모두 끝나기 전에는 관리자가 이 값을 켜지 않는 한 계속 익명이다.
+export const setVoteRevealed = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        revealed: z.boolean(),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
+    const db = await getAdmin();
+    const cfg = await loadVoteConfig(db, data.categoryId);
+    if (data.revealed && cfg.status !== "closed") {
+      throw new Error("투표를 종료한 뒤에 공개할 수 있어요.");
+    }
+    const { error } = await db
+      .from("categories")
+      .update({ vote_revealed: data.revealed })
+      .eq("id", data.categoryId);
+    if (error) throw new Error(error.message);
+    return { ok: true, revealed: data.revealed };
+  });
+
 // 내가 고른 게시글 id 목록(현재 라운드 기준). 본인 것만 돌려주므로
 // 진행 중 비공개가 유지된다.
 export const getMyVotes = createServerFn({ method: "GET" })
