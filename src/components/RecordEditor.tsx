@@ -1156,7 +1156,7 @@ function RowItem({
   onSave,
   onDelete,
 }: {
-  row: RecordRowDTO;
+  row: DraftRow;
   labels: string[];
   longs: number[];
   placeholders?: string[];
