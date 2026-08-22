@@ -9,9 +9,10 @@
 
 현재 `src/lib/record-readme.ts`의 `ROW_ORDER` 루프 안에서 모든 `kind`에 대해 `localeCompare` 기반 정렬을 하고 있다. 이 방식은 `subtype`을 갖는 `process`의 탭 순서가 라벨 문자열 비교에 의존하고, `ai_use`(`src/lib/record-schema.ts:83`의 `AI_USE_TYPES`)처럼 `subtype`을 갖는 다른 섹션의 출력 순서도 섞일 수 있다.
 
-- 수정: `subtype`이 있는 kind(`process`, `ai_use`)는 `sortOrder`를 1순위로 적용하고, 동일 `sortOrder` 내에서 `subtype` 그룹 인덱스로 tie-break한다. `process` 그룹 순서는 `PROCESS_SUBTYPES` 배열 인덱스를 따르고, `ai_use`는 `AI_USE_TYPES` 정의 순서를 따른다. 목록에 없는 subtype은 `idx < 0 ? 999 : idx` 폴백으로 맨 뒤 "기타" 그룹으로 보낸다. `subtype`이 없는 kind(핵심 기능, 사용 흐름 등)는 기존 `sortOrder` 단독 정렬을 유지한다. **정렬 우선순위는 1) sortOrder, 2) subtype 그룹 인덱스, 3) 동일 값이면 uuid id로 tie-break하며, 목록에 없는 subtype이 혼재되어 있어도 출력 순서가 흔들리지 않도록 한다.** 실제 서버 응답에는 `created_at` 필드가 없으므로 3순위 tie-break은 uuid `id`를 사용한다.
+- 수정: `subtype`이 있는 kind(`process`, `ai_use`)는 **1) subtype 그룹 인덱스, 2) 그룹 내 `sortOrder`, 3) 동일 값이면 uuid `id`로 tie-break**하여 정렬한다. `process` 그룹 순서는 `PROCESS_SUBTYPES` 배열 인덱스를 따르고, `ai_use`는 `AI_USE_TYPES` 정의 순서를 따른다. 목록에 없는 subtype은 `idx < 0 ? 999 : idx` 폴백으로 맨 뒤 "기타" 그룹으로 보낸다. `subtype`이 없는 kind(핵심 기능, 사용 흐름 등)는 기존 `sortOrder` 단독 정렬을 유지한다. 실제 서버 응답에는 `created_at` 필드가 없으므로 3순위 tie-break은 uuid `id`를 사용한다.
 - `AI_USE_TYPES`의 현재 배열 순서(`["서비스 기능", "개발 과정"]`)는 현행을 유지한다. `ai_use` 실제 데이터가 없어 재배열로 얻는 출력 순서 이득이 없고, 드롭다운 순서 변경은 기존 사용 흐름에 불필요한 변화만 가져오기 때문이다. 정렬 규칙만 "정의 순서 + `idx < 0 ? 999`"로 통일한다.
-- `src/components/record/CasebookDocument.tsx`의 `rowsOf` 함수도 동일한 정렬 기준과 폴백 값(`idx < 0 ? 999 : idx`)을 적용하여, README 출력과 사례집 출력의 순서가 일치하도록 맞춘다. 양쪽 모두 `sortOrder` 기반 안정 정렬을 유지하되, `sortOrder`가 동일할 때만 subtype 인덱스가 적용된다. `subtype` 그룹 정렬은 `process`/`ai_use`에만 적용하고, 나머지 kind(`stance`, `devlog`, `decision` 등)는 `sortOrder` 단독 정렬임을 명시한다.
+- `src/lib/record-readme.ts`의 `rowsOfKind` 함수는 README 블록 status(`empty/partial/done`) 판정에 사용되며, 정렬 결과가 status 판정에 영향을 주지 않으므로 **현행 그대로 `sortOrder` 단독 정렬을 유지**한다.
+- `src/components/record/CasebookDocument.tsx`의 `rowsOf` 함수에서만 `process`/`ai_use`에 subtype 그룹 인덱스를 1순위로 적용하고, `stance`/`devlog`/`decision` 등 나머지 kind는 `sortOrder` 단독 정렬을 유지한다. 양쪽 출력 로직 모두 `idx < 0 ? 999 : idx` 폴백 값을 동일하게 적용하여, README 출력과 사례집 출력의 순서가 일치하도록 맞춘다.
 
 
 ### 2. `multi` 탭에서 빈 양식과 추가 버튼이 동시에 보이지 않게
@@ -26,7 +27,7 @@
 
 - 수정: 추가 버튼은 클릭한 섹션의 로컬 상태에만 임시 draft를 추가하고, 사용자가 내용을 입력한 뒤 실제 저장(`onSave`)이 일어날 때만 DB에 기록한다. 삭제(취소) 시 DB에 저장되지 않은 draft는 로컬에서만 제거된다. 로컬 draft 배열의 각 항목은 `{ draftId: string; row: DraftRow }` 형태로 저장하며, `DraftRow`의 `id`는 `null`로 유지한다. draft 생성 시 `author: defaultAuthor`를 초기값으로 채워, 기존의 작성자 자동 입력 동작이 그대로 유지되도록 한다.
 - 로컬 draft 관리 규칙을 통일: `multi`/`showDraft`가 true인 탭(예: 인터뷰 기록)은 기록이 0건이면 자동으로 1개의 draft 양식을 노출하고, 그 이상 추가는 "+" 버튼으로만 draft를 로컬에 추가한다. `multi`가 아닌 다른 행 섹션에서도 추가 버튼은 동일하게 로컬 draft만 추가한다. 저장된 실제 행은 서버 응답 후 쿼리 갱신으로 다시 들어오므로, 저장 성공 시 해당 로컬 draft는 제거한다.
-- draft 생성 시 `sortOrder` 충돌 방지: 현재 선택된 섹션/탭의 기존 행들 중 최대 `sortOrder` 값을 `Math.max(0, ...existingRows.map(r => r.sort_order ?? 0))`로 구한 뒤, `maxSortOrder + 1 + draftIndex` 형태로 고유 값을 부여한다. 이 방식은 기존 행이 삭제된 이력이 있어 `rows.length`와 `sortOrder`가 불일치할 때도 중복을 방지하고, 그룹 내 출력 순서를 안정적으로 유지한다.
+- draft 생성 시 `sortOrder` 충돌 방지: 현재 선택된 탭(=동일 `subtype`)의 기존 행들 중 최대 `sortOrder` 값을 `Math.max(0, ...existingRows.filter(r => r.subtype === targetSubtype).map(r => r.sort_order ?? 0))`로 구한 뒤, `maxSortOrder + 1 + draftIndex` 형태로 고유 값을 부여한다. 이 방식은 기존 행이 삭제된 이력이 있어 `rows.length`와 `sortOrder`가 불일치할 때도 중복을 방지하고, 동일 `subtype` 그룹 내 출력 순서를 안정적으로 유지한다. `subtype`이 없는 섹션에서는 `targetSubtype` 필터를 적용하지 않고 해당 섹션의 전체 행 중 최대값을 사용한다.
 
 
 ### 4. 로컬 draft의 React key 고유성 확보 및 취소 UI 제공
