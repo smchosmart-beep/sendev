@@ -40,9 +40,13 @@
 - `listUserProfiles`(2808행): 이미 조회 중인 활동 집계에 `votes.voter_key`/`voter_name` distinct를 더해, 프로필에 없는 키를 `registered: false` 항목으로 추가 반환. `src/routes/admin.profiles.tsx`에서 `미등록` 배지 표시, 해당 행은 비밀번호 초기화 대신 병합 버튼과 안내만 노출.
 - `src/routes/_main.mypage.tsx`: 이름 변경 결과에 남은 항목이 있으면 토스트로 안내.
 - `src/routes/_main.guide.tsx`: 닉네임 변경 관련 설명 보완.
+- **충돌 처리 대상 테이블 보완**: 키 기반 유니크 외에, 이름(문자열) 기반 유니크도 병합 시 충돌 가능합니다. `posts`의 `posts_vote_one_per_author(category_id, lower(btrim(author))) WHERE type='vote'`, `reviews`의 `reviews_post_reviewer_unique(post_id, reviewer_name)`, `review_allowlist`의 `review_allowlist(category_id, reviewer_key)` 등도 동일한 규칙으로 처리해야 합니다. `migrateStep` 내부에서 테이블별 유니크 컬럼 목록을 정의할 때 키 컬럼과 문자열 컬럼을 구분하여 모두 포함합니다.
+- **선삭제 조건 한정**: "겹치는 옛 행을 먼저 삭제"는 반드시 "대상 키에 동일한 유니크 조합 행이 이미 존재할 때"로 제한합니다. 예를 들어 `votes`에서 옛 행을 통째로 삭제하면 표 수가 줄어들기 때문입니다. 대상 키에 동일 (category_id, post_id, voter_key, round) 조합이 있을 때만 옛 행을 삭제(중복 제거)하고, 그 외에는 UPDATE를 그대로 수행합니다.
 
 ## 검토에서 나온 주의점 (반영함)
 
 1. **미등록 행에는 관리 버튼을 렌더링하지 않음** — 미등록 항목은 프로필 `id`가 없으므로, `src/routes/admin.profiles.tsx`에서 `registered: false`인 행은 삭제·비밀번호 초기화 버튼을 아예 그리지 않고 안내 문구만 노출합니다(잘못된 요청·런타임 오류 방지).
 2. **추가 쿼리는 관리자 화면 1회로 제한** — 미등록 닉네임을 찾기 위한 `votes` distinct 조회는 관리자 프로필 페이지 로드시에만 1회 실행하고, 일반 사용자 화면·폴링 경로에는 추가하지 않습니다(서버 비용 영향 사실상 없음).
 3. **충돌 처리 일반화** — 옛 키를 새 키로 옮길 때 유니크 제약이 있는 모든 테이블에서 "겹치는 옛 행 선삭제 후 이관" 규칙을 적용해, 부분 실패로 이름이 절반만 바뀌는 상황을 방지합니다.
+4. **문자열 기반 유니크도 포함** — `posts`, `reviews`, `review_allowlist` 등 키가 아닌 문자열 컬럼 기반 유니크도 병합 시 충돌 가능하므로, `migrateStep`의 테이블별 유니크 목록에 모두 포함합니다.
+5. **선삭제는 중복 제거 성격으로만** — 옛 행을 삭제하는 경우는 대상 키에 동일 유니크 조합이 이미 있어서 중복을 제거할 때뿐입니다. 그렇지 않으면 데이터(예: 투표)가 유실되므로, 삭제 조건을 엄격히 제한합니다.
