@@ -8,7 +8,8 @@
 
 현재 `src/lib/record-readme.ts`의 `ROW_ORDER` 루프 안에서 모든 `kind`에 대해 `localeCompare` 기반 정렬을 하고 있다. 이 방식은 `subtype`을 갖는 `process`의 탭 순서가 라벨 문자열 비교에 의존하고, `ai_use`(`src/lib/record-schema.ts:83`의 `AI_USE_TYPES`)처럼 `subtype`을 갖는 다른 섹션의 출력 순서도 섞일 수 있다.
 
-- 수정: `subtype`이 있는 kind(`process`, `ai_use`)는 `subtype` 그룹별로 먼저 묶고, 그룹 내에서 `sortOrder`를 적용한다. `process` 그룹 순서는 `PROCESS_SUBTYPES` 배열 인덱스를 따르고, `ai_use`는 `AI_USE_TYPES` 정의 순서를 따른다. 목록에 없는 subtype은 `idx < 0 ? 999 : idx` 폴백으로 맨 뒤로 보낸다. `subtype`이 없는 kind(핵심 기능, 사용 흐름 등)는 기존 `sortOrder`만 적용한다.
+- 수정: `subtype`이 있는 kind(`process`, `ai_use`)는 `subtype` 그룹별로 먼저 묶고, 그룹 내에서 `sortOrder`를 적용한다. `process` 그룹 순서는 `PROCESS_SUBTYPES` 배열 인덱스를 따르고, `ai_use`는 `AI_USE_TYPES` 정의 순서를 따른다. 목록에 없는 subtype은 `idx < 0 ? 999 : idx` 폴백으로 맨 뒤 "기타" 그룹으로 보낸다. `subtype`이 없는 kind(핵심 기능, 사용 흐름 등)는 기존 `sortOrder`만 적용한다.
+- `AI_USE_TYPES`의 현재 배열 순서(`["서비스 기능", "개발 과정"]`)가 현재 `localeCompare` 출력 순서와 역순이므로, README/사례집 출력 순서를 유지하려면 배열을 `["개발 과정", "서비스 기능"]`으로 재배열하거나, `ai_use`는 현행 `localeCompare` 기준을 유지하도록 범위를 좁혀야 한다. 본 계획에서는 `AI_USE_TYPES` 배열 순서를 현재 출력 순서에 맞춰 재배열하고, `process`와 동일한 정의 순서 정렬을 적용한다.
 - `src/components/record/CasebookDocument.tsx`의 `rowsOf` 함수도 동일한 정렬 기준으로 맞춘다.
 
 ### 2. `multi` 탭에서 빈 양식과 추가 버튼이 동시에 보이지 않게
@@ -35,18 +36,17 @@
 
 `RowItem`의 저장 버튼은 `id: row.id`로 전달한다. draft 행의 `id`는 `null`이므로 신규 저장이 되고, 쿼리 갱신 후 서버에서 실제 `id`를 가진 행이 `filteredRows`에 추가된다. 이때 로컬 draft가 그대로 남아 있으면 같은 내용이 두 줄로 보인다.
 
-- 수정: `RowSection`은 저장된 draft를 로컬 배열에서 제거한다. 현재 `onSave` 콜백이 `void`를 반환해 성공 시점을 직접 알 수 없으므로, `onSave` 시그니처를 바꾸지 않고 `RowSection` 내부에서 저장 시점을 추적한다.
-  - 각 draft에 임시 `draftId`를 부여하고, 저장 버튼을 누르면 해당 `draftId`를 `pending` 상태에 둔다.
-  - `rowMutation`의 `isPending`이 `false`로 돌아오고, 동시에 `filteredRows`의 길이가 증가하거나 새 행의 내용(`subtype`, `col1`~`col6`, `author`)이 저장하려던 draft와 일치하면 해당 draft를 로컬 배열에서 제거한다.
-  - 이 방식은 `rowSectionProps`(`RecordEditor.tsx:480-484`), `StanceSection`(`RecordEditor.tsx:680`), `RowItem`(`RecordEditor.tsx:1259`) 등의 호출부를 변경하지 않으므로, `mutateAsync` 도입 시 발생할 수 있는 타입/전파 오류를 피할 수 있다.
+- 수정: `RowSection`에 `isPending: boolean` prop을 추가하고, `RecordEditor.tsx`에서 `rowMutation.isPending`을 전달한다. 저장 버튼을 누르면 해당 draft의 `draftId`를 `pendingDraftId` 상태에 저장한다. `isPending`이 `true`로 바뀌면 저장 진행 중임을, `false`로 돌아오면 저장 완료로 보고 해당 draft를 로컬 배열에서 제거한다.
+- `onSave`는 기존 동기 콜백 시그니처를 유지한다. `RowSection`은 prop으로 들어온 `isPending`만 추적하므로, `rowSectionProps`, `StanceSection`, `RowItem` 등의 호출부를 타입 변경 없이 사용할 수 있다.
+- `isPending` prop이 누락되면 draft가 영구히 남을 수 있으므로, `RowSection`의 모든 사용처에서 `rowMutation.isPending`을 전달해야 한다.
 - React 상태에서 draft와 서버 행을 분리해 관리하며, 저장된 draft는 즉시 로컬 배열에서 필터링한다.
 
 ## 영향 범위
 
 - `src/lib/record-readme.ts`: subtype 사용 kind(process, ai_use) 그룹 정렬 + process/ai_use 정의 순서 + 폴백
+- `src/lib/record-schema.ts`: `AI_USE_TYPES` 배열 순서를 현재 README/사례집 출력 순서에 맞춰 재배열
 - `src/components/record/CasebookDocument.tsx`: 동일 정렬 로직 확인·수정
-- `src/components/RecordEditor.tsx`: `RowSection`의 draft/추가 버튼 조건, 임시 draft 배열 관리, draft key, 저장 후 제거
-- `src/lib/record-schema.ts` (참고): `PROCESS_SUBTYPES`·`AI_USE_TYPES` 순서가 정렬 기준으로 사용됨
+- `src/components/RecordEditor.tsx`: `RowSection`의 draft/추가 버튼 조건, 임시 draft 배열 관리, draft key, 저장 후 제거, `isPending` prop 전달
 
 ## 데이터·보안·비용
 
