@@ -504,8 +504,9 @@ export function RecordEditor({
       id: `s4-${kind}`,
       no: String(i + 1).padStart(2, "0"),
       title: ROW_SECTION_DEFS[kind]!.title,
-      ...rowBlockStatus(rowsOf(kind).length),
+      ...rowBlockStatus(rowsOf(kind).filter((r) => !isBlankRow(r)).length),
     })),
+
     {
       id: "s4-stance",
       no: String(step4RowKinds.length + 1).padStart(2, "0"),
