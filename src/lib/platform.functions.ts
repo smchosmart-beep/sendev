@@ -2733,6 +2733,8 @@ export interface UserProfileDTO {
   postCount: number;
   commentCount: number;
   points: number;
+  // false = no profile row; the name only survives in activity (votes, posts…).
+  registered: boolean;
 }
 
 // Public display map keyed by normalized username.
