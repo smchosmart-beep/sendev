@@ -1095,9 +1095,56 @@ function RowSection({
   }, [rows, filterBySubtype, selectedSubtype]);
   // 전용 양식 탭을 열었는데 기록이 없으면, 편집 권한이 있을 때 빈 양식을 바로 보여준다.
   const draftTemplate = filterBySubtype ? PROCESS_SUBTYPE_TEMPLATES[selectedSubtype] : undefined;
-  const showDraft = canEdit && !!draftTemplate && filteredRows.length === 0;
   // 여러 건(팀원별) 추가가 허용된 탭에서만 새 행 추가 버튼을 보여준다.
   const multiTab = !!draftTemplate?.multi;
+
+  // "+ 추가" 버튼으로 만든 임시 draft는 저장 전까지 로컬에만 존재한다.
+  const [drafts, setDrafts] = useState<{ draftId: string; row: DraftRow }[]>([]);
+  const visibleDrafts = useMemo(
+    () => (filterBySubtype ? drafts.filter((d) => d.row.subtype === selectedSubtype) : drafts),
+    [drafts, filterBySubtype, selectedSubtype],
+  );
+  const showDraft =
+    canEdit && !!draftTemplate && filteredRows.length === 0 && visibleDrafts.length === 0;
+
+  const removeDraft = useCallback(
+    (draftId: string) => setDrafts((prev) => prev.filter((d) => d.draftId !== draftId)),
+    [],
+  );
+
+  const addDraft = () => {
+    const targetSubtype = filterBySubtype ? selectedSubtype : "";
+    const scoped = filterBySubtype ? rows.filter((r) => r.subtype === targetSubtype) : rows;
+    const maxSortOrder = Math.max(0, ...scoped.map((r) => r.sortOrder ?? 0));
+    setDrafts((prev) => {
+      const draftId =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `draft-${def.kind}-${targetSubtype}-${Date.now()}-${prev.length}`;
+      return [
+        ...prev,
+        {
+          draftId,
+          row: {
+            id: null,
+            kind: def.kind,
+            sortOrder: maxSortOrder + 1 + prev.length,
+            subtype: targetSubtype,
+            author: defaultAuthor,
+            col1: "",
+            col2: "",
+            col3: "",
+            col4: "",
+            col5: "",
+            col6: "",
+            updatedBy: "",
+            updatedAt: "",
+          },
+        },
+      ];
+    });
+  };
+
 
   return (
     <section className="rounded-2xl bg-card p-6 shadow-sm">
