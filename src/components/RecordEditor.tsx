@@ -1068,6 +1068,10 @@ function RowSection({
     if (!filterBySubtype) return rows;
     return rows.filter((r) => r.subtype === selectedSubtype);
   }, [rows, filterBySubtype, selectedSubtype]);
+  // 전용 양식 탭을 열었는데 기록이 없으면, 편집 권한이 있을 때 빈 양식을 바로 보여준다.
+  const draftTemplate = filterBySubtype ? PROCESS_SUBTYPE_TEMPLATES[selectedSubtype] : undefined;
+  const showDraft = canEdit && !!draftTemplate && filteredRows.length === 0;
+
   return (
     <section className="rounded-2xl bg-card p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-foreground">{title ?? def.title}</h2>
