@@ -472,11 +472,15 @@ export function VoteSection({
             {paged.map((post) => {
               const voted = mySet.has(post.id);
               const isLocked = lockedIds.has(post.id);
-              // 확정 팀은 자기 라운드 득표수를, 결선 후보는 이번 라운드 득표수를 쓴다.
-              const count =
-                showFinal && isLocked
-                  ? lockedCountOf(post.id)
-                  : (counts[post.id] ?? 0);
+              // 결선 후보가 아닌 글(확정 팀·탈락 글)은 마지막으로 표를 받은 라운드 득표수를 쓴다.
+              const prevRoundBased = showFinal && !runoffIds.has(post.id);
+              const count = prevRoundBased
+                ? lockedCountOf(post.id)
+                : (counts[post.id] ?? 0);
+              const voterList = prevRoundBased
+                ? (results?.roundVoters?.[lockedInfoOf(post.id).round]?.[post.id] ?? [])
+                : (results?.voters?.[post.id] ?? []);
+
               const rankInfo = rankMap.get(post.id);
               const showRank =
                 status === "closed" &&
