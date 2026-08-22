@@ -3801,9 +3801,150 @@ export const getMyDashboard = createServerFn({ method: "POST" })
     };
   });
 
+// Validates a new nickname and rejects it when any activity already exists
+// under that name. Skipped when only the display casing/spacing changes.
+async function assertNicknameAvailable(
+  db: { from: (t: string) => any },
+  newName: string,
+  newKey: string,
+): Promise<void> {
+  if (!newName) throw new Error("새 닉네임을 입력해주세요.");
+  if (newKey === "익명" || newKey === "운영진") {
+    throw new Error("사용할 수 없는 닉네임입니다.");
+  }
+
+  const { data: existing, error: exErr } = await db
+    .from("user_profiles")
+    .select("id")
+    .eq("username_key", newKey)
+    .maybeSingle();
+  if (exErr) throw new Error(exErr.message);
+  if (existing) {
+    throw new Error("이미 사용 중인 닉네임이에요. 다른 닉네임을 입력해주세요.");
+  }
+
+  const pat = escapeIlike(newName);
+  // Any trace of activity under the new name means someone else owns it.
+  const probes: Array<Promise<{ data: any[] | null; error: any }>> = [
+    db.from("posts").select("id").ilike("author", pat).limit(1),
+    db.from("comments").select("id").ilike("author", pat).limit(1),
+    db.from("post_likes").select("id").eq("liker_key", newKey).limit(1),
+    db.from("votes").select("id").eq("voter_key", newKey).limit(1),
+    db.from("record_members").select("id").eq("username_key", newKey).limit(1),
+    db.from("hackathon_reviews").select("id").ilike("nickname", pat).limit(1),
+  ];
+  const results = await Promise.all(probes);
+  for (const r of results) {
+    if (r.error) throw new Error(r.error.message);
+    if ((r.data?.length ?? 0) > 0) {
+      throw new Error("이미 다른 사용자가 사용 중인 닉네임이에요. 다른 닉네임을 입력해주세요.");
+    }
+  }
+}
+
+// Runs one migration step, tolerating unique-constraint collisions so a rare
+// duplicate row can't leave the rename half-applied.
+async function migrateStep(
+  label: string,
+  run: () => Promise<{ error: any }>,
+): Promise<void> {
+  const { error } = await run();
+  if (!error) return;
+  if (/duplicate|unique|conflict/i.test(error.message ?? "")) return;
+  throw new Error(`${label}: ${error.message}`);
+}
+
+// Moves every trace of a nickname (display name + normalized key) to a new
+// name. Authorship is stored as free text, so each table is migrated directly.
+async function migrateNickname(
+  db: { from: (t: string) => any },
+  oldName: string,
+  newName: string,
+): Promise<void> {
+  const oldKey = normalizeName(oldName);
+  const newKey = normalizeName(newName);
+  const oldPat = escapeIlike(oldName);
+
+  // Profile (keeps level, password, recovery Q&A intact) and badges.
+  await migrateStep("프로필", () =>
+    db
+      .from("user_profiles")
+      .update({ username: newName, username_key: newKey })
+      .eq("username_key", oldKey),
+  );
+  await migrateStep("배지", () =>
+    db
+      .from("user_awards")
+      .update({ username: newName, username_key: newKey })
+      .eq("username_key", oldKey),
+  );
+
+  // Authored posts & comments (case-insensitive exact match).
+  await migrateStep("게시글", () =>
+    db.from("posts").update({ author: newName }).ilike("author", oldPat),
+  );
+  await migrateStep("댓글", () =>
+    db.from("comments").update({ author: newName }).ilike("author", oldPat),
+  );
+
+  // Likes given, reads, votes, review allowlist, reviews.
+  await migrateStep("좋아요", () =>
+    db
+      .from("post_likes")
+      .update({ liker_name: newName, liker_key: newKey })
+      .eq("liker_key", oldKey),
+  );
+  await migrateStep("읽음 표시", () =>
+    db.from("post_reads").update({ username_key: newKey }).eq("username_key", oldKey),
+  );
+  await migrateStep("투표", () =>
+    db
+      .from("votes")
+      .update({ voter_name: newName, voter_key: newKey })
+      .eq("voter_key", oldKey),
+  );
+  await migrateStep("심사 명단", () =>
+    db
+      .from("review_allowlist")
+      .update({ reviewer_name: newName, reviewer_key: newKey })
+      .eq("reviewer_key", oldKey),
+  );
+  await migrateStep("평가", () =>
+    db
+      .from("reviews")
+      .update({ reviewer_name: newName })
+      .ilike("reviewer_name", oldPat),
+  );
+
+  // Hackathon reviews (sticky notes).
+  await migrateStep("해커톤 후기", () =>
+    db
+      .from("hackathon_reviews")
+      .update({ nickname: newName })
+      .ilike("nickname", oldPat),
+  );
+
+  // Activity records.
+  for (const table of ["record_members", "record_reflections", "record_ethics"]) {
+    await migrateStep("활동기록", () =>
+      db
+        .from(table)
+        .update({ username: newName, username_key: newKey })
+        .eq("username_key", oldKey),
+    );
+  }
+  await migrateStep("활동기록 표", () =>
+    db.from("record_rows").update({ author: newName }).ilike("author", oldPat),
+  );
+  for (const table of ["record_rows", "record_final"]) {
+    await migrateStep("활동기록 수정자", () =>
+      db.from(table).update({ updated_by: newName }).ilike("updated_by", oldPat),
+    );
+  }
+}
+
 // Renames a nickname while preserving all linked activity (level, badges,
-// posts, comments, likes given/received, reviews). Because authorship is stored
-// as free text, we migrate every occurrence of the old name to the new one.
+// posts, comments, likes given/received, reviews, votes, activity records).
 export const renameNickname = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
@@ -3821,14 +3962,6 @@ export const renameNickname = createServerFn({ method: "POST" })
     const newName = data.newUsername.trim();
     const newKey = normalizeName(newName);
 
-    // Validate the new name.
-    if (!newName) {
-      throw new Error("새 닉네임을 입력해주세요.");
-    }
-    if (newKey === "익명" || newKey === "운영진") {
-      throw new Error("사용할 수 없는 닉네임입니다.");
-    }
-
     // Authenticate as the current owner.
     const { data: prof, error: pErr } = await db
       .from("user_profiles")
@@ -3843,86 +3976,56 @@ export const renameNickname = createServerFn({ method: "POST" })
       throw new Error("비밀번호가 일치하지 않습니다.");
     }
 
-    const keyChanged = newKey !== oldKey;
-
-    // Collision check (skip when only the display casing/spacing changes).
-    if (keyChanged) {
-      const { data: existing, error: exErr } = await db
-        .from("user_profiles")
-        .select("id")
-        .eq("username_key", newKey)
-        .maybeSingle();
-      if (exErr) throw new Error(exErr.message);
-      if (existing) {
-        throw new Error("이미 사용 중인 닉네임이에요. 다른 닉네임을 입력해주세요.");
-      }
-
-      const newPat = escapeIlike(newName);
-      const { data: takenPost, error: tpErr } = await db
-        .from("posts")
-        .select("id")
-        .ilike("author", newPat)
-        .limit(1);
-      if (tpErr) throw new Error(tpErr.message);
-      const { data: takenComment, error: tcErr } = await db
-        .from("comments")
-        .select("id")
-        .ilike("author", newPat)
-        .limit(1);
-      if (tcErr) throw new Error(tcErr.message);
-      if ((takenPost?.length ?? 0) > 0 || (takenComment?.length ?? 0) > 0) {
-        throw new Error("이미 다른 사용자가 사용 중인 닉네임이에요. 다른 닉네임을 입력해주세요.");
-      }
+    if (newKey !== oldKey) {
+      await assertNicknameAvailable(db, newName, newKey);
+    } else if (!newName) {
+      throw new Error("새 닉네임을 입력해주세요.");
     }
 
-    const oldPat = escapeIlike(oldName);
-
-    // Migrate the profile (keeps level, password, recovery Q&A intact).
-    const { error: upProfErr } = await db
-      .from("user_profiles")
-      .update({ username: newName, username_key: newKey })
-      .eq("username_key", oldKey);
-    if (upProfErr) throw new Error(upProfErr.message);
-
-    // Migrate badges.
-    const { error: awErr } = await db
-      .from("user_awards")
-      .update({ username: newName, username_key: newKey })
-      .eq("username_key", oldKey);
-    if (awErr) throw new Error(awErr.message);
-
-    // Migrate authored posts & comments (case-insensitive exact match).
-    const { error: postErr } = await db
-      .from("posts")
-      .update({ author: newName })
-      .ilike("author", oldPat);
-    if (postErr) throw new Error(postErr.message);
-
-    const { error: commentErr } = await db
-      .from("comments")
-      .update({ author: newName })
-      .ilike("author", oldPat);
-    if (commentErr) throw new Error(commentErr.message);
-
-    // Migrate likes given (display name + normalized key).
-    const { error: likeErr } = await db
-      .from("post_likes")
-      .update({ liker_name: newName, liker_key: newKey })
-      .eq("liker_key", oldKey);
-    if (likeErr) throw new Error(likeErr.message);
-
-    // Migrate reviews. Unique (post_id, reviewer_name) could rarely collide;
-    // update what we can and ignore conflicts so the rename still succeeds.
-    const { error: reviewErr } = await db
-      .from("reviews")
-      .update({ reviewer_name: newName })
-      .ilike("reviewer_name", oldPat);
-    if (reviewErr && !/duplicate|unique/i.test(reviewErr.message)) {
-      throw new Error(reviewErr.message);
-    }
-
+    await migrateNickname(db, oldName, newName);
     return { ok: true, username: newName };
   });
+
+// Admin: rename a nickname on the user's behalf. Uses the profile-admin
+// password instead of the owner's nickname password.
+export const adminRenameNickname = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        newUsername: z.string().trim().min(1).max(100),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(
+    async ({ data }): Promise<{ ok: boolean; oldUsername: string; username: string }> => {
+      requireProfileAdmin(data.adminPassword);
+      const db = await getAdmin();
+
+      const { data: prof, error: pErr } = await db
+        .from("user_profiles")
+        .select("username, username_key")
+        .eq("id", data.id)
+        .maybeSingle();
+      if (pErr) throw new Error(pErr.message);
+      if (!prof) throw new Error("프로필을 찾을 수 없습니다.");
+
+      const oldName = String(prof.username ?? "").trim();
+      const oldKey = String(prof.username_key ?? normalizeName(oldName));
+      const newName = data.newUsername.trim();
+      const newKey = normalizeName(newName);
+
+      if (!newName) throw new Error("새 닉네임을 입력해주세요.");
+      if (newKey !== oldKey) {
+        await assertNicknameAvailable(db, newName, newKey);
+      }
+
+      await migrateNickname(db, oldName, newName);
+      return { ok: true, oldUsername: oldName, username: newName };
+    },
+  );
+
 
 // ----------------------------- Hackathon reviews -----------------------------
 // Participants who posted in any hackathon-tab board can leave a short "review"
