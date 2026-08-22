@@ -7,10 +7,12 @@ import { cn } from "@/lib/utils";
 interface TemplateNoticeProps {
   label: string;
   text: string;
+  /** 복사되지 않는 참고 팁 */
+  tip?: string;
   className?: string;
 }
 
-export function TemplateNotice({ label, text, className }: TemplateNoticeProps) {
+export function TemplateNotice({ label, text, tip, className }: TemplateNoticeProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
