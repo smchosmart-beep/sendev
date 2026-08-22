@@ -336,8 +336,10 @@ export interface PublicReadmeBlock {
 function rowsOfKind(team: RecordOverviewTeam, kind: RecordRowKindName) {
   return team.rows
     .filter((r) => r.kind === kind)
+    .filter((r) => !isBlankRow(r))
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
+
 
 function countFilled(final: RecordOverviewFinal | null, keys: RecordFinalKey[]): number {
   if (!final) return 0;
