@@ -1,6 +1,6 @@
 # 02 문제 정의 과정 탭 5개 구조 후속 개선 (수정본)
 
-02 문제 정의 과정을 5탭으로 개편한 구현에서 후속 검토로 발견된 8가지 개선점을 반영한다.
+02 문제 정의 과정을 5탭으로 개편한 구현에서 후속 검토로 발견된 10가지 개선점을 반영한다.
 
 ## 개선 항목
 
@@ -39,8 +39,9 @@
 `RowItem`의 저장 버튼은 `id: row.id`로 전달한다. draft 행의 `id`는 `null`이므로 신규 저장이 되고, 쿼리 갱신 후 서버에서 실제 `id`를 가진 행이 `filteredRows`에 추가된다. 이때 로컬 draft가 그대로 남아 있으면 같은 내용이 두 줄로 보인다.
 
 - `rowMutation`은 `RecordEditor.tsx` 전체에서 단 하나이므로, 모든 `RowSection`이 같은 `isPending` 상태를 공유한다. `isPending`이 false로 돌아오는 시점에 draft를 제거하면, **다른 섹션에서 저장이 일어날 때도** 현재 탭의 미저장 draft가 사라져 입력 중이던 내용이 유실될 수 있다. 따라서 전역 `isPending` prop 방식은 사용하지 않는다.
-- 수정: `RecordEditor.tsx` 내부의 `RowSection` 및 `RowItem` 함수를 수정한다. `RowSection`의 `onSave` prop 타입을 `Promise<void>`를 반환하는 비동기 콜백으로 변경하고, `RecordEditor.tsx`에서 `onSave`를 래퍼 함수로 정의하여 전달한다. 이 래퍼는 `postId`를 클로저로 캡처하여 `RowSection`/`RowItem`으로는 드릴링하지 않는다. 예: `async (vars) => { await rowMutation.mutateAsync(vars); await queryClient.invalidateQueries({ queryKey: ["record", postId], refetchType: "active" }); }`. `RowItem`이 실제로 저장 버튼을 가지고 있으므로, `RowItem`에 `draftId`와 `onRemoveDraft(draftId: string) => void` prop을 추가하고, 저장 버튼 클릭 시 `try { await onSave({ ...row, sectionKey }); onRemoveDraft(draftId); } catch { ... }` 형태로 호출한다. 성공 시에만 해당 `draftId`를 가진 로컬 draft를 배열에서 제거하고, 실패 시 draft는 그대로 두어 재시도할 수 있게 한다.
-- `onSave`의 반환형 변경은 `RecordEditor.tsx` 내부의 `rowSectionProps`, `StanceSection`/`StanceItem` 등 연관 호출부에 모두 영향을 미친다. 모든 `onSave` 호출부의 타입을 `Promise<void>`로 통일하고, `RowItem` 내부의 저장 호출은 `try/catch`로 감싸 실패 시 draft를 유지한다. `StanceItem`의 `save` 함수는 정의 시점에 `onSave({...}).catch(() => {})` 형태로 감싸, 호출부마다 `.catch()`를 붙이지 않아도 unhandled rejection이 발생하지 않도록 공통 처리한다.
+- 수정: `RecordEditor.tsx` 내부에 `saveRow`라는 단일 래퍼 함수를 정의한다. 예: `const saveRow = async (vars: RowMutationVariables) => { await rowMutation.mutateAsync(vars); await queryClient.invalidateQueries({ queryKey: ["record", postId], refetchType: "active" }); }`. 이 래퍼는 `postId`를 클로저로 캡처하므로 `RowSection`/`RowItem`/`StanceSection`으로 `postId`를 드릴링할 필요가 없다. `rowSectionProps.onSave`(482)와 `StanceSection`에 전달하는 `onSave`(680) 모두 이 `saveRow` 래퍼를 사용하도록 통일한다. Stance 자동 저장이나 다른 섹션의 저장도 동일한 래퍼를 거치므로, `rowMutation.onSuccess`의 `invalidateQueries`를 제거해도 저장 후 쿼리가 갱신된다.
+- `RowSection`의 `onSave` prop 타입을 `Promise<void>`를 반환하는 비동기 콜백으로 변경한다. `RowItem`에 `draftId`와 `onRemoveDraft(draftId: string) => void` prop을 추가하고, 저장 버튼 클릭 시 `try { await onSave({ ...row, sectionKey }); onRemoveDraft(draftId); } catch { ... }` 형태로 호출한다. 성공 시에만 해당 `draftId`를 가진 로컬 draft를 배열에서 제거하고, 실패 시 draft는 그대로 두어 재시도할 수 있게 한다.
+- `StanceItem`의 `save` 함수는 정의 시점에 `onSave({...}).catch(() => {})` 형태로 감싸, 호출부마다 `.catch()`를 붙이지 않아도 unhandled rejection이 발생하지 않도록 공통 처리한다. 예: `const save = React.useCallback(() => onSave({ id: row.id, postId: row.post_id, sectionKey: "stance", ... }).catch(() => {}), [...])`.
 - React 상태에서 draft와 서버 행을 분리해 관리하며, 저장된 draft는 성공 콜백에서만 로컬 배열에서 필터링한다.
 
 ### 6. 로컬 draft를 subtype(탭)별로 격리
@@ -66,15 +67,14 @@
 - `catch` 블록에서는 토스트를 띄우지 않고 draft만 유지하여 재시도를 가능하게 한다. 실제 에러 토스트는 `rowMutation`의 `onError` 콜백에서 한 곳에서만 담당한다.
 - `queryClient.invalidateQueries` 범위는 해당 활동 기록(`postId`)과 관련된 쿼리 키(`["record", postId]`)로 한정하여, 전체 쿼리 무효화로 인한 불필요한 지연을 최소화한다.
 
-## 영향 범위
+### 9. 저장 중 시각적 피드백 및 중복 클릭 방지
 
-- `src/lib/record-readme.ts`: subtype 사용 kind(process, ai_use) 그룹 정렬 + process/ai_use 정의 순서 + 폴백
-- `src/lib/record-schema.ts`: `AI_USE_TYPES` 배열 순서를 현재 README/사례집 출력 순서에 맞춰 재배열
-- `src/components/record/CasebookDocument.tsx`: 동일 정렬 로직 확인·수정
-- `src/components/RecordEditor.tsx` (내부 `RowSection`/`RowItem` 함수 수정): draft/추가 버튼 조건, 임시 draft 배열 관리, draft key, 저장 후 제거, `onSave` 비동기 콜백 전달(`postId` 클로저 캡처), `rowMutation`의 `onSuccess` 무효화 제거, 연관 호출부 통일, `StanceItem`의 `save` 함수 공통 rejection 처리, subtype별 draft 필터링, 빈 상태 문구 조건, 토스트 중복 방지, draft 저장 전 상태 표시
-- 별도 신규 파일(`RowSection.tsx`, `RowItem.tsx`)은 만들지 않는다.
+`RowItem`의 저장 버튼은 `disabled={!dirty || uploading}`만 검사하고 있어, 저장이 진행 중인지 사용자에게 명확히 표시하지 않는다. `saveRow` 래퍼가 `mutateAsync`와 `invalidateQueries`를 모두 await하므로, 저장 버튼 클릭 후 수백 ms 동안 버튼이 활성 상태로 남아 있으면 사용자가 실수로 두 번 클릭하여 같은 draft가 중복 저장될 수 있다.
 
-### 9. draft 취소와 실제 삭제 UI를 명확히 구분하고 저장 전 상태 시각화
+- 수정: `RowItem` 컴포넌트에 로컬 `saving` 상태(`React.useState(false)`)를 추가한다. 저장 버튼 클릭 시 `setSaving(true)`로 전환하고, `await onSave({...})`가 완료되거나 `catch` 블록이 끝난 후 `finally`에서 `setSaving(false)`로 복원한다. 버튼의 `disabled` 조건은 `!dirty || uploading || saving`으로 확장하여 저장 중에는 클릭 및 제출을 차단한다. 저장 중일 때 버튼 라벨은 "저장 중..." 등으로 변경하거나 스피너를 표시하여 사용자가 진행 상태를 인지할 수 있게 한다.
+- 자동 저장(stance) 경로는 `saving` 상태를 사용하지 않으며, 기존 자동 저장 방식을 그대로 유지한다. `saveRow` 래퍼를 통과하므로 자동 저장 후에도 활성 쿼리가 갱신된다.
+
+### 10. draft 취소와 실제 삭제 UI를 명확히 구분하고 저장 전 상태 시각화
 
 `dirty` 계산으로 인해 draft가 비어 있으면 저장 버튼이 비활성화되며, 이때 새로고침하면 로컬에만 존재하는 draft가 사라진다. 사용자가 "추가했는데 사라졌다"고 오해할 수 있으므로, draft는 저장 전 임시 상태임을 명확히 표시해야 한다.
 
