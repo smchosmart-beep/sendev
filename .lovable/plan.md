@@ -12,6 +12,8 @@
 ## 기존 데이터 처리
 이미 저장된 콘티 텍스트는 **삭제하지 않고 그대로 보관**되며, 화면과 출력물에서만 보이지 않습니다. 데이터 마이그레이션은 하지 않습니다(되돌리기 쉬움).
 
+다만 기존에 **콘티 내용만 입력하고 유튜브 링크는 비워 둔 행**은 출력물에 "제목만 있는 빈 항목"으로 남을 수 있으므로, 출력 단계에서 이를 건너뛰는 필터를 추가합니다.
+
 ## 부작용 점검
 - 다른 탭(1~4)과 다른 단계 양식은 건드리지 않습니다.
 - 작성 현황(빈 행 판정)은 링크 칸 값으로 계속 판정되며, 기존에 콘티만 입력된 행도 비어 있지 않은 것으로 유지됩니다.
@@ -20,4 +22,7 @@
 ## 기술 메모
 - `src/lib/record-schema.ts`의 `PROCESS_SUBTYPE_TEMPLATES["5. 종이 프로토타입 영상 콘티"]`: `cols[0]`을 빈 문자열로, `placeholders[0]`을 빈 문자열로, `longCols`를 `[]`로, `displayOrder`를 `[3]`으로 변경.
 - `PROCESS_TEMPLATE_NOTICES["5. 종이 프로토타입 영상 콘티"]`는 유지(인덱스 0 키는 파일 칸이 아니라 행 상단 안내로 렌더링됨).
+- 출력 단계(README, 사례집)에서 "해당 양식의 표시(displayOrder) 열 값이 전부 비어 있으면 행을 skip"하는 필터를 추가합니다.
+  - `src/lib/record-readme.ts`: `rows` 필터 시 `displayOrder` 기준 빈 값 검사.
+  - `src/components/record/CasebookDocument.tsx`: `rowsOf` 필터 시 동일한 로직 적용.
 - `src/routes/_main.guide.tsx` 문구 1곳 수정.
