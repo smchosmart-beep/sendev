@@ -2815,19 +2815,28 @@ async function getAwardsByKey(
 }
 
 // Admin: full list of profile mappings with computed levels + activity.
+// Also surfaces "unregistered" nicknames — names that still appear in activity
+// (posts, comments, votes) but have no profile row, e.g. leftovers from a
+// partially applied rename. The extra votes query runs on this admin screen only.
 export const listUserProfiles = createServerFn({ method: "GET" }).handler(
-  async () => {
+  async (): Promise<UserProfileDTO[]> => {
     const db = await getAdmin();
-    const [profilesRes, counts, awardsByKey] = await Promise.all([
+    const [profilesRes, counts, awardsByKey, votesRes] = await Promise.all([
       db
         .from("user_profiles")
         .select("id, username, username_key")
         .order("username", { ascending: true }),
       getActivityCounts(db),
       getAwardsByKey(db),
+      db.from("votes").select("voter_key, voter_name"),
     ]);
     if (profilesRes.error) throw new Error(profilesRes.error.message);
-    return (profilesRes.data ?? []).map((r: any): UserProfileDTO => {
+    if (votesRes.error) throw new Error(votesRes.error.message);
+
+    const registeredKeys = new Set<string>(
+      (profilesRes.data ?? []).map((r: any) => String(r.username_key)),
+    );
+    const rows = (profilesRes.data ?? []).map((r: any): UserProfileDTO => {
       const c = counts.get(r.username_key) ?? { postCount: 0, commentCount: 0 };
       return {
         id: r.id,
@@ -2837,8 +2846,35 @@ export const listUserProfiles = createServerFn({ method: "GET" }).handler(
         commentCount: c.commentCount,
         points: c.postCount * 5 + c.commentCount * 1,
         level: levelFromActivity(c.postCount, c.commentCount),
+        registered: true,
       };
     });
+
+    // Names that exist only in activity.
+    const orphans = new Map<string, string>();
+    for (const [key, c] of counts) {
+      if (!registeredKeys.has(key)) orphans.set(key, c.name || key);
+    }
+    for (const v of votesRes.data ?? []) {
+      const key = String(v.voter_key ?? "");
+      if (!key || registeredKeys.has(key) || orphans.has(key)) continue;
+      orphans.set(key, String(v.voter_name ?? key));
+    }
+    for (const [key, name] of orphans) {
+      const c = counts.get(key) ?? { postCount: 0, commentCount: 0 };
+      rows.push({
+        id: `unregistered:${key}`,
+        username: name,
+        awards: awardsByKey.get(key) ?? [],
+        postCount: c.postCount,
+        commentCount: c.commentCount,
+        points: c.postCount * 5 + c.commentCount * 1,
+        level: levelFromActivity(c.postCount, c.commentCount),
+        registered: false,
+      });
+    }
+    rows.sort((a, b) => a.username.localeCompare(b.username, "ko"));
+    return rows;
   },
 );
 
