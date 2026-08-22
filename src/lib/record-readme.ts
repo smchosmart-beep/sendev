@@ -201,8 +201,10 @@ export function buildRecordReadme(team: RecordOverviewTeam): string {
     const def = ROW_SECTION_DEFS[section.kind];
     const rows = team.rows
       .filter((r) => r.kind === section.kind)
+      .filter((r) => !isBlankRow(r))
       .sort((a, b) => a.sortOrder - b.sortOrder);
     if (rows.length === 0) continue;
+
     lines.push(`## ${section.title}`);
     lines.push("");
     rows.forEach((r, idx) => {
