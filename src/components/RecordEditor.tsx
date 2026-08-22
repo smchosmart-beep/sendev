@@ -1234,7 +1234,7 @@ function RowItem({
   labels,
   longs,
   placeholders,
-  subtypes,
+  indexLabel,
   canEdit,
   authorEnabled,
   linkCol,
@@ -1246,7 +1246,8 @@ function RowItem({
   labels: string[];
   longs: number[];
   placeholders?: string[];
-  subtypes?: string[];
+  /** 여러 건 작성 탭에서 "인터뷰 1"처럼 붙이는 머리말 */
+  indexLabel?: string;
   canEdit: boolean;
   authorEnabled?: boolean;
   linkCol?: number;
