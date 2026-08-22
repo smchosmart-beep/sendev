@@ -22,7 +22,7 @@
 
 현재 "+ ... 추가" 버튼은 `onSave(emptyRowVars(...))`를 즉시 호출하여 DB에 빈 행을 생성한다. 이 동작은 `RowSection`을 사용하는 모든 행 섹션(핵심 기능, 사용 흐름, 한계, 계획, 제작자, AI 활용, process 등)에 공통으로 적용된다. `isBlankRow`로 출력은 걸러지지만 DB에 불필요한 빈 행이 쌓인다.
 
-- 수정: 추가 버튼은 클릭한 섹션의 로컬 상태에만 임시 draft 행을 추가하고, 사용자가 내용을 입력한 뒤 실제 저장(`onSave`)이 일어날 때만 DB에 기록한다. 삭제(취소) 시 DB에 저장되지 않은 draft는 로컬에서만 제거된다.
+- 수정: 추가 버튼은 클릭한 섹션의 로컬 상태에만 임시 draft를 추가하고, 사용자가 내용을 입력한 뒤 실제 저장(`onSave`)이 일어날 때만 DB에 기록한다. 삭제(취소) 시 DB에 저장되지 않은 draft는 로컬에서만 제거된다. 로컬 draft 배열의 각 항목은 `{ draftId: string; row: DraftRow }` 형태로 저장하며, `DraftRow`의 `id`는 `null`로 유지한다.
 - 로컬 draft 관리 규칙을 통일: `multi`/`showDraft`가 true인 탭(예: 인터뷰 기록)은 기록이 0건이면 자동으로 1개의 draft 양식을 노출하고, 그 이상 추가는 "+" 버튼으로만 draft를 로컬에 추가한다. `multi`가 아닌 다른 행 섹션에서도 추가 버튼은 동일하게 로컬 draft만 추가한다. 저장된 실제 행은 서버 응답 후 쿼리 갱신으로 다시 들어오므로, 저장 성공 시 해당 로컬 draft는 제거한다.
 - draft 생성 시 `sortOrder` 충돌 방지: 여러 draft가 동시에 추가되면 `rows.length` 기준으로 같은 `sortOrder`를 가질 수 있으므로, `rows.length + draftIndex` 형태로 고유 값을 부여한다.
 
@@ -30,16 +30,16 @@
 
 `showDraft`로 표시하는 임시 draft는 `key={\`draft-${selectedSubtype}\`}`를 사용하고 있다. 같은 탭에서 "+" 버튼으로 여러 draft를 추가하면 key가 충돌하여 React 리스트 오류가 발생할 수 있다. 또한 draft는 `id`가 `null`이라 기존 `RowItem`의 삭제 버튼 조건(`row.id` 존재)에 걸려 취소할 방법이 없다.
 
-- 수정: draft를 배열로 관리하고 각 draft에 고유 ID(`draft-<sectionKey>-<index>` 또는 `crypto.randomUUID`)를 부여하여 key 충돌을 방지한다. 저장되지 않고 제거된 draft는 배열에서 필터링한다.
-- `RowItem`에 `onCancel?: (draftId: string) => void` prop(또는 `removable` 플래그)을 추가하여 `id`가 없는 draft에도 삭제(취소) 아이콘을 노출하고, 클릭 시 서버 호출 없이 로컬 draft 배열에서만 제거한다. 기존 실제 행(`id != null`)의 삭제는 기존 `onDelete` 경로를 그대로 사용한다.
+- 수정: 로컬 상태에서 draft를 별도 배열로 관리하며, 각 항목은 `{ draftId: string; row: DraftRow }` 형태로 저장한다. `DraftRow`의 `id`는 계속 `null`로 유지하고, `key`는 `draftId`로 사용한다. 각 draft에 고유 ID(`draft-<sectionKey>-<index>` 또는 `crypto.randomUUID`)를 부여하여 key 충돌을 방지한다. 저장되지 않고 제거된 draft는 배열에서 필터링한다.
+- `RowItem`에 `onCancel?: (draftId: string) => void` prop을 추가하여 `row.id`가 없는 draft에도 삭제(취소) 아이콘을 노출하고, 클릭 시 서버 호출 없이 로컬 draft 배열에서만 제거한다. `RowItem`은 `row.id == null`이면 `onDelete`를 호출하지 않고 `onCancel`을 호출하도록 조건을 변경한다. 기존 실제 행(`id != null`)의 삭제는 기존 `onDelete` 경로를 그대로 사용한다.
 
 ### 5. 임시 draft 저장 후 실제 행과 중복 표시되지 않게 (요청별 추적)
 
 `RowItem`의 저장 버튼은 `id: row.id`로 전달한다. draft 행의 `id`는 `null`이므로 신규 저장이 되고, 쿼리 갱신 후 서버에서 실제 `id`를 가진 행이 `filteredRows`에 추가된다. 이때 로컬 draft가 그대로 남아 있으면 같은 내용이 두 줄로 보인다.
 
 - `rowMutation`은 `RecordEditor.tsx` 전체에서 단 하나이므로, 모든 `RowSection`이 같은 `isPending` 상태를 공유한다. `isPending`이 false로 돌아오는 시점에 draft를 제거하면, **다른 섹션에서 저장이 일어날 때도** 현재 탭의 미저장 draft가 사라져 입력 중이던 내용이 유실될 수 있다. 따라서 전역 `isPending` prop 방식은 사용하지 않는다.
-- 수정: `RecordEditor.tsx` 내부의 `RowSection` 및 `RowItem` 함수를 수정한다. `RowSection`의 `onSave` prop 타입을 `Promise<void>`를 반환하는 비동기 콜백으로 변경하고, `RecordEditor.tsx`에서 `rowMutation.mutateAsync`를 전달한다. `RowSection`은 저장 버튼 클릭 시 해당 draft의 `draftId`를 기억한 채 `await onSave({ ...draft, sectionKey })`를 호출하고, `Promise`가 성공적으로 resolve되면 로컬 draft 배열에서 정확히 그 `draftId`만 제거한다. 실패 시 draft는 그대로 두어 재시도할 수 있게 한다.
-- `onSave`의 반환형 변경은 `RecordEditor.tsx` 내부의 `rowSectionProps`, `StanceSection`/`StanceItem` 등 연관 호출부에 모두 영향을 미친다. 모든 `onSave` 호출부의 타입을 `Promise<void>`로 통일하고, `RowSection` 내부의 저장 호출은 `try/catch`로 감싸 실패 시 draft를 유지한다. `StanceItem`처럼 draft가 없는 곳은 `void onSave(...)` 형태로 호출하여 rejection을 삼키지 않도록 처리한다.
+- 수정: `RecordEditor.tsx` 내부의 `RowSection` 및 `RowItem` 함수를 수정한다. `RowSection`의 `onSave` prop 타입을 `Promise<void>`를 반환하는 비동기 콜백으로 변경하고, `RecordEditor.tsx`에서 `rowMutation.mutateAsync`를 전달한다. `RowItem`이 실제로 저장 버튼을 가지고 있으므로, `RowItem`에 `draftId`와 `onRemoveDraft(draftId: string) => void` prop을 추가하고, 저장 버튼 클릭 시 `try { await onSave({ ...row, sectionKey }); onRemoveDraft(draftId); } catch { ... }` 형태로 호출한다. 성공 시에만 해당 `draftId`를 가진 로컬 draft를 배열에서 제거하고, 실패 시 draft는 그대로 두어 재시도할 수 있게 한다.
+- `onSave`의 반환형 변경은 `RecordEditor.tsx` 내부의 `rowSectionProps`, `StanceSection`/`StanceItem` 등 연관 호출부에 모두 영향을 미친다. 모든 `onSave` 호출부의 타입을 `Promise<void>`로 통일하고, `RowItem` 내부의 저장 호출은 `try/catch`로 감싸 실패 시 draft를 유지한다. `StanceItem`처럼 draft가 없는 곳은 `void onSave(...)` 형태로 호출하여 rejection을 삼키지 않도록 처리한다.
 - React 상태에서 draft와 서버 행을 분리해 관리하며, 저장된 draft는 성공 콜백에서만 로컬 배열에서 필터링한다.
 
 ## 영향 범위
