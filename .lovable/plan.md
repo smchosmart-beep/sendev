@@ -13,6 +13,7 @@
 - `AI_USE_TYPES`의 현재 배열 순서(`["서비스 기능", "개발 과정"]`)는 현행을 유지한다. `ai_use` 실제 데이터가 없어 재배열로 얻는 출력 순서 이득이 없고, 드롭다운 순서 변경은 기존 사용 흐름에 불필요한 변화만 가져오기 때문이다. 정렬 규칙만 "정의 순서 + `idx < 0 ? 999`"로 통일한다.
 - `src/lib/record-readme.ts`의 `rowsOfKind` 함수는 README 블록 status(`empty/partial/done`) 판정과 `feature`·`flow`·`limit`·`plan`·`maker`·`stance`·`privacy` 등 subtype이 없는 kind 본문 렌더링에 함께 쓰인다. 이 kind들에는 `subtype`이 없으므로 현행 그대로 `sortOrder` 단독 정렬을 유지한다.
 - `src/components/record/CasebookDocument.tsx`의 `rowsOf` 함수에서만 `process`/`ai_use`에 subtype 그룹 인덱스를 1순위로 적용하고, `stance`/`devlog`/`decision` 등 나머지 kind는 `sortOrder` 단독 정렬을 유지한다. 양쪽 출력 로직 모두 `idx < 0 ? 999 : idx` 폴백 값을 동일하게 적용하여, README 출력과 사례집 출력의 순서가 일치하도록 맞춘다.
+- 에디터 화면의 목록 정렬(`RecordEditor.tsx:476`의 `rowsOf`, `sortOrder` 단독)은 현행을 유지한다. `ai_use`는 `filterBySubtype`가 false여서 한 목록에 종류가 섞여 보이므로, 화면 순서와 출력물(그룹화) 순서가 달라지는 것은 의도된 차이로 둔다. 편집 중 행 위치가 갑자기 바뀌지 않게 하는 편이 안전하다.
 
 
 ### 2. `multi` 탭에서 빈 양식과 추가 버튼이 동시에 보이지 않게
