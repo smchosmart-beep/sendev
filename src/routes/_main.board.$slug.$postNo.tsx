@@ -333,7 +333,7 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
   const isVote = post.type === "vote";
   // 투표 글은 제목 없이 본문만 작성하며, 종료 전까지는 관리자 포함 모두 작성자를 숨긴다.
   const postCategory = allCategories.find((c) => c.id === post.categoryId);
-  const hideVoteAuthor = isVote && postCategory?.voteStatus !== "closed";
+  const hideVoteAuthor = isVote && !postCategory?.voteRevealed;
   const embedUrl = isLink ? getEmbedUrl(post.deployUrl) : null;
 
   return (

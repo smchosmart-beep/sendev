@@ -185,6 +185,7 @@ export interface CategoryDTO {
   voteName: string;
   recordName: string;
   voteStatus: VoteStatus;
+  voteRevealed: boolean;
   voteMaxChoices: number;
   tabGroup: TabGroup;
   evalOpen: boolean;
@@ -290,7 +291,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const { data, error } = await db
       .from("categories")
       .select(
-        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, enable_problem, enable_vote, general_name, project_name, link_name, problem_name, vote_name, enable_record, record_name, vote_status, vote_max_choices, tab_group, eval_open, eval_seed, review_allowlist_only, hidden",
+        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, enable_problem, enable_vote, general_name, project_name, link_name, problem_name, vote_name, enable_record, record_name, vote_status, vote_revealed, vote_max_choices, tab_group, eval_open, eval_seed, review_allowlist_only, hidden",
       )
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
@@ -317,6 +318,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       voteName: c.vote_name ?? "투표",
       recordName: c.record_name ?? "활동기록",
       voteStatus: (c.vote_status ?? "idle") as VoteStatus,
+      voteRevealed: !!c.vote_revealed,
       voteMaxChoices: Number(c.vote_max_choices ?? 1),
       tabGroup: (c.tab_group ?? "hackathon") as TabGroup,
       evalOpen: !!c.eval_open,
@@ -1055,7 +1057,7 @@ export const searchPosts = createServerFn({ method: "GET" })
 
     let query = db
       .from("posts")
-      .select(`${POST_COLUMNS}, categories!inner(slug, name, vote_status)`)
+      .select(`${POST_COLUMNS}, categories!inner(slug, name, vote_status, vote_revealed)`)
       .order("created_at", { ascending: false })
       .limit(100);
 
@@ -1090,8 +1092,7 @@ export const searchPosts = createServerFn({ method: "GET" })
     return posts.map((p: any) => {
       const mapped = mapPost(p, counts[String(p.id)] ?? 0);
       // 투표가 종료되지 않은 게시판의 후보 글은 작성자를 마스킹한다.
-      const maskAuthor =
-        p.type === "vote" && (p.categories?.vote_status ?? "idle") !== "closed";
+      const maskAuthor = p.type === "vote" && !p.categories?.vote_revealed;
       return {
         ...mapped,
         author: maskAuthor ? "" : mapped.author,
@@ -4116,6 +4117,7 @@ export const deleteHackathonReview = createServerFn({ method: "POST" })
 
 export interface VoteStateDTO {
   status: VoteStatus;
+  revealed: boolean;
   maxChoices: number;
   seats: number;
   round: number;
@@ -4134,7 +4136,7 @@ export interface VoteResultsDTO {
 }
 
 const VOTE_COLUMNS =
-  "vote_status, vote_max_choices, vote_seats, vote_round, vote_runoff_ids, vote_locked_ids, vote_round_history";
+  "vote_status, vote_revealed, vote_max_choices, vote_seats, vote_round, vote_runoff_ids, vote_locked_ids, vote_round_history";
 
 function idList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -4143,6 +4145,7 @@ function idList(value: unknown): string[] {
 
 interface VoteConfig {
   status: VoteStatus;
+  revealed: boolean;
   maxChoices: number;
   seats: number;
   round: number;
@@ -4161,6 +4164,7 @@ async function loadVoteConfig(db: any, categoryId: string): Promise<VoteConfig> 
   const r: any = row ?? {};
   return {
     status: (r.vote_status ?? "idle") as VoteStatus,
+    revealed: !!r.vote_revealed,
     maxChoices: Number(r.vote_max_choices ?? 1),
     seats: Number(r.vote_seats ?? 1),
     round: Math.max(1, Number(r.vote_round ?? 1)),
@@ -4187,7 +4191,10 @@ export const setVoteStatus = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     requireAdmin(data.adminPassword);
     const db = await getAdmin();
-    const patch: Record<string, unknown> = { vote_status: data.status };
+    const patch: Record<string, unknown> = {
+      vote_status: data.status,
+      vote_revealed: false,
+    };
     if (data.status === "open") {
       // 새 투표를 여는 동작이므로 라운드 상태를 1라운드로 되돌린다.
       patch.vote_max_choices = data.maxChoices;
@@ -4232,6 +4239,7 @@ export const resetVotes = createServerFn({ method: "POST" })
     const { error: cErr } = await db
       .from("categories")
       .update({
+        vote_revealed: false,
         vote_round: 1,
         vote_runoff_ids: [],
         vote_locked_ids: [],
@@ -4253,12 +4261,40 @@ export const getVoteState = createServerFn({ method: "GET" })
     const cfg = await loadVoteConfig(db, data.categoryId);
     return {
       status: cfg.status,
+      revealed: cfg.revealed,
       maxChoices: cfg.maxChoices,
       seats: cfg.seats,
       round: cfg.round,
       runoffIds: cfg.runoffIds,
       lockedIds: cfg.lockedIds,
     };
+  });
+
+// 관리자 전용: 최종 결과 확정 시 후보 작성자 닉네임을 공개/비공개로 전환한다.
+// 결선까지 모두 끝나기 전에는 관리자가 이 값을 켜지 않는 한 계속 익명이다.
+export const setVoteRevealed = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        categoryId: z.string().uuid(),
+        revealed: z.boolean(),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
+    const db = await getAdmin();
+    const cfg = await loadVoteConfig(db, data.categoryId);
+    if (data.revealed && cfg.status !== "closed") {
+      throw new Error("투표를 종료한 뒤에 공개할 수 있어요.");
+    }
+    const { error } = await db
+      .from("categories")
+      .update({ vote_revealed: data.revealed })
+      .eq("id", data.categoryId);
+    if (error) throw new Error(error.message);
+    return { ok: true, revealed: data.revealed };
   });
 
 // 내가 고른 게시글 id 목록(현재 라운드 기준). 본인 것만 돌려주므로
@@ -4585,6 +4621,7 @@ export const startRunoff = createServerFn({ method: "POST" })
       .from("categories")
       .update({
         vote_status: "open",
+        vote_revealed: false,
         vote_round: cfg.round + 1,
         vote_max_choices: wanted,
         vote_runoff_ids: preview.tiedIds,
@@ -4622,6 +4659,7 @@ export const cancelRunoff = createServerFn({ method: "POST" })
       .from("categories")
       .update({
         vote_status: "closed",
+        vote_revealed: false,
         vote_round: Math.max(1, cfg.round - 1),
         vote_max_choices: Number(prev.maxChoices ?? cfg.maxChoices),
         vote_runoff_ids: idList(prev.runoffIds),

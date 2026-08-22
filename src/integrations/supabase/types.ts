@@ -78,6 +78,7 @@ export type Database = {
           vote_locked_ids: Json
           vote_max_choices: number
           vote_name: string
+          vote_revealed: boolean
           vote_round: number
           vote_round_history: Json
           vote_runoff_ids: Json
@@ -120,6 +121,7 @@ export type Database = {
           vote_locked_ids?: Json
           vote_max_choices?: number
           vote_name?: string
+          vote_revealed?: boolean
           vote_round?: number
           vote_round_history?: Json
           vote_runoff_ids?: Json
@@ -162,6 +164,7 @@ export type Database = {
           vote_locked_ids?: Json
           vote_max_choices?: number
           vote_name?: string
+          vote_revealed?: boolean
           vote_round?: number
           vote_round_history?: Json
           vote_runoff_ids?: Json

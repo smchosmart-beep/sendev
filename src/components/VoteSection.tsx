@@ -10,6 +10,7 @@ import {
   cancelRunoff,
   normalizeUsername,
   resetVotes,
+  setVoteRevealed,
   setVoteStatus,
   startRunoff,
   submitVotes,
@@ -106,8 +107,9 @@ export function VoteSection({
     enabled: status === "closed" || isRunoff,
   });
   const counts = results?.counts ?? {};
-  // 닉네임이 투표 판단에 영향을 주지 않도록, 종료 전까지는 관리자 포함 모두 작성자를 숨긴다.
-  const showAuthor = status === "closed";
+  // 닉네임이 투표 판단에 영향을 주지 않도록, 관리자가 최종 결과를 공개하기
+  // 전까지는(결선까지 모두 끝나기 전) 관리자 포함 모두 작성자를 숨긴다.
+  const showAuthor = !!state?.revealed;
 
   const myKey = normalizeUsername(nickname);
   const isMyPost = (author: string) =>
@@ -351,6 +353,8 @@ export function VoteSection({
           seats={seats}
           round={round}
           canStartRunoff={status === "closed" && winnerInfo.tied > 0}
+          revealed={!!state?.revealed}
+          canReveal={status === "closed" && winnerInfo.tied === 0}
           runoffCandidates={winnerInfo.tied}
           defaultRunoffChoices={Math.max(1, winnerInfo.openSeats ?? 1)}
           confirm={confirm}
@@ -361,6 +365,8 @@ export function VoteSection({
             queryClient.invalidateQueries({ queryKey: ["categories"] });
             queryClient.invalidateQueries({ queryKey: ["vote-requirement", category.id] });
             queryClient.invalidateQueries({ queryKey: ["vote-voter-status", category.id] });
+            queryClient.invalidateQueries({ queryKey: ["posts"] });
+            queryClient.invalidateQueries({ queryKey: ["post"] });
           }}
         />
       )}
@@ -497,6 +503,8 @@ function AdminVoteControls({
   seats,
   round,
   canStartRunoff,
+  revealed,
+  canReveal,
   runoffCandidates,
   defaultRunoffChoices,
   confirm,
@@ -508,12 +516,14 @@ function AdminVoteControls({
   seats: number;
   round: number;
   canStartRunoff: boolean;
+  revealed: boolean;
+  canReveal: boolean;
   runoffCandidates: number;
   defaultRunoffChoices: number;
   confirm: (opts: { title?: string; description: string; destructive?: boolean }) => Promise<boolean>;
   onDone: () => void;
 }) {
-  type Mode = "start" | "stop" | "reset" | "runoff" | "cancel-runoff";
+  type Mode = "start" | "stop" | "reset" | "runoff" | "cancel-runoff" | "reveal" | "hide";
   const [dialog, setDialog] = useState<
     | null
     | {
@@ -530,6 +540,7 @@ function AdminVoteControls({
   const reset = useServerFn(resetVotes);
   const runoff = useServerFn(startRunoff);
   const cancel = useServerFn(cancelRunoff);
+  const reveal = useServerFn(setVoteRevealed);
 
   const openDialog = (mode: Mode) => {
     setDialog({
@@ -578,6 +589,14 @@ function AdminVoteControls({
             adminPassword: dialog.password,
           },
         });
+      } else if (dialog.mode === "reveal" || dialog.mode === "hide") {
+        await reveal({
+          data: {
+            categoryId,
+            revealed: dialog.mode === "reveal",
+            adminPassword: dialog.password,
+          },
+        });
       } else {
         await cancel({ data: { categoryId, adminPassword: dialog.password } });
       }
@@ -592,7 +611,11 @@ function AdminVoteControls({
               ? "투표 기록을 초기화했어요."
               : dialog.mode === "runoff"
                 ? "결선 투표를 시작했어요."
-                : "결선을 취소했어요.",
+                : dialog.mode === "reveal"
+                  ? "최종 결과와 작성자 닉네임을 공개했어요."
+                  : dialog.mode === "hide"
+                    ? "작성자 닉네임을 다시 비공개로 바꿨어요."
+                    : "결선을 취소했어요.",
       );
     } catch (err) {
       setDialog({
@@ -612,7 +635,11 @@ function AdminVoteControls({
           ? "투표 초기화"
           : dialog?.mode === "runoff"
             ? "결선 투표 시작"
-            : "결선 취소";
+            : dialog?.mode === "reveal"
+              ? "최종 결과·닉네임 공개"
+              : dialog?.mode === "hide"
+                ? "닉네임 다시 비공개"
+                : "결선 취소";
 
   const description =
     dialog?.mode === "start"
@@ -623,7 +650,11 @@ function AdminVoteControls({
           ? "관리자 비밀번호를 입력하면 모든 투표 기록이 삭제됩니다."
           : dialog?.mode === "runoff"
             ? `동점 후보 ${runoffCandidates}팀만으로 결선 투표를 엽니다. 1인당 선택 수를 정해 주세요.`
-            : "현재 결선 라운드의 표를 지우고 직전 결과로 되돌립니다.";
+            : dialog?.mode === "reveal"
+              ? "관리자 비밀번호를 입력하면 후보 작성자 닉네임이 모두에게 공개됩니다."
+              : dialog?.mode === "hide"
+                ? "관리자 비밀번호를 입력하면 작성자 닉네임을 다시 익명으로 되돌립니다."
+                : "현재 결선 라운드의 표를 지우고 직전 결과로 되돌립니다.";
 
   return (
     <>
@@ -655,6 +686,30 @@ function AdminVoteControls({
             onClick={() => openDialog("stop")}
           >
             투표 종료
+          </Button>
+        )}
+        {status === "closed" && !revealed && canReveal && (
+          <Button
+            type="button"
+            className="rounded-xl active:scale-95"
+            onClick={() => openDialog("reveal")}
+          >
+            최종 결과·닉네임 공개
+          </Button>
+        )}
+        {status === "closed" && !revealed && !canReveal && (
+          <p className="rounded-xl bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+            동점이 남아 있어요. 결선 투표를 먼저 진행해 주세요.
+          </p>
+        )}
+        {revealed && (
+          <Button
+            type="button"
+            variant="secondary"
+            className="rounded-xl active:scale-95"
+            onClick={() => openDialog("hide")}
+          >
+            닉네임 다시 비공개
           </Button>
         )}
         {canStartRunoff && (
