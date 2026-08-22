@@ -4133,6 +4133,9 @@ export interface VoteResultsDTO {
   seats: number;
   runoffIds: string[];
   lockedIds: string[];
+  // 라운드별 득표수(종료 상태에서만 채워진다). 결선 종료 후 1차 확정 팀의
+  // 득표수를 함께 보여 주기 위해 사용한다.
+  roundCounts?: Record<number, Record<string, number>>;
 }
 
 const VOTE_COLUMNS =
