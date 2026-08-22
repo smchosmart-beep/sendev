@@ -754,6 +754,8 @@ function ProfilesAdmin() {
                       </div>
 
                     </div>
+                    {p.registered ? (
+                      <>
                     <button
                       type="button"
                       onClick={() => {
@@ -815,6 +817,24 @@ function ProfilesAdmin() {
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMergingFor((prev) => (prev === p.id ? null : p.id));
+                          setMergeValue("");
+                          setAddingFor(null);
+                          setRenamingFor(null);
+                        }}
+                        aria-label="기존 닉네임으로 합치기"
+                        title="기존 닉네임으로 합치기"
+                        className="flex h-9 items-center justify-center gap-1 rounded-xl bg-secondary px-3 text-xs font-medium text-secondary-foreground shadow-sm active:scale-95"
+                      >
+                        <Merge className="h-4 w-4" />
+                        합치기
+                      </button>
+                    )}
                     </div>
                     {addingFor === p.id && (
                       <div className="mt-3 flex items-center gap-2 rounded-xl bg-muted/60 p-2">
