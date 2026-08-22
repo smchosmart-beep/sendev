@@ -1084,6 +1084,8 @@ function RowSection({
   // 전용 양식 탭을 열었는데 기록이 없으면, 편집 권한이 있을 때 빈 양식을 바로 보여준다.
   const draftTemplate = filterBySubtype ? PROCESS_SUBTYPE_TEMPLATES[selectedSubtype] : undefined;
   const showDraft = canEdit && !!draftTemplate && filteredRows.length === 0;
+  // 여러 건(팀원별) 추가가 허용된 탭에서만 새 행 추가 버튼을 보여준다.
+  const multiTab = !!draftTemplate?.multi;
 
   return (
     <section className="rounded-2xl bg-card p-6 shadow-sm">
