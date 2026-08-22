@@ -4239,6 +4239,9 @@ export interface VoteResultsDTO {
   // 라운드별 득표수(종료 상태에서만 채워진다). 결선 종료 후 1차 확정 팀의
   // 득표수를 함께 보여 주기 위해 사용한다.
   roundCounts?: Record<number, Record<string, number>>;
+  // 라운드별 투표자 명단(관리자에게만 채워진다).
+  roundVoters?: Record<number, Record<string, string[]>>;
+
 }
 
 const VOTE_COLUMNS =
@@ -4618,19 +4621,25 @@ export const getVoteResults = createServerFn({ method: "GET" })
     const counts: Record<string, number> = {};
     const voters: Record<string, string[]> = {};
     const roundCounts: Record<number, Record<string, number>> = {};
+    const roundVoters: Record<number, Record<string, string[]>> = {};
     for (const r of rows ?? []) {
       const pid = String((r as any).post_id);
       const rd = Math.max(1, Number((r as any).round ?? 1));
       const bucket = (roundCounts[rd] ??= {});
       bucket[pid] = (bucket[pid] ?? 0) + 1;
+      if (isAdmin) {
+        const vb = (roundVoters[rd] ??= {});
+        (vb[pid] ??= []).push(String((r as any).voter_name ?? ""));
+      }
       if (rd !== cfg.round) continue;
       counts[pid] = (counts[pid] ?? 0) + 1;
       if (isAdmin) {
         (voters[pid] ??= []).push(String((r as any).voter_name ?? ""));
       }
     }
-    return { ...base, counts, voters, roundCounts };
+    return { ...base, counts, voters, roundCounts, roundVoters };
   });
+
 
 export interface RunoffPreviewDTO {
   seats: number;

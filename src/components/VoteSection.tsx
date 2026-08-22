@@ -194,11 +194,21 @@ export function VoteSection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showFinal, lockedPosts, results, round]);
 
+  // 결선 종료 후에는 선발되지 않은 게시글도 마지막 득표 라운드 기준으로 이어서 보여 준다.
+  const eliminatedOrdered = useMemo(() => {
+    if (!showFinal) return [];
+    return posts
+      .filter((p) => !lockedIds.has(p.id) && !runoffIds.has(p.id))
+      .sort((a, b) => lockedCountOf(b.id) - lockedCountOf(a.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showFinal, posts, lockedIds, runoffIds, results, round]);
+
   const ordered = useMemo(() => {
     if (!showFinal) return runoffOrdered;
-    return [...lockedOrdered, ...runoffOrdered];
+    return [...lockedOrdered, ...runoffOrdered, ...eliminatedOrdered];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showFinal, lockedOrdered, runoffOrdered]);
+  }, [showFinal, lockedOrdered, runoffOrdered, eliminatedOrdered]);
+
 
 
   // 이번 라운드 종료 시 남은 자리를 채운 팀(동점으로 넘치면 그대로 표시).
@@ -286,9 +296,11 @@ export function VoteSection({
         .forEach((r) => rankGroup(byRound.get(r)!, (id) => lockedCountOf(id)));
     }
     rankGroup(runoffOrdered, (id) => counts[id] ?? 0);
+    if (showFinal) rankGroup(eliminatedOrdered, (id) => lockedCountOf(id));
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runoffOrdered, lockedOrdered, showFinal, counts, status, results, round]);
+  }, [runoffOrdered, lockedOrdered, eliminatedOrdered, showFinal, counts, status, results, round]);
+
 
 
   const pageCount = Math.max(1, Math.ceil(ordered.length / PAGE_SIZE));
@@ -460,11 +472,15 @@ export function VoteSection({
             {paged.map((post) => {
               const voted = mySet.has(post.id);
               const isLocked = lockedIds.has(post.id);
-              // 확정 팀은 자기 라운드 득표수를, 결선 후보는 이번 라운드 득표수를 쓴다.
-              const count =
-                showFinal && isLocked
-                  ? lockedCountOf(post.id)
-                  : (counts[post.id] ?? 0);
+              // 결선 후보가 아닌 글(확정 팀·탈락 글)은 마지막으로 표를 받은 라운드 득표수를 쓴다.
+              const prevRoundBased = showFinal && !runoffIds.has(post.id);
+              const count = prevRoundBased
+                ? lockedCountOf(post.id)
+                : (counts[post.id] ?? 0);
+              const voterList = prevRoundBased
+                ? (results?.roundVoters?.[lockedInfoOf(post.id).round]?.[post.id] ?? [])
+                : (results?.voters?.[post.id] ?? []);
+
               const rankInfo = rankMap.get(post.id);
               const showRank =
                 status === "closed" &&
@@ -555,11 +571,12 @@ export function VoteSection({
                     </Button>
 
                   </div>
-                  {isAdmin && status === "closed" && (results?.voters?.[post.id]?.length ?? 0) > 0 && (
+                  {isAdmin && status === "closed" && voterList.length > 0 && (
                     <p className="text-[11px] leading-snug text-muted-foreground">
-                      {results!.voters[post.id]!.join(", ")}
+                      {voterList.join(", ")}
                     </p>
                   )}
+
                 </div>
               );
             })}
