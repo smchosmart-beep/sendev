@@ -801,6 +801,49 @@ function ProfilesAdmin() {
                         </Button>
                       </div>
                     )}
+                    {renamingFor === p.id && (
+                      <div className="mt-3 space-y-2 rounded-xl bg-muted/60 p-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            autoFocus
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                submitRename(p);
+                              }
+                            }}
+                            placeholder="새 닉네임"
+                            className="rounded-lg bg-background"
+                          />
+                          <Button
+                            type="button"
+                            onClick={() => submitRename(p)}
+                            disabled={renameMutation.isPending}
+                            className="rounded-lg active:scale-95"
+                          >
+                            변경
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => {
+                              setRenamingFor(null);
+                              setRenameValue("");
+                            }}
+                            className="rounded-lg active:scale-95"
+                          >
+                            취소
+                          </Button>
+                        </div>
+                        <p className="text-[11px] leading-relaxed text-muted-foreground">
+                          글·댓글·좋아요·배지·투표·평가·활동기록·읽음 표시가 함께 옮겨져요.
+                          변경 후에는 본인에게 <strong>기기에서 닉네임을 새 이름으로 바꾸고
+                          기존 비밀번호로 다시 확인</strong>하도록 안내해 주세요.
+                        </p>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
