@@ -61,7 +61,8 @@
 
 `mutateAsync`가 resolve되어도 `invalidateQueries`는 비동기로 동작하여, draft를 즉시 제거하면 서버에서 실제 행이 목록에 나타나기까지 잠깐 항목이 사라지는 플리커가 발생할 수 있다. 또한 `rowMutation`의 `onError` 토스트와 `RowItem`의 `catch` 내부 토스트가 중복될 수 있다.
 
-- 수정: `rowMutation`의 `onSuccess`에서 `invalidateQueries`를 `return`하여 mutation 결과가 resolve되기 전에 쿼리 갱신이 완료되도록 한다. `RowItem` 내부에서 저장 버튼 클릭 시 `try { await onSave({ ...row, sectionKey }); onRemoveDraft(draftId); } catch { ... }`로 호출하고, `catch` 블록에서는 토스트를 띄우지 않고 draft만 유지하여 재시도를 가능하게 한다. 실제 에러 토스트는 `rowMutation`의 `onError` 콜백에서 한 곳에서만 담당한다.
+- 수정: `rowMutation`의 `onSuccess`에서 `invalidateQueries`를 `return`하여 mutation 결과가 resolve되기 전에 쿼리 갱신이 완료되도록 한다. 이때 `refetchType: "active"` 옵션을 사용하여 활성 쿼리만 갱신하고, 비활성 쿼리는 즉시 무효화만 처리하여 전체 지연을 최소화한다. `RowItem` 내부에서 저장 버튼 클릭 시 `try { await onSave({ ...row, sectionKey }); onRemoveDraft(draftId); } catch { ... }`로 호출하고, `catch` 블록에서는 토스트를 띄우지 않고 draft만 유지하여 재시도를 가능하게 한다. 실제 에러 토스트는 `rowMutation`의 `onError` 콜백에서 한 곳에서만 담당한다.
+- **전역 지연 최소화**: `rowMutation`은 `RecordEditor.tsx` 전체에서 공유되므로, stance 자동 저장 등 모든 행 수정에 영향을 준다. `invalidateQueries`의 대기 범위를 `refetchType: "active"`로 좁히거나, draft 제거 시점에만 쿼리 갱신 완료를 기다리고 기존 실제 행 수정은 `await`하지 않도록 구조를 정교화한다. 필요 시 draft 저장용 mutation과 기존 행 수정용 mutation을 분리하여 체감 지연을 줄인다.
 
 ## 영향 범위
 
