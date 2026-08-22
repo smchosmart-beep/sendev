@@ -4133,6 +4133,9 @@ export interface VoteResultsDTO {
   seats: number;
   runoffIds: string[];
   lockedIds: string[];
+  // 라운드별 득표수(종료 상태에서만 채워진다). 결선 종료 후 1차 확정 팀의
+  // 득표수를 함께 보여 주기 위해 사용한다.
+  roundCounts?: Record<number, Record<string, number>>;
 }
 
 const VOTE_COLUMNS =
@@ -4503,22 +4506,27 @@ export const getVoteResults = createServerFn({ method: "GET" })
     // 진행 중에는 득표수를 공개하지 않는다.
     if (cfg.status !== "closed") return { ...base, counts: {}, voters: {} };
 
+    // 라운드 필터 없이 한 번만 읽어, 현재 라운드 집계와 라운드별 집계를 함께 만든다.
     const { data: rows, error } = await db
       .from("votes")
-      .select("post_id, voter_name")
-      .eq("category_id", data.categoryId)
-      .eq("round", cfg.round);
+      .select("post_id, voter_name, round")
+      .eq("category_id", data.categoryId);
     if (error) throw new Error(error.message);
     const counts: Record<string, number> = {};
     const voters: Record<string, string[]> = {};
+    const roundCounts: Record<number, Record<string, number>> = {};
     for (const r of rows ?? []) {
       const pid = String((r as any).post_id);
+      const rd = Math.max(1, Number((r as any).round ?? 1));
+      const bucket = (roundCounts[rd] ??= {});
+      bucket[pid] = (bucket[pid] ?? 0) + 1;
+      if (rd !== cfg.round) continue;
       counts[pid] = (counts[pid] ?? 0) + 1;
       if (isAdmin) {
         (voters[pid] ??= []).push(String((r as any).voter_name ?? ""));
       }
     }
-    return { ...base, counts, voters };
+    return { ...base, counts, voters, roundCounts };
   });
 
 export interface RunoffPreviewDTO {

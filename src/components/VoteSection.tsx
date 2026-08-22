@@ -147,20 +147,49 @@ export function VoteSection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [round, maxChoices, category.id]);
 
-  // 결선 라운드에서는 동점 후보만 보여준다.
-  const visible = useMemo(
+  // 결선이 끝난 뒤에는 1차에서 확정된 팀도 함께 보여 최종 명단을 완성한다.
+  const showFinal = isRunoff && status === "closed";
+
+  // 확정 팀의 득표수는 그 팀이 확정된(마지막으로 표를 받은) 라운드 기준.
+  const lockedCountOf = (postId: string) => {
+    const byRound = results?.roundCounts ?? {};
+    for (let r = round - 1; r >= 1; r -= 1) {
+      const c = byRound[r]?.[postId];
+      if (typeof c === "number" && c > 0) return c;
+    }
+    return 0;
+  };
+
+  const runoffPosts = useMemo(
     () => (isRunoff ? posts.filter((p) => runoffIds.has(p.id)) : posts),
     [posts, isRunoff, runoffIds],
   );
 
-  const ordered = useMemo(() => {
-    if (status !== "closed") return visible;
-    return [...visible].sort(
+  const lockedPosts = useMemo(
+    () => (showFinal ? posts.filter((p) => lockedIds.has(p.id)) : []),
+    [posts, showFinal, lockedIds],
+  );
+
+  // 결선 후보(현재 라운드 득표순)
+  const runoffOrdered = useMemo(() => {
+    if (status !== "closed") return runoffPosts;
+    return [...runoffPosts].sort(
       (a, b) => (counts[b.id] ?? 0) - (counts[a.id] ?? 0),
     );
-  }, [visible, status, counts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runoffPosts, status, counts]);
+
+  const ordered = useMemo(() => {
+    if (!showFinal) return runoffOrdered;
+    const locked = [...lockedPosts].sort(
+      (a, b) => lockedCountOf(b.id) - lockedCountOf(a.id),
+    );
+    return [...locked, ...runoffOrdered];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showFinal, lockedPosts, runoffOrdered, results, round]);
 
   // 이번 라운드 종료 시 남은 자리를 채운 팀(동점으로 넘치면 그대로 표시).
+  // 판정 대상은 항상 "이번 라운드 후보"뿐이며, 확정 팀은 선발로 합산만 한다.
   const winnerInfo = useMemo(() => {
     if (status !== "closed")
       return {
@@ -170,10 +199,11 @@ export function VoteSection({
         tiedIds: new Set<string>(),
       };
     const remaining = Math.max(0, seats - lockedIds.size);
-    const sorted = [...ordered];
+    const sorted = [...runoffOrdered];
+    const withLocked = (ids: string[]) => new Set([...lockedIds, ...ids]);
     if (remaining <= 0 || sorted.length <= remaining) {
       return {
-        winners: new Set(sorted.map((p) => p.id)),
+        winners: withLocked(sorted.map((p) => p.id)),
         tied: 0,
         tieCount: 0,
         tiedIds: new Set<string>(),
@@ -184,7 +214,9 @@ export function VoteSection({
     const tied = sorted.filter((p) => (counts[p.id] ?? 0) === cutoff);
     const overflow = above.length + tied.length > remaining;
     return {
-      winners: new Set([...above, ...(overflow ? [] : tied)].map((p) => p.id)),
+      winners: withLocked(
+        [...above, ...(overflow ? [] : tied)].map((p) => p.id),
+      ),
       tied: overflow ? tied.length : 0,
       tieCount: cutoff,
       tiedIds: new Set(overflow ? tied.map((p) => p.id) : []),
@@ -198,20 +230,21 @@ export function VoteSection({
       lockedCount?: number;
       openSeats?: number;
     };
-  }, [status, ordered, counts, seats, lockedIds]);
+  }, [status, runoffOrdered, counts, seats, lockedIds]);
 
   // 표 수 기준 표준 경쟁 순위(동점은 같은 순위, 다음 순위는 인원수만큼 건너뜀).
+  // 라운드가 다른 확정 팀은 순위 비교 대상에서 제외한다.
   const rankMap = useMemo(() => {
     const map = new Map<string, { rank: number; tied: boolean }>();
     if (status !== "closed") return map;
     let rank = 0;
     let prev: number | null = null;
     const groups = new Map<number, number>();
-    ordered.forEach((p) => {
+    runoffOrdered.forEach((p) => {
       const c = counts[p.id] ?? 0;
       groups.set(c, (groups.get(c) ?? 0) + 1);
     });
-    ordered.forEach((p, i) => {
+    runoffOrdered.forEach((p, i) => {
       const c = counts[p.id] ?? 0;
       if (prev === null || c !== prev) {
         rank = i + 1;
@@ -220,7 +253,7 @@ export function VoteSection({
       map.set(p.id, { rank, tied: (groups.get(c) ?? 0) > 1 });
     });
     return map;
-  }, [ordered, counts, status]);
+  }, [runoffOrdered, counts, status]);
 
   const pageCount = Math.max(1, Math.ceil(ordered.length / PAGE_SIZE));
   const current = Math.min(Math.max(1, page), pageCount);
@@ -306,7 +339,15 @@ export function VoteSection({
             한 번에 공개됩니다.
           </>
         ) : status === "closed" ? (
-          <>투표가 종료되었어요. 아래에서 최종 결과를 확인할 수 있어요.</>
+          showFinal ? (
+            <>
+              결선이 종료되었어요. 아래 목록은 <b>이전 라운드 확정{" "}
+              {lockedIds.size}팀</b>과 <b>이번 결선 후보</b>를 함께 보여 주는
+              최종 명단이에요(선발 정원 {seats}팀).
+            </>
+          ) : (
+            <>투표가 종료되었어요. 아래에서 최종 결과를 확인할 수 있어요.</>
+          )
         ) : (
           <>아직 투표가 시작되지 않았어요. 먼저 후보 글을 등록해 주세요.</>
         )}
@@ -382,11 +423,15 @@ export function VoteSection({
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {paged.map((post) => {
               const voted = mySet.has(post.id);
-              const count = counts[post.id] ?? 0;
-              const rankInfo = rankMap.get(post.id);
+              const isLocked = lockedIds.has(post.id);
+              // 확정 팀은 자기 라운드 득표수를, 결선 후보는 이번 라운드 득표수를 쓴다.
+              const count =
+                showFinal && isLocked
+                  ? lockedCountOf(post.id)
+                  : (counts[post.id] ?? 0);
+              const rankInfo = showFinal && isLocked ? undefined : rankMap.get(post.id);
               const showRank =
                 status === "closed" && count > 0 && !!rankInfo && rankInfo.rank <= 3;
-              const isLocked = lockedIds.has(post.id);
               const isWinner =
                 status === "closed" && winnerInfo.winners.has(post.id);
               const isTied = status === "closed" && winnerInfo.tiedIds.has(post.id);
@@ -419,6 +464,11 @@ export function VoteSection({
                         (status === "closed" && winnerInfo.winners.has(post.id))) && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-600">
                           선발
+                        </span>
+                      )}
+                      {showFinal && isLocked && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                          이전 라운드 확정
                         </span>
                       )}
                     </span>
