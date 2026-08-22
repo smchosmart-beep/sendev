@@ -1310,6 +1310,7 @@ function isYouTubeUrl(raw: string): boolean {
 
 function RowItem({
   row,
+  draftId,
   labels,
   longs,
   placeholders,
@@ -1321,8 +1322,12 @@ function RowItem({
   fileCol,
   onSave,
   onDelete,
+  onCancel,
+  onRemoveDraft,
 }: {
   row: DraftRow;
+  /** 저장 전 로컬 draft에만 부여되는 식별자 */
+  draftId?: string;
   labels: string[];
   longs: number[];
   placeholders?: string[];
