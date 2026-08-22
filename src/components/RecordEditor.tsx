@@ -1471,7 +1471,7 @@ function RowItem({
             return (
               <div key={col} className={cn("space-y-2", isImageCol && "w-full")}>
                 {notice && (
-                  <TemplateNotice label={notice.label} text={notice.text} />
+                  <TemplateNotice label={notice.label} text={notice.text} tip={notice.tip} />
                 )}
                 <Label className="text-xs text-muted-foreground">
                   {label} <span className="text-[11px]">(최대 3개, 개당 3MB)</span>
