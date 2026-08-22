@@ -21,8 +21,10 @@ function val(team: RecordOverviewTeam, key: RecordFinalKey): string {
 function rowsOf(team: RecordOverviewTeam, kind: RecordRowKindName) {
   return team.rows
     .filter((r) => r.kind === kind)
+    .filter((r) => !isBlankRow(r))
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
+
 
 function Page({
   team,
