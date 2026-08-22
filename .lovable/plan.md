@@ -36,3 +36,25 @@
 ## 문서
 
 `src/routes/_main.guide.tsx` 투표 게시판 설명에 "결선 종료 후에는 선발되지 않은 게시글도 순위와 득표수와 함께 아래에 표시된다"를 추가합니다.
+
+---
+
+## 추가 요청: 이전 라운드 확정 팀의 투표자 명단 표시
+
+현재 투표자 명단(관리자에게만 보임)은 **현재 라운드 표만** 담고 있습니다(`platform.functions.ts` 4626-4630행: `rd !== cfg.round`이면 건너뜀). 그래서 결선 종료 화면에서 1차 확정 팀 카드에는 명단이 비어 있습니다.
+
+### 수정 내용
+
+- 확정 팀 카드에도 그 팀이 확정된 라운드(1차)의 투표자 명단을 표시합니다.
+- 17위 이후 탈락 글도 같은 방식으로 자신이 표를 받은 라운드의 명단을 표시합니다.
+- 명단 노출 권한은 지금과 동일하게 **관리자만**입니다(일반 사용자에게는 표시되지 않음).
+
+### 기술 세부
+
+- `platform.functions.ts` `getVoteResults`: 이미 라운드 필터 없이 읽고 있는 같은 쿼리에서 `roundVoters: Record<round, Record<postId, string[]>>`를 관리자일 때만 추가로 채워 반환(쿼리 추가 없음). `VoteResultsDTO`에 선택 필드로 추가하고 기존 `voters`는 그대로 유지.
+- `VoteSection.tsx`: 명단 조회를 `showFinal && !runoffIds.has(post.id)`인 경우 `roundVoters[lockedInfoOf(post.id).round]?.[post.id]`에서, 그 외에는 기존 `voters[post.id]`에서 가져오도록 헬퍼로 정리.
+
+### 부작용
+
+- 쿼리 수·DB 변경 없음. 응답 크기는 관리자 요청에서만 소폭 증가.
+- 비관리자 응답은 완전히 동일.
