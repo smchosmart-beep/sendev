@@ -1,6 +1,7 @@
-# 02 문제 정의 과정 탭 5개 구조 후속 개선 (수정본)
+# 02 문제 정의 과정 탭 5개 구조 후속 개선 (3차 보완본)
 
-02 문제 정의 과정을 5탭으로 개편한 구현에서 후속 검토로 발견된 10가지 개선점을 반영한다.
+02 문제 정의 과정을 5탭으로 개편한 구현에서 후속 검토로 발견된 10가지 개선점과 plan-check 3건을 반영한다.
+
 
 ## 개선 항목
 
@@ -8,9 +9,10 @@
 
 현재 `src/lib/record-readme.ts`의 `ROW_ORDER` 루프 안에서 모든 `kind`에 대해 `localeCompare` 기반 정렬을 하고 있다. 이 방식은 `subtype`을 갖는 `process`의 탭 순서가 라벨 문자열 비교에 의존하고, `ai_use`(`src/lib/record-schema.ts:83`의 `AI_USE_TYPES`)처럼 `subtype`을 갖는 다른 섹션의 출력 순서도 섞일 수 있다.
 
-- 수정: `subtype`이 있는 kind(`process`, `ai_use`)는 `subtype` 그룹별로 먼저 묶고, 그룹 내에서 `sortOrder`를 적용한다. `process` 그룹 순서는 `PROCESS_SUBTYPES` 배열 인덱스를 따르고, `ai_use`는 `AI_USE_TYPES` 정의 순서를 따른다. 목록에 없는 subtype은 `idx < 0 ? 999 : idx` 폴백으로 맨 뒤 "기타" 그룹으로 보낸다. `subtype`이 없는 kind(핵심 기능, 사용 흐름 등)는 기존 `sortOrder`만 적용한다.
+- 수정: `subtype`이 있는 kind(`process`, `ai_use`)는 `subtype` 그룹별로 먼저 묶고, 그룹 내에서 `sortOrder`를 적용한다. `process` 그룹 순서는 `PROCESS_SUBTYPES` 배열 인덱스를 따르고, `ai_use`는 `AI_USE_TYPES` 정의 순서를 따른다. 목록에 없는 subtype은 `idx < 0 ? 999 : idx` 폴백으로 맨 뒤 "기타" 그룹으로 보낸다. `subtype`이 없는 kind(핵심 기능, 사용 흐름 등)는 기존 `sortOrder`만 적용한다. **정렬 우선순위는 1) subtype 그룹 인덱스, 2) 그룹 내 sortOrder, 3) 동일 값이면 id(created_at)로 명확히 하며, 목록에 없는 subtype이 혼재되어 있어도 출력 순서가 흔들리지 않도록 한다.**
 - `AI_USE_TYPES`의 현재 배열 순서(`["서비스 기능", "개발 과정"]`)가 현재 `localeCompare` 출력 순서와 역순이므로, README/사례집 출력 순서를 유지하려면 배열을 `["개발 과정", "서비스 기능"]`으로 재배열하거나, `ai_use`는 현행 `localeCompare` 기준을 유지하도록 범위를 좁혀야 한다. 본 계획에서는 `AI_USE_TYPES` 배열 순서를 현재 출력 순서에 맞춰 재배열하고, `process`와 동일한 정의 순서 정렬을 적용한다. 편집 화면의 subtype 선택 드롭다운 순서도 함께 바뀌는 것은 의도된 변경이다.
-- `src/components/record/CasebookDocument.tsx`의 `rowsOf` 함수도 동일한 정렬 기준으로 맞춘다.
+- `src/components/record/CasebookDocument.tsx`의 `rowsOf` 함수도 동일한 정렬 기준과 폴백 값(`idx < 0 ? 999 : idx`)을 적용하여, README 출력과 사례집 출력의 순서가 일치하도록 맞춘다. 양쪽 모두 `sortOrder` 기반 안정 정렬을 유지하되, subtype 인덱스가 우선 적용된다.
+
 
 ### 2. `multi` 탭에서 빈 양식과 추가 버튼이 동시에 보이지 않게
 
@@ -24,15 +26,17 @@
 
 - 수정: 추가 버튼은 클릭한 섹션의 로컬 상태에만 임시 draft를 추가하고, 사용자가 내용을 입력한 뒤 실제 저장(`onSave`)이 일어날 때만 DB에 기록한다. 삭제(취소) 시 DB에 저장되지 않은 draft는 로컬에서만 제거된다. 로컬 draft 배열의 각 항목은 `{ draftId: string; row: DraftRow }` 형태로 저장하며, `DraftRow`의 `id`는 `null`로 유지한다. draft 생성 시 `author: defaultAuthor`를 초기값으로 채워, 기존의 작성자 자동 입력 동작이 그대로 유지되도록 한다.
 - 로컬 draft 관리 규칙을 통일: `multi`/`showDraft`가 true인 탭(예: 인터뷰 기록)은 기록이 0건이면 자동으로 1개의 draft 양식을 노출하고, 그 이상 추가는 "+" 버튼으로만 draft를 로컬에 추가한다. `multi`가 아닌 다른 행 섹션에서도 추가 버튼은 동일하게 로컬 draft만 추가한다. 저장된 실제 행은 서버 응답 후 쿼리 갱신으로 다시 들어오므로, 저장 성공 시 해당 로컬 draft는 제거한다.
-- draft 생성 시 `sortOrder` 충돌 방지: 여러 draft가 동시에 추가되면 `rows.length` 기준으로 같은 `sortOrder`를 가질 수 있으므로, `rows.length + draftIndex` 형태로 고유 값을 부여한다.
+- draft 생성 시 `sortOrder` 충돌 방지: 현재 선택된 섹션/탭의 기존 행들 중 최대 `sortOrder` 값을 `Math.max(0, ...existingRows.map(r => r.sort_order ?? 0))`로 구한 뒤, `maxSortOrder + 1 + draftIndex` 형태로 고유 값을 부여한다. 이 방식은 기존 행이 삭제된 이력이 있어 `rows.length`와 `sortOrder`가 불일치할 때도 중복을 방지하고, 그룹 내 출력 순서를 안정적으로 유지한다.
+
 
 ### 4. 로컬 draft의 React key 고유성 확보 및 취소 UI 제공
 
 `showDraft`로 표시하는 임시 draft는 `key={\`draft-${selectedSubtype}\`}`를 사용하고 있다. 같은 탭에서 "+" 버튼으로 여러 draft를 추가하면 key가 충돌하여 React 리스트 오류가 발생할 수 있다. 또한 draft는 `id`가 `null`이라 기존 `RowItem`의 삭제 버튼 조건(`row.id` 존재)에 걸려 취소할 방법이 없다.
 
 - 수정: 로컬 상태에서 draft를 별도 배열로 관리하며, 각 항목은 `{ draftId: string; row: DraftRow }` 형태로 저장한다. `DraftRow`의 `id`는 계속 `null`로 유지하고, `key`는 `draftId`로 사용한다. 각 draft에 고유 ID(`draft-<sectionKey>-<subtype>-<index>` 또는 `crypto.randomUUID`)를 부여하여 key 충돌을 방지한다. 저장되지 않고 제거된 draft는 배열에서 필터링한다.
-- `RowItem`에 `onCancel?: (draftId: string) => void` prop을 추가하여 `row.id`가 없는 draft에도 삭제(취소) 아이콘을 노출하고, 클릭 시 서버 호출 없이 로컬 draft 배열에서만 제거한다. `RowItem`은 `row.id == null`이면 `onDelete`를 호출하지 않고 `onCancel`을 호출하도록 조건을 변경한다. 기존 실제 행(`id != null`)의 삭제는 기존 `onDelete` 경로를 그대로 사용한다.
-- **자동 draft(`showDraft`)와 로컬 draft 배열의 이중 관리 충돌 방지**: `showDraft`로 파생되는 자동 draft는 `draftId`를 가지지 않는 별도 항목이므로, `RowItem`의 `draftId`와 `onCancel`/`onRemoveDraft` prop을 **optional**로 정의한다. `draftId`가 없는 자동 draft는 `onCancel`이 없어도 그대로 렌더되며, 별도 제거 핸들러는 호출하지 않는다. 새 draft 배열에 추가하는 버튼은 반드시 `draftId`가 있는 항목만 생성하도록 한다. `showDraft`가 true일 때 추가 버튼은 숨기므로(2항), 사용자가 의도적으로 추가하는 draft만 배열에 쌓인다.
+- `RowItem`에 `onCancel?: (draftId: string) => void` prop을 추가하여 `row.id`가 없는 draft에도 삭제(취소) 아이콘을 노출하고, 클릭 시 서버 호출 없이 로컬 draft 배열에서만 제거한다. `RowItem`은 `row.id == null`이면 `onDelete`를 호출하지 않고 `onCancel`을 호출하도록 조건을 변경한다. 기존 실제 행(`id != null`)의 삭제는 기존 `onDelete` 경로를 그대로 사용한다. **단, `onCancel` prop이 실제로 전달되었을 때만 취소 버튼을 렌더링하며, `draftId`가 없는 자동 draft는 `onCancel` 없이 렌더링되어 취소 버튼이 아예 나타나지 않도록 한다.**
+- **자동 draft(`showDraft`)와 로컬 draft 배열의 이중 관리 충돌 방지**: `showDraft`로 파생되는 자동 draft는 `draftId`를 가지지 않는 별도 항목이므로, `RowItem`의 `draftId`와 `onCancel`/`onRemoveDraft` prop을 **optional**로 정의한다. `draftId`가 없는 자동 draft는 `onCancel`이 없어도 그대로 렌더되며, 별도 제거 핸들러는 호출하지 않는다. 새 draft 배열에 추가하는 버튼은 반드시 `draftId`가 있는 항목만 생성하도록 한다. `showDraft`가 true일 때 추가 버튼은 숨기므로(2항), 사용자가 의도적으로 추가하는 draft만 배열에 쌓인다. `RowItem` 내부에서 `draftId`가 undefined이면 `onRemoveDraft`나 `onCancel`을 절대 호출하지 않아, 런타임 undefined 전달 오류를 방지한다.
+
 
 ### 5. 임시 draft 저장 후 실제 행과 중복 표시되지 않게 (요청별 추적)
 
