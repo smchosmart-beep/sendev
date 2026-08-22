@@ -415,11 +415,15 @@ export function VoteSection({
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {paged.map((post) => {
               const voted = mySet.has(post.id);
-              const count = counts[post.id] ?? 0;
-              const rankInfo = rankMap.get(post.id);
+              const isLocked = lockedIds.has(post.id);
+              // 확정 팀은 자기 라운드 득표수를, 결선 후보는 이번 라운드 득표수를 쓴다.
+              const count =
+                showFinal && isLocked
+                  ? lockedCountOf(post.id)
+                  : (counts[post.id] ?? 0);
+              const rankInfo = showFinal && isLocked ? undefined : rankMap.get(post.id);
               const showRank =
                 status === "closed" && count > 0 && !!rankInfo && rankInfo.rank <= 3;
-              const isLocked = lockedIds.has(post.id);
               const isWinner =
                 status === "closed" && winnerInfo.winners.has(post.id);
               const isTied = status === "closed" && winnerInfo.tiedIds.has(post.id);
