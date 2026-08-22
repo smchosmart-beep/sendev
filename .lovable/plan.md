@@ -43,10 +43,10 @@
 
 ## 영향 범위
 
-- `src/lib/record-readme.ts`: process kind 전용 정렬 + subtype 폴백
+- `src/lib/record-readme.ts`: subtype 사용 kind(process, ai_use) 그룹 정렬 + process/ai_use 정의 순서 + 폴백
 - `src/components/record/CasebookDocument.tsx`: 동일 정렬 로직 확인·수정
 - `src/components/RecordEditor.tsx`: `RowSection`의 draft/추가 버튼 조건, 임시 draft 배열 관리, draft key, 저장 후 제거
-- `src/lib/record-schema.ts` (참고): `PROCESS_SUBTYPES` 순서가 정렬 기준으로 사용됨
+- `src/lib/record-schema.ts` (참고): `PROCESS_SUBTYPES`·`AI_USE_TYPES` 순서가 정렬 기준으로 사용됨
 
 ## 데이터·보안·비용
 
