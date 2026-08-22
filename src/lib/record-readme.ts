@@ -166,6 +166,23 @@ export function isBlankRow(
   return [r.col1, r.col2, r.col3, r.col4, r.col5, r.col6].every((v) => !(v ?? "").trim());
 }
 
+/**
+ * 출력·집계용 빈 행 판정.
+ * 해당 양식에서 "화면에 실제로 표시되는 열"(displayOrder ∩ 라벨이 있는 열)만 검사한다.
+ * 양식에서 빠진 열에만 옛 값이 남아 있는 행은 빈 행으로 본다.
+ */
+export function isBlankForOutput(
+  kind: string,
+  r: { subtype?: string | null } & Record<string, string | null | undefined>,
+): boolean {
+  const tpl = rowTemplate(kind, r.subtype ?? null);
+  const values = [r.col1, r.col2, r.col3, r.col4, r.col5, r.col6];
+  const order = tpl.displayOrder ?? values.map((_, i) => i);
+  const shown = order.filter((i) => (tpl.cols[i] ?? "").trim());
+  if (shown.length === 0) return isBlankRow(r as Record<string, string>);
+  return shown.every((i) => !(values[i] ?? "").trim());
+}
+
 
 
 
