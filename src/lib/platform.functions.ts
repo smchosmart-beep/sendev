@@ -2762,14 +2762,22 @@ export function levelFromActivity(
 }
 
 // Aggregates posts + comments by normalized author name.
+// `name` keeps the last seen display spelling (used to surface unregistered ones).
 async function getActivityCounts(db: any): Promise<
-  Map<string, { postCount: number; commentCount: number }>
+  Map<string, { postCount: number; commentCount: number; name: string }>
 > {
-  const counts = new Map<string, { postCount: number; commentCount: number }>();
+  const counts = new Map<
+    string,
+    { postCount: number; commentCount: number; name: string }
+  >();
   const bump = (name: string, kind: "post" | "comment") => {
     const key = normalizeUsername(name ?? "");
     if (!key) return;
-    const cur = counts.get(key) ?? { postCount: 0, commentCount: 0 };
+    const cur = counts.get(key) ?? {
+      postCount: 0,
+      commentCount: 0,
+      name: (name ?? "").trim(),
+    };
     if (kind === "post") cur.postCount += 1;
     else cur.commentCount += 1;
     counts.set(key, cur);
