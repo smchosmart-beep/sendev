@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import { ETHICS_PRINCIPLES } from "@/lib/record-ethics";
 import { parseAttachments } from "@/lib/file-upload";
-import { normalizeUrl, isBlankRow } from "@/lib/record-readme";
+import { normalizeUrl, isBlankRow, compareOutputRows } from "@/lib/record-readme";
 
 import {
   STANCE_QUESTIONS,
