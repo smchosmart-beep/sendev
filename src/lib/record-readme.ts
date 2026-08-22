@@ -173,7 +173,15 @@ export function isBlankRow(
  */
 export function isBlankForOutput(
   kind: string,
-  r: { subtype?: string | null } & Record<string, string | null | undefined>,
+  r: {
+    subtype?: string | null;
+    col1?: string | null;
+    col2?: string | null;
+    col3?: string | null;
+    col4?: string | null;
+    col5?: string | null;
+    col6?: string | null;
+  },
 ): boolean {
   const tpl = rowTemplate(kind, r.subtype ?? null);
   const values = [r.col1, r.col2, r.col3, r.col4, r.col5, r.col6];
