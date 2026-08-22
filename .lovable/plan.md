@@ -29,7 +29,7 @@
 
 ## 기술 메모
 
-- 정리 작업은 마이그레이션이 아니라 관리자 기능(기존 `adminRenameNickname` 경로)으로 처리 — 스키마 변경 없음.
+
 - `migrateNickname`/`migrateStep`(`src/lib/platform.functions.ts` 3847~3946): 충돌로 건너뛴 단계 라벨을 수집해 반환값에 담고, 호출부(`renameNickname`, `adminRenameNickname`)가 `skipped: string[]`를 함께 돌려주도록 확장. `user_profiles` 단계 충돌은 기존처럼 실패시키지 않되 결과에 보고.
 - 이전 후 검증: `votes.voter_key`, `posts.author`, `comments.author`에 옛 키가 남았는지 count 조회 1회 → 남으면 해당 표만 재시도. 추가 쿼리는 이름 변경 시점에만 발생(평시 부하 0).
 - 정리 작업은 SQL 마이그레이션이 아니라 관리자 기능으로 처리 — 스키마 변경 없음.
