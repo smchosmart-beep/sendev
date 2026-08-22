@@ -13,6 +13,7 @@
 ### 1. 숨김 방식 교체 + 조상 체인 정규화 (정확한 셀렉터)
 - `visibility: hidden` → `display: none`으로 교체하되, `.casebook-root`는 레이아웃 깊숙이 중첩되어 있어 **형제만 숨기는 방식은 안 된다.** 조상 체인만 남기는 셀렉터를 쓴다:
   `body:has(.casebook-root) *:not(:has(.casebook-root)):not(.casebook-root):not(.casebook-root *) { display: none !important; }`
+  - 주의: 이 복합 `:not(:has())` 셀렉터가 Tailwind v4(Lightning CSS) 변환에서 누락될 수 있으므로, 빌드 후 실제 CSS에 규칙이 남았는지 확인한다. 누락되면 인쇄 직전 `document.body.classList.add("printing-casebook")`를 붙이는 단순 클래스 방식으로 대체한다.
 - 조상 체인은 `position: static; overflow: visible; height: auto; max-height: none; transform: none; margin: 0; padding: 0; background: transparent;`로 정규화. (`_main.tsx`의 sticky 헤더·overflow-hidden 탭바·모바일 고정 마퀴가 남아 첫 페이지를 덮는 것을 방지)
 - `.casebook-root` **자신과 내부 래퍼**도 함께 정규화한다. 화면용 `p-5 bg-card shadow-sm rounded-2xl`, 내부 `overflow-x-auto bg-muted/30 p-3`가 남으면 지면 폭이 줄고 가로 스크롤 컨테이너가 뒷내용을 잘라 페이지 수가 다시 어긋난다.
   → 인쇄 시 `padding: 0; background: transparent; overflow: visible; box-shadow: none; border-radius: 0;`
