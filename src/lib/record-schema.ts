@@ -64,10 +64,11 @@ export const PRIVACY_STATUSES = [
 ];
 
 export const PROCESS_SUBTYPES = [
-  "22일 팀빌딩·문제 정의 회의",
-  "인터뷰 기록",
-  "인터뷰 후 문제 구체화 회의",
-  "그 밖의 문제 정의 메모",
+  "1. 페르소나",
+  "2. 고객 여정 맵",
+  "3. 인터뷰 기록",
+  "4. 회고&문제정의",
+  "5. 종이 프로토타입 영상 콘티",
 ];
 
 export const STANCE_QUESTIONS = [
@@ -123,19 +124,21 @@ export interface RowTemplate {
    * 저장 열 인덱스는 그대로 두고 표시 순서만 바꾼다. 없으면 0..5 순서.
    */
   displayOrder?: number[];
+  /** 이 탭은 여러 건(팀원별)을 추가할 수 있다 */
+  multi?: boolean;
+  /** 새 행 추가 버튼에 쓸 문구 (multi 탭에서만 사용) */
+  addLabel?: string;
 }
 
 /** 탭별 안내 템플릿 (입력값이 아닌 참고용). subtype → 열 인덱스 → {label, text} */
 export interface TemplateNoticeDef {
   label: string;
   text: string;
+  /** 복사되지 않는 참고 팁 한 줄 */
+  tip?: string;
 }
 
-export const PROCESS_TEMPLATE_NOTICES: Record<string, Record<number, TemplateNoticeDef>> = {
-  "22일 팀빌딩·문제 정의 회의": {
-    4: {
-      label: "템플릿 · 페르소나",
-      text: `[기본 정보]
+const PERSONA_TEMPLATE = `[기본 정보]
 - 이름:
 - 나이 / 신분:
 - 한 줄 소개:
@@ -145,11 +148,9 @@ export const PROCESS_TEMPLATE_NOTICES: Record<string, Record<number, TemplateNot
 - When : 언제 이 문제가 발생하나요?
 - What : 구체적으로 무엇이 문제인가요?
 - Why : 왜 아직 해결되지 않았나요? (그 사람은 지금 어떻게 버티고 있나요?)
-- Impact : 이 문제가 해결되면 이 사람의 하루가 어떻게 달라지나요?`,
-    },
-    5: {
-      label: "템플릿 · 고객 여정 맵",
-      text: `페르소나 이름:
+- Impact : 이 문제가 해결되면 이 사람의 하루가 어떻게 달라지나요?`;
+
+const JOURNEY_TEMPLATE = `페르소나 이름:
 
 여정의 범위: (______부터 ______까지)
 
@@ -174,50 +175,112 @@ export const PROCESS_TEMPLATE_NOTICES: Record<string, Record<number, TemplateNot
 (단계는 필요한 만큼 추가)
 
 감정이 가장 낮은 단계: ___단계
-→ 우리 팀이 공략할 지점:`,
+→ 우리 팀이 공략할 지점:`;
+
+const INTERVIEW_TEMPLATE = `[인터뷰 개요]
+- 팀명:
+- 인터뷰 대상: (누구인지 + 왜 이 사람을 골랐는지)
+- 일시 / 방식: (대면, 전화, 서면 등)
+- 확인하려는 가설: (한 문장)
+
+[질문과 답변]
+Q1.
+A1.
+
+Q2.
+A2.
+
+Q3.
+A3.
+
+[관찰 메모]
+- 답변 외에 눈에 띈 것: (표정, 망설임, 예상 밖의 반응 등)
+- 그대로 옮겨 적고 싶은 한마디: "        "`;
+
+const REFLECT_TEMPLATE = `[회고]
+1) 가설과 일치했던 내용
+-
+-
+
+2) 가설과 불일치했던 내용
+-
+-
+
+3) 새로 알게 된 내용
+-
+-
+
+[문제 재정의]
+우리는 처음에 「        」가 문제라고 생각했다.
+하지만 인터뷰에서 「        」를 알게 되었다.
+그래서 우리는 문제를 「        」로 재정의한다.`;
+
+const STORYBOARD_TEMPLATE = `[콘티]
+1. (0:00~) 첫 화면 - 페르소나와 문제 한 줄 소개
+2. 핵심 기능 화면 - 사용자가 무엇을 입력/선택하는지
+3. 결과 화면 - 무엇이 달라지는지
+4. (~1:30) 마무리 - "그래서 OO의 문제가 이렇게 해결됩니다"`;
+
+export const PROCESS_TEMPLATE_NOTICES: Record<string, Record<number, TemplateNoticeDef>> = {
+  "1. 페르소나": {
+    4: {
+      label: "템플릿 · 페르소나",
+      text: PERSONA_TEMPLATE,
+      tip: "팀원이 아닌 사람이 읽고 “아, 이런 사람 진짜 있지”라고 말할 수 있으면 통과입니다.",
+    },
+  },
+  "2. 고객 여정 맵": {
+    5: {
+      label: "템플릿 · 고객 여정 맵",
+      text: JOURNEY_TEMPLATE,
+      tip: "감정 점수가 전 단계에서 비슷하면 여정을 더 잘게 쪼개 보세요. 감정이 뚝 떨어지는 순간이 문제의 위치입니다.",
+    },
+  },
+  "3. 인터뷰 기록": {
+    0: {
+      label: "템플릿 · 인터뷰 기록",
+      text: INTERVIEW_TEMPLATE,
+      tip: "질문은 3~7개 권장. 유도 질문 대신 “최근에 ~했던 경험을 이야기해 주세요”처럼 경험을 묻는 질문으로 만드세요. 인터뷰 1건당 1개씩 작성합니다.",
+    },
+  },
+  "4. 회고&문제정의": {
+    0: {
+      label: "템플릿 · 회고와 문제 재정의",
+      text: REFLECT_TEMPLATE,
+      tip: "불일치와 새로 알게 된 사실이 하나도 없다면 인터뷰가 부족했다는 신호입니다.",
+    },
+  },
+  "5. 종이 프로토타입 영상 콘티": {
+    0: {
+      label: "템플릿 · 영상 콘티",
+      text: STORYBOARD_TEMPLATE,
+      tip: "영상은 1분 30초 이내, 유튜브 업로드(일부공개 권장) 후 링크를 제출합니다.",
     },
   },
 };
 
 /** 문제 정의 과정(process) 탭별 양식. 없으면 기본 양식을 쓴다. */
 export const PROCESS_SUBTYPE_TEMPLATES: Record<string, RowTemplate> = {
-  "22일 팀빌딩·문제 정의 회의": {
-    cols: [
-      "",
-      "",
-      "",
-      "종이 프로토타입 유튜브 영상 링크",
-      "페르소나 이미지",
-      "고객 여정 맵 이미지",
-    ],
-    placeholders: ["", "", "", "예) https://youtu.be/xxxxxxxx", "", ""],
-    linkCol: 3,
-    fileCols: [4, 5],
-    imageCols: [4, 5],
-    displayOrder: [4, 5, 3],
+  "1. 페르소나": {
+    cols: ["", "", "", "", "페르소나 이미지", ""],
+    fileCols: [4],
+    imageCols: [4],
+    displayOrder: [4],
   },
 
-  "인터뷰 기록": {
-    cols: ["인터뷰 질문", "인터뷰 대상", "인터뷰 내용", "", "", ""],
-    placeholders: [
-      "예) 어떤 상황에서 배수 판별이 가장 어렵나요?",
-      "예) 5학년 학생 3명 · 6학년 담임 교사 1명",
-      "예) 학생들은 3의 배수는 자릿수 합으로 잘 찾지만, 7의 배수는 방법을 몰라 하나씩 나눠 본다고 했어요.",
-      "",
-      "",
-      "",
-    ],
-    longCols: [0, 2],
-    fileCols: [],
-    imageCols: [],
+  "2. 고객 여정 맵": {
+    cols: ["", "", "", "", "", "고객 여정 맵 이미지"],
+    fileCols: [5],
+    imageCols: [5],
+    displayOrder: [5],
   },
 
-  "인터뷰 후 문제 구체화 회의": {
-    cols: ["가설과 일치했던 내용", "가설과 불일치했던 내용", "새로 알게 된 내용", "", "", ""],
+  "3. 인터뷰 기록": {
+    cols: ["인터뷰 개요", "질문과 답변", "관찰 메모", "", "", ""],
     placeholders: [
-      "예) 인터뷰 전 가정했던 '학생들이 7의 배수 판별을 어려워한다'는 가설이 맞았어요.",
-      "예) 예상과 달리 4의 배수도 '끝 두 자리'만 보고 넘어가는 경우가 많았어요.",
-      "예) 학생들이 직접 만든 암기법을 서로 가르쳐 주는 과정에서 오히려 개념이 더 명확해지는 걸 알았어요.",
+      "예) 팀명: 배수탐정 / 대상: 5학년 담임 김○○ 선생님(배수 단원을 최근 지도) / 일시·방식: 8/21 대면 / 가설: 학생들은 7의 배수 판별에서 가장 막힌다",
+      "예) Q1. 최근에 배수 판별을 지도했던 경험을 이야기해 주세요.\nA1. 3의 배수는 금방 하는데 7은 그냥 나눠 보라고 했어요.",
+      "예) 7의 배수 이야기를 할 때 잠깐 망설이셨다. “사실 저도 방법이 없어요”라는 한마디가 인상적이었다.",
       "",
       "",
       "",
@@ -225,9 +288,49 @@ export const PROCESS_SUBTYPE_TEMPLATES: Record<string, RowTemplate> = {
     longCols: [0, 1, 2],
     fileCols: [],
     imageCols: [],
+    multi: true,
+    addLabel: "인터뷰 기록 추가",
   },
 
+  "4. 회고&문제정의": {
+    cols: [
+      "가설과 일치했던 내용",
+      "가설과 불일치했던 내용",
+      "새로 알게 된 내용",
+      "문제 재정의",
+      "관련 링크",
+      "관련 파일",
+    ],
+    placeholders: [
+      "예) 인터뷰 전 가정했던 '학생들이 7의 배수 판별을 어려워한다'는 가설이 맞았어요.",
+      "예) 예상과 달리 4의 배수도 '끝 두 자리'만 보고 넘어가는 경우가 많았어요.",
+      "예) 학생들이 직접 만든 암기법을 서로 가르쳐 주는 과정에서 개념이 더 명확해졌어요.",
+      "예) 우리는 처음에 「7의 배수 판별법을 모른다」가 문제라고 생각했다. 하지만 인터뷰에서 「교사도 설명할 방법이 없다」를 알게 되었다. 그래서 우리는 문제를 「교사가 바로 쓸 수 있는 판별 설명 도구가 없다」로 재정의한다.",
+      "예) https://docs.google.com/document/d/... (회의록 링크)",
+      "",
+    ],
+    longCols: [0, 1, 2, 3],
+    linkCol: 4,
+    fileCols: [5],
+    imageCols: [],
+  },
 
+  "5. 종이 프로토타입 영상 콘티": {
+    cols: ["콘티 내용", "", "", "종이 프로토타입 유튜브 영상 링크", "", ""],
+    placeholders: [
+      "예) 1. (0:00~) 첫 화면 - 김수학 선생님과 문제 소개\n2. 숫자 입력 화면\n3. 판별 과정 결과 화면\n4. (~1:30) 마무리 멘트",
+      "",
+      "",
+      "예) https://youtu.be/xxxxxxxx",
+      "",
+      "",
+    ],
+    longCols: [0],
+    linkCol: 3,
+    fileCols: [],
+    imageCols: [],
+    displayOrder: [0, 3],
+  },
 };
 
 /** 행의 종류·탭에 맞는 양식을 돌려준다. */

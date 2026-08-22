@@ -585,7 +585,7 @@ export function RecordEditor({
           title="문제 정의 과정 기록"
           hint="회의·인터뷰 기록을 종류별로 남겨요."
           subtypes={PROCESS_SUBTYPES}
-          defaultSubtype="그 밖의 문제 정의 메모"
+          defaultSubtype={PROCESS_SUBTYPES[0]!}
           cols={["언제·어디서", "무엇을 나눴나요?", "그래서 정한 것", "관련 링크", "관련 파일"]}
           longCols={[1, 2]}
           rows={rowsOf("process")}
@@ -1084,6 +1084,8 @@ function RowSection({
   // 전용 양식 탭을 열었는데 기록이 없으면, 편집 권한이 있을 때 빈 양식을 바로 보여준다.
   const draftTemplate = filterBySubtype ? PROCESS_SUBTYPE_TEMPLATES[selectedSubtype] : undefined;
   const showDraft = canEdit && !!draftTemplate && filteredRows.length === 0;
+  // 여러 건(팀원별) 추가가 허용된 탭에서만 새 행 추가 버튼을 보여준다.
+  const multiTab = !!draftTemplate?.multi;
 
   return (
     <section className="rounded-2xl bg-card p-6 shadow-sm">
@@ -1147,14 +1149,15 @@ function RowSection({
         {filteredRows.length === 0 && !showDraft && (
           <p className="text-sm text-muted-foreground">아직 등록된 내용이 없어요.</p>
         )}
-        {filteredRows.map((row) => (
+        {filteredRows.map((row, i) => (
           <RowItem
             key={row.id}
             row={row}
             labels={labels}
             longs={longs}
             placeholders={hints}
-            subtypes={subtypes}
+            indexLabel={multiTab ? `${selectedSubtype.replace(/^\d+\.\s*/, "")} ${i + 1}` : undefined}
+            subtypes={filterBySubtype ? undefined : subtypes}
             canEdit={canEdit}
             authorEnabled={authorEnabled}
             linkCol={def.linkCol}
@@ -1193,20 +1196,20 @@ function RowSection({
           />
         )}
 
-        {canEdit && (!filterBySubtype || selectedSubtype === defaultSubtype) && (
+        {canEdit && (!filterBySubtype || multiTab) && (
           <Button
             type="button"
             variant="secondary"
             className="rounded-xl active:scale-95"
             onClick={() =>
               onSave({
-                ...emptyRowVars(def.kind, rows.length, defaultSubtype),
+                ...emptyRowVars(def.kind, rows.length, filterBySubtype ? selectedSubtype : ""),
                 rowAuthor: defaultAuthor,
               })
             }
           >
             <Plus className="h-4 w-4" />
-            {def.addLabel}
+            {(filterBySubtype && draftTemplate?.addLabel) || def.addLabel}
           </Button>
         )}
       </div>
@@ -1232,6 +1235,7 @@ function RowItem({
   labels,
   longs,
   placeholders,
+  indexLabel,
   subtypes,
   canEdit,
   authorEnabled,
@@ -1244,6 +1248,9 @@ function RowItem({
   labels: string[];
   longs: number[];
   placeholders?: string[];
+  /** 여러 건 작성 탭에서 "인터뷰 1"처럼 붙이는 머리말 */
+  indexLabel?: string;
+  /** 탭 필터가 없는 표에서 행별 종류 선택 버튼 */
   subtypes?: string[];
   canEdit: boolean;
   authorEnabled?: boolean;
@@ -1359,8 +1366,13 @@ function RowItem({
 
   return (
     <div className="space-y-2 rounded-xl bg-muted/40 p-3">
-      {(subtypes || legacyAuthor || (authorEnabled && canEdit)) && (
+      {(indexLabel || subtypes || legacyAuthor || (authorEnabled && canEdit)) && (
         <div className="flex flex-wrap items-center gap-2">
+          {indexLabel && (
+            <span className="rounded-full bg-background px-2.5 py-1 text-xs font-semibold text-foreground">
+              {indexLabel}
+            </span>
+          )}
           {subtypes?.map((s) => (
             <Button
               key={s}
@@ -1392,6 +1404,19 @@ function RowItem({
           )}
         </div>
       )}
+
+      {row.kind === "process" &&
+        subtype &&
+        Object.entries(PROCESS_TEMPLATE_NOTICES[subtype] ?? {})
+          .filter(([col]) => !fileCols.includes(Number(col)))
+          .map(([col, notice]) => (
+            <TemplateNotice
+              key={`notice-${col}`}
+              label={notice.label}
+              text={notice.text}
+              tip={notice.tip}
+            />
+          ))}
 
       <div className="grid gap-2 sm:grid-cols-2">
         {effLabels.map((label, i) => {
@@ -1446,7 +1471,7 @@ function RowItem({
             return (
               <div key={col} className={cn("space-y-2", isImageCol && "w-full")}>
                 {notice && (
-                  <TemplateNotice label={notice.label} text={notice.text} />
+                  <TemplateNotice label={notice.label} text={notice.text} tip={notice.tip} />
                 )}
                 <Label className="text-xs text-muted-foreground">
                   {label} <span className="text-[11px]">(최대 3개, 개당 3MB)</span>
