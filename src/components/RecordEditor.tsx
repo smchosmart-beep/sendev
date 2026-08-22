@@ -1157,6 +1157,7 @@ function RowSection({
             longs={longs}
             placeholders={hints}
             indexLabel={multiTab ? `${selectedSubtype.replace(/^\d+\.\s*/, "")} ${i + 1}` : undefined}
+            subtypes={filterBySubtype ? undefined : subtypes}
             canEdit={canEdit}
             authorEnabled={authorEnabled}
             linkCol={def.linkCol}
