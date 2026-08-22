@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { UserCog, Trophy, Trash2, Lock, AlertCircle, KeyRound, Plus, X, Search, Users, Settings2, Eye, EyeOff, icons as lucideIcons } from "lucide-react";
+import { UserCog, Trophy, Trash2, Lock, AlertCircle, KeyRound, Plus, X, Search, Pencil, Users, Settings2, Eye, EyeOff, icons as lucideIcons } from "lucide-react";
 
 import { toast } from "sonner";
 
@@ -19,6 +19,7 @@ import {
   deleteUserAward,
   deleteUserProfile,
   resetNicknamePassword,
+  adminRenameNickname,
   verifyProfileAdmin,
   setAwardIcon,
   addAwardIconRule,
@@ -380,6 +381,7 @@ function ProfilesAdmin() {
   const removeAward = useServerFn(deleteUserAward);
   const remove = useServerFn(deleteUserProfile);
   const resetPw = useServerFn(resetNicknamePassword);
+  const adminRename = useServerFn(adminRenameNickname);
   const { confirm, confirmDialog } = useConfirm();
 
 
@@ -397,6 +399,10 @@ function ProfilesAdmin() {
   // 목록 행 내 인라인 배지 추가
   const [addingFor, setAddingFor] = useState<string | null>(null);
   const [addingValue, setAddingValue] = useState("");
+
+  // 목록 행 내 닉네임 변경
+  const [renamingFor, setRenamingFor] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -503,6 +509,38 @@ function ProfilesAdmin() {
     },
     onError: () => toast.error("초기화 중 문제가 발생했어요."),
   });
+  const renameMutation = useMutation({
+    mutationFn: ({ id, newUsername }: { id: string; newUsername: string }) =>
+      adminRename({
+        data: { id, newUsername, adminPassword: getProfileAdminPassword() },
+      }),
+    onSuccess: (res) => {
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      setRenamingFor(null);
+      setRenameValue("");
+      toast.success(
+        `'${res.oldUsername}' → '${res.username}'으로 변경했어요. 사용자에게 기기에서 닉네임을 새 이름으로 바꾸도록 안내해 주세요.`,
+      );
+    },
+    onError: (err) =>
+      toast.error(
+        err instanceof Error ? err.message : "닉네임 변경 중 문제가 발생했어요.",
+      ),
+  });
+
+  const submitRename = (p: UserProfileDTO) => {
+    const next = renameValue.trim();
+    if (!next) {
+      toast.error("새 닉네임을 입력해 주세요.");
+      return;
+    }
+    if (next === p.username) {
+      toast.error("현재 닉네임과 동일해요.");
+      return;
+    }
+    renameMutation.mutate({ id: p.id, newUsername: next });
+  };
 
 
 
@@ -730,6 +768,19 @@ function ProfilesAdmin() {
                     </button>
                     <button
                       type="button"
+                      onClick={() => {
+                        setRenamingFor((prev) => (prev === p.id ? null : p.id));
+                        setRenameValue(p.username);
+                        setAddingFor(null);
+                      }}
+                      aria-label="닉네임 변경"
+                      title="닉네임 변경"
+                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-sm active:scale-95"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
                       onClick={async () => {
                         if (
                           await confirm({
@@ -799,6 +850,49 @@ function ProfilesAdmin() {
                         >
                           취소
                         </Button>
+                      </div>
+                    )}
+                    {renamingFor === p.id && (
+                      <div className="mt-3 space-y-2 rounded-xl bg-muted/60 p-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            autoFocus
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                submitRename(p);
+                              }
+                            }}
+                            placeholder="새 닉네임"
+                            className="rounded-lg bg-background"
+                          />
+                          <Button
+                            type="button"
+                            onClick={() => submitRename(p)}
+                            disabled={renameMutation.isPending}
+                            className="rounded-lg active:scale-95"
+                          >
+                            변경
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => {
+                              setRenamingFor(null);
+                              setRenameValue("");
+                            }}
+                            className="rounded-lg active:scale-95"
+                          >
+                            취소
+                          </Button>
+                        </div>
+                        <p className="text-[11px] leading-relaxed text-muted-foreground">
+                          글·댓글·좋아요·배지·투표·평가·활동기록·읽음 표시가 함께 옮겨져요.
+                          변경 후에는 본인에게 <strong>기기에서 닉네임을 새 이름으로 바꾸고
+                          기존 비밀번호로 다시 확인</strong>하도록 안내해 주세요.
+                        </p>
                       </div>
                     )}
                   </li>
