@@ -64,10 +64,11 @@ export const PRIVACY_STATUSES = [
 ];
 
 export const PROCESS_SUBTYPES = [
-  "22일 팀빌딩·문제 정의 회의",
-  "인터뷰 기록",
-  "인터뷰 후 문제 구체화 회의",
-  "그 밖의 문제 정의 메모",
+  "1. 페르소나",
+  "2. 고객 여정 맵",
+  "3. 인터뷰 기록",
+  "4. 회고&문제정의",
+  "5. 종이 프로토타입 영상 콘티",
 ];
 
 export const STANCE_QUESTIONS = [
