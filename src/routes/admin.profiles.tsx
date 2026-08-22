@@ -20,6 +20,7 @@ import {
   deleteUserProfile,
   resetNicknamePassword,
   adminRenameNickname,
+  adminMergeNickname,
   verifyProfileAdmin,
   setAwardIcon,
   addAwardIconRule,
