@@ -4636,7 +4636,7 @@ export const cancelRunoff = createServerFn({ method: "POST" })
 export interface VoteVoterStatusDTO {
   voters: { name: string; voted: boolean }[];
   round: number;
-  status: "hidden" | "open" | "closed";
+  status: VoteStatus;
 }
 
 // 투표 진행 중 "누가 투표를 마쳤는지"만 알려주는 현황판용 조회.
