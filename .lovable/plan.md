@@ -22,7 +22,7 @@
 
 현재 "+ ... 추가" 버튼은 `onSave(emptyRowVars(...))`를 즉시 호출하여 DB에 빈 행을 생성한다. 이 동작은 `RowSection`을 사용하는 모든 행 섹션(핵심 기능, 사용 흐름, 한계, 계획, 제작자, AI 활용, process 등)에 공통으로 적용된다. `isBlankRow`로 출력은 걸러지지만 DB에 불필요한 빈 행이 쌓인다.
 
-- 수정: 추가 버튼은 클릭한 섹션의 로컬 상태에만 임시 draft를 추가하고, 사용자가 내용을 입력한 뒤 실제 저장(`onSave`)이 일어날 때만 DB에 기록한다. 삭제(취소) 시 DB에 저장되지 않은 draft는 로컬에서만 제거된다. 로컬 draft 배열의 각 항목은 `{ draftId: string; row: DraftRow }` 형태로 저장하며, `DraftRow`의 `id`는 `null`로 유지한다.
+- 수정: 추가 버튼은 클릭한 섹션의 로컬 상태에만 임시 draft를 추가하고, 사용자가 내용을 입력한 뒤 실제 저장(`onSave`)이 일어날 때만 DB에 기록한다. 삭제(취소) 시 DB에 저장되지 않은 draft는 로컬에서만 제거된다. 로컬 draft 배열의 각 항목은 `{ draftId: string; row: DraftRow }` 형태로 저장하며, `DraftRow`의 `id`는 `null`로 유지한다. draft 생성 시 `author: defaultAuthor`를 초기값으로 채워, 기존의 작성자 자동 입력 동작이 그대로 유지되도록 한다.
 - 로컬 draft 관리 규칙을 통일: `multi`/`showDraft`가 true인 탭(예: 인터뷰 기록)은 기록이 0건이면 자동으로 1개의 draft 양식을 노출하고, 그 이상 추가는 "+" 버튼으로만 draft를 로컬에 추가한다. `multi`가 아닌 다른 행 섹션에서도 추가 버튼은 동일하게 로컬 draft만 추가한다. 저장된 실제 행은 서버 응답 후 쿼리 갱신으로 다시 들어오므로, 저장 성공 시 해당 로컬 draft는 제거한다.
 - draft 생성 시 `sortOrder` 충돌 방지: 여러 draft가 동시에 추가되면 `rows.length` 기준으로 같은 `sortOrder`를 가질 수 있으므로, `rows.length + draftIndex` 형태로 고유 값을 부여한다.
 
