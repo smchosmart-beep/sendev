@@ -316,20 +316,13 @@ export const PROCESS_SUBTYPE_TEMPLATES: Record<string, RowTemplate> = {
   },
 
   "5. 종이 프로토타입 영상 콘티": {
-    cols: ["콘티 내용", "", "", "종이 프로토타입 유튜브 영상 링크", "", ""],
-    placeholders: [
-      "예) 1. (0:00~) 첫 화면 - 김수학 선생님과 문제 소개\n2. 숫자 입력 화면\n3. 판별 과정 결과 화면\n4. (~1:30) 마무리 멘트",
-      "",
-      "",
-      "예) https://youtu.be/xxxxxxxx",
-      "",
-      "",
-    ],
-    longCols: [0],
+    cols: ["", "", "", "종이 프로토타입 유튜브 영상 링크", "", ""],
+    placeholders: ["", "", "", "예) https://youtu.be/xxxxxxxx", "", ""],
+    longCols: [],
     linkCol: 3,
     fileCols: [],
     imageCols: [],
-    displayOrder: [0, 3],
+    displayOrder: [3],
   },
 };
 

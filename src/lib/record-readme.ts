@@ -166,6 +166,31 @@ export function isBlankRow(
   return [r.col1, r.col2, r.col3, r.col4, r.col5, r.col6].every((v) => !(v ?? "").trim());
 }
 
+/**
+ * 출력·집계용 빈 행 판정.
+ * 해당 양식에서 "화면에 실제로 표시되는 열"(displayOrder ∩ 라벨이 있는 열)만 검사한다.
+ * 양식에서 빠진 열에만 옛 값이 남아 있는 행은 빈 행으로 본다.
+ */
+export function isBlankForOutput(
+  kind: string,
+  r: {
+    subtype?: string | null;
+    col1?: string | null;
+    col2?: string | null;
+    col3?: string | null;
+    col4?: string | null;
+    col5?: string | null;
+    col6?: string | null;
+  },
+): boolean {
+  const tpl = rowTemplate(kind, r.subtype ?? null);
+  const values = [r.col1, r.col2, r.col3, r.col4, r.col5, r.col6];
+  const order = tpl.displayOrder ?? values.map((_, i) => i);
+  const shown = order.filter((i) => (tpl.cols[i] ?? "").trim());
+  if (shown.length === 0) return values.every((v) => !(v ?? "").trim());
+  return shown.every((i) => !(values[i] ?? "").trim());
+}
+
 
 
 
@@ -227,7 +252,7 @@ export function buildRecordReadme(team: RecordOverviewTeam): string {
     const def = ROW_SECTION_DEFS[section.kind];
     const rows = team.rows
       .filter((r) => r.kind === section.kind)
-      .filter((r) => !isBlankRow(r))
+      .filter((r) => !isBlankForOutput(section.kind, r))
       .sort(compareOutputRows(section.kind));
     if (rows.length === 0) continue;
 
@@ -364,7 +389,7 @@ export interface PublicReadmeBlock {
 function rowsOfKind(team: RecordOverviewTeam, kind: RecordRowKindName) {
   return team.rows
     .filter((r) => r.kind === kind)
-    .filter((r) => !isBlankRow(r))
+    .filter((r) => !isBlankForOutput(kind, r))
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 

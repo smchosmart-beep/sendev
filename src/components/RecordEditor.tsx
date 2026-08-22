@@ -76,7 +76,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { isBlankRow, normalizeUrl } from "@/lib/record-readme";
+import { isBlankForOutput, normalizeUrl } from "@/lib/record-readme";
 
 
 
@@ -507,7 +507,7 @@ export function RecordEditor({
       id: `s3-${kind}`,
       no: String(FINAL_GROUPS.length + i + 1).padStart(2, "0"),
       title: ROW_SECTION_DEFS[kind]!.title,
-      ...rowBlockStatus(rowsOf(kind).filter((r) => !isBlankRow(r)).length),
+      ...rowBlockStatus(rowsOf(kind).filter((r) => !isBlankForOutput(kind, r)).length),
     })),
 
   ];
@@ -525,7 +525,7 @@ export function RecordEditor({
       id: `s4-${kind}`,
       no: String(i + 1).padStart(2, "0"),
       title: ROW_SECTION_DEFS[kind]!.title,
-      ...rowBlockStatus(rowsOf(kind).filter((r) => !isBlankRow(r)).length),
+      ...rowBlockStatus(rowsOf(kind).filter((r) => !isBlankForOutput(kind, r)).length),
     })),
 
     {
