@@ -22,7 +22,7 @@
 
 현재 "+ ... 추가" 버튼은 `onSave(emptyRowVars(...))`를 즉시 호출하여 DB에 빈 행을 생성한다. 이 동작은 `RowSection`을 사용하는 모든 행 섹션(핵심 기능, 사용 흐름, 한계, 계획, 제작자, AI 활용, process 등)에 공통으로 적용된다. `isBlankRow`로 출력은 걸러지지만 DB에 불필요한 빈 행이 쌓인다.
 
-- 수정: 추가 버튼은 클릭한 섹션의 로컬 상태에만 임시 draft를 추가하고, 사용자가 내용을 입력한 뒤 실제 저장(`onSave`)이 일어날 때만 DB에 기록한다. 삭제(취소) 시 DB에 저장되지 않은 draft는 로컬에서만 제거된다. 로컬 draft 배열의 각 항목은 `{ draftId: string; row: DraftRow }` 형태로 저장하며, `DraftRow`의 `id`는 `null`로 유지한다.
+- 수정: 추가 버튼은 클릭한 섹션의 로컬 상태에만 임시 draft를 추가하고, 사용자가 내용을 입력한 뒤 실제 저장(`onSave`)이 일어날 때만 DB에 기록한다. 삭제(취소) 시 DB에 저장되지 않은 draft는 로컬에서만 제거된다. 로컬 draft 배열의 각 항목은 `{ draftId: string; row: DraftRow }` 형태로 저장하며, `DraftRow`의 `id`는 `null`로 유지한다. draft 생성 시 `author: defaultAuthor`를 초기값으로 채워, 기존의 작성자 자동 입력 동작이 그대로 유지되도록 한다.
 - 로컬 draft 관리 규칙을 통일: `multi`/`showDraft`가 true인 탭(예: 인터뷰 기록)은 기록이 0건이면 자동으로 1개의 draft 양식을 노출하고, 그 이상 추가는 "+" 버튼으로만 draft를 로컬에 추가한다. `multi`가 아닌 다른 행 섹션에서도 추가 버튼은 동일하게 로컬 draft만 추가한다. 저장된 실제 행은 서버 응답 후 쿼리 갱신으로 다시 들어오므로, 저장 성공 시 해당 로컬 draft는 제거한다.
 - draft 생성 시 `sortOrder` 충돌 방지: 여러 draft가 동시에 추가되면 `rows.length` 기준으로 같은 `sortOrder`를 가질 수 있으므로, `rows.length + draftIndex` 형태로 고유 값을 부여한다.
 
@@ -39,8 +39,8 @@
 `RowItem`의 저장 버튼은 `id: row.id`로 전달한다. draft 행의 `id`는 `null`이므로 신규 저장이 되고, 쿼리 갱신 후 서버에서 실제 `id`를 가진 행이 `filteredRows`에 추가된다. 이때 로컬 draft가 그대로 남아 있으면 같은 내용이 두 줄로 보인다.
 
 - `rowMutation`은 `RecordEditor.tsx` 전체에서 단 하나이므로, 모든 `RowSection`이 같은 `isPending` 상태를 공유한다. `isPending`이 false로 돌아오는 시점에 draft를 제거하면, **다른 섹션에서 저장이 일어날 때도** 현재 탭의 미저장 draft가 사라져 입력 중이던 내용이 유실될 수 있다. 따라서 전역 `isPending` prop 방식은 사용하지 않는다.
-- 수정: `RecordEditor.tsx` 내부의 `RowSection` 및 `RowItem` 함수를 수정한다. `RowSection`의 `onSave` prop 타입을 `Promise<void>`를 반환하는 비동기 콜백으로 변경하고, `RecordEditor.tsx`에서 `rowMutation.mutateAsync`를 전달한다. `RowItem`이 실제로 저장 버튼을 가지고 있으므로, `RowItem`에 `draftId`와 `onRemoveDraft(draftId: string) => void` prop을 추가하고, 저장 버튼 클릭 시 `try { await onSave({ ...row, sectionKey }); onRemoveDraft(draftId); } catch { ... }` 형태로 호출한다. 성공 시에만 해당 `draftId`를 가진 로컬 draft를 배열에서 제거하고, 실패 시 draft는 그대로 두어 재시도할 수 있게 한다.
-- `onSave`의 반환형 변경은 `RecordEditor.tsx` 내부의 `rowSectionProps`, `StanceSection`/`StanceItem` 등 연관 호출부에 모두 영향을 미친다. 모든 `onSave` 호출부의 타입을 `Promise<void>`로 통일하고, `RowItem` 내부의 저장 호출은 `try/catch`로 감싸 실패 시 draft를 유지한다. `StanceItem`처럼 draft가 없는 곳은 `onSave(...).catch(() => {})` 형태로 호출하여 unhandled rejection이 발생하지 않도록 처리한다.
+- 수정: `RecordEditor.tsx` 내부의 `RowSection` 및 `RowItem` 함수를 수정한다. `RowSection`의 `onSave` prop 타입을 `Promise<void>`를 반환하는 비동기 콜백으로 변경하고, `RecordEditor.tsx`에서 `onSave`를 래퍼 함수로 정의하여 전달한다. 이 래퍼는 `postId`를 클로저로 캡처하여 `RowSection`/`RowItem`으로는 드릴링하지 않는다. 예: `async (vars) => { await rowMutation.mutateAsync(vars); await queryClient.invalidateQueries({ queryKey: ["record", postId], refetchType: "active" }); }`. `RowItem`이 실제로 저장 버튼을 가지고 있으므로, `RowItem`에 `draftId`와 `onRemoveDraft(draftId: string) => void` prop을 추가하고, 저장 버튼 클릭 시 `try { await onSave({ ...row, sectionKey }); onRemoveDraft(draftId); } catch { ... }` 형태로 호출한다. 성공 시에만 해당 `draftId`를 가진 로컬 draft를 배열에서 제거하고, 실패 시 draft는 그대로 두어 재시도할 수 있게 한다.
+- `onSave`의 반환형 변경은 `RecordEditor.tsx` 내부의 `rowSectionProps`, `StanceSection`/`StanceItem` 등 연관 호출부에 모두 영향을 미친다. 모든 `onSave` 호출부의 타입을 `Promise<void>`로 통일하고, `RowItem` 내부의 저장 호출은 `try/catch`로 감싸 실패 시 draft를 유지한다. `StanceItem`의 `save` 함수는 정의 시점에 `onSave({...}).catch(() => {})` 형태로 감싸, 호출부마다 `.catch()`를 붙이지 않아도 unhandled rejection이 발생하지 않도록 공통 처리한다.
 - React 상태에서 draft와 서버 행을 분리해 관리하며, 저장된 draft는 성공 콜백에서만 로컬 배열에서 필터링한다.
 
 ### 6. 로컬 draft를 subtype(탭)별로 격리
@@ -57,20 +57,21 @@
 
 - 수정: 빈 상태 안내 문구(`아직 등록된 내용이 없어요`)의 노출 조건을 `filteredRows.length === 0 && visibleDrafts.length === 0`로 변경한다. draft가 있으면 안내 문구를 숨기고 draft 입력 양식만 보여준다.
 
-### 8. 저장 성공 후 draft 제거 시점을 쿼리 갱신 완료 후로 맞추고 중복 토스트 방지
+### 8. 저장 성공 후 draft 제거 시점을 쿼리 갱신 완료 후로 맞추고 중복 토스트/무효화 방지
 
 `mutateAsync`가 resolve되어도 `invalidateQueries`는 비동기로 동작하여, draft를 즉시 제거하면 서버에서 실제 행이 목록에 나타나기까지 잠깐 항목이 사라지는 플리커가 발생할 수 있다. 또한 `rowMutation`의 `onError` 토스트와 `RowItem`의 `catch` 내부 토스트가 중복될 수 있다.
 
-- 수정: `rowMutation`의 `onSuccess` 콜백은 기존처럼 `invalidateQueries`를 호출만 하고 **return하지 않는다**. draft를 제거하는 시점은 `RowItem` 내부에서 직접 제어한다. 저장 버튼 클릭 시 `try { await onSave({ ...row, sectionKey }); await queryClient.invalidateQueries({ queryKey: [...] }); onRemoveDraft(draftId); } catch { ... }` 형태로 호출하여, draft 제거는 오직 해당 draft 저장에 대한 쿼리 갱신이 완료된 뒤에만 이루어지게 한다. 이 방식은 `rowMutation`을 공유하는 다른 섹션의 저장(stance 자동 저장 등)에 지연을 전파하지 않는다.
+- 수정: `RecordEditor.tsx`에서 `onSave`를 래퍼 함수로 정의한다. 예: `async (vars) => { await rowMutation.mutateAsync(vars); await queryClient.invalidateQueries({ queryKey: ["record", postId], refetchType: "active" }); }`. 이 래퍼는 `postId`를 클로저로 캡처하므로 `RowSection`/`RowItem`으로 `postId`를 드릴링할 필요가 없다. `RowItem`의 저장 버튼 클릭 시 `try { await onSave({ ...row, sectionKey }); onRemoveDraft(draftId); } catch { ... }` 형태로 호출하여, draft 제거는 오직 해당 draft 저장에 대한 쿼리 갱신이 완료된 뒤에만 이루어지게 한다. 이 방식은 `rowMutation`을 공유하는 다른 섹션의 저장(stance 자동 저장 등)에 지연을 전파하지 않는다.
+- `rowMutation`의 `onSuccess` 콜백에서 `invalidateQueries` 호출을 제거하여, 래퍼에서 한 번만 무효화되도록 중복 refetch를 방지한다. 래퍼의 `invalidateQueries`는 `refetchType: "active"`로 범위를 한정하여 활성 쿼리만 다시 가져오게 한다.
 - `catch` 블록에서는 토스트를 띄우지 않고 draft만 유지하여 재시도를 가능하게 한다. 실제 에러 토스트는 `rowMutation`의 `onError` 콜백에서 한 곳에서만 담당한다.
-- `queryClient.invalidateQueries` 범위는 해당 활동 기록(`activityId`)과 관련된 쿼리 키로 한정하여, 전체 쿼리 무효화로 인한 불필요한 지연을 최소화한다. 필요 시 `refetchType: "active"` 옵션을 함께 사용한다.
+- `queryClient.invalidateQueries` 범위는 해당 활동 기록(`postId`)과 관련된 쿼리 키(`["record", postId]`)로 한정하여, 전체 쿼리 무효화로 인한 불필요한 지연을 최소화한다.
 
 ## 영향 범위
 
 - `src/lib/record-readme.ts`: subtype 사용 kind(process, ai_use) 그룹 정렬 + process/ai_use 정의 순서 + 폴백
 - `src/lib/record-schema.ts`: `AI_USE_TYPES` 배열 순서를 현재 README/사례집 출력 순서에 맞춰 재배열
 - `src/components/record/CasebookDocument.tsx`: 동일 정렬 로직 확인·수정
-- `src/components/RecordEditor.tsx` (내부 `RowSection`/`RowItem` 함수 수정): draft/추가 버튼 조건, 임시 draft 배열 관리, draft key, 저장 후 제거, `onSave` 비동기 콜백 전달, 연관 호출부 통일, subtype별 draft 필터링, 빈 상태 문구 조건, 토스트 중복 방지, draft 저장 전 상태 표시
+- `src/components/RecordEditor.tsx` (내부 `RowSection`/`RowItem` 함수 수정): draft/추가 버튼 조건, 임시 draft 배열 관리, draft key, 저장 후 제거, `onSave` 비동기 콜백 전달(`postId` 클로저 캡처), `rowMutation`의 `onSuccess` 무효화 제거, 연관 호출부 통일, `StanceItem`의 `save` 함수 공통 rejection 처리, subtype별 draft 필터링, 빈 상태 문구 조건, 토스트 중복 방지, draft 저장 전 상태 표시
 - 별도 신규 파일(`RowSection.tsx`, `RowItem.tsx`)은 만들지 않는다.
 
 ### 9. draft 취소와 실제 삭제 UI를 명확히 구분하고 저장 전 상태 시각화
