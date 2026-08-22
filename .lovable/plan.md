@@ -66,8 +66,16 @@
 - `src/lib/record-readme.ts`: subtype 사용 kind(process, ai_use) 그룹 정렬 + process/ai_use 정의 순서 + 폴백
 - `src/lib/record-schema.ts`: `AI_USE_TYPES` 배열 순서를 현재 README/사례집 출력 순서에 맞춰 재배열
 - `src/components/record/CasebookDocument.tsx`: 동일 정렬 로직 확인·수정
-- `src/components/RecordEditor.tsx` (내부 `RowSection`/`RowItem` 함수 수정): draft/추가 버튼 조건, 임시 draft 배열 관리, draft key, 저장 후 제거, `onSave` 비동기 콜백 전달, 연관 호출부 통일, subtype별 draft 필터링, 빈 상태 문구 조건, 토스트 중복 방지
+- `src/components/RecordEditor.tsx` (내부 `RowSection`/`RowItem` 함수 수정): draft/추가 버튼 조건, 임시 draft 배열 관리, draft key, 저장 후 제거, `onSave` 비동기 콜백 전달, 연관 호출부 통일, subtype별 draft 필터링, 빈 상태 문구 조건, 토스트 중복 방지, draft 저장 전 상태 표시
 - 별도 신규 파일(`RowSection.tsx`, `RowItem.tsx`)은 만들지 않는다.
+
+### 9. draft 취소와 실제 삭제 UI를 명확히 구분하고 저장 전 상태 시각화
+
+`dirty` 계산으로 인해 draft가 비어 있으면 저장 버튼이 비활성화되며, 이때 새로고침하면 로컬에만 존재하는 draft가 사라진다. 사용자가 "추가했는데 사라졌다"고 오해할 수 있으므로, draft는 저장 전 임시 상태임을 명확히 표시해야 한다.
+
+- 수정: draft 카드(또는 항목 래퍼)에 "저장 전" 배지를 표시하거나, 점선 테두리로 시각적으로 구분한다. 저장 버튼이 비활성화된 상태에서도 이 표시는 유지되어 사용자가 내용을 입력해야 영구 저장된다는 것을 인지할 수 있게 한다.
+- draft의 취소 버튼은 실제 저장된 행의 삭제와 구분된 아이콘/라벨을 사용한다. `row.id == null`일 때는 서버 삭제를 절대 호출하지 않으며, `onCancel`만 호출한다. `id != null`인 실제 행만 기존 `onDelete` 경로를 사용한다.
+- UI 툴팁 또는 플레이스홀더에 "저장 버튼을 눌러야 서버에 반영됩니다" 안내를 추가하여, draft가 저장 전까지 서버에 남지 않고 새로고침 시 사라진다는 동작을 사용자에게 전달한다.
 
 ## 데이터·보안·비용
 
