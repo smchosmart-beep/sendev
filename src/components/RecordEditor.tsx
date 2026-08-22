@@ -429,9 +429,21 @@ export function RecordEditor({
 
   const rowMutation = useMutation({
     mutationFn: (vars: SaveRowVars) => saveRowFn({ data: { postId, ...vars, ...auth } }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["record", postId] }),
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "저장하지 못했어요."),
   });
+
+  // 저장 → 활성 쿼리 갱신까지 한 번에 처리하는 공용 래퍼. postId를 클로저로 캡처한다.
+  const saveRow = useCallback(
+    async (vars: SaveRowVars) => {
+      await rowMutation.mutateAsync(vars);
+      await queryClient.invalidateQueries({
+        queryKey: ["record", postId],
+        refetchType: "active",
+      });
+    },
+    [rowMutation, queryClient, postId],
+  );
+
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteRowFn({ data: { postId, id, ...auth } }),
@@ -479,7 +491,7 @@ export function RecordEditor({
 
   const rowSectionProps = {
     canEdit,
-    onSave: (vars: SaveRowVars) => rowMutation.mutate(vars),
+    onSave: saveRow,
     onDelete: (id: string) => deleteMutation.mutate(id),
   };
 
@@ -677,7 +689,7 @@ export function RecordEditor({
             <StanceSection
               rows={rowsOf("stance")}
               canEdit={canEdit}
-              onSave={(vars) => rowMutation.mutate(vars)}
+              onSave={saveRow}
             />
           </div>
 
@@ -1057,7 +1069,7 @@ function RowSection({
   def: RowSectionDef;
   rows: RecordRowDTO[];
   canEdit: boolean;
-  onSave: (vars: SaveRowVars) => void;
+  onSave: (vars: SaveRowVars) => Promise<void>;
   onDelete: (id: string) => void;
   title?: string;
   hint?: string;
@@ -1083,9 +1095,56 @@ function RowSection({
   }, [rows, filterBySubtype, selectedSubtype]);
   // 전용 양식 탭을 열었는데 기록이 없으면, 편집 권한이 있을 때 빈 양식을 바로 보여준다.
   const draftTemplate = filterBySubtype ? PROCESS_SUBTYPE_TEMPLATES[selectedSubtype] : undefined;
-  const showDraft = canEdit && !!draftTemplate && filteredRows.length === 0;
   // 여러 건(팀원별) 추가가 허용된 탭에서만 새 행 추가 버튼을 보여준다.
   const multiTab = !!draftTemplate?.multi;
+
+  // "+ 추가" 버튼으로 만든 임시 draft는 저장 전까지 로컬에만 존재한다.
+  const [drafts, setDrafts] = useState<{ draftId: string; row: DraftRow }[]>([]);
+  const visibleDrafts = useMemo(
+    () => (filterBySubtype ? drafts.filter((d) => d.row.subtype === selectedSubtype) : drafts),
+    [drafts, filterBySubtype, selectedSubtype],
+  );
+  const showDraft =
+    canEdit && !!draftTemplate && filteredRows.length === 0 && visibleDrafts.length === 0;
+
+  const removeDraft = useCallback(
+    (draftId: string) => setDrafts((prev) => prev.filter((d) => d.draftId !== draftId)),
+    [],
+  );
+
+  const addDraft = () => {
+    const targetSubtype = filterBySubtype ? selectedSubtype : "";
+    const scoped = filterBySubtype ? rows.filter((r) => r.subtype === targetSubtype) : rows;
+    const maxSortOrder = Math.max(0, ...scoped.map((r) => r.sortOrder ?? 0));
+    setDrafts((prev) => {
+      const draftId =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `draft-${def.kind}-${targetSubtype}-${Date.now()}-${prev.length}`;
+      return [
+        ...prev,
+        {
+          draftId,
+          row: {
+            id: null,
+            kind: def.kind,
+            sortOrder: maxSortOrder + 1 + prev.length,
+            subtype: targetSubtype,
+            author: defaultAuthor,
+            col1: "",
+            col2: "",
+            col3: "",
+            col4: "",
+            col5: "",
+            col6: "",
+            updatedBy: "",
+            updatedAt: "",
+          },
+        },
+      ];
+    });
+  };
+
 
   return (
     <section className="rounded-2xl bg-card p-6 shadow-sm">
@@ -1146,7 +1205,7 @@ function RowSection({
         </div>
       )}
       <div className="mt-4 space-y-3">
-        {filteredRows.length === 0 && !showDraft && (
+        {filteredRows.length === 0 && !showDraft && visibleDrafts.length === 0 && (
           <p className="text-sm text-muted-foreground">아직 등록된 내용이 없어요.</p>
         )}
         {filteredRows.map((row, i) => (
@@ -1195,18 +1254,37 @@ function RowSection({
             onDelete={() => {}}
           />
         )}
+        {visibleDrafts.map((d, i) => (
+          <RowItem
+            key={d.draftId}
+            draftId={d.draftId}
+            row={d.row}
+            labels={labels}
+            longs={longs}
+            placeholders={hints}
+            indexLabel={
+              multiTab
+                ? `${selectedSubtype.replace(/^\d+\.\s*/, "")} ${filteredRows.length + i + 1}`
+                : undefined
+            }
+            subtypes={filterBySubtype ? undefined : subtypes}
+            canEdit={canEdit}
+            authorEnabled={authorEnabled}
+            linkCol={def.linkCol}
+            fileCol={def.fileCol}
+            onSave={onSave}
+            onDelete={() => {}}
+            onCancel={removeDraft}
+            onRemoveDraft={removeDraft}
+          />
+        ))}
 
-        {canEdit && (!filterBySubtype || multiTab) && (
+        {canEdit && !showDraft && (!filterBySubtype || multiTab) && (
           <Button
             type="button"
             variant="secondary"
             className="rounded-xl active:scale-95"
-            onClick={() =>
-              onSave({
-                ...emptyRowVars(def.kind, rows.length, filterBySubtype ? selectedSubtype : ""),
-                rowAuthor: defaultAuthor,
-              })
-            }
+            onClick={addDraft}
           >
             <Plus className="h-4 w-4" />
             {(filterBySubtype && draftTemplate?.addLabel) || def.addLabel}
@@ -1232,6 +1310,7 @@ function isYouTubeUrl(raw: string): boolean {
 
 function RowItem({
   row,
+  draftId,
   labels,
   longs,
   placeholders,
@@ -1243,8 +1322,12 @@ function RowItem({
   fileCol,
   onSave,
   onDelete,
+  onCancel,
+  onRemoveDraft,
 }: {
   row: DraftRow;
+  /** 저장 전 로컬 draft에만 부여되는 식별자 */
+  draftId?: string;
   labels: string[];
   longs: number[];
   placeholders?: string[];
@@ -1256,9 +1339,14 @@ function RowItem({
   authorEnabled?: boolean;
   linkCol?: number;
   fileCol?: number;
-  onSave: (vars: SaveRowVars) => void;
+  onSave: (vars: SaveRowVars) => Promise<void>;
   onDelete: (id: string) => void;
+  /** 저장 전 draft 취소 (서버 호출 없음) */
+  onCancel?: (draftId: string) => void;
+  /** 저장 성공 후 로컬 draft 제거 */
+  onRemoveDraft?: (draftId: string) => void;
 }) {
+  const [saving, setSaving] = useState(false);
   const initial = [row.col1, row.col2, row.col3, row.col4, row.col5, row.col6];
   const [values, setValues] = useState(initial);
   const [subtype, setSubtype] = useState(row.subtype);
@@ -1364,13 +1452,26 @@ function RowItem({
 
   const uploading = uploadingCol !== null;
 
+  const isDraft = row.id == null;
+
   return (
-    <div className="space-y-2 rounded-xl bg-muted/40 p-3">
-      {(indexLabel || subtypes || legacyAuthor || (authorEnabled && canEdit)) && (
+    <div
+      className={
+        isDraft
+          ? "space-y-2 rounded-xl border border-dashed border-primary/40 bg-muted/40 p-3"
+          : "space-y-2 rounded-xl bg-muted/40 p-3"
+      }
+    >
+      {(isDraft || indexLabel || subtypes || legacyAuthor || (authorEnabled && canEdit)) && (
         <div className="flex flex-wrap items-center gap-2">
           {indexLabel && (
             <span className="rounded-full bg-background px-2.5 py-1 text-xs font-semibold text-foreground">
               {indexLabel}
+            </span>
+          )}
+          {isDraft && (
+            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+              저장 전
             </span>
           )}
           {subtypes?.map((s) => (
@@ -1673,33 +1774,49 @@ function RowItem({
           <Button
             type="button"
             size="sm"
-            disabled={!dirty || uploading}
+            disabled={!dirty || uploading || saving}
             className="rounded-xl active:scale-95"
-            onClick={() => {
+            onClick={async () => {
               const vals = normalizedValues();
               if (fileCols.some((c) => (vals[c] ?? "").length > 2900)) {
                 toast.error("첨부가 너무 많아요. 파일 수를 줄여 주세요.");
                 return;
               }
-              onSave({
-                id: row.id,
-                kind: row.kind,
-                subtype,
-                rowAuthor: author,
-                sortOrder: row.sortOrder,
-                col1: vals[0] ?? "",
-                col2: vals[1] ?? "",
-                col3: vals[2] ?? "",
-                col4: vals[3] ?? "",
-                col5: vals[4] ?? "",
-                col6: vals[5] ?? "",
-                knownUpdatedAt: row.updatedAt,
-              });
+              setSaving(true);
+              try {
+                await onSave({
+                  id: row.id,
+                  kind: row.kind,
+                  subtype,
+                  rowAuthor: author,
+                  sortOrder: row.sortOrder,
+                  col1: vals[0] ?? "",
+                  col2: vals[1] ?? "",
+                  col3: vals[2] ?? "",
+                  col4: vals[3] ?? "",
+                  col5: vals[4] ?? "",
+                  col6: vals[5] ?? "",
+                  knownUpdatedAt: row.updatedAt,
+                });
+                // 저장 성공 후에만 로컬 draft를 정리한다 (실패 시 재시도 가능).
+                if (draftId && onRemoveDraft) onRemoveDraft(draftId);
+              } catch {
+                // 에러 토스트는 rowMutation.onError 한 곳에서만 담당한다.
+              } finally {
+                setSaving(false);
+              }
             }}
           >
-            저장
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                저장 중...
+              </>
+            ) : (
+              "저장"
+            )}
           </Button>
-          {row.id && (
+          {row.id ? (
             <Button
               type="button"
               size="sm"
@@ -1710,8 +1827,27 @@ function RowItem({
             >
               <Trash2 className="h-4 w-4" />
             </Button>
+          ) : (
+            draftId &&
+            onCancel && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                aria-label="작성 취소"
+                className="rounded-xl text-muted-foreground"
+                onClick={() => onCancel(draftId)}
+              >
+                <X className="h-4 w-4" />
+                취소
+              </Button>
+            )
           )}
-
+          {!row.id && (
+            <span className="text-xs text-muted-foreground">
+              저장 버튼을 눌러야 서버에 반영돼요.
+            </span>
+          )}
         </div>
       )}
     </div>
@@ -1726,7 +1862,7 @@ function StanceSection({
 }: {
   rows: RecordRowDTO[];
   canEdit: boolean;
-  onSave: (vars: SaveRowVars) => void;
+  onSave: (vars: SaveRowVars) => Promise<void>;
 }) {
   const byOrder = new Map(rows.map((r) => [r.sortOrder, r]));
   return (
@@ -1762,12 +1898,13 @@ function StanceItem({
   question: string;
   row: RecordRowDTO | null;
   canEdit: boolean;
-  onSave: (vars: SaveRowVars) => void;
+  onSave: (vars: SaveRowVars) => Promise<void>;
 }) {
   const [memo, setMemo] = useState(row?.col2 ?? "");
   useEffect(() => setMemo(row?.col2 ?? ""), [row?.col2]);
   const choice = row?.col1 ?? "";
 
+  // 에러 토스트는 rowMutation.onError에서 처리하므로 여기서는 rejection만 흡수한다.
   const save = (nextChoice: string, nextMemo: string) =>
     onSave({
       ...emptyRowVars("stance", index),
@@ -1775,7 +1912,7 @@ function StanceItem({
       col1: nextChoice,
       col2: nextMemo,
       knownUpdatedAt: row?.updatedAt ?? "",
-    });
+    }).catch(() => {});
 
   return (
     <div className="rounded-xl bg-muted/40 p-3">
