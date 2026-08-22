@@ -19,6 +19,7 @@ import {
   deleteUserAward,
   deleteUserProfile,
   resetNicknamePassword,
+  adminRenameNickname,
   verifyProfileAdmin,
   setAwardIcon,
   addAwardIconRule,
@@ -380,6 +381,7 @@ function ProfilesAdmin() {
   const removeAward = useServerFn(deleteUserAward);
   const remove = useServerFn(deleteUserProfile);
   const resetPw = useServerFn(resetNicknamePassword);
+  const adminRename = useServerFn(adminRenameNickname);
   const { confirm, confirmDialog } = useConfirm();
 
 
