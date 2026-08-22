@@ -36,6 +36,7 @@ import {
   getMyVotes,
   getVoteResults,
   getVoteRequirement,
+  getVoteVoterStatus,
 
 } from "./platform.functions";
 
@@ -346,6 +347,22 @@ export const voteRequirementQueryOptions = (
     staleTime: 30 * 1000,
   });
 
+
+// 투표 진행 중 참여자별 완료 여부(30초 폴링). 글 수와 무관한 고정 비용 쿼리.
+export const voteVoterStatusQueryOptions = (
+  categoryId: string,
+  boardPassword = "",
+  adminPassword = "",
+) =>
+  queryOptions({
+    queryKey: ["vote-voter-status", categoryId, boardPassword, adminPassword],
+    queryFn: () =>
+      getVoteVoterStatus({
+        data: { categoryId, boardPassword, adminPassword },
+      }),
+    refetchInterval: 30 * 1000,
+    staleTime: 15 * 1000,
+  });
 
 export const postTemplateQueryOptions = (
   categoryId: string,
