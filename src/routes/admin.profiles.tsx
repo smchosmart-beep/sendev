@@ -895,6 +895,48 @@ function ProfilesAdmin() {
                         </p>
                       </div>
                     )}
+                    {mergingFor === p.id && (
+                      <div className="mt-3 space-y-2 rounded-xl bg-muted/60 p-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            autoFocus
+                            value={mergeValue}
+                            onChange={(e) => setMergeValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                submitMerge(p);
+                              }
+                            }}
+                            placeholder="합칠 기존 닉네임 (예: 이서영)"
+                            className="rounded-lg bg-background"
+                          />
+                          <Button
+                            type="button"
+                            onClick={() => submitMerge(p)}
+                            disabled={mergeMutation.isPending}
+                            className="rounded-lg active:scale-95"
+                          >
+                            합치기
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => {
+                              setMergingFor(null);
+                              setMergeValue("");
+                            }}
+                            className="rounded-lg active:scale-95"
+                          >
+                            취소
+                          </Button>
+                        </div>
+                        <p className="text-[11px] leading-relaxed text-muted-foreground">
+                          '{p.username}' 이름으로 남은 글·댓글·투표·읽음 표시 등을 위에 입력한
+                          <strong> 등록된 닉네임</strong>으로 옮깁니다. 표 수는 그대로 유지돼요.
+                        </p>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
