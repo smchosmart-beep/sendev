@@ -6,10 +6,10 @@
 
 ### 1. 출력물(README·사례집) 섹션 정렬이 다른 섹션까지 영향 받지 않도록 제한
 
-현재 `src/lib/record-readme.ts`의 `ROW_ORDER` 루프 안에서 모든 `kind`에 대해 `localeCompare` 기반 정렬을 하고 있다. 이 방식은 "process" 외의 섹션(핵심 기능, 사용 흐름 등)에서도 `subtype`이 없으므로 `sortOrder`를 무너뜨리고, 순서가 localeCompare에 의해 결정되어 원래 의도와 달라진다.
+현재 `src/lib/record-readme.ts`의 `ROW_ORDER` 루프 안에서 모든 `kind`에 대해 `localeCompare` 기반 정렬을 하고 있다. 이 방식은 `subtype`을 갖는 `process`의 탭 순서가 라벨 문자열 비교에 의존하고, `ai_use`(`src/lib/record-schema.ts:83`의 `AI_USE_TYPES`)처럼 `subtype`을 갖는 다른 섹션의 출력 순서도 섞일 수 있다.
 
-- 수정: "process" kind에만 `PROCESS_SUBTYPES` 배열의 인덱스를 기준으로 정렬하고, 다른 kind는 기존 `sortOrder`만 따르도록 분기. 목록에 없는 subtype은 `idx < 0 ? 999 : idx` 폴백으로 맨 뒤로 보낸다.
-- `src/components/record/CasebookDocument.tsx`에도 동일한 정렬 조건이 있으면 함께 맞춘다.
+- 수정: `subtype`이 있는 kind(`process`, `ai_use`)는 `subtype` 그룹별로 먼저 묶고, 그룹 내에서 `sortOrder`를 적용한다. `process` 그룹 순서는 `PROCESS_SUBTYPES` 배열 인덱스를 따르고, `ai_use`는 `AI_USE_TYPES` 정의 순서를 따른다. 목록에 없는 subtype은 `idx < 0 ? 999 : idx` 폴백으로 맨 뒤로 보낸다. `subtype`이 없는 kind(핵심 기능, 사용 흐름 등)는 기존 `sortOrder`만 적용한다.
+- `src/components/record/CasebookDocument.tsx`의 `rowsOf` 함수도 동일한 정렬 기준으로 맞춘다.
 
 ### 2. `multi` 탭에서 빈 양식과 추가 버튼이 동시에 보이지 않게
 
