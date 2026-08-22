@@ -71,7 +71,7 @@
 - `src/lib/record-readme.ts`: subtype 사용 kind(process, ai_use) 그룹 정렬 + process/ai_use 정의 순서 + 폴백
 - `src/lib/record-schema.ts`: `AI_USE_TYPES` 배열 순서를 현재 README/사례집 출력 순서에 맞춰 재배열
 - `src/components/record/CasebookDocument.tsx`: 동일 정렬 로직 확인·수정
-- `src/components/RecordEditor.tsx` (내부 `RowSection`/`RowItem` 함수 수정): draft/추가 버튼 조건, 임시 draft 배열 관리, draft key, 저장 후 제거, `onSave` 비동기 콜백 전달, 연관 호출부 통일, subtype별 draft 필터링, 빈 상태 문구 조건, 토스트 중복 방지, draft 저장 전 상태 표시
+- `src/components/RecordEditor.tsx` (내부 `RowSection`/`RowItem` 함수 수정): draft/추가 버튼 조건, 임시 draft 배열 관리, draft key, 저장 후 제거, `onSave` 비동기 콜백 전달(`postId` 클로저 캡처), `rowMutation`의 `onSuccess` 무효화 제거, 연관 호출부 통일, `StanceItem`의 `save` 함수 공통 rejection 처리, subtype별 draft 필터링, 빈 상태 문구 조건, 토스트 중복 방지, draft 저장 전 상태 표시
 - 별도 신규 파일(`RowSection.tsx`, `RowItem.tsx`)은 만들지 않는다.
 
 ### 9. draft 취소와 실제 삭제 UI를 명확히 구분하고 저장 전 상태 시각화
