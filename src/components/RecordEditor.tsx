@@ -1249,6 +1249,8 @@ function RowItem({
   placeholders?: string[];
   /** 여러 건 작성 탭에서 "인터뷰 1"처럼 붙이는 머리말 */
   indexLabel?: string;
+  /** 탭 필터가 없는 표에서 행별 종류 선택 버튼 */
+  subtypes?: string[];
   canEdit: boolean;
   authorEnabled?: boolean;
   linkCol?: number;
