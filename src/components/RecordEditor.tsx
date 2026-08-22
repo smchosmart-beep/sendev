@@ -1583,16 +1583,19 @@ function RowItem({
           >
             저장
           </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            aria-label="줄 삭제"
-            className="rounded-xl text-muted-foreground hover:text-destructive"
-            onClick={() => onDelete(row.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          {row.id && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              aria-label="줄 삭제"
+              className="rounded-xl text-muted-foreground hover:text-destructive"
+              onClick={() => onDelete(row.id!)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+
         </div>
       )}
     </div>
