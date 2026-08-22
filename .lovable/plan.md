@@ -23,6 +23,7 @@
 
 - 수정: 추가 버튼은 로컬 상태에만 임시 draft 행을 추가하고, 사용자가 내용을 입력한 뒤 실제 저장(`onSave`)이 일어날 때만 DB에 기록한다. 삭제(취소) 시 DB에 저장되지 않은 draft는 그냥 사라진다.
 - 로컬 draft 관리 규칙을 통일: 탭에 기록이 0건이면 자동으로 1개의 draft 양식을 노출하고, 그 이상 추가는 "+" 버튼으로만 draft를 로컬에 추가한다. 저장된 실제 행은 서버 응답 후 쿼리 갱신으로 다시 들어오므로, 저장 성공 시 해당 로컬 draft는 제거한다.
+- draft 생성 시 `sortOrder` 충돌 방지: 여러 draft가 동시에 추가되면 `rows.length` 기준으로 같은 `sortOrder`를 가질 수 있으므로, `rows.length + draftIndex` 형태로 고유 값을 부여한다.
 
 ### 4. 로컬 draft의 React key 고유성 확보
 
@@ -34,7 +35,10 @@
 
 `RowItem`의 저장 버튼은 `id: row.id`로 전달한다. draft 행의 `id`는 `null`이므로 신규 저장이 되고, 쿼리 갱신 후 서버에서 실제 `id`를 가진 행이 `filteredRows`에 추가된다. 이때 로컬 draft가 그대로 남아 있으면 같은 내용이 두 줄로 보인다.
 
-- 수정: `RowSection`은 `onSave` 성공 시(또는 상위 쿼리가 갱신된 후) 저장된 draft를 로컬 배열에서 제거한다. 가장 단순한 방법은 draft 행을 "저장 중" 상태로 표시하고, `onSave`가 완료된 draft는 배열에서 제거하는 것이다. React 상태에서 draft와 서버 행을 분리해 관리한다.
+- 수정: `RowSection`은 저장된 draft를 로컬 배열에서 제거한다. 현재 `onSave` 콜백이 `void`를 반환해 성공 시점을 직접 알 수 없으므로, 다음 두 방법 중 하나를 적용한다.
+  - **방법 A**: `onSave`를 `mutateAsync` 기반 `Promise`를 반환하도록 변경하고, 저장 버튼 핸들러에서 `await` 후 draft를 제거한다.
+  - **방법 B**: `onSave`를 그대로 유지하고, `useEffect`로 `filteredRows` 개수가 증가한 시점(또는 `isPending`이 false로 돌아온 시점)을 감지해, 로컬 draft 배열에서 저장된 항목을 제거한다.
+- React 상태에서 draft와 서버 행을 분리해 관리하며, 저장된 draft는 즉시 로컬 배열에서 필터링한다.
 
 ## 영향 범위
 
