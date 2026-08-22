@@ -1,4 +1,4 @@
-# 02 문제 정의 과정 탭 5개 구조 후속 개선 (3차 보완본)
+# 02 문제 정의 과정 탭 5개 구조 후속 개선 (4차 보완본)
 
 02 문제 정의 과정을 5탭으로 개편한 구현에서 후속 검토로 발견된 10가지 개선점과 plan-check 3건을 반영한다.
 
@@ -13,6 +13,7 @@
 - `AI_USE_TYPES`의 현재 배열 순서(`["서비스 기능", "개발 과정"]`)는 현행을 유지한다. `ai_use` 실제 데이터가 없어 재배열로 얻는 출력 순서 이득이 없고, 드롭다운 순서 변경은 기존 사용 흐름에 불필요한 변화만 가져오기 때문이다. 정렬 규칙만 "정의 순서 + `idx < 0 ? 999`"로 통일한다.
 - `src/lib/record-readme.ts`의 `rowsOfKind` 함수는 README 블록 status(`empty/partial/done`) 판정과 `feature`·`flow`·`limit`·`plan`·`maker`·`stance`·`privacy` 등 subtype이 없는 kind 본문 렌더링에 함께 쓰인다. 이 kind들에는 `subtype`이 없으므로 현행 그대로 `sortOrder` 단독 정렬을 유지한다.
 - `src/components/record/CasebookDocument.tsx`의 `rowsOf` 함수에서만 `process`/`ai_use`에 subtype 그룹 인덱스를 1순위로 적용하고, `stance`/`devlog`/`decision` 등 나머지 kind는 `sortOrder` 단독 정렬을 유지한다. 양쪽 출력 로직 모두 `idx < 0 ? 999 : idx` 폴백 값을 동일하게 적용하여, README 출력과 사례집 출력의 순서가 일치하도록 맞춘다.
+- 에디터 화면의 목록 정렬(`RecordEditor.tsx:476`의 `rowsOf`, `sortOrder` 단독)은 현행을 유지한다. `ai_use`는 `filterBySubtype`가 false여서 한 목록에 종류가 섞여 보이므로, 화면 순서와 출력물(그룹화) 순서가 달라지는 것은 의도된 차이로 둔다. 편집 중 행 위치가 갑자기 바뀌지 않게 하는 편이 안전하다.
 
 
 ### 2. `multi` 탭에서 빈 양식과 추가 버튼이 동시에 보이지 않게
@@ -25,7 +26,7 @@
 
 현재 "+ ... 추가" 버튼은 `onSave(emptyRowVars(...))`를 즉시 호출하여 DB에 빈 행을 생성한다. 이 동작은 `RowSection`을 사용하는 모든 행 섹션(핵심 기능, 사용 흐름, 한계, 계획, 제작자, AI 활용, process 등)에 공통으로 적용된다. `isBlankRow`로 출력은 걸러지지만 DB에 불필요한 빈 행이 쌓인다.
 
-- 수정: 추가 버튼은 클릭한 섹션의 로컬 상태에만 임시 draft를 추가하고, 사용자가 내용을 입력한 뒤 실제 저장(`onSave`)이 일어날 때만 DB에 기록한다. 삭제(취소) 시 DB에 저장되지 않은 draft는 로컬에서만 제거된다. 로컬 draft 배열의 각 항목은 `{ draftId: string; row: DraftRow }` 형태로 저장하며, `DraftRow`의 `id`는 `null`로 유지한다. draft 생성 시 `author: defaultAuthor`를 초기값으로 채워 `RowItem`의 `author` state 초기값으로 사용하고, 저장 시 `RowItem`은 이 값을 `rowAuthor` 필드로 전송한다. 기존 추가 버튼의 `rowAuthor: defaultAuthor` 직접 전달 경로는 제거한다.
+- 수정: 추가 버튼은 클릭한 섹션의 로컬 상태에만 임시 draft를 추가하고, 사용자가 내용을 입력한 뒤 실제 저장(`onSave`)이 일어날 때만 DB에 기록한다. 삭제(취소) 시 DB에 저장되지 않은 draft는 로컬에서만 제거된다. 로컬 draft 배열의 각 항목은 `{ draftId: string; row: DraftRow }` 형태로 저장하며, `DraftRow`는 현행 자동 draft(`RecordEditor.tsx:1172-1186`)와 **동일한 전체 필드 집합**을 갖는다: `id: null`, `kind: def.kind`, `sortOrder`, `subtype`, `author`, `col1~col6: ""`, `updatedBy: ""`, `updatedAt: ""`. `updatedAt`은 `RowItem` 저장 시 `knownUpdatedAt`으로 전송되므로(`:1696`) 반드시 빈 문자열로 채워 `undefined` 전송을 막는다. draft 생성 시 `author: defaultAuthor`를 초기값으로 채워 `RowItem`의 `author` state 초기값으로 사용하고, 저장 시 `RowItem`은 이 값을 `rowAuthor` 필드로 전송한다. 기존 추가 버튼의 `rowAuthor: defaultAuthor` 직접 전달 경로는 제거한다.
 - 로컬 draft 관리 규칙을 통일: `multi`/`showDraft`가 true인 탭(예: 인터뷰 기록)은 기록이 0건이면 자동으로 1개의 draft 양식을 노출하고, 그 이상 추가는 "+" 버튼으로만 draft를 로컬에 추가한다. `multi`가 아닌 다른 행 섹션에서도 추가 버튼은 동일하게 로컬 draft만 추가한다. 저장된 실제 행은 서버 응답 후 쿼리 갱신으로 다시 들어오므로, 저장 성공 시 해당 로컬 draft는 제거한다.
 - draft 생성 시 `sortOrder` 충돌 방지: 현재 선택된 탭(=동일 `subtype`)의 기존 행들 중 최대 `sortOrder` 값을 `Math.max(0, ...existingRows.filter(r => r.subtype === targetSubtype).map(r => r.sortOrder ?? 0))`로 구한 뒤, `maxSortOrder + 1 + draftIndex` 형태로 고유 값을 부여한다. 이 방식은 기존 행이 삭제된 이력이 있어 `rows.length`와 `sortOrder`가 불일치할 때도 중복을 방지하고, 동일 `subtype` 그룹 내 출력 순서를 안정적으로 유지한다. `subtype`이 없는 섹션에서는 `targetSubtype` 필터를 적용하지 않고 해당 섹션의 전체 행 중 최대값을 사용한다.
 
@@ -46,7 +47,7 @@
 - `rowMutation`은 `RecordEditor.tsx` 전체에서 단 하나이므로, 모든 `RowSection`이 같은 `isPending` 상태를 공유한다. `isPending`이 false로 돌아오는 시점에 draft를 제거하면, **다른 섹션에서 저장이 일어날 때도** 현재 탭의 미저장 draft가 사라져 입력 중이던 내용이 유실될 수 있다. 따라서 전역 `isPending` prop 방식은 사용하지 않는다.
 - 수정: `RecordEditor.tsx` 내부에 `saveRow`라는 단일 래퍼 함수를 정의한다. 예: `const saveRow = async (vars: RowMutationVariables) => { await rowMutation.mutateAsync(vars); await queryClient.invalidateQueries({ queryKey: ["record", postId], refetchType: "active" }); }`. 이 래퍼는 `postId`를 클로저로 캡처하므로 `RowSection`/`RowItem`/`StanceSection`으로 `postId`를 드릴링할 필요가 없다. `rowSectionProps.onSave`(482)와 `StanceSection`에 전달하는 `onSave`(680) 모두 이 `saveRow` 래퍼를 사용하도록 통일한다. Stance 자동 저장이나 다른 섹션의 저장도 동일한 래퍼를 거치므로, `rowMutation.onSuccess`의 `invalidateQueries`를 제거해도 저장 후 쿼리가 갱신된다.
 - `RowSection`의 `onSave` prop 타입을 `Promise<void>`를 반환하는 비동기 콜백으로 변경한다. `RowItem`에 `draftId`와 `onRemoveDraft(draftId: string) => void` prop을 추가하고, 저장 버튼 클릭 시 `try { await onSave({ ...row, sectionKey }); onRemoveDraft(draftId); } catch { ... }` 형태로 호출한다. 성공 시에만 해당 `draftId`를 가진 로컬 draft를 배열에서 제거하고, 실패 시 draft는 그대로 두어 재시도할 수 있게 한다.
-- `StanceItem`의 `save` 함수는 정의 시점에 `onSave({...}).catch(() => {})` 형태로 감싸, 호출부마다 `.catch()`를 붙이지 않아도 unhandled rejection이 발생하지 않도록 공통 처리한다. 예: `const save = React.useCallback(() => onSave({ id: row.id, postId: row.post_id, sectionKey: "stance", ... }).catch(() => {}), [...])`.
+- `StanceItem`의 `save`는 실제로 `(nextChoice, nextMemo)` 2인자 함수(`RecordEditor.tsx:1771-1778`, 호출부 `save(c, memo)` `:1794`)이므로 시그니처를 유지한 채 rejection만 내부에서 흡수한다. 예: `const save = (nextChoice: string, nextMemo: string) => onSave({ ...emptyRowVars("stance", index), id: row?.id ?? null, col1: nextChoice, col2: nextMemo, knownUpdatedAt: row?.updatedAt ?? "" }).catch(() => {})`. 호출부는 그대로 두고 unhandled rejection만 방지한다.
 - React 상태에서 draft와 서버 행을 분리해 관리하며, 저장된 draft는 성공 콜백에서만 로컬 배열에서 필터링한다.
 
 ### 6. 로컬 draft를 subtype(탭)별로 격리
