@@ -1195,20 +1195,20 @@ function RowSection({
           />
         )}
 
-        {canEdit && (!filterBySubtype || selectedSubtype === defaultSubtype) && (
+        {canEdit && (!filterBySubtype || multiTab) && (
           <Button
             type="button"
             variant="secondary"
             className="rounded-xl active:scale-95"
             onClick={() =>
               onSave({
-                ...emptyRowVars(def.kind, rows.length, defaultSubtype),
+                ...emptyRowVars(def.kind, rows.length, filterBySubtype ? selectedSubtype : ""),
                 rowAuthor: defaultAuthor,
               })
             }
           >
             <Plus className="h-4 w-4" />
-            {def.addLabel}
+            {(filterBySubtype && draftTemplate?.addLabel) || def.addLabel}
           </Button>
         )}
       </div>
