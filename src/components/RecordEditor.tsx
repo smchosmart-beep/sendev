@@ -1405,6 +1405,19 @@ function RowItem({
         </div>
       )}
 
+      {row.kind === "process" &&
+        subtype &&
+        Object.entries(PROCESS_TEMPLATE_NOTICES[subtype] ?? {})
+          .filter(([col]) => !fileCols.includes(Number(col)))
+          .map(([col, notice]) => (
+            <TemplateNotice
+              key={`notice-${col}`}
+              label={notice.label}
+              text={notice.text}
+              tip={notice.tip}
+            />
+          ))}
+
       <div className="grid gap-2 sm:grid-cols-2">
         {effLabels.map((label, i) => {
           if (!label.trim()) return null;
