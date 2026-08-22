@@ -639,30 +639,60 @@
 }
 
 @media print {
-  body:has(.casebook-root) * {
-    visibility: hidden;
+  /* 사례집 조상 체인만 남기고 나머지는 자리까지 제거 (visibility 는 자리를 차지해 빈 페이지 발생) */
+  body:has(.casebook-root) *:not(:has(.casebook-root)):not(.casebook-root):not(.casebook-root *) {
+    display: none !important;
   }
+  /* 조상 체인 정규화 — sticky 헤더/overflow 컨테이너/변환이 남으면 잘림·겹침 발생 */
+  body:has(.casebook-root),
+  body:has(.casebook-root) *:has(.casebook-root) {
+    display: block !important;
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    transform: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    width: auto !important;
+  }
+  /* 사례집 루트와 내부 래퍼도 화면용 장식 제거 */
   body:has(.casebook-root) .casebook-root,
-  body:has(.casebook-root) .casebook-root * {
-    visibility: visible;
+  body:has(.casebook-root) .casebook-root > * {
+    position: static !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    width: auto !important;
+    max-height: none !important;
   }
   body:has(.casebook-root) .casebook-root {
-    position: absolute;
-    inset: 0 auto auto 0;
-    width: 100%;
-    background: #fff;
+    background: #fff !important;
   }
+  /* 관리자 일괄 출력: 화면 밖(off-screen) 배치를 정상 흐름으로 되돌린다 */
   body:has(.casebook-root) .casebook-offscreen {
-    position: absolute;
-    left: 0;
-    width: 100%;
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    width: auto !important;
   }
   .casebook-ui {
     display: none !important;
   }
   .casebook-page {
     width: 100%;
+    min-height: 0;
     margin: 0;
+    padding: 0 0 6mm;
     box-shadow: none;
   }
 }
+
