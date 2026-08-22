@@ -22,10 +22,7 @@ function rowsOf(team: RecordOverviewTeam, kind: RecordRowKindName) {
   return team.rows
     .filter((r) => r.kind === kind)
     .filter((r) => !isBlankRow(r))
-    .sort(
-      (a, b) =>
-        (a.subtype ?? "").localeCompare(b.subtype ?? "", "ko") || a.sortOrder - b.sortOrder,
-    );
+    .sort(compareOutputRows(kind));
 }
 
 
