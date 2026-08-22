@@ -10,15 +10,19 @@
 
 ## 수정 계획 (모두 `src/styles.css` 인쇄 규칙)
 
-### 1. 숨김 방식 교체 + 조상 체인 정규화
-- `visibility: hidden` → `display: none` 방식으로 교체하되, `.casebook-root`는 레이아웃 깊숙이 중첩되어 있으므로 **단순히 형제만 숨기면 안 된다.** `.casebook-root`를 포함하지 않는 요소만 숨기고, 조상 체인은 표시 상태로 남긴다.
-- 조상 체인은 `position: static; overflow: visible; height: auto; max-height: none; transform: none; margin: 0; padding: 0; background: transparent;`로 정규화한다. (스크롤 컨테이너/`overflow: hidden` 조상이 남으면 뒷페이지가 잘린다.)
-- `.casebook-root`의 `position: absolute` 겹치기를 제거해 정상 문서 흐름으로 출력한다.
+### 1. 숨김 방식 교체 + 조상 체인 정규화 (정확한 셀렉터)
+- `visibility: hidden` → `display: none`으로 교체하되, `.casebook-root`는 레이아웃 깊숙이 중첩되어 있어 **형제만 숨기는 방식은 안 된다.** 조상 체인만 남기는 셀렉터를 쓴다:
+  `body:has(.casebook-root) *:not(:has(.casebook-root)):not(.casebook-root):not(.casebook-root *) { display: none !important; }`
+- 조상 체인은 `position: static; overflow: visible; height: auto; max-height: none; transform: none; margin: 0; padding: 0; background: transparent;`로 정규화. (`_main.tsx`의 sticky 헤더·overflow-hidden 탭바·모바일 고정 마퀴가 남아 첫 페이지를 덮는 것을 방지)
+- `.casebook-root` **자신과 내부 래퍼**도 함께 정규화한다. 화면용 `p-5 bg-card shadow-sm rounded-2xl`, 내부 `overflow-x-auto bg-muted/30 p-3`가 남으면 지면 폭이 줄고 가로 스크롤 컨테이너가 뒷내용을 잘라 페이지 수가 다시 어긋난다.
+  → 인쇄 시 `padding: 0; background: transparent; overflow: visible; box-shadow: none; border-radius: 0;`
+- `.casebook-root`의 `position: absolute` 겹치기 제거 → 정상 문서 흐름 출력.
 - `.casebook-ui`(버튼 영역)는 계속 `display: none`.
 
 ### 2. 관리자 일괄 출력(`casebook-offscreen`) 동시 정리
-- 관리자 페이지의 일괄 PDF는 화면 밖(`left: -10000px`)에 그린 뒤 인쇄 시 위치를 되돌리는 구조다. 새 `display: none` 규칙에 `casebook-offscreen` 예외를 함께 갱신하지 않으면 **일괄 PDF가 백지로 출력된다.**
-- 인쇄 시 `.casebook-offscreen { position: static; left: auto; width: 100%; }`로 두고, 단건/일괄 두 경로 모두 실제로 확인한다.
+- 관리자 일괄 PDF는 `casebook-root`와 `casebook-offscreen`이 **같은 엘리먼트**다(`admin.records.tsx:685`). `position: absolute; left: -10000px`를 인쇄 시 되돌리지 않으면 **일괄 PDF가 백지**로 나온다.
+- 인쇄 시 `.casebook-offscreen { position: static; left: auto; width: 100%; }`를 유지하고, 단건(`section.casebook-root`)과 셀렉터 우선순위가 충돌하지 않게 작성한다. 두 경로 모두 실제 인쇄 미리보기로 확인.
+
 
 ### 3. `@page` 설정 분리 + 높이 여유 확보
 - 현재 `@page { size: A4; margin: 16mm }`는 README 출력(`.record-output`)과 **공유**된다. 이 값을 건드리면 README 출력이 함께 틀어지므로 `@page` 여백은 그대로 두고, 페이지 높이는 `.casebook-page` 쪽에서만 조정한다.
