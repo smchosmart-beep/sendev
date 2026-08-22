@@ -66,6 +66,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { isBlankRow, normalizeUrl } from "@/lib/record-readme";
 
@@ -1081,19 +1088,57 @@ function RowSection({
       <h2 className="text-lg font-semibold text-foreground">{title ?? def.title}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{hint ?? def.hint}</p>
       {filterBySubtype && (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {subtypes.map((s) => (
-            <Button
-              key={s}
-              type="button"
-              size="sm"
-              variant={selectedSubtype === s ? "default" : "outline"}
-              onClick={() => setSelectedSubtype(s)}
-              className="rounded-full active:scale-95"
-            >
-              {s}
-            </Button>
-          ))}
+        <div className="mt-3">
+          {/* Mobile: dropdown for process-kind tabs */}
+          <div className="sm:hidden">
+            {def.kind === "process" ? (
+              <Select
+                value={selectedSubtype}
+                onValueChange={(value) => setSelectedSubtype(value)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="기록 종류 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  {subtypes.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                {subtypes.map((s) => (
+                  <Button
+                    key={s}
+                    type="button"
+                    size="sm"
+                    variant={selectedSubtype === s ? "default" : "outline"}
+                    onClick={() => setSelectedSubtype(s)}
+                    className="rounded-full active:scale-95"
+                  >
+                    {s}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* Desktop: keep tab buttons */}
+          <div className="hidden sm:flex sm:flex-wrap sm:items-center sm:gap-2">
+            {subtypes.map((s) => (
+              <Button
+                key={s}
+                type="button"
+                size="sm"
+                variant={selectedSubtype === s ? "default" : "outline"}
+                onClick={() => setSelectedSubtype(s)}
+                className="rounded-full active:scale-95"
+              >
+                {s}
+              </Button>
+            ))}
+          </div>
         </div>
       )}
       <div className="mt-4 space-y-3">
