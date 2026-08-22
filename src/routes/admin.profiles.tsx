@@ -507,6 +507,38 @@ function ProfilesAdmin() {
     },
     onError: () => toast.error("초기화 중 문제가 발생했어요."),
   });
+  const renameMutation = useMutation({
+    mutationFn: ({ id, newUsername }: { id: string; newUsername: string }) =>
+      adminRename({
+        data: { id, newUsername, adminPassword: getProfileAdminPassword() },
+      }),
+    onSuccess: (res) => {
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      setRenamingFor(null);
+      setRenameValue("");
+      toast.success(
+        `'${res.oldUsername}' → '${res.username}'으로 변경했어요. 사용자에게 기기에서 닉네임을 새 이름으로 바꾸도록 안내해 주세요.`,
+      );
+    },
+    onError: (err) =>
+      toast.error(
+        err instanceof Error ? err.message : "닉네임 변경 중 문제가 발생했어요.",
+      ),
+  });
+
+  const submitRename = (p: UserProfileDTO) => {
+    const next = renameValue.trim();
+    if (!next) {
+      toast.error("새 닉네임을 입력해 주세요.");
+      return;
+    }
+    if (next === p.username) {
+      toast.error("현재 닉네임과 동일해요.");
+      return;
+    }
+    renameMutation.mutate({ id: p.id, newUsername: next });
+  };
 
 
 
