@@ -151,14 +151,17 @@ export function VoteSection({
   const showFinal = isRunoff && status === "closed";
 
   // 확정 팀의 득표수는 그 팀이 확정된(마지막으로 표를 받은) 라운드 기준.
-  const lockedCountOf = (postId: string) => {
+  // 라운드 번호도 함께 돌려주어, 라운드가 다른 확정 팀끼리 표 수를 섞어
+  // 비교하지 않도록 한다(3라운드 이상 진행 시 필요).
+  const lockedInfoOf = (postId: string): { round: number; count: number } => {
     const byRound = results?.roundCounts ?? {};
     for (let r = round - 1; r >= 1; r -= 1) {
       const c = byRound[r]?.[postId];
-      if (typeof c === "number" && c > 0) return c;
+      if (typeof c === "number" && c > 0) return { round: r, count: c };
     }
-    return 0;
+    return { round: 0, count: 0 };
   };
+  const lockedCountOf = (postId: string) => lockedInfoOf(postId).count;
 
   const runoffPosts = useMemo(
     () => (isRunoff ? posts.filter((p) => runoffIds.has(p.id)) : posts),
@@ -179,14 +182,24 @@ export function VoteSection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runoffPosts, status, counts]);
 
+  // 확정 팀은 확정 라운드가 빠른 순 → 같은 라운드 안에서 득표수 많은 순.
+  const lockedOrdered = useMemo(() => {
+    if (!showFinal) return [];
+    return [...lockedPosts].sort((a, b) => {
+      const ia = lockedInfoOf(a.id);
+      const ib = lockedInfoOf(b.id);
+      if (ia.round !== ib.round) return ia.round - ib.round;
+      return ib.count - ia.count;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showFinal, lockedPosts, results, round]);
+
   const ordered = useMemo(() => {
     if (!showFinal) return runoffOrdered;
-    const locked = [...lockedPosts].sort(
-      (a, b) => lockedCountOf(b.id) - lockedCountOf(a.id),
-    );
-    return [...locked, ...runoffOrdered];
+    return [...lockedOrdered, ...runoffOrdered];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showFinal, lockedPosts, runoffOrdered, results, round]);
+  }, [showFinal, lockedOrdered, runoffOrdered]);
+
 
   // 이번 라운드 종료 시 남은 자리를 채운 팀(동점으로 넘치면 그대로 표시).
   // 판정 대상은 항상 "이번 라운드 후보"뿐이며, 확정 팀은 선발로 합산만 한다.
