@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { UserCog, Trophy, Trash2, Lock, AlertCircle, KeyRound, Plus, X, Search, Users, Settings2, Eye, EyeOff, icons as lucideIcons } from "lucide-react";
+import { UserCog, Trophy, Trash2, Lock, AlertCircle, KeyRound, Plus, X, Search, Pencil, Users, Settings2, Eye, EyeOff, icons as lucideIcons } from "lucide-react";
 
 import { toast } from "sonner";
 
@@ -765,6 +765,19 @@ function ProfilesAdmin() {
                       className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-sm active:scale-95"
                     >
                       <Plus className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRenamingFor((prev) => (prev === p.id ? null : p.id));
+                        setRenameValue(p.username);
+                        setAddingFor(null);
+                      }}
+                      aria-label="닉네임 변경"
+                      title="닉네임 변경"
+                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-sm active:scale-95"
+                    >
+                      <Pencil className="h-4 w-4" />
                     </button>
                     <button
                       type="button"
