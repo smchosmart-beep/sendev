@@ -8,7 +8,8 @@
 
 현재 `src/lib/record-readme.ts`의 `ROW_ORDER` 루프 안에서 모든 `kind`에 대해 `localeCompare` 기반 정렬을 하고 있다. 이 방식은 `subtype`을 갖는 `process`의 탭 순서가 라벨 문자열 비교에 의존하고, `ai_use`(`src/lib/record-schema.ts:83`의 `AI_USE_TYPES`)처럼 `subtype`을 갖는 다른 섹션의 출력 순서도 섞일 수 있다.
 
-- 수정: `subtype`이 있는 kind(`process`, `ai_use`)는 `subtype` 그룹별로 먼저 묶고, 그룹 내에서 `sortOrder`를 적용한다. `process` 그룹 순서는 `PROCESS_SUBTYPES` 배열 인덱스를 따르고, `ai_use`는 `AI_USE_TYPES` 정의 순서를 따른다. 목록에 없는 subtype은 `idx < 0 ? 999 : idx` 폴백으로 맨 뒤로 보낸다. `subtype`이 없는 kind(핵심 기능, 사용 흐름 등)는 기존 `sortOrder`만 적용한다.
+- 수정: `subtype`이 있는 kind(`process`, `ai_use`)는 `subtype` 그룹별로 먼저 묶고, 그룹 내에서 `sortOrder`를 적용한다. `process` 그룹 순서는 `PROCESS_SUBTYPES` 배열 인덱스를 따르고, `ai_use`는 `AI_USE_TYPES` 정의 순서를 따른다. 목록에 없는 subtype은 `idx < 0 ? 999 : idx` 폴백으로 맨 뒤 "기타" 그룹으로 보낸다. `subtype`이 없는 kind(핵심 기능, 사용 흐름 등)는 기존 `sortOrder`만 적용한다.
+- `AI_USE_TYPES`의 현재 배열 순서(`["서비스 기능", "개발 과정"]`)가 현재 `localeCompare` 출력 순서와 역순이므로, README/사례집 출력 순서를 유지하려면 배열을 `["개발 과정", "서비스 기능"]`으로 재배열하거나, `ai_use`는 현행 `localeCompare` 기준을 유지하도록 범위를 좁혀야 한다. 본 계획에서는 `AI_USE_TYPES` 배열 순서를 현재 출력 순서에 맞춰 재배열하고, `process`와 동일한 정의 순서 정렬을 적용한다.
 - `src/components/record/CasebookDocument.tsx`의 `rowsOf` 함수도 동일한 정렬 기준으로 맞춘다.
 
 ### 2. `multi` 탭에서 빈 양식과 추가 버튼이 동시에 보이지 않게
