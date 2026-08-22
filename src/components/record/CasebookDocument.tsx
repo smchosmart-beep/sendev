@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import { ETHICS_PRINCIPLES } from "@/lib/record-ethics";
 import { parseAttachments } from "@/lib/file-upload";
-import { normalizeUrl, isBlankRow, compareOutputRows } from "@/lib/record-readme";
+import { normalizeUrl, isBlankForOutput, compareOutputRows } from "@/lib/record-readme";
 
 import {
   STANCE_QUESTIONS,
@@ -21,7 +21,7 @@ function val(team: RecordOverviewTeam, key: RecordFinalKey): string {
 function rowsOf(team: RecordOverviewTeam, kind: RecordRowKindName) {
   return team.rows
     .filter((r) => r.kind === kind)
-    .filter((r) => !isBlankRow(r))
+    .filter((r) => !isBlankForOutput(kind, r))
     .sort(compareOutputRows(kind));
 }
 

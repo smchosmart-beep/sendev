@@ -244,7 +244,7 @@ export function buildRecordReadme(team: RecordOverviewTeam): string {
     const def = ROW_SECTION_DEFS[section.kind];
     const rows = team.rows
       .filter((r) => r.kind === section.kind)
-      .filter((r) => !isBlankRow(r))
+      .filter((r) => !isBlankForOutput(section.kind, r))
       .sort(compareOutputRows(section.kind));
     if (rows.length === 0) continue;
 
@@ -381,7 +381,7 @@ export interface PublicReadmeBlock {
 function rowsOfKind(team: RecordOverviewTeam, kind: RecordRowKindName) {
   return team.rows
     .filter((r) => r.kind === kind)
-    .filter((r) => !isBlankRow(r))
+    .filter((r) => !isBlankForOutput(kind, r))
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
