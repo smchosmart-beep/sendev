@@ -689,7 +689,7 @@ export function RecordEditor({
             <StanceSection
               rows={rowsOf("stance")}
               canEdit={canEdit}
-              onSave={(vars) => rowMutation.mutate(vars)}
+              onSave={saveRow}
             />
           </div>
 
