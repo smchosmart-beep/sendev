@@ -125,6 +125,60 @@ export interface RowTemplate {
   displayOrder?: number[];
 }
 
+/** 탭별 안내 템플릿 (입력값이 아닌 참고용). subtype → 열 인덱스 → {label, text} */
+export interface TemplateNoticeDef {
+  label: string;
+  text: string;
+}
+
+export const PROCESS_TEMPLATE_NOTICES: Record<string, Record<number, TemplateNoticeDef>> = {
+  "22일 팀빌딩·문제 정의 회의": {
+    4: {
+      label: "템플릿 · 페르소나",
+      text: `[기본 정보]
+- 이름:
+- 나이 / 신분:
+- 한 줄 소개:
+- 하루 일과 (문제 상황과 관련된 부분 위주):
+
+[문제 프레임 - 4가지 질문]
+- When : 언제 이 문제가 발생하나요?
+- What : 구체적으로 무엇이 문제인가요?
+- Why : 왜 아직 해결되지 않았나요? (그 사람은 지금 어떻게 버티고 있나요?)
+- Impact : 이 문제가 해결되면 이 사람의 하루가 어떻게 달라지나요?`,
+    },
+    5: {
+      label: "템플릿 · 고객 여정 맵",
+      text: `페르소나 이름:
+
+여정의 범위: (______부터 ______까지)
+
+[단계 1]
+- 행동:
+- 생각/속마음:
+- 감정(1~5):
+- 페인 포인트(있으면 ★):
+
+[단계 2]
+- 행동:
+- 생각/속마음:
+- 감정(1~5):
+- 페인 포인트(있으면 ★):
+
+[단계 3]
+- 행동:
+- 생각/속마음:
+- 감정(1~5):
+- 페인 포인트(있으면 ★):
+
+(단계는 필요한 만큼 추가)
+
+감정이 가장 낮은 단계: ___단계
+→ 우리 팀이 공략할 지점:`,
+    },
+  },
+};
+
 /** 문제 정의 과정(process) 탭별 양식. 없으면 기본 양식을 쓴다. */
 export const PROCESS_SUBTYPE_TEMPLATES: Record<string, RowTemplate> = {
   "22일 팀빌딩·문제 정의 회의": {

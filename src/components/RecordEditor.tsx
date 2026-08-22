@@ -14,6 +14,7 @@ import {
 } from "@/lib/file-upload";
 import { getFileIcon } from "@/lib/file-icons";
 import { downloadFile } from "@/lib/download";
+import { TemplateNotice } from "@/components/record/TemplateNotice";
 
 
 import {
@@ -40,6 +41,7 @@ import {
   PROBLEM_AREAS,
   PROCESS_SUBTYPES,
   PROCESS_SUBTYPE_TEMPLATES,
+  PROCESS_TEMPLATE_NOTICES,
   type RowTemplate,
   PROMISE_ITEMS,
   RECORD_FINAL_FIELDS,
@@ -1437,8 +1439,15 @@ function RowItem({
             if (!label) return null;
             const files = attachmentsOf(col);
             const isImageCol = imageCols.includes(col);
+            const notice =
+              row.kind === "process" && subtype
+                ? PROCESS_TEMPLATE_NOTICES[subtype]?.[col]
+                : undefined;
             return (
-              <div key={col} className={cn("space-y-1", isImageCol && "w-full")}>
+              <div key={col} className={cn("space-y-2", isImageCol && "w-full")}>
+                {notice && (
+                  <TemplateNotice label={notice.label} text={notice.text} />
+                )}
                 <Label className="text-xs text-muted-foreground">
                   {label} <span className="text-[11px]">(최대 3개, 개당 3MB)</span>
                 </Label>
