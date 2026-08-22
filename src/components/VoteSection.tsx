@@ -458,6 +458,11 @@ export function VoteSection({
                           선발
                         </span>
                       )}
+                      {showFinal && isLocked && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                          이전 라운드 확정
+                        </span>
+                      )}
                     </span>
                     <p className="line-clamp-5 text-sm font-medium leading-relaxed text-foreground">
                       {voteCardText(post.content, post.title)}
