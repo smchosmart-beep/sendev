@@ -429,9 +429,21 @@ export function RecordEditor({
 
   const rowMutation = useMutation({
     mutationFn: (vars: SaveRowVars) => saveRowFn({ data: { postId, ...vars, ...auth } }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["record", postId] }),
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "저장하지 못했어요."),
   });
+
+  // 저장 → 활성 쿼리 갱신까지 한 번에 처리하는 공용 래퍼. postId를 클로저로 캡처한다.
+  const saveRow = useCallback(
+    async (vars: SaveRowVars) => {
+      await rowMutation.mutateAsync(vars);
+      await queryClient.invalidateQueries({
+        queryKey: ["record", postId],
+        refetchType: "active",
+      });
+    },
+    [rowMutation, queryClient, postId],
+  );
+
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteRowFn({ data: { postId, id, ...auth } }),
