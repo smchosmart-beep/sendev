@@ -1362,21 +1362,13 @@ function RowItem({
 
   return (
     <div className="space-y-2 rounded-xl bg-muted/40 p-3">
-      {(subtypes || legacyAuthor || (authorEnabled && canEdit)) && (
+      {(indexLabel || legacyAuthor || (authorEnabled && canEdit)) && (
         <div className="flex flex-wrap items-center gap-2">
-          {subtypes?.map((s) => (
-            <Button
-              key={s}
-              type="button"
-              size="sm"
-              variant={subtype === s ? "default" : "outline"}
-              disabled={!canEdit}
-              className="rounded-full active:scale-95"
-              onClick={() => setSubtype(subtype === s ? "" : s)}
-            >
-              {s}
-            </Button>
-          ))}
+          {indexLabel && (
+            <span className="rounded-full bg-background px-2.5 py-1 text-xs font-semibold text-foreground">
+              {indexLabel}
+            </span>
+          )}
           {authorEnabled ? (
             <div className="flex items-center gap-1.5">
               <Label className="text-xs text-muted-foreground">기록한 사람</Label>
