@@ -33,3 +33,8 @@
 - `listUserProfiles`(2808행): 이미 조회 중인 활동 집계에 `votes.voter_key`/`voter_name` distinct를 더해, 프로필에 없는 키를 `registered: false` 항목으로 추가 반환. `src/routes/admin.profiles.tsx`에서 `미등록` 배지 표시, 해당 행은 비밀번호 초기화 대신 안내만 노출.
 - `src/routes/_main.mypage.tsx`: 이름 변경 결과에 남은 항목이 있으면 토스트로 안내.
 - `src/routes/_main.guide.tsx`: 닉네임 변경 관련 설명 보완.
+
+## 검토에서 나온 주의점 (반영함)
+
+1. **미등록 행에는 관리 버튼을 렌더링하지 않음** — 미등록 항목은 프로필 `id`가 없으므로, `src/routes/admin.profiles.tsx`에서 `registered: false`인 행은 삭제·비밀번호 초기화 버튼을 아예 그리지 않고 안내 문구만 노출합니다(잘못된 요청·런타임 오류 방지).
+2. **추가 쿼리는 관리자 화면 1회로 제한** — 미등록 닉네임을 찾기 위한 `votes` distinct 조회는 관리자 프로필 페이지 로드시에만 1회 실행하고, 일반 사용자 화면·폴링 경로에는 추가하지 않습니다(서버 비용 영향 사실상 없음).
