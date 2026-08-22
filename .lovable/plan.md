@@ -35,7 +35,8 @@
 - 정리 작업은 SQL 마이그레이션이 아니라 관리자 기능으로 처리 — 스키마 변경 없음.
 - **신설** `adminMergeNickname({ oldUsername, targetUsername, adminPassword })`: `requireProfileAdmin` → 대상 프로필 존재 확인 → `assertNicknameAvailable`은 **호출하지 않음**(중복이 정상 상황) → `migrateNickname`을 프로필 단계 제외 모드로 실행. 옛 이름에 프로필 행이 있으면 활동 이관 후 그 행 삭제. 기존 `adminRenameNickname`(3991행)은 `id: uuid` 기반이라 프로필 없는 이름에 사용 불가하므로 그대로 유지.
 - `migrateNickname`에 `skipProfile?: boolean` 옵션 추가 — 기존 호출부(`renameNickname`, `adminRenameNickname`) 동작은 변경 없음.
-- 유니크 충돌: `votes_unique_per_round(category_id, post_id, voter_key, round)` 존재. 이번 케이스는 대상 키 `이서영`의 표가 0건이라 충돌 없음(표 수 변화 없음). 일반 병합에서 충돌이 나면 중복 표가 생기지 않도록 옛 행을 삭제하는 방식으로 처리.
+- 유니크 충돌 처리는 **키 기반 테이블 전체에 공통 적용**: `votes(category_id, post_id, voter_key, round)`뿐 아니라 `post_reads(username_key, post_id)`, `post_likes(target_type, target_id, liker_key)`, `record_members`, `record_ethics`, `record_reflections` 등 `*_key` 유니크가 걸린 모든 테이블에 동일 규칙 적용. `migrateStep`을 "① 대상 키와 겹치는 옛 키 행을 먼저 삭제 → ② 나머지 행만 UPDATE" 순서로 보완(테이블별 유니크 컬럼 목록을 상수로 정의). 이렇게 해야 한 행 충돌로 UPDATE 전체가 롤백되어 옛 이름이 그대로 남는 상황을 막습니다.
+- 이번 케이스: 옛 키 `창일중(이서영)` 잔여 행은 `votes`·`post_reads`뿐이고 `이서영` 키와 겹치는 행이 없어 실제 삭제·유실은 발생하지 않습니다(표 수 변화 없음).
 - `listUserProfiles`(2808행): 이미 조회 중인 활동 집계에 `votes.voter_key`/`voter_name` distinct를 더해, 프로필에 없는 키를 `registered: false` 항목으로 추가 반환. `src/routes/admin.profiles.tsx`에서 `미등록` 배지 표시, 해당 행은 비밀번호 초기화 대신 병합 버튼과 안내만 노출.
 - `src/routes/_main.mypage.tsx`: 이름 변경 결과에 남은 항목이 있으면 토스트로 안내.
 - `src/routes/_main.guide.tsx`: 닉네임 변경 관련 설명 보완.
@@ -44,3 +45,4 @@
 
 1. **미등록 행에는 관리 버튼을 렌더링하지 않음** — 미등록 항목은 프로필 `id`가 없으므로, `src/routes/admin.profiles.tsx`에서 `registered: false`인 행은 삭제·비밀번호 초기화 버튼을 아예 그리지 않고 안내 문구만 노출합니다(잘못된 요청·런타임 오류 방지).
 2. **추가 쿼리는 관리자 화면 1회로 제한** — 미등록 닉네임을 찾기 위한 `votes` distinct 조회는 관리자 프로필 페이지 로드시에만 1회 실행하고, 일반 사용자 화면·폴링 경로에는 추가하지 않습니다(서버 비용 영향 사실상 없음).
+3. **충돌 처리 일반화** — 옛 키를 새 키로 옮길 때 유니크 제약이 있는 모든 테이블에서 "겹치는 옛 행 선삭제 후 이관" 규칙을 적용해, 부분 실패로 이름이 절반만 바뀌는 상황을 방지합니다.
