@@ -194,11 +194,21 @@ export function VoteSection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showFinal, lockedPosts, results, round]);
 
+  // 결선 종료 후에는 선발되지 않은 게시글도 마지막 득표 라운드 기준으로 이어서 보여 준다.
+  const eliminatedOrdered = useMemo(() => {
+    if (!showFinal) return [];
+    return posts
+      .filter((p) => !lockedIds.has(p.id) && !runoffIds.has(p.id))
+      .sort((a, b) => lockedCountOf(b.id) - lockedCountOf(a.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showFinal, posts, lockedIds, runoffIds, results, round]);
+
   const ordered = useMemo(() => {
     if (!showFinal) return runoffOrdered;
-    return [...lockedOrdered, ...runoffOrdered];
+    return [...lockedOrdered, ...runoffOrdered, ...eliminatedOrdered];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showFinal, lockedOrdered, runoffOrdered]);
+  }, [showFinal, lockedOrdered, runoffOrdered, eliminatedOrdered]);
+
 
 
   // 이번 라운드 종료 시 남은 자리를 채운 팀(동점으로 넘치면 그대로 표시).
