@@ -296,9 +296,11 @@ export function VoteSection({
         .forEach((r) => rankGroup(byRound.get(r)!, (id) => lockedCountOf(id)));
     }
     rankGroup(runoffOrdered, (id) => counts[id] ?? 0);
+    if (showFinal) rankGroup(eliminatedOrdered, (id) => lockedCountOf(id));
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runoffOrdered, lockedOrdered, showFinal, counts, status, results, round]);
+  }, [runoffOrdered, lockedOrdered, eliminatedOrdered, showFinal, counts, status, results, round]);
+
 
 
   const pageCount = Math.max(1, Math.ceil(ordered.length / PAGE_SIZE));
