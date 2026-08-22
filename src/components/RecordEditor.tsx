@@ -1093,7 +1093,7 @@ function RowSection({
         </div>
       )}
       <div className="mt-4 space-y-3">
-        {filteredRows.length === 0 && (
+        {filteredRows.length === 0 && !showDraft && (
           <p className="text-sm text-muted-foreground">아직 등록된 내용이 없어요.</p>
         )}
         {filteredRows.map((row) => (
@@ -1108,11 +1108,40 @@ function RowSection({
             authorEnabled={authorEnabled}
             linkCol={def.linkCol}
             fileCol={def.fileCol}
-
             onSave={onSave}
             onDelete={onDelete}
           />
         ))}
+        {showDraft && (
+          <RowItem
+            key={`draft-${selectedSubtype}`}
+            row={{
+              id: null,
+              kind: def.kind,
+              sortOrder: rows.length,
+              subtype: selectedSubtype,
+              author: defaultAuthor,
+              col1: "",
+              col2: "",
+              col3: "",
+              col4: "",
+              col5: "",
+              col6: "",
+              updatedBy: "",
+              updatedAt: "",
+            }}
+            labels={labels}
+            longs={longs}
+            placeholders={hints}
+            canEdit={canEdit}
+            authorEnabled={authorEnabled}
+            linkCol={def.linkCol}
+            fileCol={def.fileCol}
+            onSave={onSave}
+            onDelete={() => {}}
+          />
+        )}
+
         {canEdit && (!filterBySubtype || selectedSubtype === defaultSubtype) && (
           <Button
             type="button"
