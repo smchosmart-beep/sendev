@@ -571,11 +571,12 @@ export function VoteSection({
                     </Button>
 
                   </div>
-                  {isAdmin && status === "closed" && (results?.voters?.[post.id]?.length ?? 0) > 0 && (
+                  {isAdmin && status === "closed" && voterList.length > 0 && (
                     <p className="text-[11px] leading-snug text-muted-foreground">
-                      {results!.voters[post.id]!.join(", ")}
+                      {voterList.join(", ")}
                     </p>
                   )}
+
                 </div>
               );
             })}
