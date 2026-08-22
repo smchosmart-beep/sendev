@@ -1205,7 +1205,7 @@ function RowSection({
         </div>
       )}
       <div className="mt-4 space-y-3">
-        {filteredRows.length === 0 && !showDraft && (
+        {filteredRows.length === 0 && !showDraft && visibleDrafts.length === 0 && (
           <p className="text-sm text-muted-foreground">아직 등록된 내용이 없어요.</p>
         )}
         {filteredRows.map((row, i) => (
@@ -1254,18 +1254,37 @@ function RowSection({
             onDelete={() => {}}
           />
         )}
+        {visibleDrafts.map((d, i) => (
+          <RowItem
+            key={d.draftId}
+            draftId={d.draftId}
+            row={d.row}
+            labels={labels}
+            longs={longs}
+            placeholders={hints}
+            indexLabel={
+              multiTab
+                ? `${selectedSubtype.replace(/^\d+\.\s*/, "")} ${filteredRows.length + i + 1}`
+                : undefined
+            }
+            subtypes={filterBySubtype ? undefined : subtypes}
+            canEdit={canEdit}
+            authorEnabled={authorEnabled}
+            linkCol={def.linkCol}
+            fileCol={def.fileCol}
+            onSave={onSave}
+            onDelete={() => {}}
+            onCancel={removeDraft}
+            onRemoveDraft={removeDraft}
+          />
+        ))}
 
-        {canEdit && (!filterBySubtype || multiTab) && (
+        {canEdit && !showDraft && (!filterBySubtype || multiTab) && (
           <Button
             type="button"
             variant="secondary"
             className="rounded-xl active:scale-95"
-            onClick={() =>
-              onSave({
-                ...emptyRowVars(def.kind, rows.length, filterBySubtype ? selectedSubtype : ""),
-                rowAuthor: defaultAuthor,
-              })
-            }
+            onClick={addDraft}
           >
             <Plus className="h-4 w-4" />
             {(filterBySubtype && draftTemplate?.addLabel) || def.addLabel}
