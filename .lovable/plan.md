@@ -57,13 +57,14 @@
 
 - 수정: 빈 상태 안내 문구(`아직 등록된 내용이 없어요`)의 노출 조건을 `filteredRows.length === 0 && visibleDrafts.length === 0`로 변경한다. draft가 있으면 안내 문구를 숨기고 draft 입력 양식만 보여준다.
 
-### 8. 저장 성공 후 draft 제거 시점을 쿼리 갱신 완료 후로 맞추고 중복 토스트 방지
+### 8. 저장 성공 후 draft 제거 시점을 쿼리 갱신 완료 후로 맞추고 중복 토스트/무효화 방지
 
 `mutateAsync`가 resolve되어도 `invalidateQueries`는 비동기로 동작하여, draft를 즉시 제거하면 서버에서 실제 행이 목록에 나타나기까지 잠깐 항목이 사라지는 플리커가 발생할 수 있다. 또한 `rowMutation`의 `onError` 토스트와 `RowItem`의 `catch` 내부 토스트가 중복될 수 있다.
 
-- 수정: `rowMutation`의 `onSuccess` 콜백은 기존처럼 `invalidateQueries`를 호출만 하고 **return하지 않는다**. draft를 제거하는 시점은 `RowItem` 내부에서 직접 제어한다. 저장 버튼 클릭 시 `try { await onSave({ ...row, sectionKey }); await queryClient.invalidateQueries({ queryKey: [...] }); onRemoveDraft(draftId); } catch { ... }` 형태로 호출하여, draft 제거는 오직 해당 draft 저장에 대한 쿼리 갱신이 완료된 뒤에만 이루어지게 한다. 이 방식은 `rowMutation`을 공유하는 다른 섹션의 저장(stance 자동 저장 등)에 지연을 전파하지 않는다.
+- 수정: `RecordEditor.tsx`에서 `onSave`를 래퍼 함수로 정의한다. 예: `async (vars) => { await rowMutation.mutateAsync(vars); await queryClient.invalidateQueries({ queryKey: ["record", postId], refetchType: "active" }); }`. 이 래퍼는 `postId`를 클로저로 캡처하므로 `RowSection`/`RowItem`으로 `postId`를 드릴링할 필요가 없다. `RowItem`의 저장 버튼 클릭 시 `try { await onSave({ ...row, sectionKey }); onRemoveDraft(draftId); } catch { ... }` 형태로 호출하여, draft 제거는 오직 해당 draft 저장에 대한 쿼리 갱신이 완료된 뒤에만 이루어지게 한다. 이 방식은 `rowMutation`을 공유하는 다른 섹션의 저장(stance 자동 저장 등)에 지연을 전파하지 않는다.
+- `rowMutation`의 `onSuccess` 콜백에서 `invalidateQueries` 호출을 제거하여, 래퍼에서 한 번만 무효화되도록 중복 refetch를 방지한다. 래퍼의 `invalidateQueries`는 `refetchType: "active"`로 범위를 한정하여 활성 쿼리만 다시 가져오게 한다.
 - `catch` 블록에서는 토스트를 띄우지 않고 draft만 유지하여 재시도를 가능하게 한다. 실제 에러 토스트는 `rowMutation`의 `onError` 콜백에서 한 곳에서만 담당한다.
-- `queryClient.invalidateQueries` 범위는 해당 활동 기록(`activityId`)과 관련된 쿼리 키로 한정하여, 전체 쿼리 무효화로 인한 불필요한 지연을 최소화한다. 필요 시 `refetchType: "active"` 옵션을 함께 사용한다.
+- `queryClient.invalidateQueries` 범위는 해당 활동 기록(`postId`)과 관련된 쿼리 키(`["record", postId]`)로 한정하여, 전체 쿼리 무효화로 인한 불필요한 지연을 최소화한다.
 
 ## 영향 범위
 
