@@ -3842,82 +3842,240 @@ async function assertNicknameAvailable(
   }
 }
 
-// Runs one migration step, tolerating unique-constraint collisions so a rare
-// duplicate row can't leave the rename half-applied.
+// --- Nickname migration -----------------------------------------------------
+// Moving a nickname can collide with unique constraints when the target name
+// already has a row for the same (post/category/round). Every such table is
+// declared here so collisions are resolved *before* the UPDATE runs; otherwise
+// a single duplicate row aborts the whole UPDATE and leaves the old name behind.
+//
+// strategy:
+//  - "delete": pure junction rows (a read mark, a like, a vote for the same
+//    post/round). Removing the old row is plain de-duplication and only ever
+//    happens when the target key already holds the identical combination.
+//  - "skip": rows that carry content (a post, a review, an activity record).
+//    Those are left under the old name and reported back to the caller.
+type DedupeSpec = {
+  table: string;
+  keyCol?: string; // normalized-key column
+  nameCol?: string; // display-name column (case-insensitive unique)
+  peers: string[]; // remaining columns of the unique constraint
+  strategy: "delete" | "skip";
+  extraEq?: Record<string, string>;
+};
+
+const DEDUPE_SPECS: DedupeSpec[] = [
+  { table: "user_awards", keyCol: "username_key", peers: ["name"], strategy: "delete" },
+  {
+    table: "posts",
+    nameCol: "author",
+    peers: ["category_id"],
+    strategy: "skip",
+    extraEq: { type: "vote" },
+  },
+  {
+    table: "post_likes",
+    keyCol: "liker_key",
+    peers: ["target_type", "target_id"],
+    strategy: "delete",
+  },
+  { table: "post_reads", keyCol: "username_key", peers: ["post_id"], strategy: "delete" },
+  {
+    table: "votes",
+    keyCol: "voter_key",
+    peers: ["category_id", "post_id", "round"],
+    strategy: "delete",
+  },
+  {
+    table: "review_allowlist",
+    keyCol: "reviewer_key",
+    peers: ["category_id"],
+    strategy: "delete",
+  },
+  { table: "reviews", nameCol: "reviewer_name", peers: ["post_id"], strategy: "skip" },
+  {
+    table: "record_members",
+    keyCol: "username_key",
+    peers: ["post_id"],
+    strategy: "skip",
+  },
+  {
+    table: "record_members",
+    keyCol: "username_key",
+    peers: ["category_id"],
+    strategy: "skip",
+  },
+  {
+    table: "record_reflections",
+    keyCol: "username_key",
+    peers: ["post_id"],
+    strategy: "skip",
+  },
+  {
+    table: "record_ethics",
+    keyCol: "username_key",
+    peers: ["post_id"],
+    strategy: "skip",
+  },
+];
+
+async function fetchDedupeRows(
+  db: { from: (t: string) => any },
+  spec: DedupeSpec,
+  value: string,
+): Promise<any[]> {
+  let q = db.from(spec.table).select(["id", ...spec.peers].join(", "));
+  q = spec.keyCol
+    ? q.eq(spec.keyCol, normalizeName(value))
+    : q.ilike(spec.nameCol as string, escapeIlike(value));
+  for (const [col, val] of Object.entries(spec.extraEq ?? {})) q = q.eq(col, val);
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+// Returns ids of old rows that must be excluded from the UPDATE ("skip"), after
+// deleting the ones whose duplicate already exists under the target name.
+async function resolveDuplicates(
+  db: { from: (t: string) => any },
+  spec: DedupeSpec,
+  oldName: string,
+  newName: string,
+): Promise<string[]> {
+  const sig = (r: any) => spec.peers.map((c) => String(r[c] ?? "")).join("\u0000");
+  const newRows = await fetchDedupeRows(db, spec, newName);
+  if (newRows.length === 0) return [];
+  const taken = new Set(newRows.map(sig));
+  const oldRows = await fetchDedupeRows(db, spec, oldName);
+  const dupIds = oldRows
+    .filter((r) => taken.has(sig(r)))
+    .map((r) => String(r.id));
+  if (dupIds.length === 0) return [];
+  if (spec.strategy === "delete") {
+    // Only ever removes a row the target key already has an equivalent of.
+    const { error } = await db.from(spec.table).delete().in("id", dupIds);
+    if (error) throw new Error(error.message);
+    return [];
+  }
+  return dupIds;
+}
+
+// Runs one migration step, reporting (instead of silently swallowing) any
+// collision that still slips through.
 async function migrateStep(
   label: string,
+  skipped: string[],
   run: () => Promise<{ error: any }>,
 ): Promise<void> {
   const { error } = await run();
   if (!error) return;
-  if (/duplicate|unique|conflict/i.test(error.message ?? "")) return;
+  if (/duplicate|unique|conflict/i.test(error.message ?? "")) {
+    if (!skipped.includes(label)) skipped.push(label);
+    return;
+  }
   throw new Error(`${label}: ${error.message}`);
 }
 
 // Moves every trace of a nickname (display name + normalized key) to a new
 // name. Authorship is stored as free text, so each table is migrated directly.
+// Returns the labels of anything that could not be moved.
 async function migrateNickname(
   db: { from: (t: string) => any },
   oldName: string,
   newName: string,
-): Promise<void> {
+  opts: { skipProfile?: boolean } = {},
+): Promise<string[]> {
   const oldKey = normalizeName(oldName);
   const newKey = normalizeName(newName);
   const oldPat = escapeIlike(oldName);
+  const skipped: string[] = [];
+
+  // Resolve every unique-constraint collision up front.
+  const excluded = new Map<string, Set<string>>();
+  for (const spec of DEDUPE_SPECS) {
+    const ids = await resolveDuplicates(db, spec, oldName, newName);
+    if (ids.length === 0) continue;
+    const set = excluded.get(spec.table) ?? new Set<string>();
+    for (const id of ids) set.add(id);
+    excluded.set(spec.table, set);
+  }
+  const notDup = (table: string, q: any) => {
+    const set = excluded.get(table);
+    if (!set || set.size === 0) return q;
+    return q.not("id", "in", `(${[...set].join(",")})`);
+  };
+  const markSkipped = (table: string, label: string) => {
+    if (excluded.get(table)?.size) {
+      if (!skipped.includes(label)) skipped.push(label);
+    }
+  };
 
   // Profile (keeps level, password, recovery Q&A intact) and badges.
-  await migrateStep("프로필", () =>
-    db
-      .from("user_profiles")
-      .update({ username: newName, username_key: newKey })
-      .eq("username_key", oldKey),
-  );
-  await migrateStep("배지", () =>
-    db
-      .from("user_awards")
-      .update({ username: newName, username_key: newKey })
-      .eq("username_key", oldKey),
+  if (!opts.skipProfile) {
+    await migrateStep("프로필", skipped, () =>
+      db
+        .from("user_profiles")
+        .update({ username: newName, username_key: newKey })
+        .eq("username_key", oldKey),
+    );
+  }
+  markSkipped("user_awards", "배지");
+  await migrateStep("배지", skipped, () =>
+    notDup(
+      "user_awards",
+      db
+        .from("user_awards")
+        .update({ username: newName, username_key: newKey })
+        .eq("username_key", oldKey),
+    ),
   );
 
   // Authored posts & comments (case-insensitive exact match).
-  await migrateStep("게시글", () =>
-    db.from("posts").update({ author: newName }).ilike("author", oldPat),
+  markSkipped("posts", "게시글");
+  await migrateStep("게시글", skipped, () =>
+    notDup(
+      "posts",
+      db.from("posts").update({ author: newName }).ilike("author", oldPat),
+    ),
   );
-  await migrateStep("댓글", () =>
+  await migrateStep("댓글", skipped, () =>
     db.from("comments").update({ author: newName }).ilike("author", oldPat),
   );
 
   // Likes given, reads, votes, review allowlist, reviews.
-  await migrateStep("좋아요", () =>
+  await migrateStep("좋아요", skipped, () =>
     db
       .from("post_likes")
       .update({ liker_name: newName, liker_key: newKey })
       .eq("liker_key", oldKey),
   );
-  await migrateStep("읽음 표시", () =>
+  await migrateStep("읽음 표시", skipped, () =>
     db.from("post_reads").update({ username_key: newKey }).eq("username_key", oldKey),
   );
-  await migrateStep("투표", () =>
+  await migrateStep("투표", skipped, () =>
     db
       .from("votes")
       .update({ voter_name: newName, voter_key: newKey })
       .eq("voter_key", oldKey),
   );
-  await migrateStep("심사 명단", () =>
+  await migrateStep("심사 명단", skipped, () =>
     db
       .from("review_allowlist")
       .update({ reviewer_name: newName, reviewer_key: newKey })
       .eq("reviewer_key", oldKey),
   );
-  await migrateStep("평가", () =>
-    db
-      .from("reviews")
-      .update({ reviewer_name: newName })
-      .ilike("reviewer_name", oldPat),
+  markSkipped("reviews", "평가");
+  await migrateStep("평가", skipped, () =>
+    notDup(
+      "reviews",
+      db
+        .from("reviews")
+        .update({ reviewer_name: newName })
+        .ilike("reviewer_name", oldPat),
+    ),
   );
 
   // Hackathon reviews (sticky notes).
-  await migrateStep("해커톤 후기", () =>
+  await migrateStep("해커톤 후기", skipped, () =>
     db
       .from("hackathon_reviews")
       .update({ nickname: newName })
@@ -3926,21 +4084,82 @@ async function migrateNickname(
 
   // Activity records.
   for (const table of ["record_members", "record_reflections", "record_ethics"]) {
-    await migrateStep("활동기록", () =>
-      db
-        .from(table)
-        .update({ username: newName, username_key: newKey })
-        .eq("username_key", oldKey),
+    markSkipped(table, "활동기록");
+    await migrateStep("활동기록", skipped, () =>
+      notDup(
+        table,
+        db
+          .from(table)
+          .update({ username: newName, username_key: newKey })
+          .eq("username_key", oldKey),
+      ),
     );
   }
-  await migrateStep("활동기록 표", () =>
+  await migrateStep("활동기록 표", skipped, () =>
     db.from("record_rows").update({ author: newName }).ilike("author", oldPat),
   );
   for (const table of ["record_rows", "record_final"]) {
-    await migrateStep("활동기록 수정자", () =>
+    await migrateStep("활동기록 수정자", skipped, () =>
       db.from(table).update({ updated_by: newName }).ilike("updated_by", oldPat),
     );
   }
+  return skipped;
+}
+
+// After a rename, checks the main tables for rows still carrying the old name
+// and retries once. Returns the labels that are still left over.
+async function verifyNicknameMigration(
+  db: { from: (t: string) => any },
+  oldName: string,
+  newName: string,
+  opts: { skipProfile?: boolean } = {},
+): Promise<string[]> {
+  const oldKey = normalizeName(oldName);
+  const oldPat = escapeIlike(oldName);
+  const probe = async (
+    label: string,
+    q: () => Promise<{ data: any[] | null; error: any }>,
+  ) => {
+    const { data, error } = await q();
+    if (error) throw new Error(error.message);
+    return (data?.length ?? 0) > 0 ? label : null;
+  };
+  const found = (
+    await Promise.all([
+      probe("투표", () =>
+        db.from("votes").select("id").eq("voter_key", oldKey).limit(1),
+      ),
+      probe("게시글", () =>
+        db.from("posts").select("id").ilike("author", oldPat).limit(1),
+      ),
+      probe("댓글", () =>
+        db.from("comments").select("id").ilike("author", oldPat).limit(1),
+      ),
+      probe("읽음 표시", () =>
+        db.from("post_reads").select("id").eq("username_key", oldKey).limit(1),
+      ),
+    ])
+  ).filter((v): v is string => v !== null);
+  if (found.length === 0) return [];
+  // One automatic retry for whatever is left.
+  await migrateNickname(db, oldName, newName, opts);
+  const again = (
+    await Promise.all([
+      probe("투표", () =>
+        db.from("votes").select("id").eq("voter_key", oldKey).limit(1),
+      ),
+      probe("게시글", () =>
+        db.from("posts").select("id").ilike("author", oldPat).limit(1),
+      ),
+      probe("댓글", () =>
+        db.from("comments").select("id").ilike("author", oldPat).limit(1),
+      ),
+      probe("읽음 표시", () =>
+        db.from("post_reads").select("id").eq("username_key", oldKey).limit(1),
+      ),
+    ])
+  ).filter((v): v is string => v !== null);
+  return again;
 }
 
 // Renames a nickname while preserving all linked activity (level, badges,
