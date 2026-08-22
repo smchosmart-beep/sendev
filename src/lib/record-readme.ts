@@ -134,6 +134,14 @@ export function normalizeUrl(raw: string): string {
   return withProtocol.replace(/ /g, "%20").replace(/\(/g, "%28").replace(/\)/g, "%29");
 }
 
+export function isBlankRow(
+  r: Record<`col${1 | 2 | 3 | 4 | 5 | 6}`, string> | Record<string, string>,
+): boolean {
+  return [r.col1, r.col2, r.col3, r.col4, r.col5, r.col6].every((v) => !(v ?? "").trim());
+}
+
+
+
 
 export function sanitizeFolderName(name: string): string {
   return (
@@ -193,8 +201,10 @@ export function buildRecordReadme(team: RecordOverviewTeam): string {
     const def = ROW_SECTION_DEFS[section.kind];
     const rows = team.rows
       .filter((r) => r.kind === section.kind)
+      .filter((r) => !isBlankRow(r))
       .sort((a, b) => a.sortOrder - b.sortOrder);
     if (rows.length === 0) continue;
+
     lines.push(`## ${section.title}`);
     lines.push("");
     rows.forEach((r, idx) => {
@@ -328,8 +338,10 @@ export interface PublicReadmeBlock {
 function rowsOfKind(team: RecordOverviewTeam, kind: RecordRowKindName) {
   return team.rows
     .filter((r) => r.kind === kind)
+    .filter((r) => !isBlankRow(r))
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
+
 
 function countFilled(final: RecordOverviewFinal | null, keys: RecordFinalKey[]): number {
   if (!final) return 0;

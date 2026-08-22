@@ -3,7 +3,8 @@ import type { ReactNode } from "react";
 
 import { ETHICS_PRINCIPLES } from "@/lib/record-ethics";
 import { parseAttachments } from "@/lib/file-upload";
-import { normalizeUrl } from "@/lib/record-readme";
+import { normalizeUrl, isBlankRow } from "@/lib/record-readme";
+
 import {
   STANCE_QUESTIONS,
   rowTemplate,
@@ -20,8 +21,10 @@ function val(team: RecordOverviewTeam, key: RecordFinalKey): string {
 function rowsOf(team: RecordOverviewTeam, kind: RecordRowKindName) {
   return team.rows
     .filter((r) => r.kind === kind)
+    .filter((r) => !isBlankRow(r))
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
+
 
 function Page({
   team,

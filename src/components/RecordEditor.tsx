@@ -67,7 +67,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { normalizeUrl } from "@/lib/record-readme";
+import { isBlankRow, normalizeUrl } from "@/lib/record-readme";
+
+
 
 type RowKind = RecordRowDTO["kind"];
 
@@ -85,6 +87,10 @@ type SaveRowVars = {
   col6: string;
   knownUpdatedAt: string;
 };
+
+type DraftRow = Omit<RecordRowDTO, "id"> & { id: string | null };
+
+
 
 const emptyRowVars = (kind: RowKind, sortOrder: number, subtype = ""): SaveRowVars => ({
   id: null,
@@ -480,8 +486,9 @@ export function RecordEditor({
       id: `s3-${kind}`,
       no: String(FINAL_GROUPS.length + i + 1).padStart(2, "0"),
       title: ROW_SECTION_DEFS[kind]!.title,
-      ...rowBlockStatus(rowsOf(kind).length),
+      ...rowBlockStatus(rowsOf(kind).filter((r) => !isBlankRow(r)).length),
     })),
+
   ];
 
   const step4RowKinds: RowKind[] = [
@@ -497,8 +504,9 @@ export function RecordEditor({
       id: `s4-${kind}`,
       no: String(i + 1).padStart(2, "0"),
       title: ROW_SECTION_DEFS[kind]!.title,
-      ...rowBlockStatus(rowsOf(kind).length),
+      ...rowBlockStatus(rowsOf(kind).filter((r) => !isBlankRow(r)).length),
     })),
+
     {
       id: "s4-stance",
       no: String(step4RowKinds.length + 1).padStart(2, "0"),
@@ -1064,6 +1072,10 @@ function RowSection({
     if (!filterBySubtype) return rows;
     return rows.filter((r) => r.subtype === selectedSubtype);
   }, [rows, filterBySubtype, selectedSubtype]);
+  // 전용 양식 탭을 열었는데 기록이 없으면, 편집 권한이 있을 때 빈 양식을 바로 보여준다.
+  const draftTemplate = filterBySubtype ? PROCESS_SUBTYPE_TEMPLATES[selectedSubtype] : undefined;
+  const showDraft = canEdit && !!draftTemplate && filteredRows.length === 0;
+
   return (
     <section className="rounded-2xl bg-card p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-foreground">{title ?? def.title}</h2>
@@ -1085,7 +1097,7 @@ function RowSection({
         </div>
       )}
       <div className="mt-4 space-y-3">
-        {filteredRows.length === 0 && (
+        {filteredRows.length === 0 && !showDraft && (
           <p className="text-sm text-muted-foreground">아직 등록된 내용이 없어요.</p>
         )}
         {filteredRows.map((row) => (
@@ -1100,11 +1112,40 @@ function RowSection({
             authorEnabled={authorEnabled}
             linkCol={def.linkCol}
             fileCol={def.fileCol}
-
             onSave={onSave}
             onDelete={onDelete}
           />
         ))}
+        {showDraft && (
+          <RowItem
+            key={`draft-${selectedSubtype}`}
+            row={{
+              id: null,
+              kind: def.kind,
+              sortOrder: rows.length,
+              subtype: selectedSubtype,
+              author: defaultAuthor,
+              col1: "",
+              col2: "",
+              col3: "",
+              col4: "",
+              col5: "",
+              col6: "",
+              updatedBy: "",
+              updatedAt: "",
+            }}
+            labels={labels}
+            longs={longs}
+            placeholders={hints}
+            canEdit={canEdit}
+            authorEnabled={authorEnabled}
+            linkCol={def.linkCol}
+            fileCol={def.fileCol}
+            onSave={onSave}
+            onDelete={() => {}}
+          />
+        )}
+
         {canEdit && (!filterBySubtype || selectedSubtype === defaultSubtype) && (
           <Button
             type="button"
@@ -1152,7 +1193,7 @@ function RowItem({
   onSave,
   onDelete,
 }: {
-  row: RecordRowDTO;
+  row: DraftRow;
   labels: string[];
   longs: number[];
   placeholders?: string[];
@@ -1579,16 +1620,19 @@ function RowItem({
           >
             저장
           </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            aria-label="줄 삭제"
-            className="rounded-xl text-muted-foreground hover:text-destructive"
-            onClick={() => onDelete(row.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          {row.id && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              aria-label="줄 삭제"
+              className="rounded-xl text-muted-foreground hover:text-destructive"
+              onClick={() => onDelete(row.id!)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+
         </div>
       )}
     </div>
