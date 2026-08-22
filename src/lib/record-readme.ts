@@ -187,7 +187,7 @@ export function isBlankForOutput(
   const values = [r.col1, r.col2, r.col3, r.col4, r.col5, r.col6];
   const order = tpl.displayOrder ?? values.map((_, i) => i);
   const shown = order.filter((i) => (tpl.cols[i] ?? "").trim());
-  if (shown.length === 0) return isBlankRow(r as Record<string, string>);
+  if (shown.length === 0) return values.every((v) => !(v ?? "").trim());
   return shown.every((i) => !(values[i] ?? "").trim());
 }
 
