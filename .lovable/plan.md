@@ -46,7 +46,8 @@
 
 ## 기술 메모
 
-- `src/lib/record-schema.ts`: `PROCESS_SUBTYPES`, `PROCESS_SUBTYPE_TEMPLATES`, `PROCESS_TEMPLATE_NOTICES`를 새 5탭 기준으로 재정의. 저장 열 인덱스는 기존과 동일하게 유지(페르소나=col5, 여정맵=col6, 링크=col4, 파일=col5 등 기존 매핑 보존)해 데이터 호환성 확보.
-- `src/components/RecordEditor.tsx`: `defaultSubtype`을 첫 탭으로 변경. 추가 버튼 노출 조건을 "메모 탭 한정"에서 "인터뷰 기록 탭 한정(multi 탭)"으로 교체 — 스키마에 탭별 `multi: boolean` 플래그를 두고 그 값으로 판단. 가상(빈) 행 표시 로직은 5개 탭 모두에 적용(단일 탭은 1개만). 인터뷰 행의 작성자는 기존 `record_rows.author` 컬럼을 사용하며 로그인 닉네임을 기본값으로 채움.
-- `src/lib/record-readme.ts`, `src/components/record/CasebookDocument.tsx`: 하드코딩된 탭 이름·정렬 기준 갱신.
-- 마이그레이션은 `record_rows` 대상 INSERT/UPDATE 스크립트 1건(스키마 변경 없음).
+- `src/lib/record-schema.ts`: `PROCESS_SUBTYPES`, `PROCESS_SUBTYPE_TEMPLATES`, `PROCESS_TEMPLATE_NOTICES`를 새 5탭 기준으로 재정의. 저장 열은 기존 매핑을 그대로 씁니다 — **링크=col4(index 3) / 페르소나 이미지=col5(index 4) / 고객 여정 맵 이미지=col6(index 5)**. [4. 회고&문제정의]의 텍스트 3칸은 col1~col3, 새로 붙는 관련 링크·관련 파일은 col4·col5를 사용(탭이 다르므로 팀빌딩 열과 충돌 없음). `RowTemplate`에 탭별 `multi?: boolean` 플래그 추가.
+- `src/components/RecordEditor.tsx`: `defaultSubtype`은 반드시 첫 탭 문자열로 유지(비우면 `filterBySubtype`이 꺼져 탭 필터 자체가 동작하지 않음). 추가 버튼 노출 조건을 `selectedSubtype === defaultSubtype`에서 `multi` 플래그 기준으로 교체하고, 버튼이 만드는 새 행의 `subtype`도 `defaultSubtype`이 아니라 **`selectedSubtype`**으로 전달. 빈 양식(가상 행) 표시는 5개 탭 모두 적용하되 단일 탭은 1벌만. 인터뷰 행 작성자는 기존 `record_rows.author` 컬럼과 `defaultAuthor` 로직을 그대로 사용.
+- `RowItem`에 넘기던 `subtypes` prop 제거(행 내부 탭 버튼 삭제) — 탭 재선택으로 `subtype`이 `""`가 되어 행이 사라지는 현상 차단.
+- `src/lib/record-readme.ts`, `src/components/record/CasebookDocument.tsx`: 하드코딩된 탭 이름과 정렬 기준을 새 5탭 순서로 갱신.
+- 데이터 이관은 스키마 마이그레이션이 아니라 `record_rows` 대상 INSERT/UPDATE 데이터 작업 1건으로 실행. 서버 저장 함수(`saveRecordRow`)의 `subtype`은 최대 50자 자유 문자열이라 새 탭 이름 그대로 통과하며 서버 변경은 필요 없음.
