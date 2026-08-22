@@ -67,15 +67,14 @@
 - `catch` 블록에서는 토스트를 띄우지 않고 draft만 유지하여 재시도를 가능하게 한다. 실제 에러 토스트는 `rowMutation`의 `onError` 콜백에서 한 곳에서만 담당한다.
 - `queryClient.invalidateQueries` 범위는 해당 활동 기록(`postId`)과 관련된 쿼리 키(`["record", postId]`)로 한정하여, 전체 쿼리 무효화로 인한 불필요한 지연을 최소화한다.
 
-## 영향 범위
+### 9. 저장 중 시각적 피드백 및 중복 클릭 방지
 
-- `src/lib/record-readme.ts`: subtype 사용 kind(process, ai_use) 그룹 정렬 + process/ai_use 정의 순서 + 폴백
-- `src/lib/record-schema.ts`: `AI_USE_TYPES` 배열 순서를 현재 README/사례집 출력 순서에 맞춰 재배열
-- `src/components/record/CasebookDocument.tsx`: 동일 정렬 로직 확인·수정
-- `src/components/RecordEditor.tsx` (내부 `RowSection`/`RowItem` 함수 수정): draft/추가 버튼 조건, 임시 draft 배열 관리, draft key, 저장 후 제거, `onSave` 비동기 콜백 전달(`postId` 클로저 캡처), `rowMutation`의 `onSuccess` 무효화 제거, 연관 호출부 통일, `StanceItem`의 `save` 함수 공통 rejection 처리, subtype별 draft 필터링, 빈 상태 문구 조건, 토스트 중복 방지, draft 저장 전 상태 표시
-- 별도 신규 파일(`RowSection.tsx`, `RowItem.tsx`)은 만들지 않는다.
+`RowItem`의 저장 버튼은 `disabled={!dirty || uploading}`만 검사하고 있어, 저장이 진행 중인지 사용자에게 명확히 표시하지 않는다. `saveRow` 래퍼가 `mutateAsync`와 `invalidateQueries`를 모두 await하므로, 저장 버튼 클릭 후 수백 ms 동안 버튼이 활성 상태로 남아 있으면 사용자가 실수로 두 번 클릭하여 같은 draft가 중복 저장될 수 있다.
 
-### 9. draft 취소와 실제 삭제 UI를 명확히 구분하고 저장 전 상태 시각화
+- 수정: `RowItem` 컴포넌트에 로컬 `saving` 상태(`React.useState(false)`)를 추가한다. 저장 버튼 클릭 시 `setSaving(true)`로 전환하고, `await onSave({...})`가 완료되거나 `catch` 블록이 끝난 후 `finally`에서 `setSaving(false)`로 복원한다. 버튼의 `disabled` 조건은 `!dirty || uploading || saving`으로 확장하여 저장 중에는 클릭 및 제출을 차단한다. 저장 중일 때 버튼 라벨은 "저장 중..." 등으로 변경하거나 스피너를 표시하여 사용자가 진행 상태를 인지할 수 있게 한다.
+- 자동 저장(stance) 경로는 `saving` 상태를 사용하지 않으며, 기존 자동 저장 방식을 그대로 유지한다. `saveRow` 래퍼를 통과하므로 자동 저장 후에도 활성 쿼리가 갱신된다.
+
+### 10. draft 취소와 실제 삭제 UI를 명확히 구분하고 저장 전 상태 시각화
 
 `dirty` 계산으로 인해 draft가 비어 있으면 저장 버튼이 비활성화되며, 이때 새로고침하면 로컬에만 존재하는 draft가 사라진다. 사용자가 "추가했는데 사라졌다"고 오해할 수 있으므로, draft는 저장 전 임시 상태임을 명확히 표시해야 한다.
 
