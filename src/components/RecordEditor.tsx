@@ -1149,14 +1149,14 @@ function RowSection({
         {filteredRows.length === 0 && !showDraft && (
           <p className="text-sm text-muted-foreground">아직 등록된 내용이 없어요.</p>
         )}
-        {filteredRows.map((row) => (
+        {filteredRows.map((row, i) => (
           <RowItem
             key={row.id}
             row={row}
             labels={labels}
             longs={longs}
             placeholders={hints}
-            subtypes={subtypes}
+            indexLabel={multiTab ? `${selectedSubtype.replace(/^\d+\.\s*/, "")} ${i + 1}` : undefined}
             canEdit={canEdit}
             authorEnabled={authorEnabled}
             linkCol={def.linkCol}
