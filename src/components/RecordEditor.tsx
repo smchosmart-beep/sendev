@@ -1761,33 +1761,49 @@ function RowItem({
           <Button
             type="button"
             size="sm"
-            disabled={!dirty || uploading}
+            disabled={!dirty || uploading || saving}
             className="rounded-xl active:scale-95"
-            onClick={() => {
+            onClick={async () => {
               const vals = normalizedValues();
               if (fileCols.some((c) => (vals[c] ?? "").length > 2900)) {
                 toast.error("첨부가 너무 많아요. 파일 수를 줄여 주세요.");
                 return;
               }
-              onSave({
-                id: row.id,
-                kind: row.kind,
-                subtype,
-                rowAuthor: author,
-                sortOrder: row.sortOrder,
-                col1: vals[0] ?? "",
-                col2: vals[1] ?? "",
-                col3: vals[2] ?? "",
-                col4: vals[3] ?? "",
-                col5: vals[4] ?? "",
-                col6: vals[5] ?? "",
-                knownUpdatedAt: row.updatedAt,
-              });
+              setSaving(true);
+              try {
+                await onSave({
+                  id: row.id,
+                  kind: row.kind,
+                  subtype,
+                  rowAuthor: author,
+                  sortOrder: row.sortOrder,
+                  col1: vals[0] ?? "",
+                  col2: vals[1] ?? "",
+                  col3: vals[2] ?? "",
+                  col4: vals[3] ?? "",
+                  col5: vals[4] ?? "",
+                  col6: vals[5] ?? "",
+                  knownUpdatedAt: row.updatedAt,
+                });
+                // 저장 성공 후에만 로컬 draft를 정리한다 (실패 시 재시도 가능).
+                if (draftId && onRemoveDraft) onRemoveDraft(draftId);
+              } catch {
+                // 에러 토스트는 rowMutation.onError 한 곳에서만 담당한다.
+              } finally {
+                setSaving(false);
+              }
             }}
           >
-            저장
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                저장 중...
+              </>
+            ) : (
+              "저장"
+            )}
           </Button>
-          {row.id && (
+          {row.id ? (
             <Button
               type="button"
               size="sm"
@@ -1798,8 +1814,27 @@ function RowItem({
             >
               <Trash2 className="h-4 w-4" />
             </Button>
+          ) : (
+            draftId &&
+            onCancel && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                aria-label="작성 취소"
+                className="rounded-xl text-muted-foreground"
+                onClick={() => onCancel(draftId)}
+              >
+                <X className="h-4 w-4" />
+                취소
+              </Button>
+            )
           )}
-
+          {!row.id && (
+            <span className="text-xs text-muted-foreground">
+              저장 버튼을 눌러야 서버에 반영돼요.
+            </span>
+          )}
         </div>
       )}
     </div>
