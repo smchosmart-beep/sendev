@@ -1452,13 +1452,26 @@ function RowItem({
 
   const uploading = uploadingCol !== null;
 
+  const isDraft = row.id == null;
+
   return (
-    <div className="space-y-2 rounded-xl bg-muted/40 p-3">
-      {(indexLabel || subtypes || legacyAuthor || (authorEnabled && canEdit)) && (
+    <div
+      className={
+        isDraft
+          ? "space-y-2 rounded-xl border border-dashed border-primary/40 bg-muted/40 p-3"
+          : "space-y-2 rounded-xl bg-muted/40 p-3"
+      }
+    >
+      {(isDraft || indexLabel || subtypes || legacyAuthor || (authorEnabled && canEdit)) && (
         <div className="flex flex-wrap items-center gap-2">
           {indexLabel && (
             <span className="rounded-full bg-background px-2.5 py-1 text-xs font-semibold text-foreground">
               {indexLabel}
+            </span>
+          )}
+          {isDraft && (
+            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+              저장 전
             </span>
           )}
           {subtypes?.map((s) => (
