@@ -68,9 +68,12 @@ export function TemplateNotice({ label, text, tip, className }: TemplateNoticePr
           )}
         </Button>
       </div>
-      <pre className="whitespace-pre-wrap break-words px-4 pb-4 pt-9 font-mono text-sm leading-relaxed text-foreground">
+      <pre className="whitespace-pre-wrap break-words px-4 pb-2 pt-9 font-mono text-sm leading-relaxed text-foreground">
         {text}
       </pre>
+      {tip && (
+        <p className="px-4 pb-4 text-xs leading-relaxed text-muted-foreground">💡 {tip}</p>
+      )}
     </div>
   );
 }
