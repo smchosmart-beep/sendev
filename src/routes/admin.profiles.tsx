@@ -404,6 +404,10 @@ function ProfilesAdmin() {
   const [renamingFor, setRenamingFor] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
 
+  // 미등록(프로필 없는) 닉네임을 기존 닉네임으로 합치기
+  const [mergingFor, setMergingFor] = useState<string | null>(null);
+  const [mergeValue, setMergeValue] = useState("");
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const list = (profiles as UserProfileDTO[]).filter((p) => {
