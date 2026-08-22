@@ -227,10 +227,7 @@ export function buildRecordReadme(team: RecordOverviewTeam): string {
     const rows = team.rows
       .filter((r) => r.kind === section.kind)
       .filter((r) => !isBlankRow(r))
-      .sort(
-        (a, b) =>
-          (a.subtype ?? "").localeCompare(b.subtype ?? "", "ko") || a.sortOrder - b.sortOrder,
-      );
+      .sort(compareOutputRows(section.kind));
     if (rows.length === 0) continue;
 
     lines.push(`## ${section.title}`);
