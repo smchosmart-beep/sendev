@@ -4618,19 +4618,25 @@ export const getVoteResults = createServerFn({ method: "GET" })
     const counts: Record<string, number> = {};
     const voters: Record<string, string[]> = {};
     const roundCounts: Record<number, Record<string, number>> = {};
+    const roundVoters: Record<number, Record<string, string[]>> = {};
     for (const r of rows ?? []) {
       const pid = String((r as any).post_id);
       const rd = Math.max(1, Number((r as any).round ?? 1));
       const bucket = (roundCounts[rd] ??= {});
       bucket[pid] = (bucket[pid] ?? 0) + 1;
+      if (isAdmin) {
+        const vb = (roundVoters[rd] ??= {});
+        (vb[pid] ??= []).push(String((r as any).voter_name ?? ""));
+      }
       if (rd !== cfg.round) continue;
       counts[pid] = (counts[pid] ?? 0) + 1;
       if (isAdmin) {
         (voters[pid] ??= []).push(String((r as any).voter_name ?? ""));
       }
     }
-    return { ...base, counts, voters, roundCounts };
+    return { ...base, counts, voters, roundCounts, roundVoters };
   });
+
 
 export interface RunoffPreviewDTO {
   seats: number;
