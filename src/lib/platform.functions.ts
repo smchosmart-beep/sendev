@@ -2873,7 +2873,9 @@ export const listUserProfiles = createServerFn({ method: "GET" }).handler(
         registered: false,
       });
     }
-    rows.sort((a, b) => a.username.localeCompare(b.username, "ko"));
+    rows.sort((a: UserProfileDTO, b: UserProfileDTO) =>
+      a.username.localeCompare(b.username, "ko"),
+    );
     return rows;
   },
 );
