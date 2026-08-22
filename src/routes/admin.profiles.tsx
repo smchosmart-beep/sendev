@@ -398,6 +398,10 @@ function ProfilesAdmin() {
   const [addingFor, setAddingFor] = useState<string | null>(null);
   const [addingValue, setAddingValue] = useState("");
 
+  // 목록 행 내 닉네임 변경
+  const [renamingFor, setRenamingFor] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const list = (profiles as UserProfileDTO[]).filter((p) => {
