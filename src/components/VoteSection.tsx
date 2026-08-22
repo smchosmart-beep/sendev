@@ -465,9 +465,12 @@ export function VoteSection({
                 showFinal && isLocked
                   ? lockedCountOf(post.id)
                   : (counts[post.id] ?? 0);
-              const rankInfo = showFinal && isLocked ? undefined : rankMap.get(post.id);
+              const rankInfo = rankMap.get(post.id);
               const showRank =
-                status === "closed" && count > 0 && !!rankInfo && rankInfo.rank <= 3;
+                status === "closed" &&
+                count > 0 &&
+                !!rankInfo &&
+                (showFinal ? true : rankInfo.rank <= 3);
               const isWinner =
                 status === "closed" && winnerInfo.winners.has(post.id);
               const isTied = status === "closed" && winnerInfo.tiedIds.has(post.id);
