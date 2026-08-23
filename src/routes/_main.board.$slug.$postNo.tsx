@@ -1368,7 +1368,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
         className="rounded-xl active:scale-95"
       >
         <Pencil className="h-4 w-4" />
-        수정
+        {isRecordPost ? "글 정보 수정" : "수정"}
       </Button>
       <Button
         type="button"
