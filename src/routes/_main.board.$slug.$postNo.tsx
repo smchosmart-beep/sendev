@@ -77,6 +77,8 @@ import {
   type CommentDTO,
   type TabGroup,
 } from "@/lib/platform.functions";
+import { isRecordAdmin } from "@/lib/record.functions";
+import { setAdminPassword } from "@/lib/admin-auth";
 import { EmptyState } from "@/components/EmptyState";
 import { RecordEditor } from "@/components/RecordEditor";
 import { AuthorBadge } from "@/components/AuthorBadge";
