@@ -365,13 +365,19 @@ export function RecordEditor({
     queryFn: () => fetchRecord({ data: { postId } }),
   });
 
+  // 관리자 잠금 해제 성공 시 auth/canEdit가 즉시 다시 계산되도록 로컬 state로도 들고 있는다.
+  const [adminPw, setAdminPw] = useState("");
+  useEffect(() => {
+    setAdminPw(getAdminPassword());
+  }, []);
+
   const auth = useMemo(
     () => ({
       author: identity?.author ?? "",
       nicknamePassword: identity?.nicknamePassword ?? "",
-      adminPassword: getAdminPassword(),
+      adminPassword: adminPw || getAdminPassword(),
     }),
-    [identity?.author, identity?.nicknamePassword],
+    [identity?.author, identity?.nicknamePassword, adminPw],
   );
 
   const isMember = useMemo(() => {
@@ -382,6 +388,7 @@ export function RecordEditor({
   }, [bundle, identity?.author]);
 
   const canEdit = isMember || !!auth.adminPassword;
+  const isAdminEditing = !isMember && !!auth.adminPassword;
 
   const [final, setFinal] = useState<Record<string, string> | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
