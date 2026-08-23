@@ -28,7 +28,8 @@
 서버 쪽은 이미 관리자 비밀번호를 받으면 팀원이 아니어도 저장을 허용합니다(`requireTeamMember`의 admin 분기). 화면에만 관리자 확인 수단이 없습니다.
 
 - 활동기록 상단(편집 권한 없음 안내 자리)에 **"관리자로 수정하기"** 버튼을 추가합니다.
-- 누르면 비밀번호 다이얼로그가 뜨고, 기존 서버 함수 **`isRecordAdmin`**(`src/lib/record.functions.ts`)으로 검증한 뒤 `setAdminPassword`로 세션에 저장합니다.
+- 누르면 비밀번호 다이얼로그가 뜨고, 기존 서버 함수 **`isRecordAdmin`**(`src/lib/record.functions.ts`)으로 검증한 뒤 `setAdminPassword`로 세션에 저장하고, 편집 권한 계산용 로컬 state(`adminPw`)도 함께 세팅합니다.
+- `auth` 메모의 의존성이 원래 `[identity?.author, identity?.nicknamePassword]`뿐이라 `getAdminPassword()`만으로는 `canEdit`이 재계산되지 않습니다(`RecordEditor.tsx:371-374`, `384`). 따라서 `adminPw`를 `auth` 메모 의존성에 추가해 성공 시 즉시 편집 모드로 전환합니다.
 - 성공 시 즉시 편집 모드로 전환되고 안내 문구는 "관리자 권한으로 편집 중"으로 바뀝니다. 저장 요청에는 이미 관리자 비밀번호가 함께 전송되므로 서버 로직 변경은 없습니다.
 - 잘못된 비밀번호는 토스트로 알리고 편집을 열지 않습니다.
 - 변경 파일: `src/components/RecordEditor.tsx`만.
