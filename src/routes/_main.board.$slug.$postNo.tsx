@@ -1209,13 +1209,26 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
     queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
   };
 
+  const checkRecordAdmin = useServerFn(isRecordAdmin);
+
   // Verify the password first, then open the edit form with fields prefilled.
   const editGateMutation = useMutation({
     mutationFn: () => verify({ data: { id: postId, password: editGatePw } }),
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
       if (!res.ok) {
         toast.error("비밀번호가 일치하지 않아요.");
         return;
+      }
+      // 활동기록 글에서 관리자 비밀번호로 통과하면 아래 활동기록 편집 잠금도 함께 해제한다.
+      if (isRecordPost) {
+        try {
+          const adminRes = await checkRecordAdmin({ data: { adminPassword: editGatePw } });
+          if (adminRes.ok) {
+            setAdminPassword(editGatePw);
+          }
+        } catch {
+          /* ignore */
+        }
       }
       setTitle(post.title);
       setContent(post.content);
