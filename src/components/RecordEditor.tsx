@@ -1814,12 +1814,43 @@ function RowItem({
             disabled={!dirty || uploading || saving}
             className="rounded-xl active:scale-95"
             onClick={async () => {
-              const vals = normalizedValues();
+              const vals = [...normalizedValues()];
+              setSaving(true);
+              // 회전한 이미지가 있으면 저장할 때 한 번만 업로드해서 첨부를 교체한다.
+              if (hasRotation) {
+                try {
+                  for (const col of fileCols) {
+                    const files = parseAttachments(vals[col]);
+                    let changed = false;
+                    const next: AttachedFile[] = [];
+                    for (const f of files) {
+                      const deg = (((rotations[f.url] ?? 0) % 360) + 360) % 360;
+                      if (deg === 0) {
+                        next.push(f);
+                        continue;
+                      }
+                      const blob = await rotateImageBlob(f.url, deg);
+                      const base = f.name.replace(/\.[a-zA-Z0-9]{1,10}$/, "");
+                      const rotatedFile = new File([blob], `${base}(회전).jpg`, {
+                        type: "image/jpeg",
+                      });
+                      next.push(await uploadAttachment(rotatedFile));
+                      changed = true;
+                    }
+                    if (changed) vals[col] = serializeAttachments(next);
+                  }
+                } catch (err) {
+                  console.error("record image rotate failed", err);
+                  toast.error(err instanceof Error ? err.message : "이미지 회전에 실패했어요.");
+                  setSaving(false);
+                  return;
+                }
+              }
               if (fileCols.some((c) => (vals[c] ?? "").length > 2900)) {
                 toast.error("첨부가 너무 많아요. 파일 수를 줄여 주세요.");
+                setSaving(false);
                 return;
               }
-              setSaving(true);
               try {
                 await onSave({
                   id: row.id,
