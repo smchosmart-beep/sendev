@@ -581,10 +581,58 @@ export function RecordEditor({
       </nav>
 
       {!canEdit && (
-        <p className="rounded-xl bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
-          팀원 닉네임으로 내 정보를 저장하면 이 기록을 함께 편집할 수 있어요.
+        <div className="space-y-2 rounded-xl bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+          <p>팀원 닉네임으로 내 정보를 저장하면 이 기록을 함께 편집할 수 있어요.</p>
+          {adminOpen ? (
+            <form
+              className="flex flex-wrap items-center gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void unlockAdmin();
+              }}
+            >
+              <Input
+                type="password"
+                value={adminInput}
+                onChange={(e) => setAdminInput(e.target.value)}
+                placeholder="관리자 비밀번호"
+                autoFocus
+                className="h-9 w-52 rounded-xl bg-background"
+              />
+              <Button type="submit" size="sm" className="rounded-xl" disabled={adminChecking}>
+                {adminChecking ? <Loader2 className="h-4 w-4 animate-spin" /> : "확인"}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="rounded-xl"
+                onClick={() => setAdminOpen(false)}
+              >
+                취소
+              </Button>
+            </form>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => setAdminOpen(true)}
+            >
+              <ShieldCheck className="h-4 w-4" />
+              관리자로 수정하기
+            </Button>
+          )}
+        </div>
+      )}
+
+      {isAdminEditing && (
+        <p className="rounded-xl bg-primary/10 px-4 py-3 text-sm text-primary">
+          관리자 권한으로 편집 중이에요.
         </p>
       )}
+
 
       {step === 0 && (
         <MemberSection
