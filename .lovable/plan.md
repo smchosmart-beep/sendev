@@ -12,10 +12,13 @@
 
 기술 상세
 - `src/lib/image-upload.ts`에 `rotateImageBlob(url, degrees)` 유틸 추가: 캔버스에서 가로/세로를 바꿔 그린 뒤 기존 `compressImage`와 같은 축소·품질 루프로 1MB 이하 JPEG Blob 생성.
+- `loadImage`/`compressImage` 시그니처를 `File`에서 `Blob`까지 받도록 확장해 회전 유틸이 재사용하도록 합니다(기존 호출부 `uploadCommentImage`는 File이 Blob이므로 영향 없음).
+- **저장 버튼 활성화 조건 보완**: 현재 `disabled={!dirty || uploading || saving}`(`RecordEditor.tsx:1777`)이라 회전만 한 경우 저장이 막힙니다. 회전 각도가 하나라도 0이 아니면 `dirty`로 간주하도록 조건에 포함합니다.
+- **파일명 정규화**: 회전 결과는 JPEG이므로 원본이 PNG여도 확장자가 어긋나지 않게 업로드 파일명을 `원본이름(회전).jpg`로 바꿉니다(미리보기 판별 정규식 `RecordEditor.tsx:1587`, 경로 생성 `file-upload.ts:15`와 일치).
 - **CORS 검증 우선**: 서명 URL을 `fetch` → `blob` → `createImageBitmap` 경로로 읽을 수 있는지 구현 첫 단계에서 실제 브라우저로 1회 검증합니다. 실패하면 `crossOrigin="anonymous"` 이미지 로드 방식으로 대체하고, 그것도 막히면 회전 버튼 대신 "다시 업로드" 안내로 축소합니다.
-- 업로드는 기존 `uploadAttachment`(`src/lib/file-upload.ts`) 재사용, 파일명 유지, 반환된 새 URL로 `AttachedFile.url`만 교체.
+- 업로드는 기존 `uploadAttachment`(`src/lib/file-upload.ts`) 재사용, 반환된 새 URL로 `AttachedFile.url`·이름 교체.
 - **저장 비용 주의**: `post-files` 버킷에는 DELETE 정책이 없어 이전 파일을 클라이언트가 지울 수 없습니다. 위의 "저장 시 1회만 업로드 + 1MB 재압축"으로 고아 파일 누적을 최소화합니다(이미지당 최대 1개, 최대 1MB).
-- 변경 파일: `src/components/RecordEditor.tsx`(RowItem 이미지 미리보기·저장 경로), `src/lib/image-upload.ts`.
+- 변경 파일: `src/components/RecordEditor.tsx`(RowItem 이미지 미리보기·저장 경로·저장 버튼 조건), `src/lib/image-upload.ts`.
 
 ## 2. 관리자도 활동기록 수정
 
@@ -35,6 +38,7 @@
 
 - 타입 체크 통과
 - 회전 1회 실제 브라우저 검증(CORS 통과 여부 확인)
-- 회전 버튼 2회 클릭 → 미리보기 180도, 저장 후 새로고침에도 유지, 업로드는 1회만 발생
+- 회전 버튼 2회 클릭 → 미리보기 180도, 다른 칸을 안 건드려도 저장 버튼 활성화, 저장 후 새로고침에도 유지, 업로드는 1회만 발생
+- PNG 원본 회전 후 파일명이 `.jpg`로 저장되고 미리보기가 정상 표시되는지 확인
 - 팀원이 아닌 상태에서 관리자 비밀번호 입력 → 편집 가능, 행 저장 성공
 - 틀린 비밀번호 → 편집 열리지 않음
