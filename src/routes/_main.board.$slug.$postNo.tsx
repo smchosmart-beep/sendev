@@ -1611,9 +1611,9 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto overflow-x-hidden rounded-2xl">
           <DialogHeader>
-            <DialogTitle>{noun} 수정</DialogTitle>
+            <DialogTitle>{editNoun} 수정</DialogTitle>
             <DialogDescription>
-              내용을 수정한 뒤 저장하세요.
+              {isRecordPost ? "제목·작성자·링크 정보를 수정한 뒤 저장하세요." : "내용을 수정한 뒤 저장하세요."}
             </DialogDescription>
           </DialogHeader>
           <form
