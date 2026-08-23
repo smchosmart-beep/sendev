@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, ChevronLeft, ChevronRight, ImagePlus, Loader2, Play, Plus, Trash2, Users, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, ImagePlus, Loader2, Play, Plus, RotateCw, ShieldCheck, Trash2, Users, X } from "lucide-react";
 import { toast } from "sonner";
 
-import { uploadCommentImage } from "@/lib/image-upload";
+import { rotateImageBlob, uploadCommentImage } from "@/lib/image-upload";
 import {
   MAX_ATTACHMENT_BYTES,
   parseAttachments,
@@ -22,6 +22,7 @@ import {
   deleteRecordReflection,
   deleteRecordRow,
   getRecord,
+  isRecordAdmin,
   removeRecordMember,
   saveRecordFinal,
   saveRecordReflection,
@@ -62,7 +63,7 @@ import {
   type ProgressBlock,
 } from "@/lib/record-progress";
 
-import { getAdminPassword } from "@/lib/admin-auth";
+import { getAdminPassword, setAdminPassword } from "@/lib/admin-auth";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -365,13 +366,19 @@ export function RecordEditor({
     queryFn: () => fetchRecord({ data: { postId } }),
   });
 
+  // 관리자 잠금 해제 성공 시 auth/canEdit가 즉시 다시 계산되도록 로컬 state로도 들고 있는다.
+  const [adminPw, setAdminPw] = useState("");
+  useEffect(() => {
+    setAdminPw(getAdminPassword());
+  }, []);
+
   const auth = useMemo(
     () => ({
       author: identity?.author ?? "",
       nicknamePassword: identity?.nicknamePassword ?? "",
-      adminPassword: getAdminPassword(),
+      adminPassword: adminPw || getAdminPassword(),
     }),
-    [identity?.author, identity?.nicknamePassword],
+    [identity?.author, identity?.nicknamePassword, adminPw],
   );
 
   const isMember = useMemo(() => {
@@ -382,6 +389,35 @@ export function RecordEditor({
   }, [bundle, identity?.author]);
 
   const canEdit = isMember || !!auth.adminPassword;
+  const isAdminEditing = !isMember && !!auth.adminPassword;
+
+  const checkAdmin = useServerFn(isRecordAdmin);
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [adminInput, setAdminInput] = useState("");
+  const [adminChecking, setAdminChecking] = useState(false);
+
+  const unlockAdmin = async () => {
+    const pw = adminInput.trim();
+    if (!pw) return;
+    setAdminChecking(true);
+    try {
+      const res = await checkAdmin({ data: { adminPassword: pw } });
+      if (!res.ok) {
+        toast.error("관리자 비밀번호가 올바르지 않아요.");
+        return;
+      }
+      setAdminPassword(pw);
+      setAdminPw(pw);
+      setAdminOpen(false);
+      setAdminInput("");
+      toast.success("관리자 권한으로 편집할 수 있어요.");
+    } catch (err) {
+      console.error("record admin unlock failed", err);
+      toast.error("확인에 실패했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setAdminChecking(false);
+    }
+  };
 
   const [final, setFinal] = useState<Record<string, string> | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
@@ -574,10 +610,58 @@ export function RecordEditor({
       </nav>
 
       {!canEdit && (
-        <p className="rounded-xl bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
-          팀원 닉네임으로 내 정보를 저장하면 이 기록을 함께 편집할 수 있어요.
+        <div className="space-y-2 rounded-xl bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+          <p>팀원 닉네임으로 내 정보를 저장하면 이 기록을 함께 편집할 수 있어요.</p>
+          {adminOpen ? (
+            <form
+              className="flex flex-wrap items-center gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void unlockAdmin();
+              }}
+            >
+              <Input
+                type="password"
+                value={adminInput}
+                onChange={(e) => setAdminInput(e.target.value)}
+                placeholder="관리자 비밀번호"
+                autoFocus
+                className="h-9 w-52 rounded-xl bg-background"
+              />
+              <Button type="submit" size="sm" className="rounded-xl" disabled={adminChecking}>
+                {adminChecking ? <Loader2 className="h-4 w-4 animate-spin" /> : "확인"}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="rounded-xl"
+                onClick={() => setAdminOpen(false)}
+              >
+                취소
+              </Button>
+            </form>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => setAdminOpen(true)}
+            >
+              <ShieldCheck className="h-4 w-4" />
+              관리자로 수정하기
+            </Button>
+          )}
+        </div>
+      )}
+
+      {isAdminEditing && (
+        <p className="rounded-xl bg-primary/10 px-4 py-3 text-sm text-primary">
+          관리자 권한으로 편집 중이에요.
         </p>
       )}
+
 
       {step === 0 && (
         <MemberSection
@@ -1351,14 +1435,22 @@ function RowItem({
   const [values, setValues] = useState(initial);
   const [subtype, setSubtype] = useState(row.subtype);
   const [author, setAuthor] = useState(row.author);
+  // 첨부 이미지 회전 각도(저장 전까지 화면 상태로만 보관). 키는 첨부 URL.
+  const [rotations, setRotations] = useState<Record<string, number>>({});
   useEffect(() => {
     setValues([row.col1, row.col2, row.col3, row.col4, row.col5, row.col6]);
     setSubtype(row.subtype);
     setAuthor(row.author);
+    setRotations({});
   }, [row.col1, row.col2, row.col3, row.col4, row.col5, row.col6, row.subtype, row.author]);
 
+  const hasRotation = Object.values(rotations).some((d) => d % 360 !== 0);
+
   const dirty =
-    values.some((v, i) => v !== initial[i]) || subtype !== row.subtype || author !== row.author;
+    values.some((v, i) => v !== initial[i]) ||
+    subtype !== row.subtype ||
+    author !== row.author ||
+    hasRotation;
 
   const update = (i: number, next: string) =>
     setValues((prev) => prev.map((v, idx) => (idx === i ? next : v)));
@@ -1588,28 +1680,57 @@ function RowItem({
                     const Icon = getFileIcon(f.name);
                     const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(f.name);
                     if (isImageCol && isImage) {
+                      const deg = ((rotations[f.url] ?? 0) % 360 + 360) % 360;
+                      const quarter = deg === 90 || deg === 270;
                       return (
                         <span key={f.url} className="relative inline-block w-full">
-                          <img
-                            src={f.url}
-                            alt={f.name}
-                            className="h-auto max-h-[28rem] w-full rounded-lg border border-border object-contain"
-                          />
+                          <span className="flex max-h-[28rem] w-full items-center justify-center overflow-hidden rounded-lg border border-border">
+                            <img
+                              src={f.url}
+                              alt={f.name}
+                              style={{ transform: `rotate(${deg}deg)` }}
+                              className={cn(
+                                "h-auto w-full object-contain transition-transform",
+                                quarter ? "max-h-full max-w-[28rem]" : "max-h-[28rem]",
+                              )}
+                            />
+                          </span>
 
                           {canEdit && (
-                            <button
-                              type="button"
-                              aria-label={`${f.name} 첨부 제거`}
-                              className="absolute -right-1.5 -top-1.5 rounded-full bg-background p-0.5 text-muted-foreground shadow hover:text-destructive"
-                              onClick={() =>
-                                update(
-                                  col,
-                                  serializeAttachments(files.filter((a) => a.url !== f.url)),
-                                )
-                              }
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                aria-label={`${f.name} 90도 회전`}
+                                title="오른쪽으로 90도 회전 (저장을 눌러야 반영돼요)"
+                                className="absolute -left-1.5 -top-1.5 rounded-full bg-background p-1 text-muted-foreground shadow hover:text-primary"
+                                onClick={() =>
+                                  setRotations((prev) => ({
+                                    ...prev,
+                                    [f.url]: (((prev[f.url] ?? 0) + 90) % 360),
+                                  }))
+                                }
+                              >
+                                <RotateCw className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                aria-label={`${f.name} 첨부 제거`}
+                                className="absolute -right-1.5 -top-1.5 rounded-full bg-background p-0.5 text-muted-foreground shadow hover:text-destructive"
+                                onClick={() => {
+                                  setRotations((prev) => {
+                                    const next = { ...prev };
+                                    delete next[f.url];
+                                    return next;
+                                  });
+                                  update(
+                                    col,
+                                    serializeAttachments(files.filter((a) => a.url !== f.url)),
+                                  );
+                                }}
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </>
                           )}
                         </span>
                       );
@@ -1777,12 +1898,43 @@ function RowItem({
             disabled={!dirty || uploading || saving}
             className="rounded-xl active:scale-95"
             onClick={async () => {
-              const vals = normalizedValues();
+              const vals = [...normalizedValues()];
+              setSaving(true);
+              // 회전한 이미지가 있으면 저장할 때 한 번만 업로드해서 첨부를 교체한다.
+              if (hasRotation) {
+                try {
+                  for (const col of fileCols) {
+                    const files = parseAttachments(vals[col]);
+                    let changed = false;
+                    const next: AttachedFile[] = [];
+                    for (const f of files) {
+                      const deg = (((rotations[f.url] ?? 0) % 360) + 360) % 360;
+                      if (deg === 0) {
+                        next.push(f);
+                        continue;
+                      }
+                      const blob = await rotateImageBlob(f.url, deg);
+                      const base = f.name.replace(/\.[a-zA-Z0-9]{1,10}$/, "");
+                      const rotatedFile = new File([blob], `${base}(회전).jpg`, {
+                        type: "image/jpeg",
+                      });
+                      next.push(await uploadAttachment(rotatedFile));
+                      changed = true;
+                    }
+                    if (changed) vals[col] = serializeAttachments(next);
+                  }
+                } catch (err) {
+                  console.error("record image rotate failed", err);
+                  toast.error(err instanceof Error ? err.message : "이미지 회전에 실패했어요.");
+                  setSaving(false);
+                  return;
+                }
+              }
               if (fileCols.some((c) => (vals[c] ?? "").length > 2900)) {
                 toast.error("첨부가 너무 많아요. 파일 수를 줄여 주세요.");
+                setSaving(false);
                 return;
               }
-              setSaving(true);
               try {
                 await onSave({
                   id: row.id,
@@ -1798,6 +1950,8 @@ function RowItem({
                   col6: vals[5] ?? "",
                   knownUpdatedAt: row.updatedAt,
                 });
+                setValues(vals);
+                setRotations({});
                 // 저장 성공 후에만 로컬 draft를 정리한다 (실패 시 재시도 가능).
                 if (draftId && onRemoveDraft) onRemoveDraft(draftId);
               } catch {

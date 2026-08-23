@@ -6,7 +6,7 @@ const SIGNED_URL_TTL = 60 * 60 * 24 * 365 * 10;
 // Keep stored images under ~1MB to save storage cost.
 const MAX_UPLOAD_BYTES = 1024 * 1024; // 1MB
 
-function loadImage(file: File): Promise<HTMLImageElement> {
+function loadImage(file: Blob): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new window.Image();
@@ -28,24 +28,38 @@ function canvasToBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob 
   );
 }
 
-// Returns a JPEG Blob no larger than MAX_UPLOAD_BYTES (best effort).
-export async function compressImage(file: File): Promise<Blob> {
-  const img = await loadImage(file);
+// 회전(0/90/180/270)을 적용해 캔버스에 그린다. 90/270이면 가로·세로가 바뀐다.
+function drawRotated(img: HTMLImageElement, w: number, h: number, rot: number) {
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("이미지 변환에 실패했어요.");
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, w, h);
+  const swap = rot === 90 || rot === 270;
+  ctx.save();
+  ctx.translate(w / 2, h / 2);
+  ctx.rotate((rot * Math.PI) / 180);
+  const dw = swap ? h : w;
+  const dh = swap ? w : h;
+  ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+  ctx.restore();
+  return canvas;
+}
+
+async function compressDrawn(img: HTMLImageElement, degrees = 0): Promise<Blob> {
+  const rot = (((Math.round(degrees / 90) * 90) % 360) + 360) % 360;
+  const swap = rot === 90 || rot === 270;
+  const iw = swap ? img.height : img.width;
+  const ih = swap ? img.width : img.height;
   let maxEdge = 1600;
 
   for (let attempt = 0; attempt < 5; attempt++) {
-    const scale = Math.min(1, maxEdge / Math.max(img.width, img.height));
-    const w = Math.max(1, Math.round(img.width * scale));
-    const h = Math.max(1, Math.round(img.height * scale));
-
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("이미지 변환에 실패했어요.");
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, w, h);
-    ctx.drawImage(img, 0, 0, w, h);
+    const scale = Math.min(1, maxEdge / Math.max(iw, ih));
+    const w = Math.max(1, Math.round(iw * scale));
+    const h = Math.max(1, Math.round(ih * scale));
+    const canvas = drawRotated(img, w, h, rot);
 
     for (const quality of [0.92, 0.85, 0.75, 0.65, 0.5]) {
       const blob = await canvasToBlob(canvas, quality);
@@ -54,18 +68,36 @@ export async function compressImage(file: File): Promise<Blob> {
     maxEdge = Math.round(maxEdge * 0.75);
   }
 
-  const canvas = document.createElement("canvas");
-  const scale = Math.min(1, 800 / Math.max(img.width, img.height));
-  canvas.width = Math.max(1, Math.round(img.width * scale));
-  canvas.height = Math.max(1, Math.round(img.height * scale));
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("이미지 변환에 실패했어요.");
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  const scale = Math.min(1, 800 / Math.max(iw, ih));
+  const canvas = drawRotated(
+    img,
+    Math.max(1, Math.round(iw * scale)),
+    Math.max(1, Math.round(ih * scale)),
+    rot,
+  );
   const blob = await canvasToBlob(canvas, 0.5);
   if (!blob) throw new Error("이미지 변환에 실패했어요.");
   return blob;
+}
+
+// Returns a JPEG Blob no larger than MAX_UPLOAD_BYTES (best effort).
+export async function compressImage(file: Blob): Promise<Blob> {
+  const img = await loadImage(file);
+  return compressDrawn(img, 0);
+}
+
+/** 기존 이미지 URL을 읽어 90도 단위로 회전한 JPEG Blob(1MB 이하)을 만든다. */
+export async function rotateImageBlob(url: string, degrees: number): Promise<Blob> {
+  let source: Blob;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(String(res.status));
+    source = await res.blob();
+  } catch {
+    throw new Error("이미지를 불러올 수 없어요. 잠시 후 다시 시도해 주세요.");
+  }
+  const img = await loadImage(source);
+  return compressDrawn(img, degrees);
 }
 
 // Compress an image file and upload it to the post-images bucket, returning a
