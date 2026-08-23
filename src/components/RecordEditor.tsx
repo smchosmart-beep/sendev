@@ -1351,14 +1351,22 @@ function RowItem({
   const [values, setValues] = useState(initial);
   const [subtype, setSubtype] = useState(row.subtype);
   const [author, setAuthor] = useState(row.author);
+  // 첨부 이미지 회전 각도(저장 전까지 화면 상태로만 보관). 키는 첨부 URL.
+  const [rotations, setRotations] = useState<Record<string, number>>({});
   useEffect(() => {
     setValues([row.col1, row.col2, row.col3, row.col4, row.col5, row.col6]);
     setSubtype(row.subtype);
     setAuthor(row.author);
+    setRotations({});
   }, [row.col1, row.col2, row.col3, row.col4, row.col5, row.col6, row.subtype, row.author]);
 
+  const hasRotation = Object.values(rotations).some((d) => d % 360 !== 0);
+
   const dirty =
-    values.some((v, i) => v !== initial[i]) || subtype !== row.subtype || author !== row.author;
+    values.some((v, i) => v !== initial[i]) ||
+    subtype !== row.subtype ||
+    author !== row.author ||
+    hasRotation;
 
   const update = (i: number, next: string) =>
     setValues((prev) => prev.map((v, idx) => (idx === i ? next : v)));
