@@ -1551,11 +1551,13 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
       <Dialog open={editGateOpen} onOpenChange={setEditGateOpen}>
         <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle>{noun} 수정</DialogTitle>
+            <DialogTitle>{editNoun} 수정</DialogTitle>
             <DialogDescription>
-              {post.pinned
-                ? "관리자 비밀번호를 입력해야 수정할 수 있어요."
-                : "작성자의 닉네임 비밀번호를 입력해야 수정할 수 있어요."}
+              {isRecordPost
+                ? "관리자 비밀번호를 입력하면 글 정보를 수정하고, 아래 활동기록 편집 잠금도 함께 풀립니다."
+                : post.pinned
+                  ? "관리자 비밀번호를 입력해야 수정할 수 있어요."
+                  : "작성자의 닉네임 비밀번호를 입력해야 수정할 수 있어요."}
             </DialogDescription>
           </DialogHeader>
           <form
@@ -1579,7 +1581,9 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
                 autoFocus
               />
               <p className="text-xs text-muted-foreground">
-                작성자의 닉네임 비밀번호 또는 관리자 비밀번호를 입력하세요.
+                {isRecordPost
+                  ? "활동기록 내용(사진 회전 등)은 아래 [관리자로 수정하기]에서 수정합니다."
+                  : "작성자의 닉네임 비밀번호 또는 관리자 비밀번호를 입력하세요."}
               </p>
             </div>
             <DialogFooter>
