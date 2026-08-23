@@ -1596,28 +1596,57 @@ function RowItem({
                     const Icon = getFileIcon(f.name);
                     const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(f.name);
                     if (isImageCol && isImage) {
+                      const deg = ((rotations[f.url] ?? 0) % 360 + 360) % 360;
+                      const quarter = deg === 90 || deg === 270;
                       return (
                         <span key={f.url} className="relative inline-block w-full">
-                          <img
-                            src={f.url}
-                            alt={f.name}
-                            className="h-auto max-h-[28rem] w-full rounded-lg border border-border object-contain"
-                          />
+                          <span className="flex max-h-[28rem] w-full items-center justify-center overflow-hidden rounded-lg border border-border">
+                            <img
+                              src={f.url}
+                              alt={f.name}
+                              style={{ transform: `rotate(${deg}deg)` }}
+                              className={cn(
+                                "h-auto w-full object-contain transition-transform",
+                                quarter ? "max-h-full max-w-[28rem]" : "max-h-[28rem]",
+                              )}
+                            />
+                          </span>
 
                           {canEdit && (
-                            <button
-                              type="button"
-                              aria-label={`${f.name} 첨부 제거`}
-                              className="absolute -right-1.5 -top-1.5 rounded-full bg-background p-0.5 text-muted-foreground shadow hover:text-destructive"
-                              onClick={() =>
-                                update(
-                                  col,
-                                  serializeAttachments(files.filter((a) => a.url !== f.url)),
-                                )
-                              }
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                aria-label={`${f.name} 90도 회전`}
+                                title="오른쪽으로 90도 회전 (저장을 눌러야 반영돼요)"
+                                className="absolute -left-1.5 -top-1.5 rounded-full bg-background p-1 text-muted-foreground shadow hover:text-primary"
+                                onClick={() =>
+                                  setRotations((prev) => ({
+                                    ...prev,
+                                    [f.url]: (((prev[f.url] ?? 0) + 90) % 360),
+                                  }))
+                                }
+                              >
+                                <RotateCw className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                aria-label={`${f.name} 첨부 제거`}
+                                className="absolute -right-1.5 -top-1.5 rounded-full bg-background p-0.5 text-muted-foreground shadow hover:text-destructive"
+                                onClick={() => {
+                                  setRotations((prev) => {
+                                    const next = { ...prev };
+                                    delete next[f.url];
+                                    return next;
+                                  });
+                                  update(
+                                    col,
+                                    serializeAttachments(files.filter((a) => a.url !== f.url)),
+                                  );
+                                }}
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </>
                           )}
                         </span>
                       );
