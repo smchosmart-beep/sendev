@@ -13,6 +13,13 @@ export function setAdminPassword(pw: string): void {
   } catch {
     /* ignore */
   }
+  if (typeof window !== "undefined") {
+    try {
+      window.dispatchEvent(new Event("admin-password-changed"));
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
 export function getAdminPassword(): string {

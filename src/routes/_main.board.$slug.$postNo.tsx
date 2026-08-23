@@ -77,6 +77,8 @@ import {
   type CommentDTO,
   type TabGroup,
 } from "@/lib/platform.functions";
+import { isRecordAdmin } from "@/lib/record.functions";
+import { setAdminPassword } from "@/lib/admin-auth";
 import { EmptyState } from "@/components/EmptyState";
 import { RecordEditor } from "@/components/RecordEditor";
 import { AuthorBadge } from "@/components/AuthorBadge";
@@ -1166,6 +1168,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
   const postId = post.id;
   const categoryId = post.categoryId;
   const isBoardPost = post.type === "post";
+  const isRecordPost = post.type === "record";
   const noun = isBoardPost
     ? post.pinned
       ? "공지"
@@ -1175,6 +1178,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
       : post.type === "vote"
         ? category?.voteName || "투표"
         : projectName;
+  const editNoun = isRecordPost ? "글 정보" : noun;
 
   const [editGateOpen, setEditGateOpen] = useState(false);
   const [editGatePw, setEditGatePw] = useState("");
@@ -1205,13 +1209,26 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
     queryClient.invalidateQueries({ queryKey: ["posts", categoryId] });
   };
 
+  const checkRecordAdmin = useServerFn(isRecordAdmin);
+
   // Verify the password first, then open the edit form with fields prefilled.
   const editGateMutation = useMutation({
     mutationFn: () => verify({ data: { id: postId, password: editGatePw } }),
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
       if (!res.ok) {
         toast.error("비밀번호가 일치하지 않아요.");
         return;
+      }
+      // 활동기록 글에서 관리자 비밀번호로 통과하면 아래 활동기록 편집 잠금도 함께 해제한다.
+      if (isRecordPost) {
+        try {
+          const adminRes = await checkRecordAdmin({ data: { adminPassword: editGatePw } });
+          if (adminRes.ok) {
+            setAdminPassword(editGatePw);
+          }
+        } catch {
+          /* ignore */
+        }
       }
       setTitle(post.title);
       setContent(post.content);
@@ -1364,7 +1381,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
         className="rounded-xl active:scale-95"
       >
         <Pencil className="h-4 w-4" />
-        수정
+        {isRecordPost ? "글 정보 수정" : "수정"}
       </Button>
       <Button
         type="button"
@@ -1534,11 +1551,13 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
       <Dialog open={editGateOpen} onOpenChange={setEditGateOpen}>
         <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle>{noun} 수정</DialogTitle>
+            <DialogTitle>{editNoun} 수정</DialogTitle>
             <DialogDescription>
-              {post.pinned
-                ? "관리자 비밀번호를 입력해야 수정할 수 있어요."
-                : "작성자의 닉네임 비밀번호를 입력해야 수정할 수 있어요."}
+              {isRecordPost
+                ? "관리자 비밀번호를 입력하면 글 정보를 수정하고, 아래 활동기록 편집 잠금도 함께 풀립니다."
+                : post.pinned
+                  ? "관리자 비밀번호를 입력해야 수정할 수 있어요."
+                  : "작성자의 닉네임 비밀번호를 입력해야 수정할 수 있어요."}
             </DialogDescription>
           </DialogHeader>
           <form
@@ -1562,7 +1581,9 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
                 autoFocus
               />
               <p className="text-xs text-muted-foreground">
-                작성자의 닉네임 비밀번호 또는 관리자 비밀번호를 입력하세요.
+                {isRecordPost
+                  ? "활동기록 내용(사진 회전 등)은 아래 [관리자로 수정하기]에서 수정합니다."
+                  : "작성자의 닉네임 비밀번호 또는 관리자 비밀번호를 입력하세요."}
               </p>
             </div>
             <DialogFooter>
@@ -1590,9 +1611,9 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto overflow-x-hidden rounded-2xl">
           <DialogHeader>
-            <DialogTitle>{noun} 수정</DialogTitle>
+            <DialogTitle>{editNoun} 수정</DialogTitle>
             <DialogDescription>
-              내용을 수정한 뒤 저장하세요.
+              {isRecordPost ? "제목·작성자·링크 정보를 수정한 뒤 저장하세요." : "내용을 수정한 뒤 저장하세요."}
             </DialogDescription>
           </DialogHeader>
           <form
