@@ -390,6 +390,34 @@ export function RecordEditor({
   const canEdit = isMember || !!auth.adminPassword;
   const isAdminEditing = !isMember && !!auth.adminPassword;
 
+  const checkAdmin = useServerFn(isRecordAdmin);
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [adminInput, setAdminInput] = useState("");
+  const [adminChecking, setAdminChecking] = useState(false);
+
+  const unlockAdmin = async () => {
+    const pw = adminInput.trim();
+    if (!pw) return;
+    setAdminChecking(true);
+    try {
+      const res = await checkAdmin({ data: { adminPassword: pw } });
+      if (!res.ok) {
+        toast.error("관리자 비밀번호가 올라요? 다시 확인해 주세요.");
+        return;
+      }
+      setAdminPassword(pw);
+      setAdminPw(pw);
+      setAdminOpen(false);
+      setAdminInput("");
+      toast.success("관리자 권한으로 편집할 수 있어요.");
+    } catch (err) {
+      console.error("record admin unlock failed", err);
+      toast.error("확인에 실패했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setAdminChecking(false);
+    }
+  };
+
   const [final, setFinal] = useState<Record<string, string> | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const knownUpdatedAt = useRef("");
