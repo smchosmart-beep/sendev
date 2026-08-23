@@ -371,6 +371,11 @@ export function RecordEditor({
   useEffect(() => {
     setAdminPw(getAdminPassword());
   }, []);
+  useEffect(() => {
+    const handler = () => setAdminPw(getAdminPassword());
+    window.addEventListener("admin-password-changed", handler);
+    return () => window.removeEventListener("admin-password-changed", handler);
+  }, []);
 
   const auth = useMemo(
     () => ({
