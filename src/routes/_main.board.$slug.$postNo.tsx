@@ -1168,6 +1168,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
   const postId = post.id;
   const categoryId = post.categoryId;
   const isBoardPost = post.type === "post";
+  const isRecordPost = post.type === "record";
   const noun = isBoardPost
     ? post.pinned
       ? "공지"
@@ -1177,6 +1178,7 @@ function ManagePost({ post, slug }: { post: PostDTO; slug: string }) {
       : post.type === "vote"
         ? category?.voteName || "투표"
         : projectName;
+  const editNoun = isRecordPost ? "글 정보" : noun;
 
   const [editGateOpen, setEditGateOpen] = useState(false);
   const [editGatePw, setEditGatePw] = useState("");
