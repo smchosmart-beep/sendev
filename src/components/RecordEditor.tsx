@@ -1866,6 +1866,8 @@ function RowItem({
                   col6: vals[5] ?? "",
                   knownUpdatedAt: row.updatedAt,
                 });
+                setValues(vals);
+                setRotations({});
                 // 저장 성공 후에만 로컬 draft를 정리한다 (실패 시 재시도 가능).
                 if (draftId && onRemoveDraft) onRemoveDraft(draftId);
               } catch {
