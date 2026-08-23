@@ -22,6 +22,7 @@ import {
   deleteRecordReflection,
   deleteRecordRow,
   getRecord,
+  isRecordAdmin,
   removeRecordMember,
   saveRecordFinal,
   saveRecordReflection,
@@ -62,7 +63,7 @@ import {
   type ProgressBlock,
 } from "@/lib/record-progress";
 
-import { getAdminPassword } from "@/lib/admin-auth";
+import { getAdminPassword, setAdminPassword } from "@/lib/admin-auth";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -402,7 +403,7 @@ export function RecordEditor({
     try {
       const res = await checkAdmin({ data: { adminPassword: pw } });
       if (!res.ok) {
-        toast.error("관리자 비밀번호가 올라요? 다시 확인해 주세요.");
+        toast.error("관리자 비밀번호가 올바르지 않아요.");
         return;
       }
       setAdminPassword(pw);
