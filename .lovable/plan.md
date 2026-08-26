@@ -34,4 +34,6 @@
 
 - `src/lib/record-schema.ts`: `STANCE_CHOICES`를 네 항목으로 교체.
 - `src/components/RecordEditor.tsx`의 `StanceItem`: 버튼 매핑을 shadcn `Select`로 교체하고, `onValueChange`에서 기존 `save(choice, memo)` 호출을 그대로 사용. 저장 스키마(`col1` = 선택, `col2` = 설명)는 변경 없음.
+- `StanceItem` 구현 시: `value={choice || undefined}`로 설정해 미선택 상태를 placeholder로 처리하고, `choice`가 4개 항목에 없으면 임시 `SelectItem`으로 원문을 함께 노출합니다.
+- 사례집 PDF의 응답 칸이 좁아 "우리 프로그램엔 해당 없어요" 등이 두 줄로 줄바꿈될 수 있으나, 표가 깨지지는 않으므로 그대로 둡니다.
 - 서버 함수, 마이그레이션, 테이블 변경 없음.
