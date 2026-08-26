@@ -2078,21 +2078,26 @@ function StanceItem({
       <p className="text-sm font-medium text-foreground">
         {index + 1}. {question}
       </p>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        {STANCE_CHOICES.map((c) => (
-          <Button
-            key={c}
-            type="button"
-            size="sm"
-            variant={choice === c ? "default" : "outline"}
-            disabled={!canEdit}
-            className="rounded-full active:scale-95"
-            onClick={() => save(c, memo)}
-          >
-            {choice === c && <Check className="h-3.5 w-3.5" />}
-            {c}
-          </Button>
-        ))}
+      <div className="mt-2">
+        <Select
+          value={choice || undefined}
+          onValueChange={(value) => save(value, memo)}
+          disabled={!canEdit}
+        >
+          <SelectTrigger className="w-full rounded-xl bg-background">
+            <SelectValue placeholder="선택해 주세요" />
+          </SelectTrigger>
+          <SelectContent>
+            {STANCE_CHOICES.map((c) => (
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
+            ))}
+            {choice && !STANCE_CHOICES.includes(choice) && (
+              <SelectItem value={choice}>{choice} (이전 표기)</SelectItem>
+            )}
+          </SelectContent>
+        </Select>
       </div>
       <div className="mt-2 flex gap-2">
         <Input
