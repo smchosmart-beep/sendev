@@ -536,7 +536,7 @@ export function RecordEditor({
     onDelete: (id: string) => deleteMutation.mutate(id),
   };
 
-  const step3Kinds: RowKind[] = ["feature", "flow", "limit", "plan", "maker"];
+  const step3Kinds: RowKind[] = ["feature", "flow", "limit", "plan"];
   const step3Blocks: ProgressBlock[] = [
     ...FINAL_GROUPS.map((group, i) => ({
       id: `s3-g${i}`,
