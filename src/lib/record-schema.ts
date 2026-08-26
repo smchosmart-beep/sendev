@@ -78,7 +78,12 @@ export const STANCE_QUESTIONS = [
   "기기·계정·조작 문제로 참여에서 빠지는 사람이 없게 했나요?",
 ];
 
-export const STANCE_CHOICES = ["해당함", "해당 없음"];
+export const STANCE_CHOICES = [
+  "원래 그렇게 했어요",
+  "점검하다 고쳤어요",
+  "아직이에요",
+  "우리 프로그램엔 해당 없어요",
+];
 
 export const AI_USE_TYPES = ["서비스 기능", "개발 과정"];
 
