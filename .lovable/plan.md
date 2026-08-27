@@ -23,21 +23,28 @@
 ### 서버 (`src/lib/platform.functions.ts`)
 - `VOTE_COLUMNS`/`loadVoteConfig`에 `targetType` 추가.
 - 현재 `.eq("type", "vote")`로 하드코딩된 후보/유권자 조회를 `cfg.targetType`으로 교체:
-  `getVoteRequirement`, `submitVotes`, `getVoteResults`, `getVoteVoterStatus`, `startRunoff` 등 투표 계열 전부.
-- `setVoteStatus`에 `targetType` 입력 추가 — `status === "open"`일 때만 저장(중간에 대상이 바뀌지 않도록).
-- `CategoryDTO`에 `voteTargetType` 노출(카드 렌더링 분기용).
+  `getVoteRequirement`(:5001), `submitVotes`(:5051), `computeRunoff`(:5200), `getVoteVoterStatus`(:5359).
+  `getVoteResults`는 타입 필터가 없으므로 수정 불필요.
+  `DEDUPE_SPECS`(:4093)와 글 등록 시 1인 1글 제한(:1168)은 투표게시판 전용이므로 **그대로 둡니다** — 산출물은 1인 여러 개 등록 가능.
+- **투표 권한 서버 검증 추가**: 현재 `submitVotes`는 닉네임 소유권만 확인하고 "후보 등록자인지"는 확인하지 않습니다.
+  대상 유형이 `project`일 때는 그 게시판에 산출물을 등록한 닉네임만 저장할 수 있도록 서버에서 막습니다.
+  (투표게시판 경로의 기존 동작은 건드리지 않아 회귀 없음)
+- `setVoteStatus`에 `targetType` 입력 추가 — `status === "open"`일 때만 저장(진행 중 대상 변경 방지).
+- `CategoryDTO`에 `voteTargetType` 노출.
 
 ### 프런트
 - `src/components/VoteSection.tsx`
-  - 투표 로직/관리자 컨트롤/명단 패널을 그대로 두고, **후보 카드 렌더러만 주입 가능**하게 소폭 일반화(`targetType`에 따라 익명 투표카드 또는 산출물 카드).
-  - 헤더 제목/등록 버튼은 호출 측에서 지정할 수 있도록 옵션화 (산출물 섹션은 기존 헤더 유지).
+  - 투표 로직/관리자 컨트롤/명단 패널은 그대로 두고, **후보 카드 렌더러와 헤더만 prop으로 주입 가능**하게 소폭 일반화. 기본값은 현재와 동일해 투표게시판 화면은 변화 없음.
 - `src/routes/_main.board.$slug.index.tsx`
-  - 산출물 섹션에서 `voteState.status`가 `open`/`closed`이거나 관리자일 때 투표 레이어를 렌더링.
-  - 헤더에 관리자 전용 [투표 시작]/[투표 종료]/[결선]/[초기화] 컨트롤을 등록 버튼 왼쪽에 배치.
-  - 투표 진행/종료 시 산출물 카드에 선택 체크와 순위·선발 배지를 표시(정렬은 득표순).
-- `src/components/ProjectCard`에 선택/순위 배지용 표시 속성만 추가(기존 사용처는 기본값 유지).
-- `src/routes/_main.guide.tsx`의 투표 안내에 "산출물 게시판에서도 투표 가능" 설명 추가.
+  - 산출물 섹션 헤더의 [산출물 등록] 왼쪽에 관리자 전용 [투표 시작]/[투표 종료]/[결선]/[초기화] 배치.
+  - 투표가 열려 있거나 종료된 경우에만 투표 레이어(선택·명단 패널·순위 배지) 렌더링.
+- `ProjectCard`(:851)는 카드 전체가 `<Link>`이므로, 투표 선택은 **카드 위 별도 체크 버튼**으로 넣고 `preventDefault`/`stopPropagation` 처리합니다(카드 클릭 시 상세 이동 동작은 유지).
+- `src/routes/_main.guide.tsx`의 투표 안내에 산출물 게시판 투표 설명 추가.
 
-### 부작용 검토
-- 폴링 쿼리는 투표가 열려 있을 때만 활성화하므로 평상시 서버 호출 증가 없음(투표게시판과 동일 정책).
-- 투표 상태 컬럼은 카테고리 단위 공유이므로, 한 게시판에서 투표게시판 투표와 산출물 투표를 **동시에** 열 수는 없습니다(대상 유형 1개). 시작 시 대상 유형이 기록되어 서로 섞이지 않습니다.
+### 부작용 검토 (코드·DB 확인 결과)
+- **폴링 비용**: `vote-state`(60초)·`vote-voter-status`(30초) 쿼리가 산출물 게시판에서 상시 도는 것을 막기 위해, 이미 캐시된 `category.voteStatus`가 `idle`이고 관리자도 아니면 폴링 쿼리를 아예 비활성화합니다. 투표 중에만 기존 투표게시판과 동일한 비용이 발생합니다.
+- **상태 컬럼 공유**: 확인 결과 산출물 게시판 7곳 모두 `enable_vote=false`, `vote_status='idle'`이라 실제 충돌 없음. 다만 한 게시판에서 투표게시판 투표와 산출물 투표를 동시에 열 수는 없습니다(대상 유형 1개).
+- **표 저장 안전성**: `votes_unique_per_round (category_id, post_id, voter_key, round)` 유니크 인덱스가 그대로 적용되어 중복 표가 생기지 않습니다.
+- **작성자 노출**: 작성자 마스킹은 `type='vote'`에만 걸려 있어(:1117), 산출물 카드는 요청대로 투표 중에도 작성자가 계속 보입니다. 관리자만 볼 수 있는 투표자 명단 규칙도 그대로입니다.
+- **마이그레이션**: 기본값 있는 컬럼 1개 추가뿐이라 데이터 손실·기존 동작 변경 없음.
+
