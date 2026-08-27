@@ -85,6 +85,7 @@ export type Database = {
           vote_runoff_ids: Json
           vote_seats: number
           vote_status: string
+          vote_target_type: string
         }
         Insert: {
           created_at?: string
@@ -129,6 +130,7 @@ export type Database = {
           vote_runoff_ids?: Json
           vote_seats?: number
           vote_status?: string
+          vote_target_type?: string
         }
         Update: {
           created_at?: string
@@ -173,6 +175,7 @@ export type Database = {
           vote_runoff_ids?: Json
           vote_seats?: number
           vote_status?: string
+          vote_target_type?: string
         }
         Relationships: [
           {

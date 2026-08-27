@@ -45,6 +45,8 @@ const PAGE_SIZE = 36;
 
 interface Props {
   category: CategoryDTO;
+  /** 투표 후보 유형. 산출물 게시판에서 투표할 때는 'project'. */
+  targetType?: "vote" | "project";
   slug: string;
   posts: PostDTO[];
   page: number;
@@ -58,6 +60,7 @@ interface Props {
 
 export function VoteSection({
   category,
+  targetType = "vote",
   slug,
   posts,
   page,
@@ -72,7 +75,10 @@ export function VoteSection({
   const boardPassword = getBoardPassword(slug);
   const adminPassword = typeof window === "undefined" ? "" : getAdminPassword();
   const isAdmin = adminPassword.length > 0;
-  const boardName = category.voteName || "투표";
+  const isProject = targetType === "project";
+  const boardName = isProject
+    ? category.projectName || "산출물"
+    : category.voteName || "투표";
 
   const { data: state } = useQuery(voteStateQueryOptions(category.id));
   const status = state?.status ?? category.voteStatus;
@@ -109,7 +115,8 @@ export function VoteSection({
   const counts = results?.counts ?? {};
   // 닉네임이 투표 판단에 영향을 주지 않도록, 관리자가 최종 결과를 공개하기
   // 전까지는(결선까지 모두 끝나기 전) 관리자 포함 모두 작성자를 숨긴다.
-  const showAuthor = !!state?.revealed;
+  // 산출물 투표는 작성자(팀명)를 항상 공개한다.
+  const showAuthor = isProject || !!state?.revealed;
 
   const myKey = normalizeUsername(nickname);
   const isMyPost = (author: string) =>
@@ -364,9 +371,12 @@ export function VoteSection({
           )}
         </h2>
         <Button asChild className="rounded-xl active:scale-95">
-          <Link to="/board/$slug/new-vote" params={{ slug }}>
+          <Link
+            to={isProject ? "/board/$slug/new-project" : "/board/$slug/new-vote"}
+            params={{ slug }}
+          >
             <Plus className="h-4 w-4" />
-            글 등록
+            {isProject ? `${boardName} 등록` : "글 등록"}
           </Link>
         </Button>
       </div>
@@ -437,6 +447,7 @@ export function VoteSection({
       {isAdmin && (
         <AdminVoteControls
           categoryId={category.id}
+          targetType={targetType}
           status={status}
           maxChoices={maxChoices}
           seats={seats}
@@ -602,8 +613,9 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function AdminVoteControls({
+export function AdminVoteControls({
   categoryId,
+  targetType = "vote",
   status,
   maxChoices,
   seats,
@@ -617,6 +629,7 @@ function AdminVoteControls({
   onDone,
 }: {
   categoryId: string;
+  targetType?: "vote" | "project";
   status: string;
   maxChoices: number;
   seats: number;
@@ -675,6 +688,7 @@ function AdminVoteControls({
             status: "open",
             maxChoices: Math.max(1, Number(dialog.limit) || 1),
             seats: Math.max(1, Number(dialog.seats) || 1),
+            targetType,
             adminPassword: dialog.password,
           },
         });
@@ -794,7 +808,7 @@ function AdminVoteControls({
             투표 종료
           </Button>
         )}
-        {status === "closed" && !revealed && canReveal && (
+        {targetType !== "project" && status === "closed" && !revealed && canReveal && (
           <Button
             type="button"
             className="rounded-xl active:scale-95"
@@ -808,7 +822,7 @@ function AdminVoteControls({
             동점이 남아 있어요. 결선 투표를 먼저 진행해 주세요.
           </p>
         )}
-        {revealed && (
+        {targetType !== "project" && revealed && (
           <Button
             type="button"
             variant="secondary"

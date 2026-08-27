@@ -207,6 +207,7 @@ export interface CategoryDTO {
   voteStatus: VoteStatus;
   voteRevealed: boolean;
   voteMaxChoices: number;
+  voteTargetType: VoteTargetType;
   tabGroup: TabGroup;
   evalOpen: boolean;
   evalSeed: number;
@@ -312,7 +313,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const { data, error } = await db
       .from("categories")
       .select(
-        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, enable_problem, enable_vote, general_name, project_name, link_name, problem_name, vote_name, enable_record, record_name, vote_status, vote_revealed, vote_max_choices, tab_group, eval_open, eval_seed, review_allowlist_only, eval_results_public, hidden",
+        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, enable_problem, enable_vote, general_name, project_name, link_name, problem_name, vote_name, enable_record, record_name, vote_status, vote_revealed, vote_max_choices, vote_target_type, tab_group, eval_open, eval_seed, review_allowlist_only, eval_results_public, hidden",
       )
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
@@ -341,6 +342,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       voteStatus: (c.vote_status ?? "idle") as VoteStatus,
       voteRevealed: !!c.vote_revealed,
       voteMaxChoices: Number(c.vote_max_choices ?? 1),
+      voteTargetType: (c.vote_target_type ?? "vote") as VoteTargetType,
       tabGroup: (c.tab_group ?? "hackathon") as TabGroup,
       evalOpen: !!c.eval_open,
       evalSeed: Number(c.eval_seed ?? 0),
@@ -4753,8 +4755,13 @@ export const deleteHackathonReview = createServerFn({ method: "POST" })
 
 /* -------------------------------- Votes -------------------------------- */
 
+// 투표 후보로 삼는 글 유형. 'vote'는 투표게시판(익명 후보 글),
+// 'project'는 산출물 게시판의 산출물 글이다.
+export type VoteTargetType = "vote" | "project";
+
 export interface VoteStateDTO {
   status: VoteStatus;
+  targetType: VoteTargetType;
   revealed: boolean;
   maxChoices: number;
   seats: number;
@@ -4780,7 +4787,7 @@ export interface VoteResultsDTO {
 }
 
 const VOTE_COLUMNS =
-  "vote_status, vote_revealed, vote_max_choices, vote_seats, vote_round, vote_runoff_ids, vote_locked_ids, vote_round_history";
+  "vote_status, vote_revealed, vote_max_choices, vote_seats, vote_round, vote_runoff_ids, vote_locked_ids, vote_round_history, vote_target_type";
 
 function idList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -4789,6 +4796,7 @@ function idList(value: unknown): string[] {
 
 interface VoteConfig {
   status: VoteStatus;
+  targetType: VoteTargetType;
   revealed: boolean;
   maxChoices: number;
   seats: number;
@@ -4808,6 +4816,7 @@ async function loadVoteConfig(db: any, categoryId: string): Promise<VoteConfig> 
   const r: any = row ?? {};
   return {
     status: (r.vote_status ?? "idle") as VoteStatus,
+    targetType: (r.vote_target_type ?? "vote") as VoteTargetType,
     revealed: !!r.vote_revealed,
     maxChoices: Number(r.vote_max_choices ?? 1),
     seats: Number(r.vote_seats ?? 1),
@@ -4828,6 +4837,7 @@ export const setVoteStatus = createServerFn({ method: "POST" })
         status: z.enum(["idle", "open", "closed"]),
         maxChoices: z.number().int().min(1).max(100).default(1),
         seats: z.number().int().min(1).max(1000).optional(),
+        targetType: z.enum(["vote", "project"]).default("vote"),
         adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
@@ -4843,6 +4853,8 @@ export const setVoteStatus = createServerFn({ method: "POST" })
       // 새 투표를 여는 동작이므로 라운드 상태를 1라운드로 되돌린다.
       patch.vote_max_choices = data.maxChoices;
       patch.vote_seats = data.seats ?? data.maxChoices;
+      // 대상 유형은 투표를 새로 열 때만 확정한다(진행 중 변경 방지).
+      patch.vote_target_type = data.targetType;
       patch.vote_round = 1;
       patch.vote_runoff_ids = [];
       patch.vote_locked_ids = [];
@@ -4905,6 +4917,7 @@ export const getVoteState = createServerFn({ method: "GET" })
     const cfg = await loadVoteConfig(db, data.categoryId);
     return {
       status: cfg.status,
+      targetType: cfg.targetType,
       revealed: cfg.revealed,
       maxChoices: cfg.maxChoices,
       seats: cfg.seats,
@@ -4998,7 +5011,7 @@ export const getVoteRequirement = createServerFn({ method: "GET" })
       .from("posts")
       .select("id, author")
       .eq("category_id", data.categoryId)
-      .eq("type", "vote");
+      .eq("type", cfg.targetType);
     if (error) throw new Error(error.message);
     const runoff = cfg.round > 1 ? new Set(cfg.runoffIds) : null;
     const key = normalizeName(data.nickname);
@@ -5048,8 +5061,17 @@ export const submitVotes = createServerFn({ method: "POST" })
       .from("posts")
       .select("id, author")
       .eq("category_id", data.categoryId)
-      .eq("type", "vote");
+      .eq("type", cfg.targetType);
     if (pErr) throw new Error(pErr.message);
+    // 산출물 투표는 그 게시판에 산출물을 올린 사람만 투표할 수 있다.
+    if (cfg.targetType === "project") {
+      const isEntrant = (candidates ?? []).some(
+        (r: any) => normalizeName(String(r.author ?? "")) === key,
+      );
+      if (!isEntrant) {
+        throw new Error("산출물을 등록한 사람만 투표할 수 있어요.");
+      }
+    }
     const runoff = cfg.round > 1 ? new Set(cfg.runoffIds) : null;
     const eligible = new Set(
       (candidates ?? [])
@@ -5197,7 +5219,7 @@ async function computeRunoff(
     .from("posts")
     .select("id")
     .eq("category_id", categoryId)
-    .eq("type", "vote");
+    .eq("type", cfg.targetType);
   if (pErr) throw new Error(pErr.message);
   const runoff = cfg.round > 1 ? new Set(cfg.runoffIds) : null;
   const candidateIds = (posts ?? [])
@@ -5356,7 +5378,7 @@ export const getVoteVoterStatus = createServerFn({ method: "GET" })
       .from("posts")
       .select("author")
       .eq("category_id", data.categoryId)
-      .eq("type", "vote");
+      .eq("type", cfg.targetType);
     if (error) throw new Error(error.message);
     // 같은 닉네임의 여러 글은 한 명으로 합친다(투표 저장 키와 동일 규칙).
     const byKey = new Map<string, string>();

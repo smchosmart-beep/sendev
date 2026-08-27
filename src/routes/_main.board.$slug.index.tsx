@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
-import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { Megaphone, FolderGit2, User, Plus, MessageCircleQuestion, MessageCircle, Link as LinkIcon, Play, Layers, CheckCircle2, ChevronLeft, ChevronRight, Eye, PackageOpen, Search, FileText } from "lucide-react";
@@ -16,6 +16,8 @@ import {
   problemOptionsQueryOptions,
 } from "@/lib/platform.queries";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
+import { useConfirm } from "@/hooks/useConfirm";
+import { getAdminPassword } from "@/lib/admin-auth";
 import { type PostDTO, getLikeState } from "@/lib/platform.functions";
 import { groupLinksBySeries, seededShuffle, getOrderSeed } from "@/lib/series";
 import { getEmbedUrl, getThumbnailUrl, getCanvaPreviewUrl } from "@/lib/embed";
@@ -28,7 +30,7 @@ import { MarkAllReadButton } from "@/components/MarkAllReadButton";
 import { Button } from "@/components/ui/button";
 import { ThumbnailUploadButton } from "@/components/ThumbnailUploadButton";
 import { LikeButton } from "@/components/LikeButton";
-import { VoteSection } from "@/components/VoteSection";
+import { AdminVoteControls, VoteSection } from "@/components/VoteSection";
 
 const PAGE_SIZE = 10;
 const PROBLEM_PAGE_SIZE = 9;
@@ -204,6 +206,14 @@ function BoardInner({
     if (saved && saved.trim()) setReviewerName(saved.trim());
   }, [slug]);
 
+  // 산출물 투표: 관리자가 이 게시판에서 투표를 시작한 상태인지.
+  const projectVoteActive =
+    category.voteTargetType === "project" && category.voteStatus !== "idle";
+  const isAdminUser =
+    typeof window !== "undefined" && getAdminPassword().length > 0;
+  const queryClient = useQueryClient();
+  const { confirm, confirmDialog } = useConfirm();
+
   const orderedProjects = useMemo(
     () => (seed === null ? projects : seededShuffle(projects, seed)),
     [projects, seed],
@@ -333,7 +343,21 @@ function BoardInner({
         </section>
       )}
 
-      {category.enableProject && (!keyword || projects.length > 0) && (
+      {category.enableProject && projectVoteActive && (!keyword || projects.length > 0) && (
+        <VoteSection
+          category={category}
+          targetType="project"
+          slug={slug}
+          posts={projects}
+          page={vpage}
+          onPageChange={(p) =>
+            navigate({ search: (prev: BoardSearch) => ({ ...prev, vpage: p }) })
+          }
+          Pagination={BoardPagination}
+        />
+      )}
+
+      {category.enableProject && !projectVoteActive && (!keyword || projects.length > 0) && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
@@ -347,6 +371,28 @@ function BoardInner({
               </Link>
             </Button>
           </div>
+
+          {confirmDialog}
+          {isAdminUser && (
+            <AdminVoteControls
+              categoryId={category.id}
+              targetType="project"
+              status={category.voteStatus}
+              maxChoices={category.voteMaxChoices}
+              seats={category.voteMaxChoices}
+              round={1}
+              canStartRunoff={false}
+              revealed={false}
+              canReveal={false}
+              runoffCandidates={0}
+              defaultRunoffChoices={1}
+              confirm={confirm}
+              onDone={() => {
+                queryClient.invalidateQueries({ queryKey: ["categories"] });
+                queryClient.invalidateQueries({ queryKey: ["vote-state", category.id] });
+              }}
+            />
+          )}
 
           {projects.length === 0 ? (
             <EmptyState
