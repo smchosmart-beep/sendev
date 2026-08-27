@@ -50,7 +50,7 @@ import {
   categoriesQueryOptions,
   readmeQueryOptions,
   criteriaQueryOptions,
-  reviewsQueryOptions,
+  reviewSummaryQueryOptions,
   myReviewQueryOptions,
   myReviewedPostIdsQueryOptions,
   postsQueryOptions,
@@ -78,7 +78,7 @@ import {
   type TabGroup,
 } from "@/lib/platform.functions";
 import { isRecordAdmin } from "@/lib/record.functions";
-import { setAdminPassword } from "@/lib/admin-auth";
+import { setAdminPassword, getAdminPassword } from "@/lib/admin-auth";
 import { EmptyState } from "@/components/EmptyState";
 import { RecordEditor } from "@/components/RecordEditor";
 import { AuthorBadge } from "@/components/AuthorBadge";
@@ -1858,7 +1858,6 @@ function EvaluationSection({
   const { data: criteria = [] } = useQuery(
     criteriaQueryOptions(categoryId, true),
   );
-  const { data: reviews = [] } = useQuery(reviewsQueryOptions(postId));
   const create = useServerFn(createReview);
   const { identity, save: saveIdentity } = useStoredIdentity();
 
@@ -1894,9 +1893,29 @@ function EvaluationSection({
     return () => clearTimeout(t);
   }, [reviewerName]);
 
+  const [debouncedPw, setDebouncedPw] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedPw(nicknamePassword.trim()), 500);
+    return () => clearTimeout(t);
+  }, [nicknamePassword]);
+
+  const [adminPw, setAdminPw] = useState("");
+  useEffect(() => {
+    setAdminPw(getAdminPassword());
+    const onChange = () => setAdminPw(getAdminPassword());
+    window.addEventListener("admin-password-changed", onChange);
+    return () => window.removeEventListener("admin-password-changed", onChange);
+  }, []);
+
   const { data: myReview } = useQuery(
-    myReviewQueryOptions(postId, debouncedName),
+    myReviewQueryOptions(postId, debouncedName, debouncedPw, adminPw),
   );
+
+  // 평균 점수는 서버가 권한을 판정한 뒤 계산된 값만 내려준다.
+  const { data: summary } = useQuery(
+    reviewSummaryQueryOptions(postId, debouncedName, debouncedPw, adminPw),
+  );
+  const summaryAllowed = summary?.allowed ?? false;
   const alreadyReviewed = myReview?.found ?? false;
   const myReviewDate =
     alreadyReviewed && myReview?.createdAt
@@ -1929,6 +1948,7 @@ function EvaluationSection({
       }),
     onSuccess: (res: { ok: boolean; updated?: boolean }) => {
       queryClient.invalidateQueries({ queryKey: ["reviews", postId] });
+      queryClient.invalidateQueries({ queryKey: ["review-summary", postId] });
       queryClient.invalidateQueries({ queryKey: ["my-review", postId] });
       queryClient.invalidateQueries({ queryKey: ["my-reviewed"] });
       // 이 기기에 이 카테고리의 닉네임을 기본값으로 저장한다(다음 입력 시 자동 채움).
@@ -1953,12 +1973,8 @@ function EvaluationSection({
 
 
   const averages = criteria.map((c) => {
-    const vals = reviews
-      .map((r) => r.scores[c.id])
-      .filter((v): v is number => typeof v === "number");
-    const avg =
-      vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
-    return { criterion: c, avg, count: vals.length };
+    const row = summary?.averages.find((a) => a.criterionId === c.id);
+    return { criterion: c, avg: row?.avg ?? null, count: row?.count ?? 0 };
   });
 
   // 연속 평가용: 기기별 고정 랜덤 순서로 다음 평가할 산출물을 계산한다.
@@ -2009,11 +2025,20 @@ function EvaluationSection({
         </p>
       ) : (
         <div className="space-y-8">
-          {/* 요약 */}
-          {reviews.length > 0 && (
+          {/* 요약 (평가 권한자·관리자에게만 공개) */}
+          {!summaryAllowed ? (
+            <div className="rounded-xl border border-dashed border-border bg-muted/40 px-4 py-4 text-center">
+              <p className="text-sm font-medium text-foreground">
+                🔒 평가 결과는 평가 권한이 있는 분에게만 보여요.
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                아래에 닉네임과 닉네임 비밀번호를 입력하면 확인할 수 있어요.
+              </p>
+            </div>
+          ) : (summary?.count ?? 0) > 0 && (
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-foreground">
-                평가 요약 ({reviews.length}명 참여)
+                평가 요약 ({summary?.count ?? 0}명 참여)
               </h3>
               <div className="space-y-2">
                 {averages.map(({ criterion, avg }) => (
