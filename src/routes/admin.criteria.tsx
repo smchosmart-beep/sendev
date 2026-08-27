@@ -40,6 +40,7 @@ import {
   addReviewAllowlistNames,
   removeReviewAllowlistName,
   setReviewAllowlistOnly,
+  setEvalResultsPublic,
   deleteReview,
 } from "@/lib/platform.functions";
 import type { CategoryDTO } from "@/lib/platform.functions";
@@ -411,6 +412,7 @@ function ReviewAllowlistCard({ board }: { board: CategoryDTO }) {
   const addBulkFn = useServerFn(addReviewAllowlistNames);
   const removeFn = useServerFn(removeReviewAllowlistName);
   const toggleFn = useServerFn(setReviewAllowlistOnly);
+  const publicFn = useServerFn(setEvalResultsPublic);
   const [name, setName] = useState("");
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkText, setBulkText] = useState("");
@@ -477,6 +479,16 @@ function ReviewAllowlistCard({ board }: { board: CategoryDTO }) {
     onError: () => toast.error("변경 중 문제가 발생했어요."),
   });
 
+  const publicMutation = useMutation({
+    mutationFn: (enabled: boolean) =>
+      publicFn({ data: { id: board.id, enabled, adminPassword } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["review-summary"] });
+    },
+    onError: () => toast.error("변경 중 문제가 발생했어요."),
+  });
+
   return (
     <section className="rounded-2xl bg-card p-6 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
@@ -497,6 +509,21 @@ function ReviewAllowlistCard({ board }: { board: CategoryDTO }) {
           checked={board.reviewAllowlistOnly}
           onCheckedChange={(v) => toggleMutation.mutate(v)}
           disabled={toggleMutation.isPending}
+        />
+      </div>
+
+      <div className="mt-3 flex items-start justify-between gap-4 rounded-xl bg-muted/50 p-4">
+        <div className="min-w-0">
+          <p className="font-medium text-foreground">평가 결과 전체 공개</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            꺼져 있으면 평균 점수는 평가 권한이 있는 분과 관리자만 볼 수 있어요.
+            마감 후 모두에게 결과를 보여주려면 켜세요.
+          </p>
+        </div>
+        <Switch
+          checked={board.evalResultsPublic}
+          onCheckedChange={(v) => publicMutation.mutate(v)}
+          disabled={publicMutation.isPending}
         />
       </div>
 
