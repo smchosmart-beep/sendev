@@ -5011,7 +5011,7 @@ export const getVoteRequirement = createServerFn({ method: "GET" })
       .from("posts")
       .select("id, author")
       .eq("category_id", data.categoryId)
-      .eq("type", "vote");
+      .eq("type", cfg.targetType);
     if (error) throw new Error(error.message);
     const runoff = cfg.round > 1 ? new Set(cfg.runoffIds) : null;
     const key = normalizeName(data.nickname);
@@ -5061,8 +5061,17 @@ export const submitVotes = createServerFn({ method: "POST" })
       .from("posts")
       .select("id, author")
       .eq("category_id", data.categoryId)
-      .eq("type", "vote");
+      .eq("type", cfg.targetType);
     if (pErr) throw new Error(pErr.message);
+    // 산출물 투표는 그 게시판에 산출물을 올린 사람만 투표할 수 있다.
+    if (cfg.targetType === "project") {
+      const isEntrant = (candidates ?? []).some(
+        (r: any) => normalizeName(String(r.author ?? "")) === key,
+      );
+      if (!isEntrant) {
+        throw new Error("산출물을 등록한 사람만 투표할 수 있어요.");
+      }
+    }
     const runoff = cfg.round > 1 ? new Set(cfg.runoffIds) : null;
     const eligible = new Set(
       (candidates ?? [])
@@ -5210,7 +5219,7 @@ async function computeRunoff(
     .from("posts")
     .select("id")
     .eq("category_id", categoryId)
-    .eq("type", "vote");
+    .eq("type", cfg.targetType);
   if (pErr) throw new Error(pErr.message);
   const runoff = cfg.round > 1 ? new Set(cfg.runoffIds) : null;
   const candidateIds = (posts ?? [])
@@ -5369,7 +5378,7 @@ export const getVoteVoterStatus = createServerFn({ method: "GET" })
       .from("posts")
       .select("author")
       .eq("category_id", data.categoryId)
-      .eq("type", "vote");
+      .eq("type", cfg.targetType);
     if (error) throw new Error(error.message);
     // 같은 닉네임의 여러 글은 한 명으로 합친다(투표 저장 키와 동일 규칙).
     const byKey = new Map<string, string>();
