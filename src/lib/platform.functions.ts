@@ -139,6 +139,26 @@ async function ensureNicknameOwnership(
   if (upErr) throw new Error(upErr.message);
 }
 
+// Read-only nickname check: verifies the password matches an already claimed
+// nickname. Unlike ensureNicknameOwnership it NEVER claims an unregistered
+// nickname, so it is safe to use for "can this person view X" checks.
+async function verifyNicknameOwnership(
+  db: { from: (t: string) => any },
+  name: string,
+  nicknamePassword: string,
+): Promise<boolean> {
+  const key = normalizeName((name ?? "").trim());
+  if (!key || key === "익명" || !nicknamePassword) return false;
+  const { data: row, error } = await db
+    .from("user_profiles")
+    .select("nickname_password")
+    .eq("username_key", key)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!row?.nickname_password) return false;
+  return verifySecret(nicknamePassword, row.nickname_password);
+}
+
 // Returns whether a nickname is already "claimed" (has a registered password).
 // Used by write forms to decide if the user must confirm a new password.
 // Returns only a boolean — never the password hash.
