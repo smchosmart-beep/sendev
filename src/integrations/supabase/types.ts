@@ -55,6 +55,7 @@ export type Database = {
           enable_record: boolean
           enable_vote: boolean
           eval_open: boolean
+          eval_results_public: boolean
           eval_seed: number
           general_name: string
           github_required: boolean
@@ -98,6 +99,7 @@ export type Database = {
           enable_record?: boolean
           enable_vote?: boolean
           eval_open?: boolean
+          eval_results_public?: boolean
           eval_seed?: number
           general_name?: string
           github_required?: boolean
@@ -141,6 +143,7 @@ export type Database = {
           enable_record?: boolean
           enable_vote?: boolean
           eval_open?: boolean
+          eval_results_public?: boolean
           eval_seed?: number
           general_name?: string
           github_required?: boolean

@@ -139,6 +139,26 @@ async function ensureNicknameOwnership(
   if (upErr) throw new Error(upErr.message);
 }
 
+// Read-only nickname check: verifies the password matches an already claimed
+// nickname. Unlike ensureNicknameOwnership it NEVER claims an unregistered
+// nickname, so it is safe to use for "can this person view X" checks.
+async function verifyNicknameOwnership(
+  db: { from: (t: string) => any },
+  name: string,
+  nicknamePassword: string,
+): Promise<boolean> {
+  const key = normalizeName((name ?? "").trim());
+  if (!key || key === "익명" || !nicknamePassword) return false;
+  const { data: row, error } = await db
+    .from("user_profiles")
+    .select("nickname_password")
+    .eq("username_key", key)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!row?.nickname_password) return false;
+  return verifySecret(nicknamePassword, row.nickname_password);
+}
+
 // Returns whether a nickname is already "claimed" (has a registered password).
 // Used by write forms to decide if the user must confirm a new password.
 // Returns only a boolean — never the password hash.
@@ -191,6 +211,7 @@ export interface CategoryDTO {
   evalOpen: boolean;
   evalSeed: number;
   reviewAllowlistOnly: boolean;
+  evalResultsPublic: boolean;
   hidden: boolean;
 }
 
@@ -291,7 +312,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const { data, error } = await db
       .from("categories")
       .select(
-        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, enable_problem, enable_vote, general_name, project_name, link_name, problem_name, vote_name, enable_record, record_name, vote_status, vote_revealed, vote_max_choices, tab_group, eval_open, eval_seed, review_allowlist_only, hidden",
+        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, enable_problem, enable_vote, general_name, project_name, link_name, problem_name, vote_name, enable_record, record_name, vote_status, vote_revealed, vote_max_choices, tab_group, eval_open, eval_seed, review_allowlist_only, eval_results_public, hidden",
       )
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
@@ -324,6 +345,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       evalOpen: !!c.eval_open,
       evalSeed: Number(c.eval_seed ?? 0),
       reviewAllowlistOnly: !!c.review_allowlist_only,
+      evalResultsPublic: !!c.eval_results_public,
       hidden: !!c.hidden,
     }));
   },
@@ -1519,8 +1541,18 @@ function mapCriterion(c: any): CriterionDTO {
 /* ------------------------------- Reviews ------------------------------ */
 
 export const listReviews = createServerFn({ method: "GET" })
-  .inputValidator((input) => z.object({ postId: z.string().uuid() }).parse(input))
+  .inputValidator((input) =>
+    z
+      .object({
+        postId: z.string().uuid(),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
   .handler(async ({ data }): Promise<ReviewDTO[]> => {
+    // Raw per-reviewer scores are admin-only; the public path uses
+    // getReviewSummary, which returns averages after an access check.
+    requireAdmin(data.adminPassword);
     const db = await getAdmin();
     const { data: rows, error } = await db
       .from("reviews")
@@ -1885,6 +1917,8 @@ export const getMyReview = createServerFn({ method: "GET" })
       .object({
         postId: z.string().uuid(),
         reviewerName: z.string().trim().min(1).max(100),
+        nicknamePassword: z.string().max(200).default(""),
+        adminPassword: z.string().max(200).default(""),
       })
       .parse(input),
   )
@@ -1897,6 +1931,16 @@ export const getMyReview = createServerFn({ method: "GET" })
       scores?: Record<string, number>;
     }> => {
       const db = await getAdmin();
+      // A nickname alone must not reveal that person's scores.
+      const isAdmin = isAdminPassword(data.adminPassword);
+      if (!isAdmin) {
+        const ok = await verifyNicknameOwnership(
+          db,
+          data.reviewerName,
+          data.nicknamePassword,
+        );
+        if (!ok) return { found: false };
+      }
       const { data: row, error } = await db
         .from("reviews")
         .select("created_at, scores")
@@ -1912,6 +1956,134 @@ export const getMyReview = createServerFn({ method: "GET" })
       };
     },
   );
+
+export interface ReviewSummaryDTO {
+  allowed: boolean;
+  reason?: "locked";
+  count: number;
+  averages: { criterionId: string; avg: number | null; count: number }[];
+}
+
+// Returns criterion averages only when the caller is allowed to see them:
+// admins, boards with results made public, allowlisted reviewers, or (when no
+// allowlist is used) someone who already submitted a review on this post.
+export const getReviewSummary = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z
+      .object({
+        postId: z.string().uuid(),
+        reviewerName: z.string().trim().max(100).default(""),
+        nicknamePassword: z.string().max(200).default(""),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<ReviewSummaryDTO> => {
+    const db = await getAdmin();
+    const denied: ReviewSummaryDTO = {
+      allowed: false,
+      reason: "locked",
+      count: 0,
+      averages: [],
+    };
+
+    const { data: postRow, error: postErr } = await db
+      .from("posts")
+      .select("category_id")
+      .eq("id", data.postId)
+      .maybeSingle();
+    if (postErr) throw new Error(postErr.message);
+    if (!postRow) return denied;
+
+    const { data: catRow, error: catErr } = await db
+      .from("categories")
+      .select("review_allowlist_only, eval_results_public")
+      .eq("id", postRow.category_id)
+      .maybeSingle();
+    if (catErr) throw new Error(catErr.message);
+
+    let allowed = isAdminPassword(data.adminPassword) || !!catRow?.eval_results_public;
+
+    if (!allowed && data.reviewerName.trim()) {
+      const verified = await verifyNicknameOwnership(
+        db,
+        data.reviewerName,
+        data.nicknamePassword,
+      );
+      if (verified) {
+        if (catRow?.review_allowlist_only) {
+          const { data: entry, error: allowErr } = await db
+            .from("review_allowlist")
+            .select("id")
+            .eq("category_id", postRow.category_id)
+            .eq("reviewer_key", normalizeName(data.reviewerName))
+            .maybeSingle();
+          if (allowErr) throw new Error(allowErr.message);
+          allowed = !!entry;
+        } else {
+          const { data: mine, error: mineErr } = await db
+            .from("reviews")
+            .select("id")
+            .eq("post_id", data.postId)
+            .eq("reviewer_name", data.reviewerName.trim())
+            .maybeSingle();
+          if (mineErr) throw new Error(mineErr.message);
+          allowed = !!mine;
+        }
+      }
+    }
+
+    if (!allowed) return denied;
+
+    const { data: rows, error } = await db
+      .from("reviews")
+      .select("scores")
+      .eq("post_id", data.postId);
+    if (error) throw new Error(error.message);
+
+    const sums = new Map<string, { total: number; n: number }>();
+    for (const r of rows ?? []) {
+      const scores = (r.scores ?? {}) as Record<string, number>;
+      for (const [cid, v] of Object.entries(scores)) {
+        if (typeof v !== "number") continue;
+        const cur = sums.get(cid) ?? { total: 0, n: 0 };
+        cur.total += v;
+        cur.n += 1;
+        sums.set(cid, cur);
+      }
+    }
+
+    return {
+      allowed: true,
+      count: (rows ?? []).length,
+      averages: [...sums.entries()].map(([criterionId, v]) => ({
+        criterionId,
+        avg: v.n > 0 ? v.total / v.n : null,
+        count: v.n,
+      })),
+    };
+  });
+
+export const setEvalResultsPublic = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        enabled: z.boolean(),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    requireAdmin(data.adminPassword);
+    const db = await getAdmin();
+    const { error } = await db
+      .from("categories")
+      .update({ eval_results_public: data.enabled })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
 
 export const listMyReviewedPostIds = createServerFn({ method: "GET" })
   .inputValidator((input) =>

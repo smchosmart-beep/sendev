@@ -1,0 +1,1 @@
+ALTER TABLE public.categories ADD COLUMN IF NOT EXISTS eval_results_public boolean NOT NULL DEFAULT false;

@@ -16,6 +16,7 @@ import {
   listReviewAllowlist,
   listCategoryReviews,
   getMyReview,
+  getReviewSummary,
   listMyReviewedPostIds,
   listPostStubs,
   listReadPostIds,
@@ -143,10 +144,37 @@ export const criteriaQueryOptions = (categoryId: string, activeOnly = false) =>
     queryFn: () => listCriteria({ data: { categoryId, activeOnly } }),
   });
 
-export const reviewsQueryOptions = (postId: string) =>
+export const reviewsQueryOptions = (postId: string, adminPassword: string) =>
   queryOptions({
     queryKey: ["reviews", postId],
-    queryFn: () => listReviews({ data: { postId } }),
+    queryFn: () => listReviews({ data: { postId, adminPassword } }),
+    enabled: !!adminPassword,
+  });
+
+// Passwords stay out of the query key on purpose; they are only closed over.
+export const reviewSummaryQueryOptions = (
+  postId: string,
+  reviewerName: string,
+  nicknamePassword: string,
+  adminPassword: string,
+) =>
+  queryOptions({
+    queryKey: [
+      "review-summary",
+      postId,
+      reviewerName.trim(),
+      !!adminPassword,
+      !!nicknamePassword,
+    ],
+    queryFn: () =>
+      getReviewSummary({
+        data: {
+          postId,
+          reviewerName: reviewerName.trim(),
+          nicknamePassword,
+          adminPassword,
+        },
+      }),
   });
 
 export const reviewAllowlistQueryOptions = (
@@ -168,11 +196,22 @@ export const categoryReviewsQueryOptions = (
   });
 
 
-export const myReviewQueryOptions = (postId: string, reviewerName: string) =>
+export const myReviewQueryOptions = (
+  postId: string,
+  reviewerName: string,
+  nicknamePassword: string,
+  adminPassword = "",
+) =>
   queryOptions({
-    queryKey: ["my-review", postId, reviewerName],
-    queryFn: () => getMyReview({ data: { postId, reviewerName } }),
-    enabled: reviewerName.trim().length > 0,
+    queryKey: ["my-review", postId, reviewerName.trim(), !!adminPassword],
+    queryFn: () =>
+      getMyReview({
+        data: { postId, reviewerName: reviewerName.trim(), nicknamePassword, adminPassword },
+      }),
+    enabled:
+      reviewerName.trim().length > 0 &&
+      (nicknamePassword.trim().length > 0 || !!adminPassword),
+    retry: false,
   });
 
 
