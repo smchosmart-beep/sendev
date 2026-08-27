@@ -204,6 +204,14 @@ function BoardInner({
     if (saved && saved.trim()) setReviewerName(saved.trim());
   }, [slug]);
 
+  // 산출물 투표: 관리자가 이 게시판에서 투표를 시작한 상태인지.
+  const projectVoteActive =
+    category.voteTargetType === "project" && category.voteStatus !== "idle";
+  const isAdminUser =
+    typeof window !== "undefined" && getAdminPassword().length > 0;
+  const queryClient = useQueryClient();
+  const { confirm, confirmDialog } = useConfirm();
+
   const orderedProjects = useMemo(
     () => (seed === null ? projects : seededShuffle(projects, seed)),
     [projects, seed],
@@ -354,35 +362,34 @@ function BoardInner({
               <FolderGit2 className="h-5 w-5 text-primary" />
               {category.projectName || "산출물"}
             </h2>
-            <div className="flex flex-wrap items-center gap-2">
-              {isAdminUser && (
-                <AdminVoteControls
-                  categoryId={category.id}
-                  targetType="project"
-                  status={category.voteStatus}
-                  maxChoices={category.voteMaxChoices}
-                  seats={category.voteMaxChoices}
-                  round={1}
-                  canStartRunoff={false}
-                  revealed={false}
-                  canReveal={false}
-                  runoffCandidates={0}
-                  defaultRunoffChoices={1}
-                  confirm={confirm}
-                  onDone={() => {
-                    queryClient.invalidateQueries({ queryKey: ["categories"] });
-                    queryClient.invalidateQueries({ queryKey: ["vote-state", category.id] });
-                  }}
-                />
-              )}
-              <Button asChild className="rounded-xl active:scale-95">
-                <Link to="/board/$slug/new-project" params={{ slug }}>
-                  <Plus className="h-4 w-4" />
-                  {category.projectName || "산출물"} 등록
-                </Link>
-              </Button>
-            </div>
+            <Button asChild className="rounded-xl active:scale-95">
+              <Link to="/board/$slug/new-project" params={{ slug }}>
+                <Plus className="h-4 w-4" />
+                {category.projectName || "산출물"} 등록
+              </Link>
+            </Button>
           </div>
+
+          {isAdminUser && (
+            <AdminVoteControls
+              categoryId={category.id}
+              targetType="project"
+              status={category.voteStatus}
+              maxChoices={category.voteMaxChoices}
+              seats={category.voteMaxChoices}
+              round={1}
+              canStartRunoff={false}
+              revealed={false}
+              canReveal={false}
+              runoffCandidates={0}
+              defaultRunoffChoices={1}
+              confirm={confirm}
+              onDone={() => {
+                queryClient.invalidateQueries({ queryKey: ["categories"] });
+                queryClient.invalidateQueries({ queryKey: ["vote-state", category.id] });
+              }}
+            />
+          )}
 
           {projects.length === 0 ? (
             <EmptyState
