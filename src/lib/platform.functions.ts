@@ -211,6 +211,7 @@ export interface CategoryDTO {
   evalOpen: boolean;
   evalSeed: number;
   reviewAllowlistOnly: boolean;
+  evalResultsPublic: boolean;
   hidden: boolean;
 }
 
@@ -311,7 +312,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const { data, error } = await db
       .from("categories")
       .select(
-        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, enable_problem, enable_vote, general_name, project_name, link_name, problem_name, vote_name, enable_record, record_name, vote_status, vote_revealed, vote_max_choices, tab_group, eval_open, eval_seed, review_allowlist_only, hidden",
+        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, enable_problem, enable_vote, general_name, project_name, link_name, problem_name, vote_name, enable_record, record_name, vote_status, vote_revealed, vote_max_choices, tab_group, eval_open, eval_seed, review_allowlist_only, eval_results_public, hidden",
       )
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
@@ -344,6 +345,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       evalOpen: !!c.eval_open,
       evalSeed: Number(c.eval_seed ?? 0),
       reviewAllowlistOnly: !!c.review_allowlist_only,
+      evalResultsPublic: !!c.eval_results_public,
       hidden: !!c.hidden,
     }));
   },
