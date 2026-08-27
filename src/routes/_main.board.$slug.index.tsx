@@ -28,7 +28,7 @@ import { MarkAllReadButton } from "@/components/MarkAllReadButton";
 import { Button } from "@/components/ui/button";
 import { ThumbnailUploadButton } from "@/components/ThumbnailUploadButton";
 import { LikeButton } from "@/components/LikeButton";
-import { VoteSection } from "@/components/VoteSection";
+import { AdminVoteControls, VoteSection } from "@/components/VoteSection";
 
 const PAGE_SIZE = 10;
 const PROBLEM_PAGE_SIZE = 9;
@@ -333,19 +333,55 @@ function BoardInner({
         </section>
       )}
 
-      {category.enableProject && (!keyword || projects.length > 0) && (
+      {category.enableProject && projectVoteActive && (!keyword || projects.length > 0) && (
+        <VoteSection
+          category={category}
+          targetType="project"
+          slug={slug}
+          posts={projects}
+          page={vpage}
+          onPageChange={(p) =>
+            navigate({ search: (prev: BoardSearch) => ({ ...prev, vpage: p }) })
+          }
+          Pagination={BoardPagination}
+        />
+      )}
+
+      {category.enableProject && !projectVoteActive && (!keyword || projects.length > 0) && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
               <FolderGit2 className="h-5 w-5 text-primary" />
               {category.projectName || "산출물"}
             </h2>
-            <Button asChild className="rounded-xl active:scale-95">
-              <Link to="/board/$slug/new-project" params={{ slug }}>
-                <Plus className="h-4 w-4" />
-                {category.projectName || "산출물"} 등록
-              </Link>
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {isAdminUser && (
+                <AdminVoteControls
+                  categoryId={category.id}
+                  targetType="project"
+                  status={category.voteStatus}
+                  maxChoices={category.voteMaxChoices}
+                  seats={category.voteMaxChoices}
+                  round={1}
+                  canStartRunoff={false}
+                  revealed={false}
+                  canReveal={false}
+                  runoffCandidates={0}
+                  defaultRunoffChoices={1}
+                  confirm={confirm}
+                  onDone={() => {
+                    queryClient.invalidateQueries({ queryKey: ["categories"] });
+                    queryClient.invalidateQueries({ queryKey: ["vote-state", category.id] });
+                  }}
+                />
+              )}
+              <Button asChild className="rounded-xl active:scale-95">
+                <Link to="/board/$slug/new-project" params={{ slug }}>
+                  <Plus className="h-4 w-4" />
+                  {category.projectName || "산출물"} 등록
+                </Link>
+              </Button>
+            </div>
           </div>
 
           {projects.length === 0 ? (
