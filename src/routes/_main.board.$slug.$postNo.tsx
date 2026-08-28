@@ -78,6 +78,7 @@ import {
   type TabGroup,
 } from "@/lib/platform.functions";
 import { isRecordAdmin } from "@/lib/record.functions";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { setAdminPassword, getAdminPassword } from "@/lib/admin-auth";
 import { EmptyState } from "@/components/EmptyState";
 import { RecordEditor } from "@/components/RecordEditor";
@@ -2160,14 +2161,25 @@ function EvaluationSection({
                     (0.5점 단위 · 만점 {c.maxScore})
                   </span>
                 </Label>
-                <StarRating
-                  max={c.maxScore}
-                  value={scores[c.id] ?? 0}
-                  onChange={(v) => {
-                    touchedRef.current = true;
-                    setScores((prev) => ({ ...prev, [c.id]: v }));
-                  }}
-                />
+                {isMobile ? (
+                  <ScoreStepper
+                    max={c.maxScore}
+                    value={scores[c.id] ?? 0}
+                    onChange={(v) => {
+                      touchedRef.current = true;
+                      setScores((prev) => ({ ...prev, [c.id]: v }));
+                    }}
+                  />
+                ) : (
+                  <StarRating
+                    max={c.maxScore}
+                    value={scores[c.id] ?? 0}
+                    onChange={(v) => {
+                      touchedRef.current = true;
+                      setScores((prev) => ({ ...prev, [c.id]: v }));
+                    }}
+                  />
+                )}
 
               </div>
             ))}
@@ -2308,6 +2320,81 @@ function StarRating({
       <span className="shrink-0 text-sm font-semibold text-primary">
         {display > 0 ? display.toFixed(1) : "-"} / {max}
       </span>
+    </div>
+  );
+}
+
+// Mobile numeric score stepper (0.5 increments). Replaces StarRating on small screens.
+function ScoreStepper({
+  max,
+  value,
+  onChange,
+}: {
+  max: number;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const [draft, setDraft] = useState<string>(value.toFixed(1));
+
+  useEffect(() => {
+    setDraft(value.toFixed(1));
+  }, [value]);
+
+  const clamp = (v: number) => {
+    const stepped = Math.round(v * 2) / 2;
+    return Math.min(max, Math.max(0, stepped));
+  };
+
+  const apply = (raw: string) => {
+    const num = parseFloat(raw.replace(/,/g, "."));
+    if (Number.isNaN(num)) {
+      setDraft(value.toFixed(1));
+      return;
+    }
+    onChange(clamp(num));
+  };
+
+  return (
+    <div className="flex items-center gap-3">
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="h-9 w-9 shrink-0 rounded-xl"
+        onClick={() => onChange(clamp((value || 0) - 0.5))}
+        aria-label="0.5점 감소"
+      >
+        −
+      </Button>
+      <label className="flex min-w-0 flex-1 items-center justify-center gap-1 rounded-xl border border-input bg-background px-3 py-1.5 text-sm">
+        <input
+          type="text"
+          inputMode="decimal"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={(e) => apply(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              apply((e.target as HTMLInputElement).value);
+              (e.target as HTMLInputElement).blur();
+            }
+          }}
+          className="w-12 border-0 bg-transparent p-0 text-right font-semibold text-primary outline-none"
+          aria-label="점수 직접 입력"
+        />
+        <span className="text-muted-foreground">/ {max}</span>
+      </label>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="h-9 w-9 shrink-0 rounded-xl"
+        onClick={() => onChange(clamp((value || 0) + 0.5))}
+        aria-label="0.5점 증가"
+      >
+        ＋
+      </Button>
     </div>
   );
 }
