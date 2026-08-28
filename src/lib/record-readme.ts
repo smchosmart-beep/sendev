@@ -238,7 +238,17 @@ export function buildRecordReadme(team: RecordOverviewTeam): string {
       lines.push(`### ${group.title}`);
       lines.push("");
       for (const key of filled) {
-        lines.push(`- **${FINAL_LABELS[key] ?? key}**: ${escapeMd(finalValue(f, key))}`);
+        const raw = finalValue(f, key);
+        // 결과물 형태는 쉼표로 구분해 여러 개 저장하므로 출력 시 ", "로 정리한다.
+        const text =
+          key === "outputType"
+            ? raw
+                .split(",")
+                .map((v) => v.trim())
+                .filter(Boolean)
+                .join(", ")
+            : raw;
+        lines.push(`- **${FINAL_LABELS[key] ?? key}**: ${escapeMd(text)}`);
       }
       lines.push("");
     }

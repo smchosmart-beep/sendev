@@ -165,10 +165,17 @@ export function CasebookDocument({ team }: { team: RecordOverviewTeam }) {
   const stance = rowsOf(team, "stance");
   const ethics = team.ethics ?? [];
 
+  // 결과물 형태는 쉼표 구분 다중 선택이라 출력 시 ", "로 정리한다.
+  const outputTypeText = val(team, "outputType")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean)
+    .join(", ");
+
   const overviewFields: [string, string][] = [
     ["문제 영역", val(team, "problemArea")],
     ["주 사용자", val(team, "targetUser")],
-    ["결과물 형태", val(team, "outputType")],
+    ["결과물 형태", outputTypeText],
     ["배포 상태", val(team, "deployStatus")],
     ["사용 환경", val(team, "usageEnv")],
     ["태그", val(team, "tags")],
