@@ -121,7 +121,7 @@ type FinalInput = {
   key: RecordFinalKey;
   label: string;
   hint?: string;
-  type: "text" | "textarea" | "select" | "image";
+  type: "text" | "textarea" | "select" | "multi-select" | "image";
   options?: string[];
   full?: boolean;
   placeholder?: string;
@@ -146,7 +146,13 @@ const FINAL_GROUPS: { title: string; hint?: string; fields: FinalInput[] }[] = [
       },
       { key: "problemArea", label: "문제 영역", type: "select", options: PROBLEM_AREAS },
       { key: "targetUser", label: "주 사용자", type: "select", options: MAIN_USERS },
-      { key: "outputType", label: "결과물 형태", type: "select", options: OUTPUT_TYPES },
+      {
+        key: "outputType",
+        label: "결과물 형태",
+        hint: "여러 개를 함께 고를 수 있어요",
+        type: "multi-select",
+        options: OUTPUT_TYPES,
+      },
       {
         key: "tags",
         label: "태그",
@@ -927,6 +933,39 @@ function FinalField({
               {opt}
             </Button>
           ))}
+        </div>
+      ) : field.type === "multi-select" ? (
+        <div className="flex flex-wrap gap-2">
+          {(() => {
+            const selected = new Set(
+              value
+                .split(",")
+                .map((v) => v.trim())
+                .filter(Boolean),
+            );
+            return (field.options ?? []).map((opt) => (
+              <Button
+                key={opt}
+                type="button"
+                size="sm"
+                variant={selected.has(opt) ? "default" : "outline"}
+                disabled={!canEdit}
+                className="rounded-full active:scale-95"
+                onClick={() => {
+                  const next = new Set(selected);
+                  if (next.has(opt)) next.delete(opt);
+                  else next.add(opt);
+                  // 저장 순서는 옵션 목록 순서를 따른다.
+                  const joined = (field.options ?? [])
+                    .filter((o) => next.has(o))
+                    .join(",");
+                  onChange(field.key, joined);
+                }}
+              >
+                {opt}
+              </Button>
+            ));
+          })()}
         </div>
       ) : field.type === "image" ? (
         <HeroImageInput
