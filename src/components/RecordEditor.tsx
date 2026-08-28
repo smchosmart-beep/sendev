@@ -934,6 +934,39 @@ function FinalField({
             </Button>
           ))}
         </div>
+      ) : field.type === "multi-select" ? (
+        <div className="flex flex-wrap gap-2">
+          {(() => {
+            const selected = new Set(
+              value
+                .split(",")
+                .map((v) => v.trim())
+                .filter(Boolean),
+            );
+            return (field.options ?? []).map((opt) => (
+              <Button
+                key={opt}
+                type="button"
+                size="sm"
+                variant={selected.has(opt) ? "default" : "outline"}
+                disabled={!canEdit}
+                className="rounded-full active:scale-95"
+                onClick={() => {
+                  const next = new Set(selected);
+                  if (next.has(opt)) next.delete(opt);
+                  else next.add(opt);
+                  // 저장 순서는 옵션 목록 순서를 따른다.
+                  const joined = (field.options ?? [])
+                    .filter((o) => next.has(o))
+                    .join(",");
+                  onChange(field.key, joined);
+                }}
+              >
+                {opt}
+              </Button>
+            ));
+          })()}
+        </div>
       ) : field.type === "image" ? (
         <HeroImageInput
           value={value}
