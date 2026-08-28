@@ -1860,6 +1860,7 @@ function EvaluationSection({
     criteriaQueryOptions(categoryId, true),
   );
   const create = useServerFn(createReview);
+  const isMobile = useIsMobile();
   const { identity, save: saveIdentity } = useStoredIdentity();
 
   const [scores, setScores] = useState<Record<string, number>>({});
