@@ -44,6 +44,7 @@ export const MAIN_USERS = ["교사", "학생", "교사와 학생", "학부모", 
 export const OUTPUT_TYPES = [
   "웹앱",
   "모바일앱",
+  "데스크탑 앱",
   "챗봇·AI 도구",
   "자동화 도구",
   "수업자료·콘텐츠",
