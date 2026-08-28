@@ -121,7 +121,7 @@ type FinalInput = {
   key: RecordFinalKey;
   label: string;
   hint?: string;
-  type: "text" | "textarea" | "select" | "image";
+  type: "text" | "textarea" | "select" | "multi-select" | "image";
   options?: string[];
   full?: boolean;
   placeholder?: string;
@@ -146,7 +146,13 @@ const FINAL_GROUPS: { title: string; hint?: string; fields: FinalInput[] }[] = [
       },
       { key: "problemArea", label: "문제 영역", type: "select", options: PROBLEM_AREAS },
       { key: "targetUser", label: "주 사용자", type: "select", options: MAIN_USERS },
-      { key: "outputType", label: "결과물 형태", type: "select", options: OUTPUT_TYPES },
+      {
+        key: "outputType",
+        label: "결과물 형태",
+        hint: "여러 개를 함께 고를 수 있어요",
+        type: "multi-select",
+        options: OUTPUT_TYPES,
+      },
       {
         key: "tags",
         label: "태그",
