@@ -47,6 +47,7 @@ export const OUTPUT_TYPES = [
   "챗봇·AI 도구",
   "자동화 도구",
   "수업자료·콘텐츠",
+  "/skill",
 ];
 
 export const DEPLOY_STATUSES = [
