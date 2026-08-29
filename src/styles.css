@@ -717,6 +717,41 @@
   }
   .casebook-page.casebook-cover {
     break-after: page;
+    gap: 7mm;
+    padding: 16mm 12mm;
+  }
+  .casebook-cover-top {
+    font-size: 11pt;
+  }
+  .casebook-title {
+    font-size: 34pt;
+  }
+  .casebook-lead {
+    font-size: 14pt;
+  }
+  .casebook-cover-meta {
+    font-size: 11pt;
+    gap: 3mm;
+    padding-top: 5mm;
+  }
+  .casebook-meta-label {
+    font-size: 10pt;
+  }
+  .casebook-cover-members {
+    gap: 2.5mm;
+  }
+  .casebook-cover-member-name {
+    font-size: 13pt;
+  }
+  .casebook-cover-member-meta {
+    font-size: 9.5pt;
+  }
+  .casebook-badges {
+    gap: 8px;
+  }
+  .casebook-badge {
+    font-size: 10pt;
+    padding: 3px 12px;
   }
   .casebook-body {
     padding: 0;
