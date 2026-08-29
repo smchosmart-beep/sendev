@@ -717,9 +717,14 @@
   }
   .casebook-page.casebook-cover {
     break-after: page;
+    break-before: page;
     gap: 7mm;
     padding: 16mm 12mm;
   }
+  .casebook-doc:first-of-type .casebook-cover {
+    break-before: auto;
+  }
+
   .casebook-cover-top {
     font-size: 11pt;
   }
