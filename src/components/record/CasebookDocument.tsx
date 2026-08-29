@@ -244,11 +244,16 @@ export function CasebookDocument({ team }: { team: RecordOverviewTeam }) {
           {team.members.length > 0 ? (
             <div>
               <span className="casebook-meta-label">팀원</span>
-              {team.members
-                .map((m) =>
-                  [m.username, m.affiliation, m.role].filter((v) => (v ?? "").trim()).join(" · "),
-                )
-                .join(", ")}
+              <div className="casebook-cover-members">
+                {team.members.map((m) => (
+                  <div key={m.username} className="casebook-cover-member">
+                    <div className="casebook-cover-member-name">{m.username}</div>
+                    <div className="casebook-cover-member-meta">
+                      {[m.affiliation, m.role].filter((v) => (v ?? "").trim()).join(" · ")}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : null}
           <div>
