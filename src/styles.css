@@ -691,7 +691,7 @@
     width: 100%;
     min-height: 0;
     margin: 0;
-    padding: 0 0 6mm;
+    padding: 0;
     box-shadow: none;
     break-after: auto;
     display: block;
@@ -701,15 +701,41 @@
   }
   .casebook-body {
     padding: 0;
+    orphans: 2;
+    widows: 2;
   }
   .casebook-block {
-    margin-top: 6mm;
+    margin-top: 4mm;
     margin-bottom: 0;
     break-inside: auto;
   }
   .casebook-h2,
-  .casebook-h3 {
+  .casebook-h3,
+  .casebook-card-head {
     break-after: avoid;
+  }
+  /* 긴 카드가 통째로 다음 장으로 밀려 백지가 생기는 것을 막기 위해 쪼개기 허용 */
+  .casebook-card {
+    break-inside: auto;
+    padding: 2.4mm 3mm;
+  }
+  .casebook-cards {
+    gap: 2mm;
+  }
+  .casebook-field {
+    break-inside: auto;
+    grid-template-columns: 27mm 1fr;
+    gap: 3mm;
+    padding: 1mm 0;
+  }
+  .casebook-table tr {
+    break-inside: avoid;
+  }
+  .casebook-table thead {
+    display: table-header-group;
+  }
+  .casebook-figure {
+    max-height: 85mm;
   }
   .casebook-foot {
     display: none;
