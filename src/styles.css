@@ -693,6 +693,26 @@
     margin: 0;
     padding: 0 0 6mm;
     box-shadow: none;
+    break-after: auto;
+    display: block;
+  }
+  .casebook-page.casebook-cover {
+    break-after: page;
+  }
+  .casebook-body {
+    padding: 0;
+  }
+  .casebook-block {
+    margin-top: 6mm;
+    margin-bottom: 0;
+    break-inside: auto;
+  }
+  .casebook-h2,
+  .casebook-h3 {
+    break-after: avoid;
+  }
+  .casebook-foot {
+    display: none;
   }
 }
 
