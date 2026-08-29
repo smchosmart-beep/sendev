@@ -437,24 +437,24 @@
 }
 .casebook-cover {
   justify-content: center;
-  gap: 6mm;
-  padding: 20mm 12mm;
+  gap: 7mm;
+  padding: 16mm 12mm;
   text-align: left;
 }
 .casebook-cover-top {
-  font-size: 9pt;
+  font-size: 11pt;
   letter-spacing: 0.25em;
   color: var(--primary);
   text-transform: uppercase;
 }
 .casebook-title {
-  font-size: 26pt;
+  font-size: 34pt;
   font-weight: 800;
-  line-height: 1.25;
+  line-height: 1.2;
   margin: 0;
 }
 .casebook-lead {
-  font-size: 12pt;
+  font-size: 14pt;
   color: #4b5563;
   margin: 0;
 }
@@ -478,21 +478,40 @@
 }
 .casebook-cover-meta {
   display: grid;
-  gap: 2mm;
-  font-size: 10pt;
+  gap: 3mm;
+  font-size: 11pt;
   border-top: 1px solid var(--cb-line);
-  padding-top: 4mm;
+  padding-top: 5mm;
 }
 .casebook-meta-label {
   display: inline-block;
   min-width: 46px;
   color: #6b7280;
-  font-size: 9pt;
+  font-size: 10pt;
+}
+.casebook-cover-members {
+  display: grid;
+  gap: 2.5mm;
+  margin-top: 1mm;
+}
+.casebook-cover-member {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4mm;
+}
+.casebook-cover-member-name {
+  font-size: 13pt;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.casebook-cover-member-meta {
+  font-size: 9.5pt;
+  color: #4b5563;
 }
 .casebook-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 .casebook-badge,
 .casebook-doc a {
@@ -503,8 +522,8 @@
 .casebook-badge {
   border: 1px solid var(--cb-line);
   border-radius: 999px;
-  padding: 2px 10px;
-  font-size: 9pt;
+  padding: 3px 12px;
+  font-size: 10pt;
 }
 .casebook-h2 {
   display: flex;
