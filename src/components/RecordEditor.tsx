@@ -1661,7 +1661,14 @@ function RowItem({
           if (fileCols.includes(i) || i === effLink) return null;
           return (
             <div key={i} className={cn("space-y-1", effLongs.includes(i) && "sm:col-span-2")}>
-              <Label className="text-xs text-muted-foreground">{label}</Label>
+              <Label
+                className={cn(
+                  "text-xs text-muted-foreground",
+                  row.kind === "flow" && "whitespace-nowrap",
+                )}
+              >
+                {label}
+              </Label>
               {effLongs.includes(i) ? (
                 <>
                   <Textarea
