@@ -56,11 +56,19 @@ export function PostListCard({
             <span className="truncate">{author}</span>
             <AuthorBadge author={author} profileMap={profileMap} only="level" />
           </span>
+          {/* 모바일은 접힌 배지, 데스크톱만 전체 펼침 */}
+          <AuthorBadge
+            author={author}
+            profileMap={profileMap}
+            only="awards"
+            className="sm:hidden"
+          />
           <AuthorBadge
             author={author}
             profileMap={profileMap}
             only="awards"
             expand
+            className="hidden sm:inline-flex"
           />
         </span>
 
