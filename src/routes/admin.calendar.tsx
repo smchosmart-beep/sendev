@@ -1,4 +1,5 @@
 import { getAdminPassword } from "@/lib/admin-auth";
+import { MAX_ATTACHMENT_BYTES } from "@/lib/file-upload";
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
@@ -199,8 +200,8 @@ function AdminCalendarPage() {
     setUploading(true);
     try {
       for (const file of Array.from(files)) {
-        if (file.size > 3 * 1024 * 1024) {
-          toast.error(`${file.name}: 3MB를 넘는 파일은 업로드할 수 없어요.`);
+        if (file.size > MAX_ATTACHMENT_BYTES) {
+          toast.error(`${file.name}: 10MB를 넘는 파일은 업로드할 수 없어요.`);
           continue;
         }
         const dataBase64 = await fileToBase64(file);

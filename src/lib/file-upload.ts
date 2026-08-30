@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 // 10 years — effectively permanent signed URL for the private bucket.
 const SIGNED_URL_TTL = 60 * 60 * 24 * 365 * 10;
 
-export const MAX_ATTACHMENT_BYTES = 3 * 1024 * 1024; // 3MB
+export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024; // 10MB
 
 export interface AttachedFile {
   name: string;

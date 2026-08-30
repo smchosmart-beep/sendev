@@ -1535,7 +1535,7 @@ function RowItem({
       return;
     }
     if (file.size > MAX_ATTACHMENT_BYTES) {
-      toast.error("파일 크기는 3MB 이하만 가능해요.");
+      toast.error("파일 크기는 10MB 이하만 가능해요.");
       return;
     }
     setUploadingCol(col);
@@ -1718,7 +1718,7 @@ function RowItem({
                   <TemplateNotice label={notice.label} text={notice.text} tip={notice.tip} />
                 )}
                 <Label className="text-xs text-muted-foreground">
-                  {label} <span className="text-[11px]">(최대 3개, 개당 3MB)</span>
+                  {label} <span className="text-[11px]">(최대 3개, 개당 10MB)</span>
                 </Label>
                 <div
                   className={cn(
@@ -1877,7 +1877,7 @@ function RowItem({
                             첨부하세요
                           </span>
                           <span className="text-[11px]">
-                            {files.length}/3 · 개당 3MB 이하
+                            {files.length}/3 · 개당 10MB 이하
                           </span>
                         </div>
                       )
