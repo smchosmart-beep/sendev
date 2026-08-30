@@ -287,12 +287,12 @@ function BoardInner({
 
       {category.enablePost && (!keyword || generals.length > 0) && (
         <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
-              <MessageCircle className="h-5 w-5 text-primary" />
-              {category.generalName || "일반게시판"}
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="flex min-w-0 items-center gap-2 text-lg font-semibold text-foreground">
+              <MessageCircle className="h-5 w-5 shrink-0 text-primary" />
+              <span className="truncate">{category.generalName || "일반게시판"}</span>
             </h2>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               {hasReader && (
                 <MarkAllReadButton
                   categoryId={category.id}
