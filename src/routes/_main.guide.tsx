@@ -610,7 +610,7 @@ function GuidePage() {
           <li>본문에 넣는 이미지는 <strong>JPG·PNG·WEBP·GIF</strong> 형식만 지원하며, 올릴 때 자동으로 압축되어 <strong>2MB 이내</strong>로 저장됩니다. 행사·공지 첨부파일은 <strong>1개당 10MB</strong>까지 올릴 수 있습니다.</li>
           <li><strong>글 수정·삭제</strong>: 글 상세 페이지의 <strong>수정 / 삭제</strong> 버튼으로 할 수 있으며, 누르면 비밀번호 확인창이 뜹니다. <strong>작성자 본인의 닉네임 비밀번호</strong> 또는 <strong>관리자 비밀번호</strong>를 입력해야 진행되며, 비밀번호가 일치하지 않으면 수정·삭제되지 않습니다. 따라서 자기가 쓴 글은 본인이, 그 외에는 관리자가 정리할 수 있습니다. (글을 다른 게시판으로 옮기는 <strong>이동</strong>은 관리자만 가능합니다.)</li>
           <li>게시글을 볼 때 <strong>본문 이미지를 누르면</strong> 전체화면 확대 보기(라이트박스)가 열립니다. 우측 상단의 버튼으로 <strong>전체화면 보기</strong>, <strong>이미지 다운로드</strong>, <strong>닫기</strong>를 할 수 있고, 배경을 누르거나 <strong>ESC</strong> 키로도 닫을 수 있습니다. 모바일에서는 <strong>두 손가락 핀치로 확대/축소</strong>하고 <strong>확대 후 한 손가락으로 끌어 이미지를 이동</strong>할 수 있으며, 더블탭으로도 확대됩니다. 전체화면 보기에서 가로형 이미지는 모바일에서 가로 모드로 회전해 화면에 꽉 차게 표시됩니다.</li>
-          <li>도구 모음의 <strong>클립(파일 첨부)</strong> 버튼으로 <strong>HWP·PDF·ZIP·오피스 문서</strong> 등 일반 파일을 올릴 수 있습니다. 파일당 <strong>3MB</strong>까지 가능하며, 본문에는 클릭하면 내려받는 <strong>다운로드 카드</strong>로 표시됩니다. 파일 종류에 따라 아이콘이 달라집니다 — <strong>HWP·PDF·문서</strong>는 문서 아이콘, <strong>XLS·XLSX</strong>는 표(시트) 아이콘, <strong>ZIP</strong>은 압축파일 아이콘으로 표시됩니다.</li>
+          <li>도구 모음의 <strong>클립(파일 첨부)</strong> 버튼으로 <strong>HWP·PDF·ZIP·오피스 문서</strong> 등 일반 파일을 올릴 수 있습니다. 파일당 <strong>10MB</strong>까지 가능하며, 본문에는 클릭하면 내려받는 <strong>다운로드 카드</strong>로 표시됩니다. 파일 종류에 따라 아이콘이 달라집니다 — <strong>HWP·PDF·문서</strong>는 문서 아이콘, <strong>XLS·XLSX</strong>는 표(시트) 아이콘, <strong>ZIP</strong>은 압축파일 아이콘으로 표시됩니다.</li>
         </ul>
 
         <p className="mt-4">
