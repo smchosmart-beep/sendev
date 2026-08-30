@@ -65,13 +65,14 @@ export function MarkAllReadButton({
         className={className ?? "h-9 rounded-xl active:scale-95"}
         disabled={unreadCount === 0 || mutation.isPending}
         onClick={() => setOpen(true)}
+        aria-label={label}
       >
         {mutation.isPending ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
           <CheckCheck className="h-4 w-4" />
         )}
-        {label}
+        <span className="hidden sm:inline">{label}</span>
         {unreadCount > 0 && (
           <span className="ml-1 text-xs font-semibold text-muted-foreground">
             {unreadCount > 99 ? "99+" : unreadCount}
