@@ -29,6 +29,7 @@ import { Markdown } from "tiptap-markdown";
 import Placeholder from "@tiptap/extension-placeholder";
 
 import { cn } from "@/lib/utils";
+import { MAX_ATTACHMENT_BYTES } from "@/lib/file-upload";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -447,8 +448,8 @@ export function PostEditor({
     e.target.value = "";
     if (!file || !editor) return;
 
-    if (file.size > 3 * 1024 * 1024) {
-      toast.error("파일 크기는 3MB 이하만 가능해요.");
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      toast.error("파일 크기는 10MB 이하만 가능해요.");
       return;
     }
 
