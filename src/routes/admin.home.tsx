@@ -149,7 +149,7 @@ function AdminHomePage() {
 
   const swapMutation = useMutation({
     mutationFn: (vars: { id: string; otherId: string }) =>
-      swapFn({ data: vars }),
+      swapFn({ data: { ...vars, adminPassword: getAdminPassword() } }),
     onSuccess: async () => {
       await invalidate();
     },
