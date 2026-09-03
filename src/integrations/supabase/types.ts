@@ -68,6 +68,7 @@ export type Database = {
           password: string
           problem_name: string
           project_name: string
+          record_kind: string
           record_name: string
           review_allowlist_only: boolean
           slug: string
@@ -113,6 +114,7 @@ export type Database = {
           password?: string
           problem_name?: string
           project_name?: string
+          record_kind?: string
           record_name?: string
           review_allowlist_only?: boolean
           slug: string
@@ -158,6 +160,7 @@ export type Database = {
           password?: string
           problem_name?: string
           project_name?: string
+          record_kind?: string
           record_name?: string
           review_allowlist_only?: boolean
           slug?: string
@@ -646,6 +649,110 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "record_final_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: true
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      record_growth: {
+        Row: {
+          ai_work: string
+          created_at: string
+          difficulty: string
+          education_check: string
+          ethics: string[]
+          evidence: string
+          expected_change: string
+          features: string[]
+          flow: string[]
+          hero_image_url: string
+          human_check: string
+          learned: string
+          next_plan: string
+          one_line: string
+          post_id: string
+          primary_user: string
+          privacy: string
+          problem_area: string
+          problem_text: string
+          project_name: string
+          promise: string
+          resolution: string
+          result_type: string
+          result_url: string
+          solution: string
+          status: string
+          tools: string
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          ai_work?: string
+          created_at?: string
+          difficulty?: string
+          education_check?: string
+          ethics?: string[]
+          evidence?: string
+          expected_change?: string
+          features?: string[]
+          flow?: string[]
+          hero_image_url?: string
+          human_check?: string
+          learned?: string
+          next_plan?: string
+          one_line?: string
+          post_id: string
+          primary_user?: string
+          privacy?: string
+          problem_area?: string
+          problem_text?: string
+          project_name?: string
+          promise?: string
+          resolution?: string
+          result_type?: string
+          result_url?: string
+          solution?: string
+          status?: string
+          tools?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Update: {
+          ai_work?: string
+          created_at?: string
+          difficulty?: string
+          education_check?: string
+          ethics?: string[]
+          evidence?: string
+          expected_change?: string
+          features?: string[]
+          flow?: string[]
+          hero_image_url?: string
+          human_check?: string
+          learned?: string
+          next_plan?: string
+          one_line?: string
+          post_id?: string
+          primary_user?: string
+          privacy?: string
+          problem_area?: string
+          problem_text?: string
+          project_name?: string
+          promise?: string
+          resolution?: string
+          result_type?: string
+          result_url?: string
+          solution?: string
+          status?: string
+          tools?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_growth_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: true
             referencedRelation: "posts"
