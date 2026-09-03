@@ -38,7 +38,9 @@
 - 신규 파일: `src/lib/record-growth-schema.ts`(단계·선택지·필수항목 정의), `src/lib/record-growth.functions.ts`(`getGrowthRecord` / `saveGrowthRecord`, 도전형과 동일한 닉네임 비밀번호·관리자 비밀번호 인증 재사용), `src/components/record/GrowthRecordEditor.tsx`, `GrowthReadmeOutput.tsx`, `GrowthCasebookDocument.tsx`.
 - 수정 파일: `src/lib/platform.functions.ts`(카테고리 DTO에 `recordKind` 추가·저장), `src/routes/admin.categories.tsx`(유형 선택 UI), `src/routes/_main.board.$slug.$postNo.tsx`(유형에 따라 편집기 분기), `src/routes/_main.board.$slug.new-record.tsx`(성장형이면 "팀명" 대신 "프로젝트명" 라벨, 팀원 안내 문구 제외), `src/routes/_main.board.$slug.index.tsx`(기본 라벨), `src/styles.css`(성장형 사례집 인쇄 규칙은 기존 `.casebook-*` 규칙 재사용, 필요한 경우만 최소 추가).
 - 저장은 도전형과 동일한 1초 지연 자동 저장 1개 요청으로 통일하고(단계 이동 시 대기분 flush), 이미지 업로드도 기존 `file-upload` 경로를 그대로 씁니다 — 서버 요청량이 늘지 않습니다.
-- 관리자 활동기록 현황(`/admin/records`)은 이번 작업에서 도전형 전용으로 유지하고, 성장형 게시판은 목록에서 제외해 기존 통계가 깨지지 않게 합니다.
+- 관리자 활동기록 현황(`/admin/records`)은 상단에 **도전형 / 성장형** 전환 탭을 두고, 게시판 선택 목록도 유형별로 나눠 보여 줍니다. 성장형은 6단계 구조에 맞춘 진행률·작성자·최종 수정 시각 표와 전용 엑셀/ZIP 열을 별도로 만들고, 도전형 화면과 계산 로직은 그대로 둡니다.
+- 모든 입력칸의 라벨·안내문구·글자수 제한·플레이스홀더는 첨부 HTML의 문구를 그대로 사용합니다(예: "예) 수업 질문 카드", "한 가지 장면만 적어 주세요.", "쉼표로 구분해 주세요." 등). 문구는 `record-growth-schema.ts` 한 곳에 모아 관리합니다.
+
 - 기존 도전형 데이터·화면은 변경하지 않습니다(추가 컬럼 기본값만 부여).
 
 ## 마무리
