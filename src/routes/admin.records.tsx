@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { CasebookDocument } from "@/components/record/CasebookDocument";
+import { GrowthAdminPanel } from "@/components/record/GrowthAdminPanel";
 import { categoriesQueryOptions } from "@/lib/platform.queries";
 import { getRecordOverview } from "@/lib/record.functions";
 import type { RecordOverviewTeam } from "@/lib/record.functions";
@@ -49,8 +50,34 @@ export const Route = createFileRoute("/admin/records")({
       },
     ],
   }),
-  component: RecordOverviewPage,
+  component: RecordOverviewTabs,
 });
+
+function RecordOverviewTabs() {
+  const [kind, setKind] = useState<"challenge" | "growth">("challenge");
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 rounded-2xl border border-border bg-card p-1.5 shadow-sm">
+        {(["challenge", "growth"] as const).map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => setKind(k)}
+            className={cn(
+              "flex-1 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+              kind === k
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted",
+            )}
+          >
+            {k === "challenge" ? "도전형" : "성장형"}
+          </button>
+        ))}
+      </div>
+      {kind === "challenge" ? <RecordOverviewPage /> : <GrowthAdminPanel />}
+    </div>
+  );
+}
 
 const ROW_SECTIONS: {
   kind: RecordOverviewRowKind;
@@ -135,7 +162,7 @@ function RecordOverviewPage() {
   );
 
   const recordCategories = useMemo(
-    () => (categories ?? []).filter((c) => c.enableRecord),
+    () => (categories ?? []).filter((c) => c.enableRecord && c.recordKind !== "growth"),
     [categories],
   );
 
@@ -406,7 +433,7 @@ function RecordOverviewPage() {
           </select>
           {recordCategories.length === 0 && !categoriesLoading && (
             <p className="mt-2 text-xs text-muted-foreground">
-              활동기록 유형이 활성화된 카테고리가 없습니다. 카테고리 관리에서 활동기록을 켜주세요.
+              도전형 활동기록 게시판이 없습니다. 게시판 관리에서 활동기록을 켜주세요.
             </p>
           )}
         </div>
