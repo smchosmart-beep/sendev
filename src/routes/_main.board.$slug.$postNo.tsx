@@ -247,6 +247,8 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
   const { data: post } = useSuspenseQuery(postByNoQueryOptions(slug, postNo, getBoardPassword(slug)));
   const { data: profileMap } = useSuspenseQuery(profileMapQueryOptions());
   const { data: allCategories } = useSuspenseQuery(categoriesQueryOptions());
+  const recordKind =
+    allCategories.find((c) => c.id === post?.categoryId)?.recordKind ?? "challenge";
 
   // 모바일 좌우 스와이프 / PC 좌우 방향키로 다음글(←)/이전글(→) 이동.
   const navigate = useNavigate();
