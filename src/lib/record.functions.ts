@@ -226,6 +226,14 @@ export const createRecord = createServerFn({ method: "POST" })
     const author = await R.ensureNickname(db, data.author, data.nicknamePassword);
     const key = R.normalizeName(author);
 
+    const { data: cat } = await db
+      .from("categories")
+      .select("record_kind")
+      .eq("id", data.categoryId)
+      .maybeSingle();
+    const recordKind =
+      (cat as { record_kind?: string } | null)?.record_kind === "growth" ? "growth" : "challenge";
+
     const { data: mine } = await db
       .from("record_members")
       .select("post_id")
@@ -269,7 +277,11 @@ export const createRecord = createServerFn({ method: "POST" })
           username: author,
           username_key: key,
         });
-        await db.from("record_final").insert({ post_id: inserted.id, updated_by: author });
+        if (recordKind === "growth") {
+          await db.from("record_growth").insert({ post_id: inserted.id, updated_by: author });
+        } else {
+          await db.from("record_final").insert({ post_id: inserted.id, updated_by: author });
+        }
         return { postNo: nextNo, existing: false };
       }
       if (!String(error?.message ?? "").toLowerCase().includes("duplicate")) {

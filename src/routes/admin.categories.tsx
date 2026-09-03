@@ -144,6 +144,7 @@ function CategoriesPage() {
   const [voteName, setVoteName] = useState("투표");
   const [enableRecord, setEnableRecord] = useState(false);
   const [recordName, setRecordName] = useState("활동기록");
+  const [recordKind, setRecordKind] = useState<"challenge" | "growth">("challenge");
   const [tabGroup, setTabGroup] = useState<TabGroup>("hackathon");
   const [isGroup, setIsGroup] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -167,6 +168,7 @@ function CategoriesPage() {
   const [editVoteName, setEditVoteName] = useState("투표");
   const [editEnableRecord, setEditEnableRecord] = useState(false);
   const [editRecordName, setEditRecordName] = useState("활동기록");
+  const [editRecordKind, setEditRecordKind] = useState<"challenge" | "growth">("challenge");
   const [editTabGroup, setEditTabGroup] = useState<TabGroup>("hackathon");
   const [editIsGroup, setEditIsGroup] = useState(false);
   const [editHidden, setEditHidden] = useState(false);
@@ -232,6 +234,7 @@ function CategoriesPage() {
           voteName: voteName.trim(),
           enableRecord,
           recordName: recordName.trim(),
+          recordKind,
           tabGroup,
           isGroup,
           hidden,
@@ -289,6 +292,7 @@ function CategoriesPage() {
           voteName: editVoteName.trim(),
           enableRecord: editEnableRecord,
           recordName: editRecordName.trim(),
+          recordKind: editRecordKind,
           tabGroup: editTabGroup,
           isGroup: editIsGroup,
           hidden: editHidden,
@@ -387,6 +391,7 @@ function CategoriesPage() {
     setEditVoteName(c.voteName || "투표");
     setEditEnableRecord(c.enableRecord);
     setEditRecordName(c.recordName || "활동기록");
+    setEditRecordKind(c.recordKind === "growth" ? "growth" : "challenge");
     setEditTabGroup(c.tabGroup ?? "hackathon");
     setEditIsGroup(c.isGroup);
     setEditHidden(c.hidden);
@@ -628,8 +633,22 @@ function CategoriesPage() {
                   className="rounded-xl bg-background"
                 />
                 <p className="text-xs text-muted-foreground">
-                  팀당 기록 1개이며, 팀원 모두가 같은 기록을 함께 편집해요.
+                  {recordKind === "growth"
+                    ? "개인 1인 전용이며, 작성자 본인과 관리자만 편집할 수 있어요."
+                    : "팀당 기록 1개이며, 팀원 모두가 같은 기록을 함께 편집해요."}
                 </p>
+                <div className="space-y-1.5 pt-1">
+                  <Label htmlFor="add-record-kind">활동기록 유형</Label>
+                  <select
+                    id="add-record-kind"
+                    value={recordKind}
+                    onChange={(e) => setRecordKind(e.target.value as "challenge" | "growth")}
+                    className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="challenge">도전형 (팀 단위, 8단계)</option>
+                    <option value="growth">성장형 (개인 1인, 6단계)</option>
+                  </select>
+                </div>
               </div>
             )}
           </div>
@@ -1044,6 +1063,16 @@ function CategoriesPage() {
                     placeholder="예: 활동기록, 팀 기록"
                     className="rounded-xl bg-background"
                   />
+                  <Label htmlFor="edit-record-kind">활동기록 유형</Label>
+                  <select
+                    id="edit-record-kind"
+                    value={editRecordKind}
+                    onChange={(e) => setEditRecordKind(e.target.value as "challenge" | "growth")}
+                    className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="challenge">도전형 (팀 단위, 8단계)</option>
+                    <option value="growth">성장형 (개인 1인, 6단계)</option>
+                  </select>
                 </div>
               )}
 

@@ -33,6 +33,7 @@ function NewRecordPage() {
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
   const category = categories.find((c) => c.slug === slug);
   const boardName = category?.recordName || "활동기록";
+  const isGrowth = category?.recordKind === "growth";
 
   const [teamName, setTeamName] = useState("");
   const {
@@ -92,14 +93,20 @@ function NewRecordPage() {
       <div className="rounded-2xl bg-card p-6 shadow-sm">
         <h1 className="text-2xl font-bold text-foreground">{boardName} 시작하기</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          팀당 기록은 하나예요. 만든 뒤 팀원을 추가하면 다 같이 편집할 수 있어요.
+          {isGrowth
+            ? "개인 기록이에요. 작성자 본인과 관리자만 편집할 수 있어요."
+            : "팀당 기록은 하나예요. 만든 뒤 팀원을 추가하면 다 같이 편집할 수 있어요."}
         </p>
 
         <form
           onSubmit={(e) => {
             e.preventDefault();
             if (!teamName.trim() || !author.trim()) {
-              toast.error("팀 이름과 작성자를 입력해주세요.");
+              toast.error(
+                isGrowth
+                  ? "프로젝트명과 작성자를 입력해주세요."
+                  : "팀 이름과 작성자를 입력해주세요.",
+              );
               return;
             }
             if (needsConfirm && nicknamePassword.trim() !== confirmPassword.trim()) {
@@ -111,12 +118,12 @@ function NewRecordPage() {
           className="mt-6 space-y-4"
         >
           <div className="space-y-2">
-            <Label htmlFor="rec-team">팀 이름</Label>
+            <Label htmlFor="rec-team">{isGrowth ? "프로젝트명" : "팀 이름"}</Label>
             <Input
               id="rec-team"
               value={teamName}
               onChange={(e) => setTeamName(e.target.value)}
-              placeholder="예: 4모둠 배수탐험대"
+              placeholder={isGrowth ? "예) 수업 질문 카드" : "예: 4모둠 배수탐험대"}
               className="rounded-xl"
             />
           </div>

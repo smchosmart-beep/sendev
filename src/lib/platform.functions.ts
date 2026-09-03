@@ -204,6 +204,7 @@ export interface CategoryDTO {
   problemName: string;
   voteName: string;
   recordName: string;
+  recordKind: "challenge" | "growth";
   voteStatus: VoteStatus;
   voteRevealed: boolean;
   voteMaxChoices: number;
@@ -313,7 +314,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const { data, error } = await db
       .from("categories")
       .select(
-        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, enable_problem, enable_vote, general_name, project_name, link_name, problem_name, vote_name, enable_record, record_name, vote_status, vote_revealed, vote_max_choices, vote_target_type, tab_group, eval_open, eval_seed, review_allowlist_only, eval_results_public, hidden",
+        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, enable_problem, enable_vote, general_name, project_name, link_name, problem_name, vote_name, enable_record, record_name, record_kind, vote_status, vote_revealed, vote_max_choices, vote_target_type, tab_group, eval_open, eval_seed, review_allowlist_only, eval_results_public, hidden",
       )
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
@@ -339,6 +340,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       problemName: c.problem_name ?? "문제ZIP",
       voteName: c.vote_name ?? "투표",
       recordName: c.record_name ?? "활동기록",
+      recordKind: (c.record_kind === "growth" ? "growth" : "challenge") as "challenge" | "growth",
       voteStatus: (c.vote_status ?? "idle") as VoteStatus,
       voteRevealed: !!c.vote_revealed,
       voteMaxChoices: Number(c.vote_max_choices ?? 1),
@@ -472,6 +474,7 @@ export const createCategory = createServerFn({ method: "POST" })
         problemName: z.string().trim().max(100).default("문제ZIP"),
         voteName: z.string().trim().max(100).default("투표"),
         recordName: z.string().trim().max(100).default("활동기록"),
+        recordKind: z.enum(["challenge", "growth"]).default("challenge"),
         tabGroup: z
           .enum(["hackathon", "resources", "devground", "helloworld"])
           .default("hackathon"),
@@ -511,6 +514,7 @@ export const createCategory = createServerFn({ method: "POST" })
       problem_name: data.problemName || "문제ZIP",
       vote_name: data.voteName || "투표",
       record_name: data.recordName || "활동기록",
+      record_kind: data.recordKind,
       tab_group: data.tabGroup,
       hidden: data.hidden,
       sort_order: nextOrder,
@@ -544,6 +548,7 @@ export const updateCategory = createServerFn({ method: "POST" })
         problemName: z.string().trim().max(100).optional(),
         voteName: z.string().trim().max(100).optional(),
         recordName: z.string().trim().max(100).optional(),
+        recordKind: z.enum(["challenge", "growth"]).optional(),
         templatePost: z.string().max(8000).optional(),
         templateQuestion: z.string().max(8000).optional(),
         templateVote: z.string().max(8000).optional(),
@@ -592,6 +597,7 @@ export const updateCategory = createServerFn({ method: "POST" })
     if (data.voteName !== undefined) patch.vote_name = data.voteName || "투표";
     if (data.recordName !== undefined)
       patch.record_name = data.recordName || "활동기록";
+    if (data.recordKind !== undefined) patch.record_kind = data.recordKind;
     if (data.templatePost !== undefined) patch.template_post = data.templatePost;
     if (data.templateQuestion !== undefined)
       patch.template_question = data.templateQuestion;

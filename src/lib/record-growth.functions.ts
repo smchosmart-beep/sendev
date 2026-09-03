@@ -126,13 +126,24 @@ export const saveGrowthRecord = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ ok: true; updatedAt: string; updatedBy: string }> => {
     const R = await import("./record.server");
     const db = await R.getRecordDb();
-    const who = await R.requireTeamMember(
-      db,
-      data.postId,
-      data.author,
-      data.nicknamePassword,
-      data.adminPassword,
-    );
+    // 성장형은 개인 기록: 작성자 본인 또는 관리자만 수정 가능
+    let who: string;
+    if (R.isAdminPassword(data.adminPassword)) {
+      who = (data.author ?? "").trim() || "관리자";
+    } else {
+      const name = await R.ensureNickname(db, data.author, data.nicknamePassword);
+      const { data: post } = await db
+        .from("posts")
+        .select("author")
+        .eq("id", data.postId)
+        .maybeSingle();
+      const owner = (post as { author: string } | null)?.author ?? "";
+      if (R.normalizeName(owner) !== R.normalizeName(name)) {
+        throw new Error("이 활동기록은 작성자 본인만 수정할 수 있어요.");
+      }
+      who = name;
+    }
+
 
     const { data: current } = await db
       .from("record_growth")
