@@ -35,7 +35,9 @@
   - `categories.record_kind text NOT NULL DEFAULT 'challenge'` 추가 (`challenge` | `growth`).
   - `record_growth` 테이블 신설: `post_id` PK(→ posts), 01~04 단계 텍스트 컬럼, `features text[]`, `flow text[]`, `ethics text[]`, `hero_image_url`, `updated_by`, `created_at/updated_at` + updated_at 트리거. 기존 record_* 테이블과 동일한 보안 모델(RLS on, `service_role`만 GRANT, 접근은 서버 함수 경유).
 - 글 타입은 기존 `record`를 그대로 사용하고, 편집기 분기는 카테고리의 `record_kind`로만 판단합니다(게시판 목록·검색·읽음 처리 등 기존 로직 무영향).
-- 신규 파일: `src/lib/record-growth-schema.ts`(단계·선택지·필수항목 정의), `src/lib/record-growth.functions.ts`(`getGrowthRecord` / `saveGrowthRecord`, 도전형과 동일한 닉네임 비밀번호·관리자 비밀번호 인증 재사용), `src/components/record/GrowthRecordEditor.tsx`, `GrowthReadmeOutput.tsx`, `GrowthCasebookDocument.tsx`.
+- 글 생성은 기존 `createRecord`를 재사용하되, 카테고리의 `record_kind`를 함께 조회해 성장형이면 `record_final` 빈 행 대신 `record_growth` 빈 행을 만듭니다(도전형 전용 테이블에 불필요한 빈 행이 쌓이는 것을 막기 위함).
+- 신규 파일: `src/lib/record-growth-schema.ts`(단계·선택지·필수항목·라벨·플레이스홀더 정의), `src/lib/record-growth.functions.ts`(`getGrowthRecord` / `saveGrowthRecord` / `getGrowthOverview`, 도전형과 동일한 닉네임 비밀번호·관리자 비밀번호 인증 재사용), `src/components/record/GrowthRecordEditor.tsx`, `GrowthReadmeOutput.tsx`, `GrowthCasebookDocument.tsx`.
+
 - 수정 파일: `src/lib/platform.functions.ts`(카테고리 DTO에 `recordKind` 추가·저장), `src/routes/admin.categories.tsx`(유형 선택 UI), `src/routes/_main.board.$slug.$postNo.tsx`(유형에 따라 편집기 분기), `src/routes/_main.board.$slug.new-record.tsx`(성장형이면 "팀명" 대신 "프로젝트명" 라벨, 팀원 안내 문구 제외), `src/routes/_main.board.$slug.index.tsx`(기본 라벨), `src/styles.css`(성장형 사례집 인쇄 규칙은 기존 `.casebook-*` 규칙 재사용, 필요한 경우만 최소 추가).
 - 저장은 도전형과 동일한 1초 지연 자동 저장 1개 요청으로 통일하고(단계 이동 시 대기분 flush), 이미지 업로드도 기존 `file-upload` 경로를 그대로 씁니다 — 서버 요청량이 늘지 않습니다.
 - 관리자 활동기록 현황(`/admin/records`)은 상단에 **도전형 / 성장형** 전환 탭을 두고, 게시판 선택 목록도 유형별로 나눠 보여 줍니다. 성장형은 6단계 구조에 맞춘 진행률·작성자·최종 수정 시각 표와 전용 엑셀/ZIP 열을 별도로 만들고, 도전형 화면과 계산 로직은 그대로 둡니다.
