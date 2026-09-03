@@ -82,6 +82,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { setAdminPassword, getAdminPassword } from "@/lib/admin-auth";
 import { EmptyState } from "@/components/EmptyState";
 import { RecordEditor } from "@/components/RecordEditor";
+import { GrowthRecordEditor } from "@/components/record/GrowthRecordEditor";
 import { AuthorBadge } from "@/components/AuthorBadge";
 import { CommentImagePicker } from "@/components/CommentImagePicker";
 import { getEmbedUrl } from "@/lib/embed";
@@ -488,7 +489,12 @@ function ProjectDetailPage({ slug, postNo }: { slug: string; postNo: number }) {
         </>
       )}
 
-      {post.type === "record" && <RecordEditor postId={post.id} postNo={post.postNo} slug={slug} />}
+      {post.type === "record" &&
+        (recordKind === "growth" ? (
+          <GrowthRecordEditor postId={post.id} />
+        ) : (
+          <RecordEditor postId={post.id} postNo={post.postNo} slug={slug} />
+        ))}
 
       {isBoardPost && <SeriesChainSection post={post} slug={slug} />}
 
