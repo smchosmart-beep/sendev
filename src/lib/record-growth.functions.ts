@@ -486,6 +486,7 @@ export const sendGrowthPeerFeedback = createServerFn({ method: "POST" })
       post_id: data.toPostId,
       from_post_id: data.fromPostId,
       from_name: fromName,
+      to_name: data.toName,
       expected: data.expected,
       actual: data.actual,
       receiver_type: data.receiverType,
