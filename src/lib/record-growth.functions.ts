@@ -3,10 +3,15 @@ import { z } from "zod";
 
 import {
   GROWTH_ALL_FIELDS,
+  GROWTH_EMPTY,
+  GROWTH_EMPTY_REVIEW,
   GROWTH_REPEATER_ITEM_MAX,
   GROWTH_REPEATER_MAX,
   type GrowthFieldKey,
   type GrowthRecordData,
+  type GrowthReviewData,
+  type GrowthReceivedFeedback,
+  type GrowthSentFeedback,
 } from "./record-growth-schema";
 
 /** 카멜케이스 필드 → DB 컬럼 이름 */
@@ -21,6 +26,7 @@ const COLUMN_MAP: Record<string, string> = {
   solution: "solution",
   expectedChange: "expected_change",
   resultUrl: "result_url",
+  githubUrl: "github_url",
   status: "status",
   tools: "tools",
   difficulty: "difficulty",
@@ -39,6 +45,40 @@ type GrowthRow = Record<string, unknown>;
 
 type GrowthPostRef = { id: string; post_no: number | null; title: string; author: string };
 
+function parseReview(raw: unknown): GrowthReviewData {
+  if (!raw || typeof raw !== "object") return GROWTH_EMPTY_REVIEW;
+  const r = raw as Partial<GrowthReviewData>;
+  const ensureSelf = () => {
+    const arr = Array.isArray(r.selfChecks)
+      ? r.selfChecks.filter((x) => x && typeof x === "object")
+      : [];
+    return GROWTH_EMPTY_REVIEW.selfChecks.map((q, i) => ({
+      question: q.question,
+      answer: (arr[i]?.answer ?? "") as string,
+    }));
+  };
+  const ensureAi = () => {
+    const arr = Array.isArray(r.aiChecks)
+      ? r.aiChecks.filter((x) => x && typeof x === "object")
+      : [];
+    return GROWTH_EMPTY_REVIEW.aiChecks.map((q, i) => ({
+      question: q.question,
+      answer: (arr[i]?.answer ?? "") as string,
+    }));
+  };
+  const mapStrings = (key: keyof GrowthReviewData) =>
+    Array.isArray(r[key]) ? (r[key] as unknown[]).filter((x) => x && typeof x === "object") : [];
+
+  return {
+    selfChecks: ensureSelf(),
+    aiChecks: ensureAi(),
+    peerAssignments: mapStrings("peerAssignments") as GrowthReviewData["peerAssignments"],
+    receivedFeedbacks: mapStrings("receivedFeedbacks") as GrowthReceivedFeedback[],
+    sentFeedbacks: mapStrings("sentFeedbacks") as GrowthSentFeedback[],
+    sharedFixes: mapStrings("sharedFixes") as GrowthReviewData["sharedFixes"],
+  };
+}
+
 function toDTO(row: GrowthRow | null, postId: string): GrowthRecordData {
   const s = (v: unknown) => (typeof v === "string" ? v : "");
   const arr = (v: unknown) =>
@@ -54,8 +94,7 @@ function toDTO(row: GrowthRow | null, postId: string): GrowthRecordData {
     heroImageUrl: s(row?.["hero_image_url"]),
     updatedBy: s(row?.["updated_by"]),
     updatedAt: s(row?.["updated_at"]),
-    // postId는 DTO에 포함하지 않지만 호출부 디버깅 편의를 위해 남기지 않는다.
-    ...(postId ? {} : {}),
+    review: parseReview(row?.["review"]),
   };
 }
 
@@ -96,6 +135,39 @@ const textPatchShape = Object.fromEntries(
   GROWTH_ALL_FIELDS.map((f) => [f.key, z.string().max(f.max).optional()]),
 ) as Record<GrowthFieldKey, z.ZodOptional<z.ZodString>>;
 
+const reviewPatchSchema = z
+  .object({
+    selfChecks: z
+      .array(z.object({ question: z.string(), answer: z.string().max(400).default("") }))
+      .optional(),
+    aiChecks: z
+      .array(z.object({ question: z.string(), answer: z.string().max(400).default("") }))
+      .optional(),
+    peerAssignments: z
+      .array(
+        z.object({
+          postId: z.string().uuid(),
+          postNo: z.number().int().default(0),
+          author: z.string().default(""),
+        }),
+      )
+      .optional(),
+    receivedFeedbacks: z.array(z.record(z.any())).optional(),
+    sentFeedbacks: z.array(z.record(z.any())).optional(),
+    sharedFixes: z
+      .array(
+        z.object({
+          kind: z.string().max(100).default(""),
+          target: z.string().max(200).default(""),
+          method: z.string().max(400).default(""),
+          category: z.string().max(100).default(""),
+          createdAt: z.string().max(40).default(""),
+        }),
+      )
+      .optional(),
+  })
+  .optional();
+
 export const saveGrowthRecord = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
@@ -115,6 +187,7 @@ export const saveGrowthRecord = createServerFn({ method: "POST" })
               .max(GROWTH_REPEATER_MAX)
               .optional(),
             ethics: z.array(z.string().max(100)).max(20).optional(),
+            review: reviewPatchSchema,
           })
           .default({}),
         author: z.string().trim().max(100).default(""),
@@ -126,7 +199,7 @@ export const saveGrowthRecord = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ ok: true; updatedAt: string; updatedBy: string }> => {
     const R = await import("./record.server");
     const db = await R.getRecordDb();
-    // 성장형은 개인 기록: 작성자 본인 또는 관리자만 수정 가능
+
     let who: string;
     if (R.isAdminPassword(data.adminPassword)) {
       who = (data.author ?? "").trim() || "관리자";
@@ -143,7 +216,6 @@ export const saveGrowthRecord = createServerFn({ method: "POST" })
       }
       who = name;
     }
-
 
     const { data: current } = await db
       .from("record_growth")
@@ -167,6 +239,10 @@ export const saveGrowthRecord = createServerFn({ method: "POST" })
       if (v === undefined) continue;
       if (k === "features" || k === "flow" || k === "ethics") {
         patch[k] = (v as string[]).map((x) => x.trim()).filter((x) => x.length > 0);
+        continue;
+      }
+      if (k === "review") {
+        patch[k] = v;
         continue;
       }
       const col = COLUMN_MAP[k];
@@ -230,4 +306,191 @@ export const getGrowthOverview = createServerFn({ method: "POST" })
         data: dto,
       };
     });
+  });
+
+/* ----------------------------- Peer feedback ----------------------------- */
+
+export const getGrowthPeerAssignments = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        postId: z.string().uuid(),
+        author: z.string().trim().max(100).default(""),
+        nicknamePassword: z.string().trim().max(100).default(""),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ assignments: GrowthReviewData["peerAssignments"] }> => {
+    const R = await import("./record.server");
+    const db = await R.getRecordDb();
+
+    if (!R.isAdminPassword(data.adminPassword)) {
+      const name = await R.ensureNickname(db, data.author, data.nicknamePassword);
+      const { data: post } = await db
+        .from("posts")
+        .select("author")
+        .eq("id", data.postId)
+        .maybeSingle();
+      const owner = (post as { author: string } | null)?.author ?? "";
+      if (R.normalizeName(owner) !== R.normalizeName(name)) {
+        throw new Error("이 활동기록은 작성자 본인만 볼 수 있어요.");
+      }
+    }
+
+    const { data: target } = await db
+      .from("posts")
+      .select("category_id, author")
+      .eq("id", data.postId)
+      .maybeSingle();
+    if (!target) return { assignments: [] };
+
+    const { data: existing } = await db
+      .from("record_growth")
+      .select("review")
+      .eq("post_id", data.postId)
+      .maybeSingle();
+    const review = parseReview(existing?.review);
+    if (review.peerAssignments.length >= 2) return { assignments: review.peerAssignments };
+
+    const { data: candidates } = await db
+      .from("posts")
+      .select("id, post_no, author")
+      .eq("category_id", target.category_id)
+      .eq("type", "record")
+      .neq("author", target.author)
+      .order("post_no", { ascending: true });
+
+    const list = ((candidates ?? []) as GrowthPostRef[]).filter((p) => p.id !== data.postId);
+    if (list.length === 0) return { assignments: [] };
+
+    // 무작위로 2명 선택(시드 없이 단순 무작위)
+    const shuffled = list.sort(() => Math.random() - 0.5);
+    const assignments = shuffled.slice(0, 2).map((p) => ({
+      postId: p.id,
+      postNo: p.post_no ?? 0,
+      author: p.author,
+    }));
+
+    await db
+      .from("record_growth")
+      .update({
+        review: {
+          ...review,
+          peerAssignments: assignments,
+        },
+        updated_at: new Date().toISOString(),
+      })
+      .eq("post_id", data.postId);
+
+    return { assignments };
+  });
+
+export const listGrowthPeerFeedbacks = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        postId: z.string().uuid(),
+        author: z.string().trim().max(100).default(""),
+        nicknamePassword: z.string().trim().max(100).default(""),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(
+    async ({ data }): Promise<{ received: GrowthReceivedFeedback[]; sent: GrowthSentFeedback[] }> => {
+      const R = await import("./record.server");
+      const db = await R.getRecordDb();
+
+      if (!R.isAdminPassword(data.adminPassword)) {
+        const name = await R.ensureNickname(db, data.author, data.nicknamePassword);
+        const { data: post } = await db
+          .from("posts")
+          .select("author")
+          .eq("id", data.postId)
+          .maybeSingle();
+        const owner = (post as { author: string } | null)?.author ?? "";
+        if (R.normalizeName(owner) !== R.normalizeName(name)) {
+          throw new Error("이 활동기록은 작성자 본인만 볼 수 있어요.");
+        }
+      }
+
+    const { data: receivedRows } = await db
+      .from("record_growth_peer_feedback")
+      .select("*")
+      .eq("post_id", data.postId)
+      .order("created_at", { ascending: true });
+    const { data: sentRows } = await db
+      .from("record_growth_peer_feedback")
+      .select("*")
+      .eq("from_post_id", data.postId)
+      .order("created_at", { ascending: true });
+
+    const received = ((receivedRows ?? []) as any[]).map((r) => ({
+      id: r.id,
+      fromPostId: r.from_post_id,
+      fromName: r.from_name,
+      expected: r.expected,
+      actual: r.actual,
+      receiverType: r.receiver_type,
+      createdAt: r.created_at,
+    }));
+    const sent = ((sentRows ?? []) as any[]).map((r) => ({
+      id: r.id,
+      postId: r.post_id,
+      toPostId: r.post_id,
+      toName: r.to_name,
+      expected: r.expected,
+      actual: r.actual,
+      receiverType: r.receiver_type,
+      createdAt: r.created_at,
+    }));
+    return { received, sent };
+    },
+  );
+
+export const sendGrowthPeerFeedback = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        fromPostId: z.string().uuid(),
+        toPostId: z.string().uuid(),
+        toName: z.string().max(100).default(""),
+        expected: z.string().max(400).default(""),
+        actual: z.string().max(400).default(""),
+        receiverType: z.enum(["expected", "actual"]).default("expected"),
+        author: z.string().trim().max(100).default(""),
+        nicknamePassword: z.string().trim().max(100).default(""),
+        adminPassword: z.string().max(200).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ ok: true }> => {
+    const R = await import("./record.server");
+    const db = await R.getRecordDb();
+
+    let fromName: string;
+    if (R.isAdminPassword(data.adminPassword)) {
+      fromName = (data.author ?? "").trim() || "관리자";
+    } else {
+      fromName = await R.ensureNickname(db, data.author, data.nicknamePassword);
+      const { data: post } = await db
+        .from("posts")
+        .select("id")
+        .eq("id", data.fromPostId)
+        .maybeSingle();
+      if (!post) throw new Error("자신의 활동기록에서만 피드백을 보낼 수 있어요.");
+    }
+
+    const { error } = await db.from("record_growth_peer_feedback").insert({
+      post_id: data.toPostId,
+      from_post_id: data.fromPostId,
+      from_name: fromName,
+      to_name: data.toName,
+      expected: data.expected,
+      actual: data.actual,
+      receiver_type: data.receiverType,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });

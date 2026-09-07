@@ -12,6 +12,7 @@ export type GrowthFieldKey =
   | "solution"
   | "expectedChange"
   | "resultUrl"
+  | "githubUrl"
   | "status"
   | "tools"
   | "difficulty"
@@ -57,6 +58,78 @@ export const GROWTH_ETHICS_PRINCIPLES = [
 export const GROWTH_REPEATER_MAX = 3;
 export const GROWTH_REPEATER_ITEM_MAX = 160;
 
+// 2MB 원본 제한 안내(업로드 전 클라이언트 검증용).
+export const GROWTH_HERO_MAX_BYTES = 2 * 1024 * 1024;
+
+export const GROWTH_SELF_CHECK_QUESTIONS = [
+  "이 앱을 처음 여는 사람이 3초 안에 할 일을 알 수 있나요? 무엇을 보고 아나요?",
+  "학생(또는 주 사용자)이 잘못 입력하면 화면은 무엇을 보여 주나요?",
+  "지금 받고 있는 입력값 중 없어도 되는 것은 무엇인가요?",
+  "이 결과를 교사가 그대로 성적 기록에 쓰면 무엇이 위험한가요?",
+  "답을 그대로 베끼면 어떻게 알 수 있나요?",
+  "학생이 적은 내용은 누가 볼 수 있고 언제 지워지나요?",
+  "위기 신호가 들어오면 앱은 무엇을 하나요?",
+  "이 앱이 없을 때 걸리던 시간과 지금 걸리는 시간을 숫자로 말할 수 있나요?",
+  "학교 공용 계정으로 써도 되나요, 개인 계정이 필요한가요?",
+  "알림을 받지 못한 사람은 어떻게 알게 되나요?",
+  "잘못 보낸 공지는 되돌릴 수 있나요?",
+];
+
+export const GROWTH_AI_CHECK_QUESTIONS = [
+  "아직 수정하지 말고, 가능한 원인과 가장 먼저 확인할 한 가지를 알려 줘.",
+  "원인이 좁혀지면 그때 아래 한 가지만 고쳐 줘.",
+  "[기대] [여기에 기대한 동작을 적으세요]",
+  "[범위] 이 화면에서 이 한 가지만. 바꾼 내용을 먼저 알려 주고 배포하지 마.",
+];
+
+export type GrowthSelfCheck = { question: string; answer: string };
+export type GrowthAiCheck = { question: string; answer: string };
+export type GrowthPeerAssignment = { postId: string; postNo: number; author: string };
+export type GrowthReceivedFeedback = {
+  id: string;
+  fromPostId: string;
+  fromName: string;
+  expected: string;
+  actual: string;
+  receiverType: string;
+  createdAt: string;
+};
+export type GrowthSentFeedback = {
+  id: string;
+  postId: string;
+  toPostId: string;
+  toName: string;
+  expected: string;
+  actual: string;
+  receiverType: string;
+  createdAt: string;
+};
+export type GrowthSharedFix = {
+  kind: string;
+  target: string;
+  method: string;
+  category: string;
+  createdAt: string;
+};
+
+export type GrowthReviewData = {
+  selfChecks: GrowthSelfCheck[];
+  aiChecks: GrowthAiCheck[];
+  peerAssignments: GrowthPeerAssignment[];
+  receivedFeedbacks: GrowthReceivedFeedback[];
+  sentFeedbacks: GrowthSentFeedback[];
+  sharedFixes: GrowthSharedFix[];
+};
+
+export const GROWTH_EMPTY_REVIEW: GrowthReviewData = {
+  selfChecks: GROWTH_SELF_CHECK_QUESTIONS.map((q) => ({ question: q, answer: "" })),
+  aiChecks: GROWTH_AI_CHECK_QUESTIONS.map((q) => ({ question: q, answer: "" })),
+  peerAssignments: [],
+  receivedFeedbacks: [],
+  sentFeedbacks: [],
+  sharedFixes: [],
+};
+
 export const GROWTH_STEP_META = [
   {
     id: "project",
@@ -80,24 +153,31 @@ export const GROWTH_STEP_META = [
     hint: "기술 설명보다 실제로 무엇이 작동하고 어떻게 사용하는지가 보이도록 정리해요.",
   },
   {
-    id: "growth",
+    id: "review",
     no: "04",
-    name: "성장과 점검",
-    title: "나의 성장과 점검",
+    name: "검토 및 개선",
+    title: "검토 및 개선",
+    hint: "스스로 점검하고, AI와 동료의 피드백을 받아 개선 방향을 정리해요.",
+  },
+  {
+    id: "growth",
+    no: "05",
+    name: "성찰과 성장",
+    title: "나의 성찰과 성장",
     hint: "대표 경험 하나를 남기고, AI가 한 일과 내가 판단한 일을 구분해요.",
   },
   {
     id: "readme",
-    no: "05",
+    no: "06",
     name: "README 출력",
     title: "README 출력",
     hint: "앞 단계에 입력한 내용이 개인 프로젝트용 README로 자동 정리됩니다.",
   },
   {
     id: "casebook",
-    no: "06",
+    no: "07",
     name: "사례집 출력",
-    title: "사례집 출력",
+    title: "성장 사례집 출력",
     hint: "입력한 내용을 A4 지면으로 조판했습니다. 인쇄 대화상자에서 PDF 저장을 선택할 수 있어요.",
   },
 ] as const;
@@ -193,6 +273,14 @@ export const GROWTH_RESULT_FIELDS: GrowthField[] = [
     label: "배포 주소",
     type: "url",
     placeholder: "https://",
+    max: 220,
+    required: false,
+  },
+  {
+    key: "githubUrl",
+    label: "GitHub 저장소 주소",
+    type: "url",
+    placeholder: "https://github.com/...",
     max: 220,
     required: false,
   },
@@ -306,6 +394,7 @@ export const GROWTH_REQUIRED: Record<string, string[]> = {
   project: ["projectName", "oneLine", "primaryUser", "problemArea", "resultType"],
   problem: ["problemText", "solution", "expectedChange"],
   result: ["status", "features.0", "flow.0"],
+  review: ["review.selfChecks.0.answer", "review.aiChecks.0.answer"],
   growth: ["difficulty", "resolution", "humanCheck", "privacy", "learned", "nextPlan"],
 };
 
@@ -316,6 +405,7 @@ export type GrowthRecordData = Record<GrowthFieldKey, string> & {
   heroImageUrl: string;
   updatedBy: string;
   updatedAt: string;
+  review: GrowthReviewData;
 };
 
 export const GROWTH_EMPTY: GrowthRecordData = {
@@ -329,12 +419,26 @@ export const GROWTH_EMPTY: GrowthRecordData = {
   heroImageUrl: "",
   updatedBy: "",
   updatedAt: "",
+  review: GROWTH_EMPTY_REVIEW,
 };
 
-const filled = (v: string | string[] | undefined) =>
+const filled = (v: string | string[]) =>
   Array.isArray(v) ? v.some((x) => (x ?? "").trim().length > 0) : (v ?? "").trim().length > 0;
 
 function valueOf(data: GrowthRecordData, section: string, path: string): string | string[] {
+  if (path.startsWith("review.")) {
+    const rest = path.slice("review.".length);
+    const review = data.review ?? GROWTH_EMPTY_REVIEW;
+    if (rest.startsWith("selfChecks.")) {
+      const idx = Number(rest.split(".")[1]);
+      return review.selfChecks[idx]?.answer ?? "";
+    }
+    if (rest.startsWith("aiChecks.")) {
+      const idx = Number(rest.split(".")[1]);
+      return review.aiChecks[idx]?.answer ?? "";
+    }
+    return "";
+  }
   if (path.includes(".")) {
     const [name, index] = path.split(".");
     const arr = (data[name as "features" | "flow"] ?? []) as string[];
@@ -351,7 +455,7 @@ function valueOf(data: GrowthRecordData, section: string, path: string): string 
 export function growthStepProgress(data: GrowthRecordData, stepId: string) {
   const required = GROWTH_REQUIRED[stepId];
   if (!required) return { done: 1, total: 1, complete: true };
-  const done = required.filter((path) => filled(valueOf(data, stepId, path))).length;
+  const done = required.filter((path) => filled(valueOf(data, stepId, path) as string | string[])).length;
   return { done, total: required.length, complete: done === required.length };
 }
 

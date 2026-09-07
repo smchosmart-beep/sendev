@@ -67,6 +67,11 @@ export function GrowthAdminPanel() {
       base["사용 흐름"] = it.data.flow.join(" | ");
       base["윤리 원칙"] = it.data.ethics.join(", ");
       base["대표 이미지"] = it.data.heroImageUrl;
+      base["GitHub 저장소"] = it.data.githubUrl;
+      const review = it.data.review;
+      base["자기 점검 완료"] = review?.selfChecks.filter((q) => q.answer.trim()).length ?? 0;
+      base["AI 점검 완료"] = review?.aiChecks.filter((q) => q.answer.trim()).length ?? 0;
+      base["공통 수정 기록"] = review?.sharedFixes.length ?? 0;
       return base;
     });
     const wb = XLSX.utils.book_new();
@@ -87,7 +92,7 @@ export function GrowthAdminPanel() {
           <div>
             <h2 className="text-lg font-bold text-foreground">성장형 활동기록 현황</h2>
             <p className="text-xs text-muted-foreground">
-              개인별 6단계 작성 진행률을 확인하고 원자료를 내려받습니다.
+              개인별 7단계 작성 진행률을 확인하고 원자료를 내려받습니다.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
