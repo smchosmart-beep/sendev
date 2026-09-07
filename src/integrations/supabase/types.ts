@@ -667,6 +667,7 @@ export type Database = {
           expected_change: string
           features: string[]
           flow: string[]
+          github_url: string
           hero_image_url: string
           human_check: string
           learned: string
@@ -682,6 +683,7 @@ export type Database = {
           resolution: string
           result_type: string
           result_url: string
+          review: Json
           solution: string
           status: string
           tools: string
@@ -698,6 +700,7 @@ export type Database = {
           expected_change?: string
           features?: string[]
           flow?: string[]
+          github_url?: string
           hero_image_url?: string
           human_check?: string
           learned?: string
@@ -713,6 +716,7 @@ export type Database = {
           resolution?: string
           result_type?: string
           result_url?: string
+          review?: Json
           solution?: string
           status?: string
           tools?: string
@@ -729,6 +733,7 @@ export type Database = {
           expected_change?: string
           features?: string[]
           flow?: string[]
+          github_url?: string
           hero_image_url?: string
           human_check?: string
           learned?: string
@@ -744,6 +749,7 @@ export type Database = {
           resolution?: string
           result_type?: string
           result_url?: string
+          review?: Json
           solution?: string
           status?: string
           tools?: string
@@ -755,6 +761,57 @@ export type Database = {
             foreignKeyName: "record_growth_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: true
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      record_growth_peer_feedback: {
+        Row: {
+          actual: string
+          created_at: string
+          expected: string
+          from_name: string
+          from_post_id: string
+          id: string
+          post_id: string
+          receiver_type: string
+          updated_at: string
+        }
+        Insert: {
+          actual?: string
+          created_at?: string
+          expected?: string
+          from_name?: string
+          from_post_id: string
+          id?: string
+          post_id: string
+          receiver_type?: string
+          updated_at?: string
+        }
+        Update: {
+          actual?: string
+          created_at?: string
+          expected?: string
+          from_name?: string
+          from_post_id?: string
+          id?: string
+          post_id?: string
+          receiver_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_growth_peer_feedback_from_post_id_fkey"
+            columns: ["from_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "record_growth_peer_feedback_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
             referencedRelation: "posts"
             referencedColumns: ["id"]
           },
