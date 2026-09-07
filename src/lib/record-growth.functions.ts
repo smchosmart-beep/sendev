@@ -415,37 +415,37 @@ export const listGrowthPeerFeedbacks = createServerFn({ method: "POST" })
         }
       }
 
-      const { data: receivedRows } = await db
-        .from("record_growth_peer_feedback")
-        .select("*")
-        .eq("post_id", data.postId)
-        .order("created_at", { ascending: true });
-      const { data: sentRows } = await db
-        .from("record_growth_peer_feedback")
-        .select("*")
-        .eq("from_post_id", data.postId)
-        .order("created_at", { ascending: true });
+    const { data: receivedRows } = await db
+      .from("record_growth_peer_feedback")
+      .select("*")
+      .eq("post_id", data.postId)
+      .order("created_at", { ascending: true });
+    const { data: sentRows } = await db
+      .from("record_growth_peer_feedback")
+      .select("*")
+      .eq("from_post_id", data.postId)
+      .order("created_at", { ascending: true });
 
-      const received = ((receivedRows ?? []) as any[]).map((r) => ({
-        id: r.id,
-        fromPostId: r.from_post_id,
-        fromName: r.from_name,
-        expected: r.expected,
-        actual: r.actual,
-        receiverType: r.receiver_type,
-        createdAt: r.created_at,
-      }));
-      const sent = ((sentRows ?? []) as any[]).map((r) => ({
-        id: r.id,
-        postId: r.post_id,
-        toPostId: r.post_id,
-        toName: r.from_name,
-        expected: r.expected,
-        actual: r.actual,
-        receiverType: r.receiver_type,
-        createdAt: r.created_at,
-      }));
-      return { received, sent };
+    const received = ((receivedRows ?? []) as any[]).map((r) => ({
+      id: r.id,
+      fromPostId: r.from_post_id,
+      fromName: r.from_name,
+      expected: r.expected,
+      actual: r.actual,
+      receiverType: r.receiver_type,
+      createdAt: r.created_at,
+    }));
+    const sent = ((sentRows ?? []) as any[]).map((r) => ({
+      id: r.id,
+      postId: r.post_id,
+      toPostId: r.post_id,
+      toName: r.to_name,
+      expected: r.expected,
+      actual: r.actual,
+      receiverType: r.receiver_type,
+      createdAt: r.created_at,
+    }));
+    return { received, sent };
     },
   );
 
