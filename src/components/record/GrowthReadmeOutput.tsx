@@ -4,20 +4,38 @@ import { Check, Copy } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import type { GrowthRecordData } from "@/lib/record-growth-schema";
+import {
+  GROWTH_FIX_TYPES,
+  growthFixDone,
+  type GrowthFix,
+  type GrowthRecordData,
+} from "@/lib/record-growth-schema";
 
 const clean = (items: string[]) => items.map((i) => (i ?? "").trim()).filter(Boolean);
+
+const fixLabel = (t: GrowthFix["type"]) => GROWTH_FIX_TYPES.find((x) => x.value === t)?.label ?? "";
+
+function fixLine(label: string, fix: GrowthFix): string {
+  if (!growthFixDone(fix)) return "";
+  const parts = [`고친 것: ${fix.what.trim()}`, `방법: ${fix.how.trim()}`, `분류: ${fixLabel(fix.type)}`];
+  if (fix.skipped.trim()) parts.push(`고치지 않기로 한 것: ${fix.skipped.trim()}`);
+  return `- ${label} — ${parts.join(" / ")}`;
+}
 
 function reviewSummary(d: GrowthRecordData): string {
   const review = d.review;
   if (!review) return "";
-  const self = review.selfChecks.filter((q) => q.answer.trim()).length;
-  const ai = review.aiChecks.filter((q) => q.answer.trim()).length;
-  const fixes = review.sharedFixes.length;
   const lines: string[] = [];
-  if (self > 0) lines.push(`- 자기 점검 완료: ${self}개`);
-  if (ai > 0) lines.push(`- AI 점검 완료: ${ai}개`);
-  if (fixes > 0) lines.push(`- 공통 수정 기록: ${fixes}건`);
+  const selfLine = fixLine("자기 점검", review.self.fix);
+  const aiLine = fixLine("AI 점검", review.ai.fix);
+  const peerLine = fixLine("동료 점검", review.peer.fix);
+  if (selfLine) lines.push(selfLine);
+  if (aiLine) lines.push(aiLine);
+  if (peerLine) lines.push(peerLine);
+  const unanswered = review.ai.questions.filter((q) => q.unanswered).length;
+  if (unanswered > 0) lines.push(`- 답하지 못한 AI 질문: ${unanswered}개`);
+  const received = review.peer.given.filter((g) => g.sent).length;
+  if (received > 0) lines.push(`- 동료에게 남긴 피드백: ${received}건`);
   return lines.join("\n");
 }
 

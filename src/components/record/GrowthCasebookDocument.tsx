@@ -2,7 +2,13 @@
 import { Printer } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import type { GrowthRecordData } from "@/lib/record-growth-schema";
+import {
+  GROWTH_FIX_KIND_LABELS,
+  GROWTH_FIX_TYPES,
+  growthFixDone,
+  type GrowthReceivedFeedback,
+  type GrowthRecordData,
+} from "@/lib/record-growth-schema";
 
 const clean = (items: string[]) => items.map((i) => (i ?? "").trim()).filter(Boolean);
 
@@ -11,7 +17,15 @@ function Show({ value, fallback = "아직 입력하지 않았습니다." }: { va
   return <p className="casebook-p text-muted-foreground">{fallback}</p>;
 }
 
-function GrowthDoc({ data, author }: { data: GrowthRecordData; author: string }) {
+function GrowthDoc({
+  data,
+  author,
+  received = [],
+}: {
+  data: GrowthRecordData;
+  author: string;
+  received?: GrowthReceivedFeedback[];
+}) {
   const features = clean(data.features);
   const flow = clean(data.flow);
   const ethics = clean(data.ethics);
@@ -178,52 +192,67 @@ function GrowthDoc({ data, author }: { data: GrowthRecordData; author: string })
           <h2 className="casebook-h2">
             <span className="casebook-no">04</span> 검토 및 개선
           </h2>
-          <div className="casebook-block">
-            <h3 className="casebook-h3">자기 점검</h3>
-            {review?.selfChecks.some((q) => q.answer.trim()) ? (
-              <ul className="casebook-list">
-                {review.selfChecks
-                  .filter((q) => q.answer.trim())
-                  .map((q, i) => (
-                    <li key={i}>
-                      <strong>{q.question}</strong>
-                      <p className="mt-1">{q.answer}</p>
+          {(["self", "ai", "peer"] as const).map((kind) => {
+            const label = GROWTH_FIX_KIND_LABELS[kind];
+            const fix = review?.[kind].fix;
+            return (
+              <div className="casebook-block" key={kind}>
+                <h3 className="casebook-h3">{label}</h3>
+                {fix && growthFixDone(fix) ? (
+                  <ul className="casebook-list">
+                    <li>
+                      <strong>고친 것</strong>
+                      <p className="mt-1">{fix.what}</p>
                     </li>
+                    <li>
+                      <strong>어떻게 고쳤나(전 → 후)</strong>
+                      <p className="mt-1">{fix.how}</p>
+                    </li>
+                    {fix.skipped.trim() && (
+                      <li>
+                        <strong>고치지 않기로 한 것과 이유</strong>
+                        <p className="mt-1">{fix.skipped}</p>
+                      </li>
+                    )}
+                    <li>
+                      분류: {GROWTH_FIX_TYPES.find((t) => t.value === fix.type)?.label ?? ""}
+                    </li>
+                  </ul>
+                ) : (
+                  <p className="casebook-p text-muted-foreground">아직 입력하지 않았습니다.</p>
+                )}
+              </div>
+            );
+          })}
+          <div className="casebook-block">
+            <h3 className="casebook-h3">AI 점검에서 답하지 못한 질문</h3>
+            {review && review.ai.questions.some((q) => q.unanswered) ? (
+              <ul className="casebook-list">
+                {review.ai.questions
+                  .filter((q) => q.unanswered)
+                  .map((q, i) => (
+                    <li key={i}>{q.q}</li>
                   ))}
               </ul>
             ) : (
-              <p className="casebook-p text-muted-foreground">아직 입력하지 않았습니다.</p>
+              <p className="casebook-p text-muted-foreground">없음</p>
             )}
           </div>
           <div className="casebook-block">
-            <h3 className="casebook-h3">AI 점검</h3>
-            {review?.aiChecks.some((q) => q.answer.trim()) ? (
+            <h3 className="casebook-h3">동료가 남긴 말</h3>
+            {received && received.length > 0 ? (
               <ul className="casebook-list">
-                {review.aiChecks
-                  .filter((q) => q.answer.trim())
-                  .map((q, i) => (
-                    <li key={i}>
-                      <strong>{q.question}</strong>
-                      <p className="mt-1">{q.answer}</p>
-                    </li>
-                  ))}
-              </ul>
-            ) : (
-              <p className="casebook-p text-muted-foreground">아직 입력하지 않았습니다.</p>
-            )}
-          </div>
-          <div className="casebook-block">
-            <h3 className="casebook-h3">공통 수정 기록</h3>
-            {review?.sharedFixes.length ? (
-              <ul className="casebook-list">
-                {review.sharedFixes.map((f, i) => (
-                  <li key={i}>
-                    [{f.kind}] {f.target} — {f.method} (분류: {f.category})
+                {received.map((r) => (
+                  <li key={r.id}>
+                    <strong>{r.fromName}</strong>
+                    <p className="mt-1">
+                      기대: {r.expected} / 실제: {r.actual}
+                    </p>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="casebook-p text-muted-foreground">아직 입력하지 않았습니다.</p>
+              <p className="casebook-p text-muted-foreground">아직 받은 피드백이 없습니다.</p>
             )}
           </div>
         </div>
@@ -306,9 +335,11 @@ function GrowthDoc({ data, author }: { data: GrowthRecordData; author: string })
 export function GrowthCasebookOutput({
   data,
   author,
+  received = [],
 }: {
   data: GrowthRecordData;
   author: string;
+  received?: GrowthReceivedFeedback[];
 }) {
   return (
     <section className="casebook-root space-y-4">
@@ -322,7 +353,7 @@ export function GrowthCasebookOutput({
         </Button>
       </div>
       <div className="overflow-x-auto rounded-xl bg-muted/30 p-3">
-        <GrowthDoc data={data} author={author} />
+        <GrowthDoc data={data} author={author} received={received} />
       </div>
     </section>
   );

@@ -1,39 +1,51 @@
 // 성장형(개인) 활동기록 편집기 — 7단계 위저드.
 // 도전형 RecordEditor와 동일한 UI 패턴(단계 탭 · 1초 지연 자동 저장 · 관리자 잠금 해제)을 사용한다.
+// 04 검토 및 개선은 원본 HTML 구조를 따른다: 1차 자기 점검 · 2차 AI 점검 · 3차 동료 점검 탭.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Check,
+  ChevronDown,
+  Copy,
   ImagePlus,
+  Import,
   Loader2,
+  MessageSquare,
   Plus,
   RotateCw,
   ShieldCheck,
+  Sparkles,
   Trash2,
-  X,
-  Copy,
   Users,
-  MessageSquare,
-  RefreshCw,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
-  getGrowthRecord,
-  saveGrowthRecord,
+  classifyGrowthPeerFeedback,
   getGrowthPeerAssignments,
+  getGrowthPeerSummaries,
+  getGrowthRecord,
   listGrowthPeerFeedbacks,
+  saveGrowthRecord,
   sendGrowthPeerFeedback,
 } from "@/lib/record-growth.functions";
 import { isRecordAdmin } from "@/lib/record.functions";
 import {
-  GROWTH_AI_CHECK_QUESTIONS,
+  GROWTH_AI_AREA_QUESTIONS,
+  GROWTH_ANGLE_CHOICES,
+  GROWTH_ANGLE_ITEMS,
+  GROWTH_CHECK_CHOICES,
   GROWTH_EDUCATION_FIELD,
   GROWTH_EMPTY,
   GROWTH_EMPTY_REVIEW,
+  GROWTH_ERROR_GUIDE,
   GROWTH_ETHICS_PRINCIPLES,
   GROWTH_FIELD_MAX,
+  GROWTH_FIX_KIND_LABELS,
+  GROWTH_FIX_MAX,
+  GROWTH_FIX_TYPES,
   GROWTH_GROWTH_FIELDS_A,
   GROWTH_GROWTH_FIELDS_B,
   GROWTH_HERO_MAX_BYTES,
@@ -43,15 +55,26 @@ import {
   GROWTH_REPEATER_ITEM_MAX,
   GROWTH_REPEATER_MAX,
   GROWTH_RESULT_FIELDS,
-  GROWTH_SELF_CHECK_QUESTIONS,
+  GROWTH_SELF_CHECK_ITEMS,
   GROWTH_STEP_META,
+  growthAiQuestions,
   growthCompletionPercent,
+  growthFixDone,
+  growthLaterItems,
+  growthStatusSuggestion,
   growthStepProgress,
+  type GrowthAngleKey,
+  type GrowthAngleValue,
+  type GrowthCheckValue,
   type GrowthField,
   type GrowthFieldKey,
+  type GrowthFix,
+  type GrowthFixType,
+  type GrowthReceivedFeedback,
   type GrowthRecordData,
   type GrowthReviewData,
-  type GrowthSharedFix,
+  type GrowthReviewKind,
+  type GrowthSelfCheckKey,
 } from "@/lib/record-growth-schema";
 import { GrowthReadmeOutput } from "@/components/record/GrowthReadmeOutput";
 import { GrowthCasebookOutput } from "@/components/record/GrowthCasebookDocument";
@@ -62,6 +85,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -78,9 +102,6 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
   const fetchGrowth = useServerFn(getGrowthRecord);
   const saveGrowth = useServerFn(saveGrowthRecord);
   const checkAdmin = useServerFn(isRecordAdmin);
-  const fetchPeers = useServerFn(getGrowthPeerAssignments);
-  const fetchFeedbacks = useServerFn(listGrowthPeerFeedbacks);
-  const sendFeedback = useServerFn(sendGrowthPeerFeedback);
   const { identity } = useStoredIdentity();
 
   const [step, setStep] = useState(0);
@@ -152,7 +173,7 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
   useEffect(() => {
     if (!bundle) return;
     knownUpdatedAt.current = bundle.data.updatedAt ?? "";
-    setData({ ...GROWTH_EMPTY, ...bundle.data });
+    setData({ ...GROWTH_EMPTY, ...bundle.data, review: bundle.data.review ?? GROWTH_EMPTY_REVIEW });
   }, [bundle]);
 
   const flush = useCallback(async () => {
@@ -224,73 +245,6 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
 
   useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
 
-  // 동료 점검 데이터
-  const {
-    data: peerData,
-    isLoading: peersLoading,
-    refetch: refetchPeers,
-  } = useQuery({
-    queryKey: ["growth-peers", postId],
-    queryFn: () => fetchPeers({ data: { postId, ...auth } }),
-    enabled: canEdit && step === 3,
-  });
-
-  const {
-    data: feedbackData,
-    isLoading: feedbacksLoading,
-    refetch: refetchFeedbacks,
-  } = useQuery({
-    queryKey: ["growth-feedbacks", postId],
-    queryFn: () => fetchFeedbacks({ data: { postId, ...auth } }),
-    enabled: canEdit && step === 3,
-  });
-
-  const [assigning, setAssigning] = useState(false);
-  const assignPeers = async () => {
-    setAssigning(true);
-    try {
-      await fetchPeers({ data: { postId, ...auth } });
-      await refetchPeers();
-      toast.success("새 점검 짝 2명을 배정했습니다.");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "배정에 실패했어요.");
-    } finally {
-      setAssigning(false);
-    }
-  };
-
-  const [feedbackTarget, setFeedbackTarget] = useState<string | null>(null);
-  const [feedbackForm, setFeedbackForm] = useState({
-    toName: "",
-    receiverType: "expected" as "expected" | "actual",
-    expected: "",
-    actual: "",
-  });
-  const [sendingFeedback, setSendingFeedback] = useState(false);
-
-  const submitFeedback = async () => {
-    if (!feedbackTarget) return;
-    setSendingFeedback(true);
-    try {
-      await sendFeedback({
-        data: {
-          fromPostId: postId,
-          toPostId: feedbackTarget,
-          ...feedbackForm,
-          ...auth,
-        },
-      });
-      toast.success("동료 피드백을 보냈어요.");
-      setFeedbackTarget(null);
-      setFeedbackForm({ toName: "", receiverType: "expected", expected: "", actual: "" });
-      await refetchFeedbacks();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "피드백 전송에 실패했어요.");
-    } finally {
-      setSendingFeedback(false);
-    }
-  };
-
   if (isLoading || !data) {
     return (
       <div className="flex items-center gap-2 rounded-2xl bg-card p-6 text-sm text-muted-foreground shadow-sm">
@@ -309,6 +263,19 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
 
   const percent = growthCompletionPercent(data);
   const meta = GROWTH_STEP_META[step]!;
+  const review = data.review ?? GROWTH_EMPTY_REVIEW;
+
+  const importLater = () => {
+    const items = growthLaterItems(review, receivedRef.current);
+    if (items.length === 0) {
+      toast.info("04에서 '다음에 고침'으로 분류한 항목이 아직 없어요.");
+      return;
+    }
+    const joined = items.map((t) => `- ${t}`).join("\n");
+    const base = data.nextPlan.trim();
+    onField("nextPlan", (base ? `${base}\n` : "") + joined);
+    toast.success("04의 '다음에 고침' 항목을 이어 붙였어요.");
+  };
 
   return (
     <div className="space-y-6">
@@ -350,7 +317,7 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
                   </span>
                   {hasRequired && (
                     <span className="block text-[9px] opacity-70">
-                      {p.done} / {p.total} 작성
+                      {s.id === "review" ? `${p.done} / ${p.total} 점검` : `${p.done} / ${p.total} 작성`}
                     </span>
                   )}
                 </button>
@@ -460,21 +427,10 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
         {step === 3 && (
           <ReviewStep
             data={data}
+            postId={postId}
             canEdit={canEdit}
+            auth={auth}
             onReview={onReview}
-            peerAssignments={peerData?.assignments ?? []}
-            peersLoading={peersLoading}
-            onAssign={assignPeers}
-            assigning={assigning}
-            received={feedbackData?.received ?? []}
-            sent={feedbackData?.sent ?? []}
-            feedbacksLoading={feedbacksLoading}
-            feedbackTarget={feedbackTarget}
-            setFeedbackTarget={setFeedbackTarget}
-            feedbackForm={feedbackForm}
-            setFeedbackForm={setFeedbackForm}
-            onSubmitFeedback={submitFeedback}
-            sendingFeedback={sendingFeedback}
           />
         )}
 
@@ -542,418 +498,854 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
               </div>
             </div>
             <FieldGrid
-              fields={GROWTH_GROWTH_FIELDS_B}
+              fields={GROWTH_GROWTH_FIELDS_B.filter((f) => f.key !== "nextPlan")}
               data={data}
               canEdit={canEdit}
               onChange={onField}
             />
+            {/* 다음에 보완하고 싶은 것 — 04에서 가져오기 연계 */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="growth-nextPlan">
+                  다음에 보완하고 싶은 것<span className="ml-1 text-destructive">*</span>
+                </Label>
+                <span className="text-[11px] text-muted-foreground">
+                  {data.nextPlan.length} / 240
+                </span>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={!canEdit}
+                  className="rounded-xl active:scale-95"
+                  onClick={importLater}
+                >
+                  <Import className="h-3.5 w-3.5" />
+                  04에서 가져오기
+                </Button>
+              </div>
+              <Textarea
+                id="growth-nextPlan"
+                value={data.nextPlan}
+                disabled={!canEdit}
+                placeholder="다음 행동이 보이도록 적어 주세요."
+                onChange={(e) => onField("nextPlan", e.target.value)}
+                className="min-h-24 rounded-xl"
+              />
+            </div>
           </div>
         )}
 
         {step === 5 && <GrowthReadmeOutput data={data} />}
-        {step === 6 && <GrowthCasebookOutput data={data} author={bundle.author} />}
+        {step === 6 && (
+          <GrowthCasebookOutput
+            data={data}
+            author={bundle.author}
+            received={receivedRef.current}
+          />
+        )}
       </section>
     </div>
   );
 }
 
+/** 07 사례집에서 쓸 받은 피드백을 ReviewStep이 채워 두는 공유 저장소 */
+const receivedRef: { current: GrowthReceivedFeedback[] } = { current: [] };
+
+/* ------------------------------ 04 · 검토 및 개선 ---------------------------- */
+
 function ReviewStep({
+  data,
+  postId,
+  canEdit,
+  auth,
+  onReview,
+}: {
+  data: GrowthRecordData;
+  postId: string;
+  canEdit: boolean;
+  auth: { author: string; nicknamePassword: string; adminPassword: string };
+  onReview: (next: GrowthReviewData) => void;
+}) {
+  const review = data.review ?? GROWTH_EMPTY_REVIEW;
+  const [tab, setTab] = useState<GrowthReviewKind>("self");
+  const fetchPeers = useServerFn(getGrowthPeerAssignments);
+  const fetchFeedbacks = useServerFn(listGrowthPeerFeedbacks);
+  const fetchSummaries = useServerFn(getGrowthPeerSummaries);
+  const sendFeedback = useServerFn(sendGrowthPeerFeedback);
+  const classifyFeedback = useServerFn(classifyGrowthPeerFeedback);
+
+  const { data: peerData, isLoading: peersLoading, refetch: refetchPeers } = useQuery({
+    queryKey: ["growth-peers", postId],
+    queryFn: () => fetchPeers({ data: { postId, ...auth } }),
+    enabled: canEdit,
+  });
+
+  const assignments = useMemo(
+    () => (peerData?.assignments?.length ? peerData.assignments : review.peer.assigned),
+    [peerData?.assignments, review.peer.assigned],
+  );
+
+  const { data: feedbackData, isLoading: feedbacksLoading, refetch: refetchFeedbacks } = useQuery({
+    queryKey: ["growth-feedbacks", postId],
+    queryFn: () => fetchFeedbacks({ data: { postId, ...auth } }),
+    enabled: canEdit,
+  });
+
+  useEffect(() => {
+    if (feedbackData) receivedRef.current = feedbackData.received;
+  }, [feedbackData]);
+
+  const { data: summaries } = useQuery({
+    queryKey: ["growth-peer-summaries", postId, assignments.map((a) => a.postId).join(",")],
+    queryFn: () =>
+      fetchSummaries({ data: { postId, postIds: assignments.map((a) => a.postId), ...auth } }),
+    enabled: canEdit && assignments.length > 0,
+  });
+
+  const [assigning, setAssigning] = useState(false);
+  const assignPeers = async () => {
+    setAssigning(true);
+    try {
+      await refetchPeers();
+      toast.success("점검 짝을 배정받았어요.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "배정에 실패했어요.");
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  const [sendingTo, setSendingTo] = useState<string | null>(null);
+  const submitFeedback = async (toPostId: string, toName: string) => {
+    const given = review.peer.given.find((g) => g.toPostId === toPostId);
+    if (!given || (!given.expected.trim() && !given.actual.trim())) {
+      toast.error("기대한 것과 실제로 나온 것을 적어 주세요.");
+      return;
+    }
+    setSendingTo(toPostId);
+    try {
+      await sendFeedback({
+        data: {
+          fromPostId: postId,
+          toPostId,
+          toName,
+          expected: given.expected,
+          actual: given.actual,
+          receiverType: "",
+          ...auth,
+        },
+      });
+      onReview({
+        ...review,
+        peer: {
+          ...review.peer,
+          given: review.peer.given.map((g) => (g.toPostId === toPostId ? { ...g, sent: true } : g)),
+        },
+      });
+      toast.success("피드백을 전달했어요.");
+      await refetchFeedbacks();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "피드백 전달에 실패했어요.");
+    } finally {
+      setSendingTo(null);
+    }
+  };
+
+  const setClassify = async (fb: GrowthReceivedFeedback, t: GrowthFixType) => {
+    try {
+      await classifyFeedback({ data: { feedbackId: fb.id, receiverType: t, ...auth } });
+      await refetchFeedbacks();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "분류에 실패했어요.");
+    }
+  };
+
+  const doneCount = [review.self.fix, review.ai.fix, review.peer.fix].filter(growthFixDone).length;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          세 점검을 모두 마치고 점검마다 수정 기록을 남겨 주세요.
+        </p>
+        <p className="shrink-0 text-sm font-semibold text-foreground">{doneCount} / 3 점검</p>
+      </div>
+
+      <Tabs value={tab} onValueChange={(v) => setTab(v as GrowthReviewKind)}>
+        <TabsList className="grid w-full grid-cols-3 rounded-xl">
+          {(["self", "ai", "peer"] as const).map((k) => (
+            <TabsTrigger key={k} value={k} className="gap-1.5 rounded-lg text-xs sm:text-sm">
+              {GROWTH_FIX_KIND_LABELS[k]}
+              {growthFixDone(review[k].fix) && <Check className="h-3.5 w-3.5 text-primary" />}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        <TabsContent value="self" className="mt-5">
+          <SelfPanel data={data} canEdit={canEdit} onReview={onReview} />
+        </TabsContent>
+        <TabsContent value="ai" className="mt-5">
+          <AiPanel data={data} canEdit={canEdit} onReview={onReview} />
+        </TabsContent>
+        <TabsContent value="peer" className="mt-5">
+          <PeerPanel
+            data={data}
+            canEdit={canEdit}
+            onReview={onReview}
+            assignments={assignments}
+            summaries={summaries ?? []}
+            peersLoading={peersLoading}
+            onAssign={assignPeers}
+            assigning={assigning}
+            received={feedbackData?.received ?? []}
+            feedbacksLoading={feedbacksLoading}
+            onSend={submitFeedback}
+            sendingTo={sendingTo}
+            onClassify={setClassify}
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+/* ------------------------------ 공통 수정 기록 ----------------------------- */
+
+function FixBlock({
+  kind,
+  fix,
+  title,
+  canEdit,
+  onChange,
+}: {
+  kind: GrowthReviewKind;
+  fix: GrowthFix;
+  title: string;
+  canEdit: boolean;
+  onChange: (fix: GrowthFix) => void;
+}) {
+  const promptText = `① 아직 수정하지 말고, 가능한 원인과 가장 먼저 확인할 한 가지를 알려 줘.
+② 원인이 좁혀지면 그때 아래 한 가지만 고쳐 줘.
+[증상] ${fix.what.trim() || "…"}
+[기대] [여기에 기대한 동작을 적으세요]
+[범위] 이 화면에서 이 한 가지만. 바꾼 내용을 먼저 알려 주고 배포하지 마.`;
+
+  return (
+    <div className="space-y-4 rounded-xl border border-border bg-muted/30 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h5 className="text-sm font-semibold text-foreground">{title}</h5>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="rounded-lg"
+          onClick={() => {
+            void navigator.clipboard.writeText(promptText);
+            toast.success("수정 프롬프트를 복사했어요.");
+          }}
+        >
+          <Copy className="h-3.5 w-3.5" />
+          수정 프롬프트 복사
+        </Button>
+      </div>
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs">고친 것 · 무엇을</Label>
+            <span className="text-[11px] text-muted-foreground">
+              {fix.what.length} / {GROWTH_FIX_MAX.what}
+            </span>
+          </div>
+          <Input
+            value={fix.what}
+            disabled={!canEdit}
+            placeholder="예) 빈 카드를 저장할 수 있던 문제"
+            onChange={(e) => onChange({ ...fix, what: e.target.value.slice(0, GROWTH_FIX_MAX.what) })}
+            className="rounded-xl bg-background"
+          />
+        </div>
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs">어떻게 고쳤나(전 → 후)</Label>
+            <span className="text-[11px] text-muted-foreground">
+              {fix.how.length} / {GROWTH_FIX_MAX.how}
+            </span>
+          </div>
+          <Textarea
+            value={fix.how}
+            disabled={!canEdit}
+            placeholder="예) 전: 바로 저장 → 후: 빈 내용이면 저장하지 않고 안내 문구 표시"
+            onChange={(e) => onChange({ ...fix, how: e.target.value.slice(0, GROWTH_FIX_MAX.how) })}
+            className="min-h-16 rounded-xl bg-background"
+          />
+        </div>
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs">고치지 않기로 한 것과 이유</Label>
+            <span className="text-[11px] text-muted-foreground">
+              {fix.skipped.length} / {GROWTH_FIX_MAX.skipped}
+            </span>
+          </div>
+          <Textarea
+            value={fix.skipped}
+            disabled={!canEdit}
+            placeholder="예) 알림 소리는 학교 컴퓨터 환경 때문에 다음에 검토"
+            onChange={(e) =>
+              onChange({ ...fix, skipped: e.target.value.slice(0, GROWTH_FIX_MAX.skipped) })
+            }
+            className="min-h-16 rounded-xl bg-background"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">분류</Label>
+          <div className="flex flex-wrap gap-2">
+            {GROWTH_FIX_TYPES.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                disabled={!canEdit}
+                onClick={() => onChange({ ...fix, type: t.value })}
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                  fix.type === t.value
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-background text-muted-foreground hover:bg-muted",
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <p className="text-[11px] text-muted-foreground">{GROWTH_FIX_KIND_LABELS[kind]}의 수정 기록입니다.</p>
+    </div>
+  );
+}
+
+/* ------------------------------ 1차 · 자기 점검 ---------------------------- */
+
+function SelfPanel({
   data,
   canEdit,
   onReview,
-  peerAssignments,
-  peersLoading,
-  onAssign,
-  assigning,
-  received,
-  sent,
-  feedbacksLoading,
-  feedbackTarget,
-  setFeedbackTarget,
-  feedbackForm,
-  setFeedbackForm,
-  onSubmitFeedback,
-  sendingFeedback,
 }: {
   data: GrowthRecordData;
   canEdit: boolean;
   onReview: (next: GrowthReviewData) => void;
-  peerAssignments: GrowthReviewData["peerAssignments"];
-  peersLoading: boolean;
-  onAssign: () => void;
-  assigning: boolean;
-  received: GrowthReviewData["receivedFeedbacks"];
-  sent: GrowthReviewData["sentFeedbacks"];
-  feedbacksLoading: boolean;
-  feedbackTarget: string | null;
-  setFeedbackTarget: (v: string | null) => void;
-  feedbackForm: {
-    toName: string;
-    receiverType: "expected" | "actual";
-    expected: string;
-    actual: string;
-  };
-  setFeedbackForm: (v: {
-    toName: string;
-    receiverType: "expected" | "actual";
-    expected: string;
-    actual: string;
-  }) => void;
-  onSubmitFeedback: () => void;
-  sendingFeedback: boolean;
 }) {
   const review = data.review ?? GROWTH_EMPTY_REVIEW;
+  const [anglesOpen, setAnglesOpen] = useState(false);
 
-  const updateSelf = (i: number, answer: string) => {
-    const next = {
-      ...review,
-      selfChecks: review.selfChecks.map((q, idx) => (idx === i ? { ...q, answer } : q)),
-    };
-    onReview(next);
+  const quoted: Record<GrowthSelfCheckKey, string> = {
+    oneLiner: data.oneLine,
+    firstScreen: data.primaryUser ? `주 사용자: ${data.primaryUser}` : "",
+    feature1: data.features[0] ?? "",
+    feature2: data.features[1] ?? "",
+    feature3: data.features[2] ?? "",
+    flow: data.flow.filter(Boolean).join(" → "),
   };
 
-  const updateAi = (i: number, answer: string) => {
-    const next = {
-      ...review,
-      aiChecks: review.aiChecks.map((q, idx) => (idx === i ? { ...q, answer } : q)),
-    };
-    onReview(next);
+  const setCheck = (key: GrowthSelfCheckKey, value: GrowthCheckValue) =>
+    onReview({ ...review, self: { ...review.self, checks: { ...review.self.checks, [key]: value } } });
+
+  const setAngle = (key: GrowthAngleKey, value: GrowthAngleValue) =>
+    onReview({ ...review, self: { ...review.self, angles: { ...review.self.angles, [key]: value } } });
+
+  const suggestion = growthStatusSuggestion(review);
+  const hasIssue = Object.values(review.self.checks).includes("no") ||
+    Object.values(review.self.angles).includes("issue");
+
+  return (
+    <div className="space-y-5">
+      <p className="text-xs text-muted-foreground">
+        01~03에 적은 내용이 이 앱의 PRD입니다. 기억이 아니라 기록과 실제 화면을 비교합니다.
+      </p>
+
+      <div className="space-y-3">
+        {GROWTH_SELF_CHECK_ITEMS.map((item) => (
+          <div key={item.key} className="rounded-xl border border-border bg-muted/30 p-3">
+            <p className="text-sm font-medium text-foreground">{item.text}</p>
+            {quoted[item.key].trim() && (
+              <p className="mt-1 text-xs text-muted-foreground">내 기록: {quoted[item.key]}</p>
+            )}
+            <div className="mt-2 flex flex-wrap gap-2">
+              {GROWTH_CHECK_CHOICES.map((c) => (
+                <button
+                  key={c.value}
+                  type="button"
+                  disabled={!canEdit}
+                  onClick={() => setCheck(item.key, c.value)}
+                  className={cn(
+                    "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                    review.self.checks[item.key] === c.value
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-background text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-xl bg-primary/5 px-4 py-3 text-sm text-primary">
+        완성 상태 제안: <strong>{suggestion}</strong>
+        <span className="block text-xs text-primary/80">
+          제안만 표시합니다. 03의 값은 직접 바꿔 주세요.
+        </span>
+      </div>
+
+      <div className="rounded-xl border border-border">
+        <button
+          type="button"
+          className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-foreground"
+          onClick={() => setAnglesOpen((v) => !v)}
+        >
+          안 되는 길도 걸어 보기(선택)
+          <ChevronDown className={cn("h-4 w-4 transition-transform", anglesOpen && "rotate-180")} />
+        </button>
+        {anglesOpen && (
+          <div className="space-y-3 border-t border-border p-4">
+            {GROWTH_ANGLE_ITEMS.map((a) => (
+              <div key={a.key} className="rounded-xl bg-muted/30 p-3">
+                <p className="text-sm font-medium text-foreground">
+                  {a.name}
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">{a.desc}</span>
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {GROWTH_ANGLE_CHOICES.map((c) => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      disabled={!canEdit}
+                      onClick={() => setAngle(a.key, c.value)}
+                      className={cn(
+                        "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                        review.self.angles[a.key] === c.value
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-background text-muted-foreground hover:bg-muted",
+                      )}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {hasIssue && (
+        <p className="text-xs text-muted-foreground">
+          문제 있음으로 표시한 것 중 하나를 골라 고치고 아래에 남겨 주세요.
+        </p>
+      )}
+
+      <FixBlock
+        kind="self"
+        fix={review.self.fix}
+        title="수정 기록"
+        canEdit={canEdit}
+        onChange={(fix) => onReview({ ...review, self: { ...review.self, fix } })}
+      />
+    </div>
+  );
+}
+
+/* ------------------------------- 2차 · AI 점검 ------------------------------ */
+
+function AiPanel({
+  data,
+  canEdit,
+  onReview,
+}: {
+  data: GrowthRecordData;
+  canEdit: boolean;
+  onReview: (next: GrowthReviewData) => void;
+}) {
+  const review = data.review ?? GROWTH_EMPTY_REVIEW;
+  const allQuestions = useMemo(() => growthAiQuestions(data.problemArea), [data.problemArea]);
+
+  const visible = allQuestions.slice(0, review.ai.revealed);
+  const answered = review.ai.questions.filter((q) => q.a.trim() && !q.unanswered).length;
+  const unanswered = review.ai.questions.filter((q) => q.unanswered).length;
+
+  const revealNext = () => {
+    const next = Math.min(allQuestions.length, review.ai.revealed + 1);
+    const questions = [...review.ai.questions];
+    const q = allQuestions[next - 1]!;
+    if (!questions.some((x) => x.q === q)) questions.push({ q, a: "", unanswered: false });
+    onReview({ ...review, ai: { ...review.ai, revealed: next, questions } });
   };
 
-  const [fix, setFix] = useState<GrowthSharedFix>({
-    kind: "",
-    target: "",
-    method: "",
-    category: "",
-    createdAt: "",
-  });
-
-  const addFix = () => {
-    if (!fix.kind.trim() || !fix.target.trim() || !fix.method.trim() || !fix.category.trim()) {
-      toast.error("점검 종류, 고친 것, 고친 방법, 분류를 모두 입력해 주세요.");
-      return;
-    }
-    const next = {
+  const updateQ = (q: string, patch: Partial<{ a: string; unanswered: boolean }>) => {
+    onReview({
       ...review,
-      sharedFixes: [
-        ...review.sharedFixes,
-        { ...fix, createdAt: new Date().toISOString() },
-      ],
-    };
-    onReview(next);
-    setFix({ kind: "", target: "", method: "", category: "", createdAt: "" });
-  };
-
-  const removeFix = (i: number) => {
-    const next = {
-      ...review,
-      sharedFixes: review.sharedFixes.filter((_, idx) => idx !== i),
-    };
-    onReview(next);
+      ai: {
+        ...review.ai,
+        questions: review.ai.questions.map((x) => (x.q === q ? { ...x, ...patch } : x)),
+      },
+    });
   };
 
   return (
-    <div className="space-y-8">
-      {/* 자기 점검 */}
-      <div className="space-y-4">
-        <h4 className="text-sm font-bold text-foreground">1차 자기 점검</h4>
-        <div className="space-y-4">
-          {review.selfChecks.map((q, i) => (
-            <div key={i} className="space-y-2">
-              <Label className="text-sm font-medium leading-snug text-foreground">
-                {i + 1}. {q.question}
-              </Label>
-              <Textarea
-                value={q.answer}
-                disabled={!canEdit}
-                placeholder="여기에 답변을 적어 주세요."
-                onChange={(e) => updateSelf(i, e.target.value)}
-                className="min-h-20 rounded-xl"
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* AI 점검 */}
-      <div className="space-y-4">
-        <h4 className="text-sm font-bold text-foreground">AI 점검</h4>
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
-          아래 질문을 복사해 AI에게 물어보고, 받은 답변을 정리해 적어 주세요.
+          AI가 내 기록을 읽고 질문합니다. 답하지 못한 질문이 곧 고칠 곳입니다.
         </p>
-        <div className="space-y-4">
-          {review.aiChecks.map((q, i) => (
-            <div key={i} className="space-y-2 rounded-xl border border-border bg-muted/30 p-4">
-              <div className="flex items-start justify-between gap-2">
-                <Label className="text-sm font-medium leading-snug text-foreground">
-                  {i + 1}. {q.question}
-                </Label>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 shrink-0 rounded-lg"
-                  onClick={() => {
-                    navigator.clipboard.writeText(q.question);
-                    toast.success("질문을 복사했어요.");
-                  }}
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  복사
-                </Button>
-              </div>
-              <Textarea
-                value={q.answer}
-                disabled={!canEdit}
-                placeholder="AI의 답변 또는 적용한 내용을 적어 주세요."
-                onChange={(e) => updateAi(i, e.target.value)}
-                className="min-h-20 rounded-xl bg-background"
-              />
-            </div>
-          ))}
-        </div>
+        <Button
+          type="button"
+          size="sm"
+          disabled={!canEdit || review.ai.revealed >= allQuestions.length}
+          className="rounded-xl active:scale-95"
+          onClick={revealNext}
+        >
+          <Sparkles className="h-4 w-4" />
+          질문 받기
+        </Button>
       </div>
 
-      {/* 동료 점검 */}
-      <div className="space-y-4">
-        <h4 className="text-sm font-bold text-foreground">동료 점검</h4>
+      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+        <span>
+          답함 <strong className="text-foreground">{answered}</strong> / {allQuestions.length}
+        </span>
+        <span>
+          답하지 못함 <strong className="text-foreground">{unanswered}</strong>
+        </span>
+        <span>문제 영역: {data.problemArea || "미선택"}</span>
+      </div>
+
+      {visible.length === 0 ? (
+        <p className="rounded-xl bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
+          '질문 받기'를 눌러 AI 점검 질문을 한 개씩 받아 보세요.
+        </p>
+      ) : (
+        <div className="space-y-4">
+          {visible.map((q, i) => {
+            const entry = review.ai.questions.find((x) => x.q === q);
+            return (
+              <div key={q} className="space-y-2 rounded-xl border border-border bg-muted/30 p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <Label className="text-sm font-medium leading-snug text-foreground">
+                    {i + 1}. {q}
+                  </Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 shrink-0 rounded-lg"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(q);
+                      toast.success("질문을 복사했어요.");
+                    }}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    복사
+                  </Button>
+                </div>
+                <Textarea
+                  value={entry?.a ?? ""}
+                  disabled={!canEdit || entry?.unanswered}
+                  placeholder="여기에 답변을 적어 주세요."
+                  onChange={(e) => updateQ(q, { a: e.target.value.slice(0, 200) })}
+                  className="min-h-20 rounded-xl bg-background"
+                />
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    disabled={!canEdit}
+                    checked={entry?.unanswered ?? false}
+                    onChange={(e) => updateQ(q, { unanswered: e.target.checked })}
+                    className="h-3.5 w-3.5 rounded accent-primary"
+                  />
+                  지금은 답하지 못함
+                </label>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="rounded-xl border border-border p-4">
+        <p className="mb-2 text-xs font-semibold text-foreground">오류가 나면 이 다섯 단계만</p>
+        <ol className="flex flex-wrap gap-2">
+          {GROWTH_ERROR_GUIDE.map((g, i) => (
+            <li key={g.name} className="rounded-lg bg-muted/50 px-3 py-2 text-xs">
+              <span className="font-semibold text-foreground">
+                {i + 1}. {g.name}
+              </span>
+              {g.desc && <span className="ml-1 text-muted-foreground">{g.desc}</span>}
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <FixBlock
+        kind="ai"
+        fix={review.ai.fix}
+        title="답하지 못한 질문 중 하나를 골라 고칩니다."
+        canEdit={canEdit}
+        onChange={(fix) => onReview({ ...review, ai: { ...review.ai, fix } })}
+      />
+    </div>
+  );
+}
+
+/* ------------------------------ 3차 · 동료 점검 ----------------------------- */
+
+type PeerSummary = {
+  postId: string;
+  postNo: number;
+  author: string;
+  projectName: string;
+  oneLine: string;
+  resultUrl: string;
+  features: string[];
+  flow: string[];
+};
+
+function PeerPanel({
+  data,
+  canEdit,
+  onReview,
+  assignments,
+  summaries,
+  peersLoading,
+  onAssign,
+  assigning,
+  received,
+  feedbacksLoading,
+  onSend,
+  sendingTo,
+  onClassify,
+}: {
+  data: GrowthRecordData;
+  canEdit: boolean;
+  onReview: (next: GrowthReviewData) => void;
+  assignments: { postId: string; postNo: number; author: string }[];
+  summaries: PeerSummary[];
+  peersLoading: boolean;
+  onAssign: () => void;
+  assigning: boolean;
+  received: GrowthReceivedFeedback[];
+  feedbacksLoading: boolean;
+  onSend: (toPostId: string, toName: string) => void;
+  sendingTo: string | null;
+  onClassify: (fb: GrowthReceivedFeedback, t: GrowthFixType) => void;
+}) {
+  const review = data.review ?? GROWTH_EMPTY_REVIEW;
+  const [openRecord, setOpenRecord] = useState<string | null>(null);
+
+  const setGiven = (toPostId: string, to: string, patch: Partial<{ expected: string; actual: string }>) => {
+    const rest = review.peer.given.filter((g) => g.toPostId !== toPostId);
+    const cur = review.peer.given.find((g) => g.toPostId === toPostId) ?? {
+      toPostId,
+      to,
+      expected: "",
+      actual: "",
+      sent: false,
+    };
+    onReview({ ...review, peer: { ...review.peer, given: [...rest, { ...cur, to, ...patch }] } });
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
-          같은 게시판의 다른 기록에서 2명이 자동 배정됩니다. 동료의 결과물을 보고 기대했던 점과
-          실제 본 점을 남겨 주세요.
+          짝은 무작위로 정해집니다. 마주 앉아 설명하지 않고, 링크만 열어 직접 써 봅니다.
         </p>
         <Button
           type="button"
           size="sm"
           variant="outline"
           disabled={!canEdit || assigning || peersLoading}
-          onClick={onAssign}
           className="rounded-xl active:scale-95"
+          onClick={onAssign}
         >
           {assigning || peersLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Users className="h-4 w-4" />
           )}
-          새 점검 짝 2명 배정
+          짝 배정 받기
         </Button>
+      </div>
 
-        {peerAssignments.length > 0 && (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {peerAssignments.map((p) => (
-              <div
-                key={p.postId}
-                className="rounded-xl border border-border bg-muted/30 p-4"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{p.author}</p>
-                    <p className="text-xs text-muted-foreground">#{p.postNo} 활동기록</p>
-                  </div>
+      {assignments.length === 0 ? (
+        <p className="rounded-xl bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
+          '짝 배정 받기'를 누르면 같은 게시판의 다른 기록 2개가 배정됩니다.
+        </p>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {assignments.map((p) => {
+            const s = summaries.find((x) => x.postId === p.postId);
+            const given = review.peer.given.find((g) => g.toPostId === p.postId);
+            return (
+              <div key={p.postId} className="space-y-3 rounded-xl border border-border bg-muted/30 p-4">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{p.author}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {s?.projectName || `#${p.postNo} 활동기록`}
+                  </p>
+                  {s?.oneLine && <p className="mt-1 text-xs text-muted-foreground">{s.oneLine}</p>}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {s?.resultUrl && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="rounded-xl"
+                      onClick={() => window.open(s.resultUrl, "_blank", "noopener")}
+                    >
+                      배포 주소 열기
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     size="sm"
-                    variant="outline"
-                    disabled={!canEdit}
-                    onClick={() => {
-                      setFeedbackTarget(p.postId);
-                      setFeedbackForm({ ...feedbackForm, toName: p.author });
-                    }}
+                    variant="ghost"
                     className="rounded-xl"
+                    onClick={() => setOpenRecord(openRecord === p.postId ? null : p.postId)}
                   >
-                    <MessageSquare className="h-3.5 w-3.5" />
-                    피드백 쓰기
+                    01~03 기록 보기
+                    <ChevronDown
+                      className={cn("h-3.5 w-3.5 transition-transform", openRecord === p.postId && "rotate-180")}
+                    />
+                  </Button>
+                </div>
+                {openRecord === p.postId && s && (
+                  <div className="space-y-2 rounded-lg bg-background p-3 text-xs text-muted-foreground">
+                    <div>
+                      <p className="font-semibold text-foreground">핵심 기능</p>
+                      {s.features.filter(Boolean).length ? (
+                        <ul className="list-disc pl-4">
+                          {s.features.filter(Boolean).map((f, i) => (
+                            <li key={i}>{f}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p>미입력</p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">사용 흐름</p>
+                      {s.flow.filter(Boolean).length ? (
+                        <ol className="list-decimal pl-4">
+                          {s.flow.filter(Boolean).map((f, i) => (
+                            <li key={i}>{f}</li>
+                          ))}
+                        </ol>
+                      ) : (
+                        <p>미입력</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 01 내가 남기는 피드백 */}
+                <div className="space-y-2 border-t border-border pt-3">
+                  <p className="text-xs font-semibold text-foreground">01 내가 남기는 피드백</p>
+                  <Textarea
+                    value={given?.expected ?? ""}
+                    disabled={!canEdit || given?.sent}
+                    placeholder="기대한 것"
+                    onChange={(e) => setGiven(p.postId, p.author, { expected: e.target.value.slice(0, 120) })}
+                    className="min-h-14 rounded-xl bg-background text-sm"
+                  />
+                  <Textarea
+                    value={given?.actual ?? ""}
+                    disabled={!canEdit || given?.sent}
+                    placeholder="실제로 나온 것"
+                    onChange={(e) => setGiven(p.postId, p.author, { actual: e.target.value.slice(0, 120) })}
+                    className="min-h-14 rounded-xl bg-background text-sm"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="rounded-xl"
+                    disabled={!canEdit || sendingTo === p.postId || given?.sent}
+                    onClick={() => onSend(p.postId, p.author)}
+                  >
+                    {sendingTo === p.postId ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <MessageSquare className="h-3.5 w-3.5" />
+                    )}
+                    {given?.sent ? "전달됨" : "보내기"}
                   </Button>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            );
+          })}
+        </div>
+      )}
 
-        {feedbackTarget && (
-          <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-foreground">
-                {feedbackForm.toName}에게 피드백 보내기
-              </p>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => setFeedbackTarget(null)}
-                className="rounded-xl"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <Label className="text-xs">분류</Label>
-                <Select
-                  value={feedbackForm.receiverType}
-                  onValueChange={(v) =>
-                    setFeedbackForm({ ...feedbackForm, receiverType: v as "expected" | "actual" })
-                  }
-                >
-                  <SelectTrigger className="rounded-xl">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="expected">기대했던 점</SelectItem>
-                    <SelectItem value="actual">실제 본 점</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">기대했던 점</Label>
-                <Textarea
-                  value={feedbackForm.expected}
-                  onChange={(e) =>
-                    setFeedbackForm({ ...feedbackForm, expected: e.target.value.slice(0, 400) })
-                  }
-                  placeholder="이 기능을 사용할 때 기대했던 점을 적어 주세요."
-                  className="min-h-16 rounded-xl"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">실제 본 점</Label>
-                <Textarea
-                  value={feedbackForm.actual}
-                  onChange={(e) =>
-                    setFeedbackForm({ ...feedbackForm, actual: e.target.value.slice(0, 400) })
-                  }
-                  placeholder="실제로 사용해 본 느낌을 적어 주세요."
-                  className="min-h-16 rounded-xl"
-                />
-              </div>
-              <Button
-                type="button"
-                size="sm"
-                className="rounded-xl"
-                disabled={sendingFeedback || !feedbackForm.expected.trim() || !feedbackForm.actual.trim()}
-                onClick={() => void onSubmitFeedback()}
-              >
-                {sendingFeedback ? <Loader2 className="h-4 w-4 animate-spin" /> : "보내기"}
-              </Button>
-            </div>
-          </div>
-        )}
-
+      {/* 02 내가 받은 피드백 */}
+      <div className="space-y-2">
+        <h5 className="text-xs font-semibold text-muted-foreground">02 내가 받은 피드백</h5>
         {feedbacksLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             피드백을 불러오는 중...
           </div>
+        ) : received.length === 0 ? (
+          <p className="text-sm text-muted-foreground">아직 받은 피드백이 없어요.</p>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <h5 className="text-xs font-semibold text-muted-foreground">받은 피드백</h5>
-              {received.length === 0 ? (
-                <p className="text-sm text-muted-foreground">아직 받은 피드백이 없어요.</p>
-              ) : (
-                <div className="space-y-2">
-                  {received.map((f) => (
-                    <div key={f.id} className="rounded-xl border border-border bg-muted/30 p-3 text-sm">
-                      <p className="font-medium text-foreground">{f.fromName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {f.receiverType === "expected" ? "기대" : "실제"}
-                      </p>
-                      <p className="mt-1 text-foreground">{f.expected || f.actual}</p>
-                    </div>
+          <div className="space-y-2">
+            {received.map((f) => (
+              <div key={f.id} className="space-y-2 rounded-xl border border-border bg-muted/30 p-3 text-sm">
+                <p className="font-medium text-foreground">{f.fromName}</p>
+                <p className="text-xs text-muted-foreground">
+                  기대: {f.expected || "—"} / 실제: {f.actual || "—"}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {GROWTH_FIX_TYPES.map((t) => (
+                    <button
+                      key={t.value}
+                      type="button"
+                      disabled={!canEdit}
+                      onClick={() => onClassify(f, t.value)}
+                      className={cn(
+                        "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                        f.receiverType === t.value
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-background text-muted-foreground hover:bg-muted",
+                      )}
+                    >
+                      {t.label}
+                    </button>
                   ))}
                 </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <h5 className="text-xs font-semibold text-muted-foreground">보낸 피드백</h5>
-              {sent.length === 0 ? (
-                <p className="text-sm text-muted-foreground">아직 보낸 피드백이 없어요.</p>
-              ) : (
-                <div className="space-y-2">
-                  {sent.map((f) => (
-                    <div key={f.id} className="rounded-xl border border-border bg-muted/30 p-3 text-sm">
-                      <p className="font-medium text-foreground">{f.toName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {f.receiverType === "expected" ? "기대" : "실제"}
-                      </p>
-                      <p className="mt-1 text-foreground">{f.expected || f.actual}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+              </div>
+            ))}
           </div>
         )}
+        <p className="text-[11px] text-muted-foreground">
+          판단이 아니라 관찰을 건넵니다. 무엇을 고칠지는 만든 사람이 정합니다.
+        </p>
       </div>
 
-      {/* 공통 수정 기록 */}
-      <div className="space-y-4">
-        <h4 className="text-sm font-bold text-foreground">공통 수정 기록</h4>
-        <p className="text-xs text-muted-foreground">
-          점검 뒤 실제로 바꾼 내용을 남겨요. 고치지 않기로 한 것과 이유도 적을 수 있어요.
-        </p>
-        {canEdit && (
-          <div className="grid gap-3 rounded-xl border border-border bg-muted/30 p-4 sm:grid-cols-2">
-            <Input
-              value={fix.kind}
-              onChange={(e) => setFix({ ...fix, kind: e.target.value })}
-              placeholder="점검 종류"
-              className="rounded-xl"
-            />
-            <Input
-              value={fix.category}
-              onChange={(e) => setFix({ ...fix, category: e.target.value })}
-              placeholder="분류"
-              className="rounded-xl"
-            />
-            <Input
-              value={fix.target}
-              onChange={(e) => setFix({ ...fix, target: e.target.value })}
-              placeholder="고친 것"
-              className="rounded-xl sm:col-span-2"
-            />
-            <Textarea
-              value={fix.method}
-              onChange={(e) => setFix({ ...fix, method: e.target.value })}
-              placeholder="고친 방법"
-              className="min-h-16 rounded-xl sm:col-span-2"
-            />
-            <Button type="button" size="sm" className="rounded-xl sm:col-span-2" onClick={addFix}>
-              <Plus className="h-4 w-4" />
-              수정 기록 추가
-            </Button>
-          </div>
-        )}
-        <div className="space-y-2">
-          {review.sharedFixes.map((f, i) => (
-            <div
-              key={i}
-              className="flex items-start justify-between gap-3 rounded-xl border border-border bg-muted/30 p-3"
-            >
-              <div className="text-sm">
-                <p className="font-medium text-foreground">
-                  [{f.kind}] {f.target}
-                </p>
-                <p className="text-muted-foreground">{f.method}</p>
-                <p className="text-xs text-muted-foreground">분류: {f.category}</p>
-              </div>
-              {canEdit && (
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="rounded-xl"
-                  onClick={() => removeFix(i)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+      <FixBlock
+        kind="peer"
+        fix={review.peer.fix}
+        title="받은 피드백 중 하나를 골라 고칩니다."
+        canEdit={canEdit}
+        onChange={(fix) => onReview({ ...review, peer: { ...review.peer, fix } })}
+      />
     </div>
   );
 }
+
+/* --------------------------------- 공용 입력 -------------------------------- */
 
 function FieldGrid({
   fields,

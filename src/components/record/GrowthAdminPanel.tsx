@@ -8,9 +8,13 @@ import { categoriesQueryOptions } from "@/lib/platform.queries";
 import { getGrowthOverview } from "@/lib/record-growth.functions";
 import {
   GROWTH_ALL_FIELDS,
+  GROWTH_FIX_TYPES,
   growthCompletionPercent,
+  growthFixDone,
+  growthReviewDoneCount,
   GROWTH_STEP_META,
   growthStepProgress,
+  type GrowthFix,
 } from "@/lib/record-growth-schema";
 import { getAdminPassword } from "@/lib/admin-auth";
 import { cn } from "@/lib/utils";
@@ -69,9 +73,15 @@ export function GrowthAdminPanel() {
       base["대표 이미지"] = it.data.heroImageUrl;
       base["GitHub 저장소"] = it.data.githubUrl;
       const review = it.data.review;
-      base["자기 점검 완료"] = review?.selfChecks.filter((q) => q.answer.trim()).length ?? 0;
-      base["AI 점검 완료"] = review?.aiChecks.filter((q) => q.answer.trim()).length ?? 0;
-      base["공통 수정 기록"] = review?.sharedFixes.length ?? 0;
+      const fixText = (label: string, fix: GrowthFix) =>
+        growthFixDone(fix)
+          ? `${label}: ${fix.what.trim()} (${GROWTH_FIX_TYPES.find((x) => x.value === fix.type)?.label ?? ""})`
+          : "";
+      base["검토 완료"] = `${growthReviewDoneCount(review)}/3`;
+      base["자기 점검 수정 기록"] = review ? fixText("자기", review.self.fix) : "";
+      base["AI 점검 수정 기록"] = review ? fixText("AI", review.ai.fix) : "";
+      base["동료 점검 수정 기록"] = review ? fixText("동료", review.peer.fix) : "";
+      base["답하지 못한 AI 질문"] = review?.ai.questions.filter((q) => q.unanswered).length ?? 0;
       return base;
     });
     const wb = XLSX.utils.book_new();
