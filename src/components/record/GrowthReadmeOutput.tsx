@@ -1,4 +1,4 @@
-// 05 README 출력 — 입력 내용을 개인 프로젝트 README 텍스트로 조립·복사
+// 06 README 출력 — 입력 내용을 개인 프로젝트 README 텍스트로 조립·복사
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { toast } from "sonner";
@@ -8,9 +8,23 @@ import type { GrowthRecordData } from "@/lib/record-growth-schema";
 
 const clean = (items: string[]) => items.map((i) => (i ?? "").trim()).filter(Boolean);
 
+function reviewSummary(d: GrowthRecordData): string {
+  const review = d.review;
+  if (!review) return "";
+  const self = review.selfChecks.filter((q) => q.answer.trim()).length;
+  const ai = review.aiChecks.filter((q) => q.answer.trim()).length;
+  const fixes = review.sharedFixes.length;
+  const lines: string[] = [];
+  if (self > 0) lines.push(`- 자기 점검 완료: ${self}개`);
+  if (ai > 0) lines.push(`- AI 점검 완료: ${ai}개`);
+  if (fixes > 0) lines.push(`- 공통 수정 기록: ${fixes}건`);
+  return lines.join("\n");
+}
+
 export function buildGrowthReadme(d: GrowthRecordData): string {
   const features = clean(d.features);
   const flow = clean(d.flow);
+  const reviewLines = reviewSummary(d);
   return `# ${d.projectName || "제목 없는 프로젝트"}
 
 > ${d.oneLine || "한 줄 소개를 입력해 주세요."}
@@ -33,7 +47,10 @@ ${features.length ? features.map((item) => `- ${item}`).join("\n") : "- 핵심 �
 ## 5. 사용 흐름
 ${flow.length ? flow.map((item, i) => `${i + 1}. ${item}`).join("\n") : "1. 사용 흐름을 입력해 주세요."}
 
-## 6. 교육적 점검과 성장
+## 6. 검토 및 개선
+${reviewLines || "- 검토 및 개선 내용을 입력해 주세요."}
+
+## 7. 성찰과 성장
 - 사람이 확인한 일: ${d.humanCheck || "미입력"}
 - 개인정보 처리: ${d.privacy || "미입력"}
 - 배운 점: ${d.learned || "미입력"}
@@ -42,6 +59,7 @@ ${flow.length ? flow.map((item, i) => `${i + 1}. ${item}`).join("\n") : "1. 사�
 ## 사용 도구
 ${d.tools || "미입력"}
 
+${d.githubUrl ? `## GitHub 저장소\n${d.githubUrl}` : ""}
 ${d.resultUrl ? `## 바로 사용하기\n${d.resultUrl}` : ""}`;
 }
 
@@ -64,7 +82,7 @@ export function GrowthReadmeOutput({ data }: { data: GrowthRecordData }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <p className="mr-auto text-xs text-muted-foreground">
-          수정이 필요하면 01~04 단계의 원본 내용을 바꿔 주세요.
+          수정이 필요하면 01~05 단계의 원본 내용을 바꿔 주세요.
         </p>
         <Button type="button" size="sm" className="rounded-xl" onClick={copy}>
           {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
