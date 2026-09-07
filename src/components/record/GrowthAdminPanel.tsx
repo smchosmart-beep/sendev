@@ -67,6 +67,11 @@ export function GrowthAdminPanel() {
       base["사용 흐름"] = it.data.flow.join(" | ");
       base["윤리 원칙"] = it.data.ethics.join(", ");
       base["대표 이미지"] = it.data.heroImageUrl;
+      base["GitHub 저장소"] = it.data.githubUrl;
+      const review = it.data.review;
+      base["자기 점검 완료"] = review?.selfChecks.filter((q) => q.answer.trim()).length ?? 0;
+      base["AI 점검 완료"] = review?.aiChecks.filter((q) => q.answer.trim()).length ?? 0;
+      base["공통 수정 기록"] = review?.sharedFixes.length ?? 0;
       return base;
     });
     const wb = XLSX.utils.book_new();
