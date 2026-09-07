@@ -1,4 +1,4 @@
-// 06 사례집 출력 — 표지 + 01 문제와 해결 + 02 결과물 + 03 성장과 점검 (A4 조판)
+// 07 사례집 출력 — 표지 + 01 프로젝트 + 02 문제와 해결 + 03 결과물 + 04 검토 및 개선 + 05 성찰과 성장 (A4 조판)
 import { Printer } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ function GrowthDoc({ data, author }: { data: GrowthRecordData; author: string })
   const features = clean(data.features);
   const flow = clean(data.flow);
   const ethics = clean(data.ethics);
+  const review = data.review;
   return (
     <div className="casebook-doc">
       {/* 표지 */}
@@ -35,11 +36,46 @@ function GrowthDoc({ data, author }: { data: GrowthRecordData; author: string })
         </div>
       </article>
 
-      {/* 01 문제와 해결 */}
+      {/* 01 프로젝트 */}
       <article className="casebook-page">
         <div className="casebook-body">
           <h2 className="casebook-h2">
-            <span className="casebook-no">01</span> 문제와 해결
+            <span className="casebook-no">01</span> 나의 프로젝트
+          </h2>
+          <dl className="casebook-dl casebook-grid">
+            <div className="casebook-field">
+              <dt>프로젝트명</dt>
+              <dd>{data.projectName || "미입력"}</dd>
+            </div>
+            <div className="casebook-field">
+              <dt>주 사용자</dt>
+              <dd>{data.primaryUser || "미입력"}</dd>
+            </div>
+            <div className="casebook-field">
+              <dt>문제 영역</dt>
+              <dd>{data.problemArea || "미입력"}</dd>
+            </div>
+            <div className="casebook-field">
+              <dt>결과물 형태</dt>
+              <dd>{data.resultType || "미입력"}</dd>
+            </div>
+          </dl>
+          <div className="casebook-block">
+            <h3 className="casebook-h3">한 줄 소개</h3>
+            <Show value={data.oneLine} />
+          </div>
+        </div>
+        <footer className="casebook-foot">
+          <span>{data.projectName || "성장형 활동기록"}</span>
+          <span>01 · 나의 프로젝트</span>
+        </footer>
+      </article>
+
+      {/* 02 문제와 해결 */}
+      <article className="casebook-page">
+        <div className="casebook-body">
+          <h2 className="casebook-h2">
+            <span className="casebook-no">02</span> 문제와 해결
           </h2>
           <div className="casebook-block">
             <h3 className="casebook-h3">해결하려는 문제</h3>
@@ -62,15 +98,15 @@ function GrowthDoc({ data, author }: { data: GrowthRecordData; author: string })
         </div>
         <footer className="casebook-foot">
           <span>{data.projectName || "성장형 활동기록"}</span>
-          <span>01 · 문제와 해결</span>
+          <span>02 · 문제와 해결</span>
         </footer>
       </article>
 
-      {/* 02 결과물 */}
+      {/* 03 결과물 */}
       <article className="casebook-page">
         <div className="casebook-body">
           <h2 className="casebook-h2">
-            <span className="casebook-no">02</span> 결과물
+            <span className="casebook-no">03</span> 결과물
           </h2>
           {data.heroImageUrl && (
             <img className="casebook-figure" src={data.heroImageUrl} alt="결과물 대표 이미지" />
@@ -90,6 +126,16 @@ function GrowthDoc({ data, author }: { data: GrowthRecordData; author: string })
                 <dd>
                   <a href={data.resultUrl} target="_blank" rel="noreferrer">
                     {data.resultUrl}
+                  </a>
+                </dd>
+              </div>
+            )}
+            {data.githubUrl && (
+              <div className="casebook-field">
+                <dt>GitHub 저장소</dt>
+                <dd>
+                  <a href={data.githubUrl} target="_blank" rel="noreferrer">
+                    {data.githubUrl}
                   </a>
                 </dd>
               </div>
@@ -122,15 +168,76 @@ function GrowthDoc({ data, author }: { data: GrowthRecordData; author: string })
         </div>
         <footer className="casebook-foot">
           <span>{data.projectName || "성장형 활동기록"}</span>
-          <span>02 · 결과물</span>
+          <span>03 · 결과물</span>
         </footer>
       </article>
 
-      {/* 03 성장과 점검 */}
+      {/* 04 검토 및 개선 */}
       <article className="casebook-page">
         <div className="casebook-body">
           <h2 className="casebook-h2">
-            <span className="casebook-no">03</span> 성장과 점검
+            <span className="casebook-no">04</span> 검토 및 개선
+          </h2>
+          <div className="casebook-block">
+            <h3 className="casebook-h3">자기 점검</h3>
+            {review?.selfChecks.some((q) => q.answer.trim()) ? (
+              <ul className="casebook-list">
+                {review.selfChecks
+                  .filter((q) => q.answer.trim())
+                  .map((q, i) => (
+                    <li key={i}>
+                      <strong>{q.question}</strong>
+                      <p className="mt-1">{q.answer}</p>
+                    </li>
+                  ))}
+              </ul>
+            ) : (
+              <p className="casebook-p text-muted-foreground">아직 입력하지 않았습니다.</p>
+            )}
+          </div>
+          <div className="casebook-block">
+            <h3 className="casebook-h3">AI 점검</h3>
+            {review?.aiChecks.some((q) => q.answer.trim()) ? (
+              <ul className="casebook-list">
+                {review.aiChecks
+                  .filter((q) => q.answer.trim())
+                  .map((q, i) => (
+                    <li key={i}>
+                      <strong>{q.question}</strong>
+                      <p className="mt-1">{q.answer}</p>
+                    </li>
+                  ))}
+              </ul>
+            ) : (
+              <p className="casebook-p text-muted-foreground">아직 입력하지 않았습니다.</p>
+            )}
+          </div>
+          <div className="casebook-block">
+            <h3 className="casebook-h3">공통 수정 기록</h3>
+            {review?.sharedFixes.length ? (
+              <ul className="casebook-list">
+                {review.sharedFixes.map((f, i) => (
+                  <li key={i}>
+                    [{f.kind}] {f.target} — {f.method} (분류: {f.category})
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="casebook-p text-muted-foreground">아직 입력하지 않았습니다.</p>
+            )}
+          </div>
+        </div>
+        <footer className="casebook-foot">
+          <span>{data.projectName || "성장형 활동기록"}</span>
+          <span>04 · 검토 및 개선</span>
+        </footer>
+      </article>
+
+      {/* 05 성찰과 성장 */}
+      <article className="casebook-page">
+        <div className="casebook-body">
+          <h2 className="casebook-h2">
+            <span className="casebook-no">05</span> 성찰과 성장
           </h2>
           <div className="casebook-grid">
             <div className="casebook-block">
@@ -189,7 +296,7 @@ function GrowthDoc({ data, author }: { data: GrowthRecordData; author: string })
         </div>
         <footer className="casebook-foot">
           <span>{data.projectName || "성장형 활동기록"}</span>
-          <span>03 · 성장과 점검</span>
+          <span>05 · 성찰과 성장</span>
         </footer>
       </article>
     </div>
