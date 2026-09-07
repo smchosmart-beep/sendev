@@ -87,7 +87,7 @@ export function GrowthAdminPanel() {
           <div>
             <h2 className="text-lg font-bold text-foreground">성장형 활동기록 현황</h2>
             <p className="text-xs text-muted-foreground">
-              개인별 6단계 작성 진행률을 확인하고 원자료를 내려받습니다.
+              개인별 7단계 작성 진행률을 확인하고 원자료를 내려받습니다.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
