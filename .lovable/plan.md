@@ -44,14 +44,20 @@
 ## 기술 메모
 
 - 마이그레이션 1건
-  - `record_growth`에 `github_url text NOT NULL DEFAULT ''`, `review jsonb NOT NULL DEFAULT '{}'`(자기·AI 점검 응답과 세 수정 기록, 배정된 짝 정보) 추가
+  - `record_growth`에 `github_url text NOT NULL DEFAULT ''`, `review jsonb NOT NULL DEFAULT '{}'`(자기·AI 점검 응답과 세 수정 기록, 배정된 짝 정보) 추가 — 기존 행에는 기본값만 채워지므로 도전형/성장형 기존 데이터는 그대로입니다
   - `record_growth_peer_feedback` 신설: `id`, `post_id`(→posts), `from_post_id`, `from_name`, `expected`, `actual`, `receiver_type text DEFAULT ''`(받은 사람이 정하는 분류), `created_at/updated_at`. 다른 `record_*` 테이블과 동일하게 RLS on + `service_role`만 GRANT, 접근은 서버 함수 경유
-- `src/lib/record-growth-schema.ts`: 7단계 메타, 체크리스트/관점/AI 질문 목록, 수정 기록 필드, 새 문구를 모두 여기서 관리(필수·진행률 기준은 유지)
-- `src/lib/record-growth.functions.ts`: 저장 필드에 `githubUrl`·`review` 추가, `assignGrowthPeers`(같은 카테고리 기록 중 본인 제외 2명 무작위 배정, 결과는 review에 저장) / `sendGrowthPeerFeedback` / 조회 시 받은 피드백 목록 포함. 자동 저장은 기존과 동일하게 1초 지연 1요청 방식이라 서버 요청량은 늘지 않고, 짝 배정·피드백 전송만 버튼을 누를 때 1회씩 호출됩니다
+- `src/lib/record-growth-schema.ts`: 7단계 메타, 체크리스트/관점/AI 질문 목록, 수정 기록 필드, 새 문구를 여기서 관리
+  - **주의 1** — `GROWTH_REQUIRED`에 `review` 항목을 반드시 추가합니다(예: 세 점검의 '고친 것' 3개). 빠지면 `growthStepProgress`가 필수 없는 단계를 항상 '완료'로 표시해 작성자 화면과 관리자 표의 진행률이 부풀려집니다(`record-growth-schema.ts:351`).
+  - **주의 2** — `githubUrl`을 `GROWTH_ALL_FIELDS`에 추가할 때 `record-growth.functions.ts`의 `COLUMN_MAP`에도 `githubUrl: "github_url"`을 같이 넣습니다. 빠지면 `toDTO`가 잘못된 컬럼을 읽어 값이 사라집니다(`record-growth.functions.ts:13, 47`).
+- `src/lib/record-growth.functions.ts`
+  - `saveGrowthRecord`의 입력 검증은 텍스트 필드만 다루므로, `review`는 별도 스키마(객체 형태·문자열 길이 제한)로 명시 추가하고 통째로 저장합니다
+  - `assignGrowthPeers` / `sendGrowthPeerFeedback` 은 반드시 `saveGrowthRecord`와 같은 인증(작성자 본인 또는 관리자)을 거칩니다. 이 함수들은 서비스 권한으로 DB를 읽으므로 인증 없이 두면 다른 참가자의 배포 주소·기록이 외부에 노출됩니다
+  - 짝 배정은 버튼을 누를 때 1회, 피드백 전송도 1회만 호출하고, 받은 피드백은 기존 `getGrowthRecord` 응답에 함께 실어 보냅니다(폴링 없음). 자동 저장은 지금과 같은 1초 지연 1요청 방식이라 서버 요청량은 늘지 않습니다
 - `src/components/record/GrowthRecordEditor.tsx`: 단계 배열 확장, `ReviewStep` 하위 컴포넌트(자기/AI/동료 탭) 추가, 03에 GitHub 입력 추가
 - `GrowthReadmeOutput.tsx` / `GrowthCasebookDocument.tsx`: 위 출력 변경 반영(인쇄 스타일은 기존 `.casebook-*` 재사용)
-- `/admin/records` 성장형 탭의 진행률 계산 기준은 그대로 두고, 04 점검 완료 수(0~3) 열만 추가
-- 도전형(활동기록) 코드·데이터는 건드리지 않습니다
+- `/admin/records` 성장형 탭은 단계 목록을 그대로 순회하므로 04 검토 열이 자동으로 추가됩니다. 엑셀 열에 `GitHub 저장소`와 세 점검의 '고친 것'을 추가합니다
+- 도전형(활동기록) 코드·데이터는 건드리지 않습니다. 공용으로 쓰이는 파일은 성장형 전용 모듈뿐이라 다른 게시판 기능에는 영향이 없습니다
+
 
 ## 마무리
 
