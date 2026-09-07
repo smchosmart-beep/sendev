@@ -33,7 +33,7 @@ import {
 } from "@/lib/record-growth.functions";
 import { isRecordAdmin } from "@/lib/record.functions";
 import {
-  GROWTH_AI_AREA_QUESTIONS,
+  
   GROWTH_ANGLE_CHOICES,
   GROWTH_ANGLE_ITEMS,
   GROWTH_CHECK_CHOICES,
