@@ -776,6 +776,7 @@ export type Database = {
           id: string
           post_id: string
           receiver_type: string
+          to_name: string
           updated_at: string
         }
         Insert: {
@@ -787,6 +788,7 @@ export type Database = {
           id?: string
           post_id: string
           receiver_type?: string
+          to_name?: string
           updated_at?: string
         }
         Update: {
@@ -798,6 +800,7 @@ export type Database = {
           id?: string
           post_id?: string
           receiver_type?: string
+          to_name?: string
           updated_at?: string
         }
         Relationships: [
