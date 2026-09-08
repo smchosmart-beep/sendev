@@ -342,6 +342,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
       voteName: c.vote_name ?? "투표",
       recordName: c.record_name ?? "활동기록",
       recordKind: (c.record_kind === "growth" ? "growth" : "challenge") as "challenge" | "growth",
+      galleryOpen: !!c.gallery_open,
       voteStatus: (c.vote_status ?? "idle") as VoteStatus,
       voteRevealed: !!c.vote_revealed,
       voteMaxChoices: Number(c.vote_max_choices ?? 1),
