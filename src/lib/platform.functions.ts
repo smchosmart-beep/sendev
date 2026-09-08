@@ -315,7 +315,7 @@ export const listCategories = createServerFn({ method: "GET" }).handler(
     const { data, error } = await db
       .from("categories")
       .select(
-        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, enable_problem, enable_vote, general_name, project_name, link_name, problem_name, vote_name, enable_record, record_name, record_kind, vote_status, vote_revealed, vote_max_choices, vote_target_type, tab_group, eval_open, eval_seed, review_allowlist_only, eval_results_public, hidden",
+        "id, slug, name, description, sort_order, password, github_required, parent_id, is_group, enable_post, enable_project, enable_link, enable_problem, enable_vote, general_name, project_name, link_name, problem_name, vote_name, enable_record, record_name, record_kind, gallery_open, vote_status, vote_revealed, vote_max_choices, vote_target_type, tab_group, eval_open, eval_seed, review_allowlist_only, eval_results_public, hidden",
       )
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
