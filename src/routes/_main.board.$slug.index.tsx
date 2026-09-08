@@ -587,12 +587,21 @@ function BoardInner({
             <h2 className="text-lg font-semibold text-foreground">
               {category.recordName || "활동기록"}
             </h2>
-            <Button asChild className="rounded-xl active:scale-95">
-              <Link to="/board/$slug/new-record" params={{ slug }}>
-                <Plus className="h-4 w-4" />
-                {category.recordName || "활동기록"} 시작하기
-              </Link>
-            </Button>
+            <div className="flex items-center gap-2">
+              {category.recordKind === "growth" && (
+                <Button asChild variant="outline" className="rounded-xl active:scale-95">
+                  <Link to="/board/$slug/gallery" params={{ slug }}>
+                    나눔
+                  </Link>
+                </Button>
+              )}
+              <Button asChild className="rounded-xl active:scale-95">
+                <Link to="/board/$slug/new-record" params={{ slug }}>
+                  <Plus className="h-4 w-4" />
+                  {category.recordName || "활동기록"} 시작하기
+                </Link>
+              </Button>
+            </div>
           </div>
           {recordPosts.length === 0 ? (
             <EmptyState
