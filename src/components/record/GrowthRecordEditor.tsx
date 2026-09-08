@@ -130,6 +130,15 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
     [identity?.author, identity?.nicknamePassword, adminPw],
   );
 
+  // 07 사례집: 나눔에서 내가 고른 인용 2줄 (없으면 빈 배열)
+  const fetchQuotes = useServerFn(getMyGalleryQuotes);
+  const { data: galleryQuotes } = useQuery({
+    queryKey: ["galleryQuotes", bundle?.categoryId, auth.author],
+    queryFn: () =>
+      fetchQuotes({ data: { categoryId: bundle!.categoryId, ...auth } }).catch(() => []),
+    enabled: !!bundle?.categoryId && !!auth.author && step === 6,
+  });
+
   const isOwner = useMemo(() => {
     if (!bundle) return false;
     const me = (identity?.author ?? "").trim().toLowerCase();
