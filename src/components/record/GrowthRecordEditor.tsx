@@ -80,6 +80,7 @@ import { GrowthReadmeOutput } from "@/components/record/GrowthReadmeOutput";
 import { GrowthCasebookOutput } from "@/components/record/GrowthCasebookDocument";
 import { rotateImageBlob, uploadCommentImage } from "@/lib/image-upload";
 import { getAdminPassword, setAdminPassword } from "@/lib/admin-auth";
+import { getMyGalleryQuotes } from "@/lib/record-gallery.functions";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
