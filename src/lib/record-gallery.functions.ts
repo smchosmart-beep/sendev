@@ -952,3 +952,27 @@ export const resetGalleryStage = createServerFn({ method: "POST" })
     await db.from("record_growth_stage").delete().eq("category_id", data.categoryId);
     return { ok: true };
   });
+
+/** 07 성장 사례집에 익명 인용으로 실을, 내가 고른 "내가 가져갈 한 줄" 2개. */
+export const getMyGalleryQuotes = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z.object({ categoryId: z.string().uuid(), ...authInput }).parse(input),
+  )
+  .handler(async ({ data }): Promise<string[]> => {
+    const db = await getDb();
+    const { session } = await ensureParticipant(db, data.categoryId, data);
+    if (!session.myPostId) return [];
+    const { data: picks } = await db
+      .from("record_growth_quote_pick")
+      .select("evaluation_id")
+      .eq("post_id", session.myPostId);
+    const ids = ((picks ?? []) as { evaluation_id: string }[]).map((p) => p.evaluation_id);
+    if (ids.length === 0) return [];
+    const { data: rows } = await db
+      .from("record_growth_evaluation")
+      .select("takeaway")
+      .in("id", ids);
+    return ((rows ?? []) as { takeaway: string }[])
+      .map((r) => (r.takeaway ?? "").trim())
+      .filter(Boolean);
+  });

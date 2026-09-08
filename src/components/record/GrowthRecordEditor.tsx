@@ -544,6 +544,7 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
             data={data}
             author={bundle.author}
             received={receivedRef.current}
+            quotes={galleryQuotes ?? []}
           />
         )}
       </section>
