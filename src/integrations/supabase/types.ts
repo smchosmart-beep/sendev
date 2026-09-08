@@ -57,6 +57,7 @@ export type Database = {
           eval_open: boolean
           eval_results_public: boolean
           eval_seed: number
+          gallery_open: boolean
           general_name: string
           github_required: boolean
           hidden: boolean
@@ -103,6 +104,7 @@ export type Database = {
           eval_open?: boolean
           eval_results_public?: boolean
           eval_seed?: number
+          gallery_open?: boolean
           general_name?: string
           github_required?: boolean
           hidden?: boolean
@@ -149,6 +151,7 @@ export type Database = {
           eval_open?: boolean
           eval_results_public?: boolean
           eval_seed?: number
+          gallery_open?: boolean
           general_name?: string
           github_required?: boolean
           hidden?: boolean
@@ -766,6 +769,163 @@ export type Database = {
           },
         ]
       }
+      record_growth_evaluation: {
+        Row: {
+          accuracy: number
+          created_at: string
+          effect: number
+          from_post_id: string
+          id: string
+          not_visited: boolean
+          post_id: string
+          problem: number
+          submitted: boolean
+          takeaway: string
+          updated_at: string
+        }
+        Insert: {
+          accuracy?: number
+          created_at?: string
+          effect?: number
+          from_post_id: string
+          id?: string
+          not_visited?: boolean
+          post_id: string
+          problem?: number
+          submitted?: boolean
+          takeaway?: string
+          updated_at?: string
+        }
+        Update: {
+          accuracy?: number
+          created_at?: string
+          effect?: number
+          from_post_id?: string
+          id?: string
+          not_visited?: boolean
+          post_id?: string
+          problem?: number
+          submitted?: boolean
+          takeaway?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_growth_evaluation_from_post_id_fkey"
+            columns: ["from_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "record_growth_evaluation_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      record_growth_group: {
+        Row: {
+          area: string
+          category_id: string
+          created_at: string
+          id: string
+          number: number
+          updated_at: string
+        }
+        Insert: {
+          area?: string
+          category_id: string
+          created_at?: string
+          id?: string
+          number: number
+          updated_at?: string
+        }
+        Update: {
+          area?: string
+          category_id?: string
+          created_at?: string
+          id?: string
+          number?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_growth_group_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      record_growth_group_member: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          post_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          post_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_growth_group_member_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "record_growth_group"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "record_growth_group_member_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: true
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      record_growth_heart: {
+        Row: {
+          created_at: string
+          id: string
+          stage_id: string
+          voter_key: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          stage_id: string
+          voter_key: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          stage_id?: string
+          voter_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_growth_heart_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "record_growth_stage"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       record_growth_peer_feedback: {
         Row: {
           actual: string
@@ -816,6 +976,119 @@ export type Database = {
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      record_growth_quote_pick: {
+        Row: {
+          created_at: string
+          evaluation_id: string
+          id: string
+          post_id: string
+        }
+        Insert: {
+          created_at?: string
+          evaluation_id: string
+          id?: string
+          post_id: string
+        }
+        Update: {
+          created_at?: string
+          evaluation_id?: string
+          id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_growth_quote_pick_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "record_growth_evaluation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "record_growth_quote_pick_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      record_growth_stage: {
+        Row: {
+          aggregated_at: string
+          area: string
+          category_id: string
+          created_at: string
+          id: string
+          order_no: number
+          post_id: string
+        }
+        Insert: {
+          aggregated_at?: string
+          area?: string
+          category_id: string
+          created_at?: string
+          id?: string
+          order_no?: number
+          post_id: string
+        }
+        Update: {
+          aggregated_at?: string
+          area?: string
+          category_id?: string
+          created_at?: string
+          id?: string
+          order_no?: number
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_growth_stage_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "record_growth_stage_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      record_growth_stage_comment: {
+        Row: {
+          author: string
+          content: string
+          created_at: string
+          id: string
+          stage_id: string
+        }
+        Insert: {
+          author?: string
+          content?: string
+          created_at?: string
+          id?: string
+          stage_id: string
+        }
+        Update: {
+          author?: string
+          content?: string
+          created_at?: string
+          id?: string
+          stage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_growth_stage_comment_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "record_growth_stage"
             referencedColumns: ["id"]
           },
         ]
