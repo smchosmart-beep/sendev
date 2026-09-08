@@ -21,10 +21,12 @@ function GrowthDoc({
   data,
   author,
   received = [],
+  quotes = [],
 }: {
   data: GrowthRecordData;
   author: string;
   received?: GrowthReceivedFeedback[];
+  quotes?: string[];
 }) {
   const features = clean(data.features);
   const flow = clean(data.flow);
@@ -336,10 +338,12 @@ export function GrowthCasebookOutput({
   data,
   author,
   received = [],
+  quotes = [],
 }: {
   data: GrowthRecordData;
   author: string;
   received?: GrowthReceivedFeedback[];
+  quotes?: string[];
 }) {
   return (
     <section className="casebook-root space-y-4">
@@ -352,6 +356,20 @@ export function GrowthCasebookOutput({
           인쇄·PDF 저장
         </Button>
       </div>
+      {quotes.length > 0 && (
+        <div className="casebook-ui rounded-xl border border-border p-3">
+          <p className="text-xs font-semibold text-muted-foreground">
+            나눔에서 동료가 남긴 한 줄 (익명 인용)
+          </p>
+          <ul className="mt-1.5 space-y-1">
+            {quotes.map((q, i) => (
+              <li key={i} className="text-sm text-foreground">
+                “{q}”
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="overflow-x-auto rounded-xl bg-muted/30 p-3">
         <GrowthDoc data={data} author={author} received={received} />
       </div>

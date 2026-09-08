@@ -16,6 +16,7 @@ import {
   growthStepProgress,
   type GrowthFix,
 } from "@/lib/record-growth-schema";
+import { GalleryAdminSection } from "@/components/record/GalleryAdminSection";
 import { getAdminPassword } from "@/lib/admin-auth";
 import { cn } from "@/lib/utils";
 
@@ -152,6 +153,8 @@ export function GrowthAdminPanel() {
           )}
         </div>
       </div>
+
+      {categoryId && <GalleryAdminSection categoryId={categoryId} />}
 
       {isLoading && categoryId && (
         <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">

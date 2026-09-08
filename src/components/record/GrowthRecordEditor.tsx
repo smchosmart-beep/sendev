@@ -80,6 +80,7 @@ import { GrowthReadmeOutput } from "@/components/record/GrowthReadmeOutput";
 import { GrowthCasebookOutput } from "@/components/record/GrowthCasebookDocument";
 import { rotateImageBlob, uploadCommentImage } from "@/lib/image-upload";
 import { getAdminPassword, setAdminPassword } from "@/lib/admin-auth";
+import { getMyGalleryQuotes } from "@/lib/record-gallery.functions";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -129,6 +130,15 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
     }),
     [identity?.author, identity?.nicknamePassword, adminPw],
   );
+
+  // 07 사례집: 나눔에서 내가 고른 인용 2줄 (없으면 빈 배열)
+  const fetchQuotes = useServerFn(getMyGalleryQuotes);
+  const { data: galleryQuotes } = useQuery({
+    queryKey: ["galleryQuotes", bundle?.categoryId, auth.author],
+    queryFn: () =>
+      fetchQuotes({ data: { categoryId: bundle!.categoryId, ...auth } }).catch(() => []),
+    enabled: !!bundle?.categoryId && !!auth.author && step === 6,
+  });
 
   const isOwner = useMemo(() => {
     if (!bundle) return false;
@@ -544,6 +554,7 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
             data={data}
             author={bundle.author}
             received={receivedRef.current}
+            quotes={galleryQuotes ?? []}
           />
         )}
       </section>
