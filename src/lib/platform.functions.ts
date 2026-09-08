@@ -551,6 +551,7 @@ export const updateCategory = createServerFn({ method: "POST" })
         voteName: z.string().trim().max(100).optional(),
         recordName: z.string().trim().max(100).optional(),
         recordKind: z.enum(["challenge", "growth"]).optional(),
+        galleryOpen: z.boolean().optional(),
         templatePost: z.string().max(8000).optional(),
         templateQuestion: z.string().max(8000).optional(),
         templateVote: z.string().max(8000).optional(),
@@ -600,6 +601,7 @@ export const updateCategory = createServerFn({ method: "POST" })
     if (data.recordName !== undefined)
       patch.record_name = data.recordName || "활동기록";
     if (data.recordKind !== undefined) patch.record_kind = data.recordKind;
+    if (data.galleryOpen !== undefined) patch.gallery_open = data.galleryOpen;
     if (data.templatePost !== undefined) patch.template_post = data.templatePost;
     if (data.templateQuestion !== undefined)
       patch.template_question = data.templateQuestion;
