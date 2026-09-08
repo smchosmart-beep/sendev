@@ -205,6 +205,7 @@ export interface CategoryDTO {
   voteName: string;
   recordName: string;
   recordKind: "challenge" | "growth";
+  galleryOpen: boolean;
   voteStatus: VoteStatus;
   voteRevealed: boolean;
   voteMaxChoices: number;
