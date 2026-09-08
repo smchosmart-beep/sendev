@@ -338,10 +338,12 @@ export function GrowthCasebookOutput({
   data,
   author,
   received = [],
+  quotes = [],
 }: {
   data: GrowthRecordData;
   author: string;
   received?: GrowthReceivedFeedback[];
+  quotes?: string[];
 }) {
   return (
     <section className="casebook-root space-y-4">
