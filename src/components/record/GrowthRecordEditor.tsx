@@ -107,7 +107,7 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
 
   const [step, setStep] = useState(0);
   const [data, setData] = useState<GrowthRecordData | null>(null);
-  const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "unsaved">("idle");
 
   const { data: bundle, isLoading } = useQuery({
     queryKey: ["record-growth", postId],
@@ -206,7 +206,7 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
         if (!msg.includes("다른 곳에서 먼저")) throw err;
         // 최신 저장 시각만 다시 받아 한 번 재시도
         const fresh = await fetchGrowth({ data: { postId } });
-        knownUpdatedAt.current = fresh.data.updatedAt ?? "";
+        knownUpdatedAt.current = fresh?.data?.updatedAt ?? "";
         res = await saveGrowth({
           data: { postId, knownUpdatedAt: knownUpdatedAt.current, patch, ...auth },
         });
