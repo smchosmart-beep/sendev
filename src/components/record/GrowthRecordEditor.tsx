@@ -326,8 +326,20 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
       <div className="rounded-2xl bg-card p-4 shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-semibold text-foreground">전체 작성률 {percent}%</p>
-          <p className="text-xs text-muted-foreground">
-            {status === "saving" ? "저장 중..." : status === "saved" ? "자동 저장됨" : "\u00a0"}
+          <p
+            className={
+              status === "unsaved"
+                ? "text-xs font-semibold text-amber-600"
+                : "text-xs text-muted-foreground"
+            }
+          >
+            {status === "saving"
+              ? "저장 중..."
+              : status === "saved"
+                ? "자동 저장됨"
+                : status === "unsaved"
+                  ? "아직 저장되지 않았어요"
+                  : "\u00a0"}
           </p>
         </div>
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
