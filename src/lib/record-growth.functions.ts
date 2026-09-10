@@ -149,6 +149,7 @@ function toDTO(row: GrowthRow | null, postId: string): GrowthRecordData {
   ) as Record<GrowthFieldKey, string>;
   return {
     ...base,
+    privacy: s(row?.["privacy"]),
     features: arr(row?.["features"]),
     flow: arr(row?.["flow"]),
     ethics: arr(row?.["ethics"]),

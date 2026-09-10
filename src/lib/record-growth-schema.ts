@@ -552,6 +552,7 @@ export const GROWTH_EMPTY: GrowthRecordData = {
     GrowthFieldKey,
     string
   >),
+  privacy: "",
   features: [],
   flow: [],
   ethics: [],
