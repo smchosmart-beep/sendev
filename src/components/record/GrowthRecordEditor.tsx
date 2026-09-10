@@ -229,11 +229,23 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
   const queue = useCallback(
     (key: string, value: unknown) => {
       pending.current[key] = value;
+      setStatus((s) => (s === "saving" ? s : "unsaved"));
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => void flush(), 1000);
     },
     [flush],
   );
+
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (Object.keys(pending.current).length > 0 || saving.current) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, []);
 
   const onField = useCallback(
     (key: GrowthFieldKey, value: string) => {
