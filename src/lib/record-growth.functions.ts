@@ -284,6 +284,7 @@ export const saveGrowthRecord = createServerFn({ method: "POST" })
         patch: z
           .object({
             ...textPatchShape,
+            privacy: z.enum(["", ...GROWTH_PRIVACY_CHOICES] as [string, ...string[]]).optional(),
             heroImageUrl: z.string().max(1000).optional(),
             features: z
               .array(z.string().max(GROWTH_REPEATER_ITEM_MAX))
