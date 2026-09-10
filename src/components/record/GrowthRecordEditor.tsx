@@ -107,7 +107,7 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
 
   const [step, setStep] = useState(0);
   const [data, setData] = useState<GrowthRecordData | null>(null);
-  const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "unsaved">("idle");
 
   const { data: bundle, isLoading } = useQuery({
     queryKey: ["record-growth", postId],
@@ -186,32 +186,66 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
     setData({ ...GROWTH_EMPTY, ...bundle.data, review: bundle.data.review ?? GROWTH_EMPTY_REVIEW });
   }, [bundle]);
 
-  const flush = useCallback(async () => {
+  const saving = useRef(false);
+
+  const flush = useCallback(async (): Promise<void> => {
+    if (saving.current) return; // 진행 중이면 끝난 뒤 이어서 보냄
     const patch = pending.current;
     pending.current = {};
     if (Object.keys(patch).length === 0) return;
+    saving.current = true;
     setStatus("saving");
     try {
-      const res = await saveGrowth({
-        data: { postId, knownUpdatedAt: knownUpdatedAt.current, patch, ...auth },
-      });
+      let res: { updatedAt: string };
+      try {
+        res = await saveGrowth({
+          data: { postId, knownUpdatedAt: knownUpdatedAt.current, patch, ...auth },
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "";
+        if (!msg.includes("다른 곳에서 먼저")) throw err;
+        // 최신 저장 시각만 다시 받아 한 번 재시도
+        const fresh = await fetchGrowth({ data: { postId } });
+        knownUpdatedAt.current = fresh?.data?.updatedAt ?? "";
+        res = await saveGrowth({
+          data: { postId, knownUpdatedAt: knownUpdatedAt.current, patch, ...auth },
+        });
+      }
       knownUpdatedAt.current = res.updatedAt;
-      setStatus("saved");
+      setStatus(Object.keys(pending.current).length > 0 ? "unsaved" : "saved");
     } catch (err) {
-      setStatus("idle");
+      pending.current = { ...patch, ...pending.current };
+      setStatus("unsaved");
       toast.error(err instanceof Error ? err.message : "저장 중 문제가 발생했어요.");
-      queryClient.invalidateQueries({ queryKey: ["record-growth", postId] });
+    } finally {
+      saving.current = false;
+      if (Object.keys(pending.current).length > 0) {
+        if (timer.current) clearTimeout(timer.current);
+        timer.current = setTimeout(() => void flush(), 600);
+      }
     }
-  }, [auth, postId, queryClient, saveGrowth]);
+  }, [auth, fetchGrowth, postId, saveGrowth]);
 
   const queue = useCallback(
     (key: string, value: unknown) => {
       pending.current[key] = value;
+      setStatus((s) => (s === "saving" ? s : "unsaved"));
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => void flush(), 1000);
     },
     [flush],
   );
+
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (Object.keys(pending.current).length > 0 || saving.current) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, []);
 
   const onField = useCallback(
     (key: GrowthFieldKey, value: string) => {
@@ -292,8 +326,20 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
       <div className="rounded-2xl bg-card p-4 shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-semibold text-foreground">전체 작성률 {percent}%</p>
-          <p className="text-xs text-muted-foreground">
-            {status === "saving" ? "저장 중..." : status === "saved" ? "자동 저장됨" : "\u00a0"}
+          <p
+            className={
+              status === "unsaved"
+                ? "text-xs font-semibold text-amber-600"
+                : "text-xs text-muted-foreground"
+            }
+          >
+            {status === "saving"
+              ? "저장 중..."
+              : status === "saved"
+                ? "자동 저장됨"
+                : status === "unsaved"
+                  ? "아직 저장되지 않았어요"
+                  : "\u00a0"}
           </p>
         </div>
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">

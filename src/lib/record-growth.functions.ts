@@ -6,6 +6,7 @@ import {
   GROWTH_EMPTY,
   GROWTH_EMPTY_REVIEW,
   GROWTH_FIX_MAX,
+  GROWTH_PRIVACY_CHOICES,
   GROWTH_REPEATER_ITEM_MAX,
   GROWTH_REPEATER_MAX,
   type GrowthAngleKey,
@@ -284,6 +285,7 @@ export const saveGrowthRecord = createServerFn({ method: "POST" })
         patch: z
           .object({
             ...textPatchShape,
+            privacy: z.enum(["", ...GROWTH_PRIVACY_CHOICES] as [string, ...string[]]).optional(),
             heroImageUrl: z.string().max(1000).optional(),
             features: z
               .array(z.string().max(GROWTH_REPEATER_ITEM_MAX))
