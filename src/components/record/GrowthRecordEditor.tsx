@@ -186,23 +186,45 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
     setData({ ...GROWTH_EMPTY, ...bundle.data, review: bundle.data.review ?? GROWTH_EMPTY_REVIEW });
   }, [bundle]);
 
-  const flush = useCallback(async () => {
+  const saving = useRef(false);
+
+  const flush = useCallback(async (): Promise<void> => {
+    if (saving.current) return; // 진행 중이면 끝난 뒤 이어서 보냄
     const patch = pending.current;
     pending.current = {};
     if (Object.keys(patch).length === 0) return;
+    saving.current = true;
     setStatus("saving");
     try {
-      const res = await saveGrowth({
-        data: { postId, knownUpdatedAt: knownUpdatedAt.current, patch, ...auth },
-      });
+      let res: { updatedAt: string };
+      try {
+        res = await saveGrowth({
+          data: { postId, knownUpdatedAt: knownUpdatedAt.current, patch, ...auth },
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "";
+        if (!msg.includes("다른 곳에서 먼저")) throw err;
+        // 최신 저장 시각만 다시 받아 한 번 재시도
+        const fresh = await fetchGrowth({ data: { postId } });
+        knownUpdatedAt.current = fresh.data.updatedAt ?? "";
+        res = await saveGrowth({
+          data: { postId, knownUpdatedAt: knownUpdatedAt.current, patch, ...auth },
+        });
+      }
       knownUpdatedAt.current = res.updatedAt;
-      setStatus("saved");
+      setStatus(Object.keys(pending.current).length > 0 ? "unsaved" : "saved");
     } catch (err) {
-      setStatus("idle");
+      pending.current = { ...patch, ...pending.current };
+      setStatus("unsaved");
       toast.error(err instanceof Error ? err.message : "저장 중 문제가 발생했어요.");
-      queryClient.invalidateQueries({ queryKey: ["record-growth", postId] });
+    } finally {
+      saving.current = false;
+      if (Object.keys(pending.current).length > 0) {
+        if (timer.current) clearTimeout(timer.current);
+        timer.current = setTimeout(() => void flush(), 600);
+      }
     }
-  }, [auth, postId, queryClient, saveGrowth]);
+  }, [auth, fetchGrowth, postId, saveGrowth]);
 
   const queue = useCallback(
     (key: string, value: unknown) => {
