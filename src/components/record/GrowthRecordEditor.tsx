@@ -105,7 +105,8 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
   const fetchGrowth = useServerFn(getGrowthRecord);
   const saveGrowth = useServerFn(saveGrowthRecord);
   const checkAdmin = useServerFn(isRecordAdmin);
-  const { identity } = useStoredIdentity();
+  const { identity, save: saveIdentity } = useStoredIdentity();
+  const verifyNickname = useServerFn(verifyNicknameLogin);
 
   const [step, setStep] = useState(0);
   const [data, setData] = useState<GrowthRecordData | null>(null);
