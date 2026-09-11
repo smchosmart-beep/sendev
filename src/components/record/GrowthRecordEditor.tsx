@@ -1240,6 +1240,11 @@ function PeerPanel({
           짝 배정 받기
         </Button>
       </div>
+      {assignments.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          이미 배정된 짝입니다. 다시 눌러도 바뀌지 않습니다.
+        </p>
+      )}
 
       {assignments.length === 0 ? (
         <p className="rounded-xl bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
