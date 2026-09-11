@@ -32,6 +32,7 @@ import {
   sendGrowthPeerFeedback,
 } from "@/lib/record-growth.functions";
 import { isRecordAdmin } from "@/lib/record.functions";
+import { verifyNicknameLogin } from "@/lib/platform.functions";
 import {
   
   GROWTH_ANGLE_CHOICES,
@@ -84,6 +85,7 @@ import { getMyGalleryQuotes } from "@/lib/record-gallery.functions";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/PasswordInput";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
