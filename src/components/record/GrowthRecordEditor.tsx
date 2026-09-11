@@ -179,6 +179,44 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
     }
   };
 
+  // 본인 확인 — 다른 기기/브라우저에서 열어 잠긴 경우, 닉네임 비밀번호로 스스로 잠금을 푼다.
+  const [ownerName, setOwnerName] = useState("");
+  const [ownerPw, setOwnerPw] = useState("");
+  const [ownerChecking, setOwnerChecking] = useState(false);
+
+  useEffect(() => {
+    if (bundle?.author) setOwnerName((prev) => (prev ? prev : bundle.author));
+  }, [bundle?.author]);
+
+  const unlockOwner = async () => {
+    const name = ownerName.trim();
+    const pw = ownerPw.trim();
+    if (!name || !pw) {
+      toast.error("닉네임과 비밀번호를 입력해 주세요.");
+      return;
+    }
+    // 작성자와 다른 닉네임이면 서버를 부르지 않고 바로 거절한다.
+    if (name.toLowerCase() !== (bundle?.author ?? "").trim().toLowerCase()) {
+      toast.error("이 기록의 작성자 닉네임이 아니에요.");
+      return;
+    }
+    setOwnerChecking(true);
+    try {
+      const res = await verifyNickname({ data: { username: name, password: pw } });
+      if (!res.ok) {
+        toast.error("비밀번호가 일치하지 않습니다.");
+        return;
+      }
+      saveIdentity(res.username || name, pw);
+      setOwnerPw("");
+      toast.success("본인 확인이 끝났어요. 이제 수정할 수 있어요.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "확인에 실패했어요.");
+    } finally {
+      setOwnerChecking(false);
+    }
+  };
+
   const knownUpdatedAt = useRef("");
   const pending = useRef<Patch>({});
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
