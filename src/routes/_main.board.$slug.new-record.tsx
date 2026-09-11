@@ -99,6 +99,12 @@ function NewRecordPage() {
             ? "개인 기록이에요. 작성자 본인과 관리자만 편집할 수 있어요."
             : "팀당 기록은 하나예요. 만든 뒤 팀원을 추가하면 다 같이 편집할 수 있어요."}
         </p>
+        {isGrowth && (
+          <p className="mt-1 text-sm text-muted-foreground">
+            이미 기록을 만들었다면 게시판 목록에서 내 기록을 열고, 닉네임 비밀번호로 본인 확인을
+            하세요.
+          </p>
+        )}
 
         <form
           onSubmit={(e) => {
