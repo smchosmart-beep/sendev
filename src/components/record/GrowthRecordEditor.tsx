@@ -425,8 +425,49 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
       </nav>
 
       {!canEdit && (
-        <div className="space-y-2 rounded-xl bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
-          <p>이 기록은 작성자 본인과 관리자만 수정할 수 있어요.</p>
+        <div className="space-y-3 rounded-xl bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+          <p>
+            이 기록은 작성자 본인과 관리자만 수정할 수 있어요. 본인이라면 아래에서 닉네임
+            비밀번호로 확인해 주세요.
+          </p>
+          <form
+            className="flex flex-wrap items-end gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void unlockOwner();
+            }}
+          >
+            <div className="space-y-1">
+              <Label htmlFor="growth-owner-name" className="text-xs">
+                내 닉네임
+              </Label>
+              <Input
+                id="growth-owner-name"
+                value={ownerName}
+                onChange={(e) => setOwnerName(e.target.value)}
+                placeholder="작성자 닉네임"
+                className="h-9 w-40 rounded-xl bg-background"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="growth-owner-pw" className="text-xs">
+                닉네임 비밀번호
+              </Label>
+              <PasswordInput
+                id="growth-owner-pw"
+                value={ownerPw}
+                onChange={(e) => setOwnerPw(e.target.value)}
+                placeholder="닉네임 비밀번호"
+                className="h-9 w-48 rounded-xl bg-background"
+              />
+            </div>
+            <Button type="submit" size="sm" className="h-9 rounded-xl" disabled={ownerChecking}>
+              {ownerChecking ? <Loader2 className="h-4 w-4 animate-spin" /> : "내 기록 확인"}
+            </Button>
+          </form>
+          <p className="text-xs">
+            비밀번호가 기억나지 않으면 마이페이지의 <b>비밀번호 찾기</b>로 다시 설정할 수 있어요.
+          </p>
           {adminOpen ? (
             <form
               className="flex flex-wrap items-center gap-2"
