@@ -32,6 +32,7 @@ import {
   sendGrowthPeerFeedback,
 } from "@/lib/record-growth.functions";
 import { isRecordAdmin } from "@/lib/record.functions";
+import { verifyNicknameLogin } from "@/lib/platform.functions";
 import {
   
   GROWTH_ANGLE_CHOICES,
@@ -84,6 +85,7 @@ import { getMyGalleryQuotes } from "@/lib/record-gallery.functions";
 import { useStoredIdentity } from "@/hooks/useNicknameIdentity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/PasswordInput";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -103,7 +105,8 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
   const fetchGrowth = useServerFn(getGrowthRecord);
   const saveGrowth = useServerFn(saveGrowthRecord);
   const checkAdmin = useServerFn(isRecordAdmin);
-  const { identity } = useStoredIdentity();
+  const { identity, save: saveIdentity } = useStoredIdentity();
+  const verifyNickname = useServerFn(verifyNicknameLogin);
 
   const [step, setStep] = useState(0);
   const [data, setData] = useState<GrowthRecordData | null>(null);
@@ -173,6 +176,44 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
       toast.error("확인에 실패했어요. 잠시 후 다시 시도해 주세요.");
     } finally {
       setAdminChecking(false);
+    }
+  };
+
+  // 본인 확인 — 다른 기기/브라우저에서 열어 잠긴 경우, 닉네임 비밀번호로 스스로 잠금을 푼다.
+  const [ownerName, setOwnerName] = useState("");
+  const [ownerPw, setOwnerPw] = useState("");
+  const [ownerChecking, setOwnerChecking] = useState(false);
+
+  useEffect(() => {
+    if (bundle?.author) setOwnerName((prev) => (prev ? prev : bundle.author));
+  }, [bundle?.author]);
+
+  const unlockOwner = async () => {
+    const name = ownerName.trim();
+    const pw = ownerPw.trim();
+    if (!name || !pw) {
+      toast.error("닉네임과 비밀번호를 입력해 주세요.");
+      return;
+    }
+    // 작성자와 다른 닉네임이면 서버를 부르지 않고 바로 거절한다.
+    if (name.toLowerCase() !== (bundle?.author ?? "").trim().toLowerCase()) {
+      toast.error("이 기록의 작성자 닉네임이 아니에요.");
+      return;
+    }
+    setOwnerChecking(true);
+    try {
+      const res = await verifyNickname({ data: { username: name, password: pw } });
+      if (!res.ok) {
+        toast.error("비밀번호가 일치하지 않습니다.");
+        return;
+      }
+      saveIdentity(res.username || name, pw);
+      setOwnerPw("");
+      toast.success("본인 확인이 끝났어요. 이제 수정할 수 있어요.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "확인에 실패했어요.");
+    } finally {
+      setOwnerChecking(false);
     }
   };
 
@@ -384,8 +425,49 @@ export function GrowthRecordEditor({ postId }: { postId: string }) {
       </nav>
 
       {!canEdit && (
-        <div className="space-y-2 rounded-xl bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
-          <p>이 기록은 작성자 본인과 관리자만 수정할 수 있어요.</p>
+        <div className="space-y-3 rounded-xl bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+          <p>
+            이 기록은 작성자 본인과 관리자만 수정할 수 있어요. 본인이라면 아래에서 닉네임
+            비밀번호로 확인해 주세요.
+          </p>
+          <form
+            className="flex flex-wrap items-end gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void unlockOwner();
+            }}
+          >
+            <div className="space-y-1">
+              <Label htmlFor="growth-owner-name" className="text-xs">
+                내 닉네임
+              </Label>
+              <Input
+                id="growth-owner-name"
+                value={ownerName}
+                onChange={(e) => setOwnerName(e.target.value)}
+                placeholder="작성자 닉네임"
+                className="h-9 w-40 rounded-xl bg-background"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="growth-owner-pw" className="text-xs">
+                닉네임 비밀번호
+              </Label>
+              <PasswordInput
+                id="growth-owner-pw"
+                value={ownerPw}
+                onChange={(e) => setOwnerPw(e.target.value)}
+                placeholder="닉네임 비밀번호"
+                className="h-9 w-48 rounded-xl bg-background"
+              />
+            </div>
+            <Button type="submit" size="sm" className="h-9 rounded-xl" disabled={ownerChecking}>
+              {ownerChecking ? <Loader2 className="h-4 w-4 animate-spin" /> : "내 기록 확인"}
+            </Button>
+          </form>
+          <p className="text-xs">
+            비밀번호가 기억나지 않으면 마이페이지의 <b>비밀번호 찾기</b>로 다시 설정할 수 있어요.
+          </p>
           {adminOpen ? (
             <form
               className="flex flex-wrap items-center gap-2"
