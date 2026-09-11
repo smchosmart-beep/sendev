@@ -61,7 +61,9 @@ function NewRecordPage() {
       persistIdentity();
       queryClient.invalidateQueries({ queryKey: ["posts", category!.id] });
       toast.success(
-        res.existing ? "이미 참여 중인 기록으로 이동해요." : "활동기록이 만들어졌어요!",
+        res.existing
+          ? "이미 만든 기록이 있어 그 기록으로 이동했어요. 기록은 한 사람당 하나예요."
+          : "활동기록이 만들어졌어요!",
       );
       navigate({
         to: "/board/$slug/$postNo",
