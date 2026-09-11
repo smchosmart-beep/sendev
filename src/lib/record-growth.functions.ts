@@ -380,7 +380,8 @@ export const saveGrowthRecord = createServerFn({ method: "POST" })
         }
         if (incoming.peer) {
           merged.peer = {
-            assigned: incoming.peer.assigned ?? merged.peer.assigned,
+            // 짝 목록은 서버가 관리하는 값 — 자동 저장이 보낸 오래된 값으로 덮어쓰지 않는다.
+            assigned: merged.peer.assigned,
             given: incoming.peer.given ?? merged.peer.given,
             fix: incoming.peer.fix ? { ...merged.peer.fix, ...incoming.peer.fix } : merged.peer.fix,
           };
@@ -494,7 +495,7 @@ export const getGrowthPeerAssignments = createServerFn({ method: "POST" })
       .eq("post_id", data.postId)
       .maybeSingle();
     const review = parseReview(existing?.review);
-    if (review.peer.assigned.length >= 2) return { assignments: review.peer.assigned };
+    if (review.peer.assigned.length > 0) return { assignments: review.peer.assigned };
 
     // 같은 게시판(카테고리)의 성장형 기록 중 본인 제외 후보
     const { data: candidates } = await db

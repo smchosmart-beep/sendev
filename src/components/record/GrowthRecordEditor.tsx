@@ -666,7 +666,11 @@ function ReviewStep({
   const assignPeers = async () => {
     setAssigning(true);
     try {
-      await refetchPeers();
+      const result = await refetchPeers();
+      const assigned = result.data?.assignments ?? [];
+      if (assigned.length > 0) {
+        onReview({ ...review, peer: { ...review.peer, assigned } });
+      }
       toast.success("점검 짝을 배정받았어요.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "배정에 실패했어요.");
@@ -1217,7 +1221,8 @@ function PeerPanel({
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
-          짝은 무작위로 정해집니다. 마주 앉아 설명하지 않고, 링크만 열어 직접 써 봅니다.
+          짝은 무작위로 한 번만 정해지고, 그 뒤에는 바뀌지 않습니다. 짝의 배포 주소를 열어 보고
+          돌아와도 같은 짝이 그대로 있습니다. 마주 앉아 설명하지 않고, 링크만 열어 직접 써 봅니다.
         </p>
         <Button
           type="button"
